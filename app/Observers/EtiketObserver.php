@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Observers;
+
+use App\Models\Etiket;
+use App\Models\Product;
+
+class EtiketObserver
+{
+    /**
+     * Handle the Etiket "created" event.
+     */
+    public function created(Etiket $etiket): void
+    {
+        $product = Product::query()
+            ->where('name','=',$etiket->name)
+            ->where('weight','=',$etiket->weight)
+            ->first();
+        if ($product) {
+            $etiket->update([
+                'product_id' => $product->id,
+            ]);
+        }else{
+            $sameNameProduct = Product::query()
+                ->where('name', '=', $etiket->name)
+                ->whereNull('parent_id')
+                ->first();
+
+            if ($sameNameProduct) {
+                $product = $sameNameProduct->replicate();
+                $product->parent_id = $sameNameProduct->id;
+                $product->weight = $etiket->weight;
+                $product->save();
+                $etiket->update([
+                    'product_id' => $product->id,
+                ]);
+            }else{
+                $product = Product::create([
+                    'name' => $etiket->name,
+                    'weight' => $etiket->weight,
+                    'price' => $etiket->price,
+                ]);
+                $etiket->update([
+                    'product_id' => $product->id,
+                ]);
+            }
+        }
+
+    }
+
+    /**
+     * Handle the Etiket "updated" event.
+     */
+    public function updated(Etiket $etiket): void
+    {
+        //
+    }
+
+    /**
+     * Handle the Etiket "deleted" event.
+     */
+    public function deleted(Etiket $etiket): void
+    {
+        //
+    }
+
+    /**
+     * Handle the Etiket "restored" event.
+     */
+    public function restored(Etiket $etiket): void
+    {
+        //
+    }
+
+    /**
+     * Handle the Etiket "force deleted" event.
+     */
+    public function forceDeleted(Etiket $etiket): void
+    {
+        //
+    }
+}

@@ -15,9 +15,7 @@ class SettingGroupSeeder extends Seeder
     {
         $groups = [
             'وبسایت',
-            'درباره ما',
-            'تماس با ما',
-            'سئو',
+            'Tahesab API',
         ];
         foreach ($groups as $group)
         {

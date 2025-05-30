@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Etiket;
 use App\Models\SettingGroup;
+use App\Observers\EtiketObserver;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -31,5 +33,7 @@ class AppServiceProvider extends ServiceProvider
         }catch (\Exception $exception){
 
         }
+
+        Etiket::observe(EtiketObserver::class);
     }
 }

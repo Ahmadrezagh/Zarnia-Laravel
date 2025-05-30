@@ -33,34 +33,22 @@ class SettingSeeder extends Seeder
                 'setting_group_id'=>'1'
             ],
 
-            [   'key' =>'terms',
-                'type'=>'textarea',
-                'title'=>'قوانین استفاده از وبسایت',
-                'value'=>'<p>قوانین استفاده از وبسایت را اینجا بنویسید....</p>',
-                'setting_group_id'=>'2'
-            ],
-            [   'key' =>'about_us',
-                'type'=>'textarea',
-                'title'=>'درباره ما',
-                'value'=>'<p>متن درباره ما ...</p>',
-                'setting_group_id'=>'2'
-            ],
-            [   'key' =>'contact_us',
-                'type'=>'textarea',
-                'title'=>'تماس با ما',
-                'value'=>'<p>متن تماس با ما...</p>',
-                'setting_group_id'=>'3'
-            ],
-            [   'key' =>'email',
+            [   'key' =>'api_endpoint',
                 'type'=>'string',
-                'title'=>'ایمیل',
-                'value'=>'support@site.com',
+                'title'=>'آدرس سرور',
+                'value'=>'https://45.144.18.113:8081',
                 'setting_group_id'=>'2'
             ],
-            [   'key' =>'phone',
+            [   'key' =>'api_key',
                 'type'=>'string',
-                'title'=>'شماره تماس',
-                'value'=>'+98 021 123456',
+                'title'=>'کلید',
+                'value'=>'Q5T7D4G6D8C4T2A8O3U2F7F6K6F5D2L4E8C7S1T4R8Q3U2I4Y5X2D5Y2I2F1V6H2N4M8A5A2W1V4K3N5',
+                'setting_group_id'=>'2'
+            ],
+            [   'key' =>'api_db',
+                'type'=>'string',
+                'title'=>'دیتابیس',
+                'value'=>'TahesabDB',
                 'setting_group_id'=>'2'
             ],
         ];
