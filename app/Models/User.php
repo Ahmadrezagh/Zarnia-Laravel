@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -25,6 +26,8 @@ class User extends Authenticatable
         'type',
         'phone',
         'profile_image',
+        'otp_code',
+        'otp_expires_at'
     ];
 
     public static $TYPES = [
@@ -112,4 +115,8 @@ class User extends Authenticatable
         return url('uploads/profiles/default/user.png');
     }
 
+    public function favoriteProducts()
+    {
+        return $this->belongsToMany(Product::class,'favorites');
+    }
 }
