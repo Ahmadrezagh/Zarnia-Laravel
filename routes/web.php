@@ -1,0 +1,43 @@
+<?php
+
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\FooterTitleController;
+use App\Http\Controllers\Admin\FooterTitleLinkController;
+use App\Http\Controllers\Admin\HeaderLinkController;
+use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\UserController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return redirect('home');
+});
+
+Auth::routes();
+
+Route::middleware(['auth'])->get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () {
+    Route::get('admins', [AdminController::class, 'table'])->name('admins');
+    Route::get('users', [UserController::class, 'table'])->name('users');
+    Route::get('roles', [RoleController::class, 'table'])->name('roles');
+    Route::get('categories', [CategoryController::class, 'table'])->name('categories');
+    Route::get('pages', [PageController::class, 'table'])->name('pages');
+    Route::get('header_links', [HeaderLinkController::class, 'table'])->name('header_links');
+    Route::get('footer_titles', [FooterTitleController::class, 'table'])->name('footer_titles');
+    Route::get('footer_title_links/{footer_title}', [FooterTitleLinkController::class, 'table'])->name('footer_title_links');
+});
+Route::middleware(['auth'])->prefix('admin')-> group(function (){
+    Route::resource('roles', RoleController::class );
+    Route::resource('users', UserController::class );
+    Route::resource('admins', AdminController::class );
+    Route::resource('categories', CategoryController::class );
+    Route::resource('setting_group.settings', SettingController::class );
+    Route::resource('pages', PageController::class );
+
+    Route::resource('header_links', HeaderLinkController::class );
+    Route::resource('footer_titles', FooterTitleController::class );
+    Route::resource('footer_title.footer_title_links', FooterTitleLinkController::class );
+});
+

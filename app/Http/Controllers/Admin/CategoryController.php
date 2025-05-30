@@ -1,0 +1,133 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Category\StoreCategoryRequest;
+use App\Http\Requests\Admin\Category\UpdateCategoryRequest;
+use App\Models\Category;
+use App\Models\Permission;
+use App\Models\Role;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Blade;
+
+class CategoryController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next){
+            if(auth()->user()->isSuperadmin() || (auth()->user()->isAdmin() && auth()->user()->can('category')) ){
+                return $next($request);
+            }
+            else {
+                abort(404);
+            }
+        });
+    }
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $categories = Category::query()->paginate();
+        return view('admin.categories.index',compact('categories'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreCategoryRequest $request)
+    {
+        $category = Category::create($request->validated());
+        return response()->json(['message' => 'با موفقیت انجام شد']);
+
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateCategoryRequest $request, Category $category)
+    {
+        $category->update($request->validated());
+        return response()->json(['message' => 'با موفقیت انجام شد']);
+
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Category $category)
+    {
+        $category->delete();
+        return response()->json(['message' => 'با موفقیت انجام شد']);
+
+    }
+
+
+    public function table()
+    {
+        $categories = Category::query()->paginate();
+
+        // Initialize slot content
+        $slotContent = '';
+
+        // Loop through users and render the Blade string for each
+        foreach ($categories as $category) {
+            $slotContent .= Blade::render(
+                <<<'BLADE'
+                 <!-- Modal -->
+                <x-modal.destroy id="modal-destroy-{{$category->id}}" title="حذف دسته بندی" action="{{route('categories.destroy', $category->id)}}" title="{{$category->title}}" />
+
+                <x-modal.update id="modal-edit-{{$category->id}}" title="ساخت دسته بندی" action="{{route('categories.update',$category->id)}}" >
+                    <x-form.input title="نام"  name="title" :value="$category->title" />
+                    <x-form.select-option title="دسته بندی والد" name="parent_id" >
+                        @foreach($categories as $parent_category)
+                            @if( ($parent_category->id != $category->id) && (!$category->isParentOfCategory($parent_category) ))
+                                <option value="{{$category->id}}" @if($category->parent_id == $parent_category->id) selected @endif >{{$parent_category->title}}</option>
+                            @endif
+                        @endforeach
+                    </x-form.select-option>
+                </x-modal.update>
+            BLADE,
+                ['category' => $category, 'categories' => $categories]
+            );
+        }
+        return view('components.table', [
+            'id' => 'categories-table',
+            'columns' => [
+                ['label' => 'نام', 'key' => 'title', 'type' => 'text'],
+            ],
+            'url' => route('table.categories'),
+            'items' => $categories,
+            'actions' => [
+                ['label' => 'ویرایش', 'type' => 'modal-edit'],
+                ['label' => 'حذف', 'type' => 'modal-destroy']
+            ],
+            'slot' => $slotContent
+        ]);
+    }
+}
