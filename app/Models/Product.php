@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Traits\Scopes\HasDiscount;
+use App\Traits\Scopes\MaxPrice;
+use App\Traits\Scopes\MinPrice;
+use App\Traits\Scopes\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Pishran\LaravelPersianSlug\HasPersianSlug;
@@ -9,7 +13,7 @@ use Spatie\Sluggable\SlugOptions;
 class Product extends Model
 {
     use HasPersianSlug;
-
+    use Search,HasDiscount,MaxPrice,MinPrice;
     protected $fillable = [
         'name',
         'slug',
@@ -49,48 +53,6 @@ class Product extends Model
     public function children()
     {
         return $this->hasMany(self::class, 'parent_id');
-    }
-
-    public function scopeSearch(Builder $query,$search = null)
-    {
-        if($search){
-            return $query->where('name','like','%'.$search.'%');
-        }
-        return $query;
-    }
-    public function scopeMinPrice(Builder $query, $minPrice = null)
-    {
-        if (is_null($minPrice)) {
-            return $query;
-        }
-        $minPrice = $minPrice * 10;
-        return $query->where(function ($q) use ($minPrice) {
-            $q->whereNotNull('discounted_price')
-                ->where('discounted_price', '>=', $minPrice)
-                ->orWhereNull('discounted_price')
-                ->where('price', '>=', $minPrice);
-        });
-    }
-    public function scopeMaxPrice(Builder $query, $maxPrice = null)
-    {
-        if (is_null($maxPrice)) {
-            return $query;
-        }
-        $maxPrice = $maxPrice * 10;
-        return $query->where(function ($q) use ($maxPrice) {
-            $q->whereNotNull('discounted_price')
-                ->where('discounted_price', '<=', $maxPrice)
-                ->orWhereNull('discounted_price')
-                ->where('price', '<=', $maxPrice);
-        });
-    }
-
-    public function scopeHasDiscount(Builder $query, $hasDiscount = null)
-    {
-        if($hasDiscount){
-            return $query->whereNotNull('discounted_price');
-        }
-        return $query;
     }
 
     public function getImageAttribute()
