@@ -55,6 +55,10 @@ class Product extends Model
         return $this->hasMany(self::class, 'parent_id');
     }
 
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class,'product_categories');
+    }
     public function getImageAttribute()
     {
         return asset('img/sample.jpg');
@@ -67,5 +71,29 @@ class Product extends Model
             asset('img/sample.jpg'),
             asset('img/sample.jpg'),
         ];
+    }
+
+    public function scopeCategories(Builder $query, $category_ids = [])
+    {
+        if(!empty($category_ids)){
+            return $query->whereHas('categories', function ($q) use ($category_ids) {
+                $q->whereIn('categories.id', (array) $category_ids);
+            });
+        }
+        return $query;
+    }
+
+    public function scopeOrderByEffectivePrice($query, $direction = null)
+    {
+        $availableDirections = ['asc', 'desc'];
+        if($direction && in_array($direction, $availableDirections)){
+                return $query->orderByRaw("
+                CASE
+                    WHEN discounted_price > 0 THEN discounted_price
+                    ELSE price
+                END {$direction}
+            ");
+        }
+        return $query;
     }
 }

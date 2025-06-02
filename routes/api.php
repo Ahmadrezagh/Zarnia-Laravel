@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteProductController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ShoppingCartController;
@@ -14,6 +15,7 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
         Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp']);
 
         //Public Routes
+        Route::get('categories', [CategoryController::class, 'index']);
         Route::get('products', [ProductController::class, 'index']);
         Route::get('products/{product}', [ProductController::class, 'show']);
         // Protected routes
