@@ -22,7 +22,7 @@ class AuthController extends Controller
         }
 
         // Generate a 6-digit OTP
-        $otp = rand(100000, 999999);
+        $otp = rand(1000, 9999);
         $expiresAt = now()->addMinutes(10);
 
         // Store OTP directly in the users table
