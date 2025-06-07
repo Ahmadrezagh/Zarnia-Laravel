@@ -41,7 +41,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'phone' => 'required|string|regex:/^09[0-9]{9}$/',
-            'otp' => 'required|string|size:6',
+            'otp' => 'required|string|size:4',
         ]);
 
         $phoneNumber = $request->phone;
