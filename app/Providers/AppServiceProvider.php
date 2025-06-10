@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Etiket;
 use App\Models\SettingGroup;
 use App\Observers\EtiketObserver;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -24,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Paginator::useBootstrap();
         try{
             if (Schema::hasTable('setting_groups'))
             {

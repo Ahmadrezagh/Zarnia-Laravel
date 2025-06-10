@@ -96,4 +96,34 @@ class Product extends Model
         }
         return $query;
     }
+
+    public function etikets()
+    {
+        return $this->hasMany(Etiket::class);
+    }
+    public function getCountAttribute()
+    {
+        return $this->etikets()->count();
+    }
+
+    public function getDiscountPercentageAttribute()
+    {
+        if($this->discounted_price){
+            return intval((($this->price - $this->discounted_price ) / $this->price) * 100);
+        }
+        return 0;
+    }
+
+    public function getCategoriesTitleAttribute()
+    {
+        if($this->categories()->count()){
+            $categoriesTitle = "";
+            foreach ($this->categories as $category){
+                $categoriesTitle .= $category->title.", ";
+            }
+            return $categoriesTitle;
+        }else{
+            return "بدون دسته بندی";
+        }
+    }
 }

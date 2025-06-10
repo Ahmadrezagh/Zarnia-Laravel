@@ -63,7 +63,7 @@
     <link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css" integrity="sha512-3pIirOrwegjM6erE5gPSwkUzO+3cTjpnV9lexlNZqvupR64iZBnOOTiiLPb9M36zpMScbmUNIcHUqKD47M719g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
+    @yield('css')
     @yield('head')
 </head>
 
@@ -171,6 +171,20 @@
                         <ul class="nav-sub">
                             <li class="nav-sub-item">
                                 <a class="nav-sub-link" href="{{route('users.index')}}">کاربران</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
+            @if ((Auth::user()->isAdmin() && Auth::user()->can('User')) || Auth::user()->isSuperAdmin() )
+                    <li class="nav-item">
+                        <a class="nav-link with-sub" href="#">
+                            <span class="shape1"></span>
+                            <span class="shape2"></span>
+                            <i class="fas fa-boxes sidemenu-icon"></i>
+                            <span class="sidemenu-label">مدیریت محصولات</span><i class="angle fe fe-chevron-left"></i></a>
+                        <ul class="nav-sub">
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('products.index')}}">محصولات</a>
                             </li>
                         </ul>
                     </li>
