@@ -6,7 +6,7 @@
     'actions' => [],
 ])
 
-<div class="table-responsive">
+<div class="table-responsive" style="overflow-x: auto;">
     <input type="hidden" id="selectedValues" value="[]">
     <table class="table table-bordered" id="{{ $id }}" data-url="{{ $url }}">
         <thead>

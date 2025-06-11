@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AddressController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteProductController;
 use App\Http\Controllers\Api\V1\InitController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ShoppingCartController;
 use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Http\Request;
@@ -34,6 +36,9 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
             Route::get('shopping_cart/plus/{product}', [ShoppingCartController::class, 'plus']);
             Route::get('shopping_cart/minus/{product}', [ShoppingCartController::class, 'minus']);
             Route::get('shopping_cart', [ShoppingCartController::class, 'index']);
+            Route::get('profile', [ProfileController::class, 'index']);
+            Route::post('profile', [ProfileController::class, 'update']);
+            Route::resource('addresses', AddressController::class);
         });
     });
 });
