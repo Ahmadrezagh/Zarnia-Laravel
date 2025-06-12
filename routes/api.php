@@ -35,6 +35,7 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
 
             Route::get('shopping_cart/plus/{product}', [ShoppingCartController::class, 'plus']);
             Route::get('shopping_cart/minus/{product}', [ShoppingCartController::class, 'minus']);
+            Route::get('shopping_cart/remove/{product}', [ShoppingCartController::class, 'remove']);
             Route::get('shopping_cart', [ShoppingCartController::class, 'index']);
             Route::get('profile', [ProfileController::class, 'index']);
             Route::post('profile', [ProfileController::class, 'update']);

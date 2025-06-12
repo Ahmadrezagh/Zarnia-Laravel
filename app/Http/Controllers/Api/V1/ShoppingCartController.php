@@ -48,6 +48,21 @@ class ShoppingCartController extends Controller
 
         return ShoppingCartResource::make([],$user->shoppingCartItems);
     }
+    public function remove(Product $product)
+    {
+        $user = auth()->user();
+
+        $item = ShoppingCartItem::query()
+            ->where('user_id', $user->id)
+            ->where('product_id', $product->id)
+            ->first();
+
+        if ($item) {
+            $item->delete();
+        }
+
+        return ShoppingCartResource::make([],$user->shoppingCartItems);
+    }
 
     public function index()
     {
