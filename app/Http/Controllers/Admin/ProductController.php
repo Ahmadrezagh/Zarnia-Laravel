@@ -63,6 +63,31 @@ class ProductController extends Controller
     {
         $product = Product::query()->findOrFail($id);
         $product->update($request->validated());
+
+        // Handle cover image
+        if ($request->hasFile('cover_image')) {
+            $product->clearMediaCollection('cover_image');
+            $product->addMedia($request->file('cover_image'))
+                ->toMediaCollection('cover_image');
+        }
+
+        // Handle gallery images
+        $existingGallery = $request->existing_gallery ? json_decode($request->existing_gallery, true) : [];
+        // Clear gallery collection except for retained images
+        $currentMedia = $product->getMedia('gallery');
+        foreach ($currentMedia as $media) {
+            if (!in_array($media->getUrl(), $existingGallery)) {
+                $media->delete();
+            }
+        }
+
+        if ($request->hasFile('gallery')) {
+            foreach ($request->file('gallery') as $image) {
+                $product->addMedia($image)
+                    ->toMediaCollection('gallery');
+            }
+        }
+
         $product->categories()->sync($request->category_ids);
         return response()->json($product);
     }

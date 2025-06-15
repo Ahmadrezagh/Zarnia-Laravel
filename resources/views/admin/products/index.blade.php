@@ -110,6 +110,15 @@
                             ${categoryOptions}
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="product-cover-image">تصویر کاور</label>
+                        <input type="file" class="form-control-file" id="product-cover-image" name="cover_image" accept="image/*">
+                        ${product.image ? `<img src="${product.image}" alt="Current Cover Image" class="img-thumbnail mt-2" style="max-width: 100px;">` : ''}
+                    </div>
+                    <div class="form-group">
+                        <label for="product-gallery">گالری تصاویر</label>
+                        <div id="product-gallery"></div>
+                    </div>
                     <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
                 </form>
             `;
@@ -124,29 +133,88 @@
                         width: '100%'
                     });
 
-                    // Handle form submission
+                    // Check if imageUploader is available
+                    if (typeof $.fn.imageUploader === 'undefined') {
+                        console.error('imageUploader is not defined. Ensure the image-uploader library is loaded.');
+                        $('.gallery-preview').before('<p class="text-danger">خطا: کتابخانه آپلود تصاویر بارگذاری نشده است.</p>');
+                        return;
+                    }
+
+                    // Initialize image-uploader for gallery
+                    $('#product-gallery').imageUploader({
+                        label: 'تصاویر را انتخاب کنید یا اینجا بکشید و رها کنید',
+                        imagesInputName: 'gallery',
+                        maxFiles: 10,
+                        maxSize: 2 * 1024 * 1024,
+                        preloaded: product.gallery || []
+                    });
+
+                    // Client-side file size validation
+                    $('#product-cover-image, #product-gallery').on('change', function() {
+                        const maxSize = 2 * 1024 * 1024; // 2MB
+                        for (let file of this.files) {
+                            if (file.size > maxSize) {
+                                alert('فایل‌ها باید کمتر از ۲ مگابایت باشند.');
+                                this.value = '';
+                            }
+                        }
+                    });
+
                     // Handle form submission
                     $('#edit-product-form').on('submit', function(e) {
                         e.preventDefault();
-                        const updatedData = {
-                            name: $('#product-name').val(),
-                            price: $('#product-price').val(),
-                            weight: $('#product-weight').val(),
-                            discounted_price: $('#discounted_price').val(),
-                            count: $('#product-count').val(),
-                            description: $('#product-description').val(),
-                            category_ids: $('#product-categories').val() ? $('#product-categories').val().map(Number) : []
-                        };
+                        const formData = new FormData();
+                        formData.append('_method', 'PUT');
+                        formData.append('name', $('#product-name').val());
+                        formData.append('price', $('#product-price').val());
+                        formData.append('weight', $('#product-weight').val());
+                        formData.append('discount_percentage', $('#product-discount').val());
+                        formData.append('count', $('#product-count').val());
+                        formData.append('description', $('#product-description').val());
+                        const categoryIds = $('#product-categories').val() ? $('#product-categories').val().map(Number) : [];
+                        categoryIds.forEach(id => formData.append('category_ids[]', id));
+                        const coverImage = $('#product-cover-image')[0].files[0];
+                        if (coverImage) {
+                            formData.append('cover_image', coverImage);
+                        }
+
+                        // Get files from image-uploader
+                        const $galleryInput = $('#product-gallery').find('input[name="gallery[]"]');
+                        const galleryFiles = $galleryInput[0] ? $galleryInput[0].files : [];
+                        const $uploadedImages = $('#product-gallery').find('.uploaded-image');
+                        const existingImageUrls = [];
+
+                        // Collect existing (preloaded) images
+                        $uploadedImages.each(function() {
+                            const $img = $(this).find('img');
+                            const src = $img.attr('src');
+                            if (src && !src.startsWith('blob:')) {
+                                existingImageUrls.push(src);
+                            }
+                        });
+                        formData.append('existing_gallery', JSON.stringify(existingImageUrls));
+
+                        // Append new gallery files
+                        for (let i = 0; i < galleryFiles.length; i++) {
+                            formData.append('gallery[]', galleryFiles[i]);
+                        }
+
+                        // Debug FormData
+                        for (let [key, value] of formData.entries()) {
+                            console.log(key, value);
+                        }
+
 
                         $.ajax({
                             url: `{{route('products.index')}}/${id}`,
-                            method: 'PUT',
+                            method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                             },
-                            data: updatedData,
+                            data: formData,
+                            processData: false,
+                            contentType: false,
                             success: function(response) {
-
                                 window.refreshTable()
                                 toastr.success('محصول با موفقیت به‌روزرسانی شد!');
                                 $('#dynamic-modal').modal('hide');

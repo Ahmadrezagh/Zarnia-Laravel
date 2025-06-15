@@ -31,6 +31,13 @@ class EditProductResource extends JsonResource
             'price' => $this->price,
             'discounted_price' => $this->discounted_price,
             'categories' => CategoryResource::collection(Category::all()),
+            'gallery' => $this->getMedia('gallery')->map(function ($media, $index) {
+                $url = $media->getUrl();
+                return [
+                    'id' => 'gallery-image-' . $media->id, // Use media ID for uniqueness
+                    'source' => $url
+                ];
+            })->toArray(),
         ];
     }
 }

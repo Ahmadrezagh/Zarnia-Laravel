@@ -25,6 +25,8 @@ class UpdateProductRequest extends FormRequest
             'description' => 'nullable|string',
             'discounted_price' => 'nullable|numeric',
             'categories' => 'nullable',
+            'cover_image' => 'nullable',
+            'gallery' => 'nullable',
         ];
     }
 }

@@ -63,6 +63,7 @@
     <link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css" integrity="sha512-3pIirOrwegjM6erE5gPSwkUzO+3cTjpnV9lexlNZqvupR64iZBnOOTiiLPb9M36zpMScbmUNIcHUqKD47M719g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="{{ asset('image-uploader/dist/image-uploader.min.css') }}" rel="stylesheet" />
     @yield('css')
     @yield('head')
 </head>
@@ -523,6 +524,7 @@
 <!-- Include jQuery -->
 <script src="{{asset('dashboard/assets/js/jquery-3.6.0.min.js')}}"></script>
 
+<script src="{{ asset('image-uploader/dist/image-uploader.min.js') }}"></script>
 <!-- Bootstrap js-->
 <script src="{{asset('dashboard/assets/plugins/bootstrap/js/popper.min.js')}}"></script>
 <script src="{{asset('dashboard/assets/plugins/bootstrap/js/bootstrap-rtl.js')}}"></script>

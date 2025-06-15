@@ -9,9 +9,13 @@ use App\Traits\Scopes\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Pishran\LaravelPersianSlug\HasPersianSlug;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Sluggable\SlugOptions;
-class Product extends Model
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+class Product extends Model implements HasMedia
 {
+    use InteractsWithMedia;
     use HasPersianSlug;
     use Search,HasDiscount,MaxPrice,MinPrice;
     protected $fillable = [
@@ -63,7 +67,8 @@ class Product extends Model
     }
     public function getImageAttribute()
     {
-        return asset('img/sample.jpg');
+        $image = $this->getFirstMediaUrl('cover_image');
+        return $image != "" ? $image : asset('img/no_image.jpg');
     }
     public function getGalleryAttribute()
     {
@@ -127,5 +132,23 @@ class Product extends Model
         }else{
             return "بدون دسته بندی";
         }
+    }
+
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('cover_image')
+            ->singleFile(); // Only one file for cover image
+
+        $this->addMediaCollection('gallery'); // Multiple files for gallery
+    }
+
+    // Optional: Generate thumbnail conversions for media
+    public function registerMediaConversions(Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(100)
+            ->height(100)
+            ->sharpen(10);
     }
 }
