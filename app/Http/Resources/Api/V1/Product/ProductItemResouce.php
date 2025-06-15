@@ -19,9 +19,13 @@ class ProductItemResouce extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'weight' => $this->weight,
-            'description' => "لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از طراحان گرافیک است، چاپگرها و متون بلکه روزنامه و مجله در ستون و سطرآنچنان که لازم است،",
+            'description' => $this->description,
             'image' => $this->image,
-            'gallery' => $this->gallery,
+            'gallery' => $this->getMedia('gallery')->map(function ($media, $index) {
+                $url = $media->getUrl();
+                return $url
+                ;
+            })->toArray(),
             'slug' => $this->slug,
             'price' => number_format($this->price),
             'price_without_discount' => number_format($this->price_without_discount),
