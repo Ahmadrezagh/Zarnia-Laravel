@@ -42,10 +42,12 @@
             const table = $('#{{ $id }}').DataTable({
                 processing: true,
                 serverSide: true,
-                responsive: true,
+                responsive: false,
                 ajax: {
                     url: '{{ $url }}',
                     type: 'POST',
+                    async: false,
+                    cache: false,
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
@@ -131,7 +133,7 @@
                             }
                             actionsHtml += `<a href="${url}" class="dropdown-item" target="_blank">{{ $action['label'] }}</a>`;
                             @else
-                                actionsHtml += `<button class="dropdown-item" data-toggle="modal" data-target="#{{ $action['type'] }}-${row.id}">{{ $action['label'] }}</button>`;
+                                actionsHtml += `<button class="dropdown-item" data-toggle="modal" data-target="#{{ $action['type'] }}-${row.id}" onClick="{{ $action['type'] }}(${row.id})" >{{ $action['label'] }}</button>`;
                             @endif
                                     @endforeach
                                 actionsHtml += `</div></div>`;
@@ -158,6 +160,10 @@
                 }
             });
 
+            // Refresh button click handler
+            $('#refreshTable').on('click', function() {
+                window.refreshTable()// Refresh data without resetting pagination
+            });
             // Checkbox handling
             $('#selectAll').on('click', function() {
                 const isChecked = this.checked;
@@ -188,6 +194,10 @@
                     return [];
                 }
             };
+
+            window.refreshTable = function(){
+                table.ajax.reload(null, false);
+            }
         });
     </script>
 @endsection

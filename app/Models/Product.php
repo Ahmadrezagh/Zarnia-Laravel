@@ -20,7 +20,9 @@ class Product extends Model
         'weight',
         'price',
         'discounted_price',
-        'parent_id'
+        'parent_id',
+        'description',
+
     ];
 
 

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Product\UpdateProductRequest;
+use App\Http\Resources\Admin\Product\EditProductResource;
 use App\Http\Resources\Admin\Table\AdminProductResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -40,7 +42,10 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $product = Product::query()->findOrFail($id);
+        if($product){
+            return EditProductResource::make($product);
+        }
     }
 
     /**
@@ -54,9 +59,12 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateProductRequest $request, string $id)
     {
-        //
+        $product = Product::query()->findOrFail($id);
+        $product->update($request->validated());
+        $product->categories()->sync($request->category_ids);
+        return response()->json($product);
     }
 
     /**

@@ -952,6 +952,7 @@
 
 <script>
     function reloadTables() {
+        window.refreshTable()
         // Get all table elements on the page
         const tables = document.getElementsByTagName('table');
         // Iterate through each table
