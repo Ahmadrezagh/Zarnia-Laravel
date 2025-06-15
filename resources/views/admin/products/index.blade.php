@@ -117,6 +117,13 @@
                     // Append form to modal
                     appendToModalContent(formContent);
 
+                    // Initialize Select2 for categories dropdown
+                    $('#product-categories').select2({
+                        placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
+                        allowClear: true,
+                        width: '100%'
+                    });
+
                     // Handle form submission
                     // Handle form submission
                     $('#edit-product-form').on('submit', function(e) {
@@ -139,6 +146,8 @@
                             },
                             data: updatedData,
                             success: function(response) {
+
+                                window.refreshTable()
                                 toastr.success('محصول با موفقیت به‌روزرسانی شد!');
                                 $('#dynamic-modal').modal('hide');
                                 // Optionally refresh your product list here
@@ -149,7 +158,6 @@
                             }
                         });
                     });
-                    window.refreshTable()
                 },
                 error: function(xhr) {
                     console.error('Error fetching product:', xhr);
