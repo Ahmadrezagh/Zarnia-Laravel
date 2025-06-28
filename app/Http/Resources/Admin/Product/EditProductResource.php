@@ -35,7 +35,7 @@ class EditProductResource extends JsonResource
                 $url = $media->getUrl();
                 return [
                     'id' => 'gallery-image-' . $media->id, // Use media ID for uniqueness
-                    'source' => $url
+                    'src' => $url
                 ];
             })->toArray(),
         ];

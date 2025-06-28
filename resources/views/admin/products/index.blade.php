@@ -110,12 +110,12 @@
                             ${categoryOptions}
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="product-cover-image">تصویر کاور</label>
-                        <input type="file" class="form-control-file" id="product-cover-image" name="cover_image" accept="image/*">
-                        ${product.image ? `<img src="${product.image}" alt="Current Cover Image" class="img-thumbnail mt-2" style="max-width: 100px;">` : ''}
+                    <div class="custom-file mt-5 mb-5">
+                        <label for="product-cover-image" class="custom-file-label">تصویر کاور</label>
+                        <input type="file" class="custom-file-input" id="product-cover-image" name="cover_image" accept="image/*">
+                        ${product.image ? `<div class="d-flex justify-content-center"><img src="${product.image}" alt="Current Cover Image" class="img-thumbnail mt-2" style="max-width: 150px;"></div>` : ''}
                     </div>
-                    <div class="form-group">
+                    <div class="form-group mt-5">
                         <label for="product-gallery">گالری تصاویر</label>
                         <div id="product-gallery"></div>
                     </div>
