@@ -99,7 +99,11 @@
                     </div>
                     <div class="form-group">
                         <label for="product-price">قیمت با تخفیف</label>
-                        <input type="number" class="form-control" id="discounted_price" value="${product.discounted_price || ''}" >
+                        <input type="number" class="form-control" id="product-discounted-price" value="${product.discounted_price || ''}" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-price">درصد تخفیف</label>
+                        <input type="number" class="form-control" id="discount_percentage" value="${product.discount_percentage || ''}" >
                     </div>
                     <div class="form-group">
                         <label for="product-description">توضیحات</label>
@@ -140,7 +144,7 @@
                     appendToModalContent(formContent);
 
                     $('#attributeGroup').click()
-                    $('#attributeGroup').val("تست")
+                    $('#attributeGroup').val(product.attribute_group_str)
                     $('#attributeGroup').change()
                     const tabEvent = new $.Event('keydown', {
                         key: 'Tab',
@@ -190,7 +194,7 @@
                         formData.append('name', $('#product-name').val());
                         formData.append('price', $('#product-price').val());
                         formData.append('weight', $('#product-weight').val());
-                        formData.append('discount_percentage', $('#product-discount').val());
+                        formData.append('discount_percentage', $('#discount_percentage').val());
                         formData.append('count', $('#product-count').val());
                         formData.append('description', $('#product-description').val());
                         const categoryIds = $('#product-categories').val() ? $('#product-categories').val().map(Number) : [];

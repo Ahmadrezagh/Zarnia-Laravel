@@ -26,7 +26,8 @@ class Product extends Model implements HasMedia
         'discounted_price',
         'parent_id',
         'description',
-        'attribute_group_id'
+        'attribute_group_id',
+        'discount_percentage'
     ];
 
 
@@ -113,13 +114,7 @@ class Product extends Model implements HasMedia
         return $this->etikets()->count();
     }
 
-    public function getDiscountPercentageAttribute()
-    {
-        if($this->discounted_price){
-            return intval((($this->price - $this->discounted_price ) / $this->price) * 100);
-        }
-        return 0;
-    }
+
 
     public function getCategoriesTitleAttribute()
     {

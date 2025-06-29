@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             SettingGroupSeeder::class,
             SettingSeeder::class,
+//            ProductSeeder::class,
+//            ProductCategorySeeder::class,
         ]);
     }
 }

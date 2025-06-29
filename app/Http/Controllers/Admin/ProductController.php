@@ -65,7 +65,9 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, string $id)
     {
         $product = Product::query()->findOrFail($id);
-        $product->update($request->validated());
+        $validated = $request->validated();
+        $validated['discount_percentage'] = $request->input('discount_percentage') ?? 0;
+        $product->update($validated);
 
         // Handle cover image
         if ($request->hasFile('cover_image')) {

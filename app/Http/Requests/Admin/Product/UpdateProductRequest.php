@@ -29,6 +29,7 @@ class UpdateProductRequest extends FormRequest
             'gallery' => 'nullable',
             'attribute_group' => 'nullable',
             'attributes' => 'nullable',
+            'discount_percentage' => 'nullable',
         ];
     }
 }
