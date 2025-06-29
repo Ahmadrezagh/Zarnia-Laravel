@@ -13,6 +13,7 @@
         "livewire/livewire": "^3.6",
         "morilog/jalali": "^3.4",
         "pishran/laravel-persian-slug": "^2.2",
+        "spatie/image": "^3.8",
         "spatie/laravel-medialibrary": "^11.13",
         "yoeunes/toastr": "^3.1"
     },

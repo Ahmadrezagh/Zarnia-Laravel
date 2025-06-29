@@ -42,5 +42,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('header_links', HeaderLinkController::class );
     Route::resource('footer_titles', FooterTitleController::class );
     Route::resource('footer_title.footer_title_links', FooterTitleLinkController::class );
+
+    Route::post('load_attribute_group',[\App\Http\Controllers\Admin\AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
 });
 

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "34faa16e14c45b2b9b28ec6966fe603c",
+    "content-hash": "9cdae0f8749f0c72b04af87ef16d3bfb",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -4171,16 +4171,16 @@
         },
         {
             "name": "spatie/image",
-            "version": "3.8.3",
+            "version": "3.8.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/image.git",
-                "reference": "54a7331a4d1ba7712603dd058522613506d2dfe0"
+                "reference": "a63f60b7387ebeacab463e79a95deb7ffed75430"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/image/zipball/54a7331a4d1ba7712603dd058522613506d2dfe0",
-                "reference": "54a7331a4d1ba7712603dd058522613506d2dfe0",
+                "url": "https://api.github.com/repos/spatie/image/zipball/a63f60b7387ebeacab463e79a95deb7ffed75430",
+                "reference": "a63f60b7387ebeacab463e79a95deb7ffed75430",
                 "shasum": ""
             },
             "require": {
@@ -4228,7 +4228,7 @@
                 "spatie"
             ],
             "support": {
-                "source": "https://github.com/spatie/image/tree/3.8.3"
+                "source": "https://github.com/spatie/image/tree/3.8.5"
             },
             "funding": [
                 {
@@ -4240,7 +4240,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-04-25T08:04:51+00:00"
+            "time": "2025-06-27T12:44:55+00:00"
         },
         {
             "name": "spatie/image-optimizer",

@@ -88,6 +88,7 @@
                     // Create form HTML with fields
                     const formContent = `
                 <form id="edit-product-form" data-id="${product.id}">
+                    <input type="hidden" id="productId" value="${product.id}">
                     <div class="form-group">
                         <label for="product-name">نام محصول</label>
                         <input type="text" class="form-control" id="product-name" value="${product.name || ''}" disabled>
@@ -112,13 +113,25 @@
                     </div>
                     <div class="custom-file mt-5 mb-5">
                         <label for="product-cover-image" class="custom-file-label">تصویر کاور</label>
-                        <input type="file" class="custom-file-input" id="product-cover-image" name="cover_image" accept="image/*">
-                        ${product.image ? `<div class="d-flex justify-content-center"><img src="${product.image}" alt="Current Cover Image" class="img-thumbnail mt-2" style="max-width: 150px;"></div>` : ''}
+                        <input type="file" class="custom-file-input" id="product-cover-image" name="cover_image" accept="image/*" onchange="showImagePreview('product-cover-image', 'image-preview', '${product.image || ''}')">
+                        <div id="image-preview" class="d-flex justify-content-center mt-2">
+                            ${product.image ? `<img src="${product.image}" alt="Current Cover Image" class="img-thumbnail" style="max-width: 150px;" onclick="changeSize(this)">` : ''}
+                        </div>
                     </div>
                     <div class="form-group mt-5">
                         <label for="product-gallery">گالری تصاویر</label>
                         <div id="product-gallery"></div>
                     </div>
+
+                    <div class="form-group">
+                        <label for="attributeGroup">گروه ویژگی</label>
+                        <input type="text" name="attribute_group" class="form-control" id="attributeGroup" name="attribute_group" placeholder="نام گروه ویژگی را وارد کنید" onkeydown="handleGroupKeydown(event)">
+                        <div id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status">
+                            <span class="sr-only">در حال بارگذاری...</span>
+                        </div>
+                    </div>
+                    <div id="attributeInputs" class="mt-3"></div>
+
                     <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
                 </form>
             `;
@@ -126,6 +139,15 @@
                     // Append form to modal
                     appendToModalContent(formContent);
 
+                    $('#attributeGroup').click()
+                    $('#attributeGroup').val("تست")
+                    $('#attributeGroup').change()
+                    const tabEvent = new $.Event('keydown', {
+                        key: 'Tab',
+                        code: 'Tab',
+                        keyCode: 9
+                    });
+                    $('#attributeGroup').trigger(tabEvent);
                     // Initialize Select2 for categories dropdown
                     $('#product-categories').select2({
                         placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
@@ -199,11 +221,28 @@
                             formData.append('gallery[]', galleryFiles[i]);
                         }
 
+                        // Append attribute group and attributes from modal
+                        const attributeGroup = $('#attributeGroup').val();
+                        if (attributeGroup) {
+                            formData.append('attribute_group', attributeGroup);
+                        }
+
+                        const attributes = $('.attribute-row').get().map((row, index) => ({
+                            attribute_id: $(row).find('.attribute-name').data('attribute-id') || '',
+                            name: $(row).find('.attribute-name').val().trim(),
+                            value: $(row).find('.attribute-value').val().trim()
+                        })).filter(attr => attr.name && attr.value); // Only include attributes with both name and value
+
+                        attributes.forEach((attr, index) => {
+                            formData.append(`attributes[${index}][attribute_id]`, attr.attribute_id);
+                            formData.append(`attributes[${index}][name]`, attr.name);
+                            formData.append(`attributes[${index}][value]`, attr.value);
+                        });
+
                         // Debug FormData
                         for (let [key, value] of formData.entries()) {
                             console.log(key, value);
                         }
-
 
                         $.ajax({
                             url: `{{route('products.index')}}/${id}`,
@@ -215,10 +254,9 @@
                             processData: false,
                             contentType: false,
                             success: function(response) {
-                                window.refreshTable()
+                                window.refreshTable();
                                 toastr.success('محصول با موفقیت به‌روزرسانی شد!');
                                 $('#dynamic-modal').modal('hide');
-                                // Optionally refresh your product list here
                             },
                             error: function(xhr) {
                                 console.error('Error updating product:', xhr);
@@ -233,5 +271,127 @@
                 }
             });
         }
+    </script>
+
+    <script>
+        function showImagePreview(inputId, previewContainerId, originalImage) {
+            const input = document.getElementById(inputId);
+            const previewContainer = document.getElementById(previewContainerId);
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewContainer.innerHTML = `<img src="${e.target.result}" alt="Image Preview" class="img-thumbnail" style="max-width: 150px;">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                // Restore original image or clear preview if no file is selected
+                previewContainer.innerHTML = originalImage ? `<img src="${originalImage}" alt="Current Cover Image" class="img-thumbnail" style="max-width: 150px;">` : '';
+            }
+        }
+
+        function changeSize(img){
+                if (img.style.maxWidth === '150px') {
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.style.width = '100%';
+                } else {
+                    img.style.maxWidth = '150px';
+                    img.style.height = '';
+                    img.style.width = '';
+                }
+        }
+    </script>
+
+    <script>
+        const attributeState = {
+            groupId: null
+        };
+
+        const showLoading = () => $('#loadingSpinner').removeClass('d-none');
+        const hideLoading = () => $('#loadingSpinner').addClass('d-none');
+
+        const createAttributeRow = (attributeId, name, value, index) => `
+    <div class="attribute-row row mt-2 mb-2">
+        <div class="col-5">
+            <input type="text" class="form-control attribute-name"
+                   name="attributes[${index}][name]"
+                   data-attribute-id="${attributeId || ''}"
+                   value="${name || ''}"
+                   placeholder="نام ویژگی"
+                   ${attributeId ? 'readonly' : ''}>
+        </div>
+        <div class="col-6">
+            <input type="text" class="form-control attribute-value"
+                   name="attributes[${index}][value]"
+                   value="${value || ''}"
+                   placeholder="مقدار ویژگی">
+        </div>
+        <div class="col-1">
+            <button type="button" class="btn btn-danger btn-sm remove-btn" onclick="removeAttributeRow(this)">-</button>
+        </div>
+    </div>
+`;
+
+        const addAddButton = () => {
+            const addButton = $('<button type="button" class="btn btn-success btn-sm mt-2 mb-2">+ افزودن ویژگی</button>');
+            addButton.on('click', () => addAttributeInput(null, '', '', $('.attribute-row').length));
+            $('#attributeInputs').append(addButton);
+        };
+
+        const addAttributeInput = (attributeId, name, value, index) => {
+            $('#attributeInputs').append(createAttributeRow(attributeId, name, value, index));
+        };
+
+        const loadAttributes = (attributes, attributeValues) => {
+            attributes.forEach((attr, index) => {
+                const value = attributeValues.find(val => val.attribute_id === attr.id)?.value || '';
+                addAttributeInput(attr.id, attr.name, value, index);
+            });
+        };
+
+        const checkAttributeGroup = (groupName, productId) => {
+            if (!groupName) return;
+
+            showLoading();
+            $.ajax({
+                url: '{{ route('load_attribute_group') }}',
+                method: 'POST',
+                data: {
+                    name: groupName,
+                    product_id: productId,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: (response) => {
+                    hideLoading();
+                    $('#attributeInputs').empty();
+                    addAddButton();
+                    attributeState.groupId = response.attributeGroup?.id || null;
+
+                    if (response.attributeGroup) {
+                        loadAttributes(response.attributes, response.attributeValues || []);
+                    } else {
+                        addAttributeInput(null, '', '', 0);
+                    }
+                },
+                error: () => {
+                    hideLoading();
+                    alert('خطا در بررسی گروه ویژگی');
+                }
+            });
+        };
+
+        const removeAttributeRow = (button) => {
+            $(button).closest('.attribute-row').remove();
+        };
+
+        const handleGroupKeydown = (event) => {
+            if (event.key === 'Tab') {
+                event.preventDefault();
+                const groupName = $('#attributeGroup').val().trim();
+                const productId = $('#productId').val();
+                checkAttributeGroup(groupName, productId);
+            }
+        };
     </script>
 @endsection

@@ -26,7 +26,7 @@ class Product extends Model implements HasMedia
         'discounted_price',
         'parent_id',
         'description',
-
+        'attribute_group_id'
     ];
 
 
@@ -146,9 +146,22 @@ class Product extends Model implements HasMedia
     // Optional: Generate thumbnail conversions for media
     public function registerMediaConversions(Media $media = null): void
     {
-        $this->addMediaConversion('thumb')
-            ->width(100)
-            ->height(100)
-            ->sharpen(10);
+        $this->addMediaConversion('large')
+            ->width(505)
+            ->height(344)
+            ->format('webp')
+            ->performOnCollections('cover_image', 'gallery');
+
+        $this->addMediaConversion('medium')
+            ->width(344)
+            ->height(344)
+            ->format('webp')
+            ->performOnCollections('cover_image', 'gallery');
+
+        $this->addMediaConversion('small')
+            ->width(108)
+            ->height(108)
+            ->format('webp')
+            ->performOnCollections('cover_image', 'gallery');
     }
 }

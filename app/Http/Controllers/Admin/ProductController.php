@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Product\UpdateProductRequest;
 use App\Http\Resources\Admin\Product\EditProductResource;
 use App\Http\Resources\Admin\Table\AdminProductResource;
+use App\Models\Attribute;
+use App\Models\AttributeGroup;
+use App\Models\AttributeValue;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -88,10 +91,63 @@ class ProductController extends Controller
             }
         }
 
+        // Handle categories
         $product->categories()->sync($request->category_ids);
+
+        // Handle attribute group and attributes
+        if ($request->has('attribute_group') && $request->has('attributes')) {
+            $group = AttributeGroup::firstOrCreate(
+                ['name' => $request->attribute_group],
+                ['name' => $request->attribute_group]
+            );
+            $product->update(['attribute_group_id' => $group->id]);
+            // Get existing attribute values for this product and group
+            $existingAttributeIds = AttributeValue::where('product_id', $product->id)
+                ->whereIn('attribute_id', Attribute::where('attribute_group_id', $group->id)->pluck('id'))
+                ->pluck('attribute_id')
+                ->toArray();
+
+            $newAttributeIds = [];
+            foreach ($request['attributes'] as $index => $attr) {
+
+                if (!empty($attr['name']) && !empty($attr['value'])) {
+                    if (isset($attr['attribute_id']) && $attr['attribute_id']) {
+                        // Update existing attribute value
+                        AttributeValue::updateOrCreate(
+                            [
+                                'product_id' => $product->id,
+                                'attribute_id' => $attr['attribute_id']
+                            ],
+                            ['value' => $attr['value']]
+                        );
+                        $newAttributeIds[] = $attr['attribute_id'];
+                    } else {
+                        // Create new attribute and value
+                        $attribute = Attribute::create([
+                            'attribute_group_id' => $group->id,
+                            'name' => $attr['name']
+                        ]);
+                        AttributeValue::create([
+                            'product_id' => $product->id,
+                            'attribute_id' => $attribute->id,
+                            'value' => $attr['value']
+                        ]);
+                        $newAttributeIds[] = $attribute->id;
+                    }
+                }
+            }
+
+            // Delete attribute values that are no longer in the request
+            $attributesToDelete = array_diff($existingAttributeIds, $newAttributeIds);
+            if (!empty($attributesToDelete)) {
+                AttributeValue::where('product_id', $product->id)
+                    ->whereIn('attribute_id', $attributesToDelete)
+                    ->delete();
+            }
+        }
+
         return response()->json($product);
     }
-
     /**
      * Remove the specified resource from storage.
      */
