@@ -4,6 +4,7 @@
     'url' => '',
     'columns' => [],
     'actions' => [],
+    'perPage' => 10, // Default per-page value if not in localStorage
 ])
 
 <div class="table-responsive" style="overflow-x: auto;">
@@ -50,16 +51,26 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
 @endsection
 
+
 @section('js')
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Get stored per-page value from localStorage, fallback to prop
+            const tableKey = '{{ $id }}'; // Use table ID as key
+            // Alternative: Use route name or URL for more specificity
+            // const tableKey = '{{ Route::currentRouteName() }}' || '{{ md5($url) }}';
+            const storedPerPage = localStorage.getItem(`datatable_per_page_${tableKey}`);
+            const defaultPerPage = storedPerPage ? parseInt(storedPerPage) : {{ $perPage }};
+
             const table = $('#{{ $id }}').DataTable({
                 processing: true,
                 serverSide: true,
                 responsive: false,
+                pageLength: defaultPerPage, // Use stored or default per-page
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]], // Available options
                 ajax: {
                     url: '{{ $url }}',
                     type: 'POST',
@@ -98,7 +109,6 @@
                                 return `<a href="${url}" target="_blank">${data || ''}</a>`;
                             @elseif(isset($column['url']))
                             let url = '{{ $column['url'] }}';
-                            // Dynamically replace placeholders with row data
                             for (const key in row) {
                                 if (row.hasOwnProperty(key)) {
                                     url = url.replace(`{${key}}`, row[key] || '');
@@ -126,12 +136,12 @@
                         searchable: false,
                         render: function(data, type, row) {
                             let actionsHtml = `
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
-                                            عملیات
-                                        </button>
-                                        <div class="dropdown-menu">
-                                `;
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
+                                        عملیات
+                                    </button>
+                                    <div class="dropdown-menu">
+                            `;
                             @foreach($actions as $action)
                             @if(isset($action['route']))
                             let url = '{{ route($action['route'][0], array_fill(0, count($action['route'][1]), ':param')) }}';
@@ -142,7 +152,6 @@
                                 actionsHtml += `<a href="${url}" class="dropdown-item" target="_blank">{{ $action['label'] }}</a>`;
                             @elseif(isset($action['url']))
                             let url = '{{ $action['url'] }}';
-                            // Dynamically replace placeholders with row data
                             for (const key in row) {
                                 if (row.hasOwnProperty(key)) {
                                     url = url.replace(`{${key}}`, row[key] || '');
@@ -177,10 +186,21 @@
                 }
             });
 
+            // Save per-page selection to localStorage
+            table.on('length.dt', function(e, settings, len) {
+                try {
+                    localStorage.setItem(`datatable_per_page_${tableKey}`, len);
+                    console.log('Per-page setting saved:', len);
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+                }
+            });
+
             // Refresh button click handler
             $('#refreshTable').on('click', function() {
-                window.refreshTable()// Refresh data without resetting pagination
+                window.refreshTable();
             });
+
             // Checkbox handling
             $('#selectAll').on('click', function() {
                 const isChecked = this.checked;
@@ -212,14 +232,12 @@
                 }
             };
 
-            window.refreshTable = function(){
+            window.refreshTable = function() {
                 table.ajax.reload(null, false);
             }
         });
 
-
-
-        function previewImage(src){
+        function previewImage(src) {
             document.getElementById('modalImage').src = src;
             $('#imagePreviewModal').modal('show');
         }
