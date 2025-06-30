@@ -26,6 +26,23 @@
         </thead>
         <tbody></tbody>
     </table>
+
+
+    <!-- Fullscreen Modal -->
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog " >
+            <div class="modal-content bg-dark">
+                <div class="modal-body p-0 position-relative">
+                    <button type="button" class="close text-white position-absolute" style="top: 10px; right: 15px; font-size: 2rem;" data-dismiss="modal" aria-label="Close">
+                        &times;
+                    </button>
+                    <img id="modalImage" src="" alt="Preview" style="object-fit: contain;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 </div>
 
 @section('css')
@@ -89,7 +106,7 @@
                             }
                             return `<a href="${url}" target="_blank">${data || ''}</a>`;
                             @elseif($column['type'] === 'image')
-                                return data ? `<img src="${data}" style="width: 100px; height: 100px; border-radius: 50%" alt="Image">` : '';
+                                return data ? `<img src="${data}" style="width: 100px; height: 100px; border-radius: 50%" alt="Image" onclick="previewImage('${data}')" >` : '';
                             @elseif($column['type'] === 'copiableText')
                                 return `<x-form.copiable-component content="${data || ''}" />`;
                             @elseif($column['type'] === 'binaryCondition')
@@ -199,5 +216,12 @@
                 table.ajax.reload(null, false);
             }
         });
+
+
+
+        function previewImage(src){
+            document.getElementById('modalImage').src = src;
+            $('#imagePreviewModal').modal('show');
+        }
     </script>
 @endsection
