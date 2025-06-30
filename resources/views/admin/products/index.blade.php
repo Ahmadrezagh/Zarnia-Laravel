@@ -172,7 +172,8 @@
                         imagesInputName: 'gallery',
                         maxFiles: 10,
                         maxSize: 2 * 1024 * 1024,
-                        preloaded: product.gallery || []
+                        preloaded: product.gallery || [],
+                        extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg','.JPG','.JPEG'],
                     });
 
                     // Client-side file size validation
