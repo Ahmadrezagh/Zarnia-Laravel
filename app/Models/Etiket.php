@@ -11,6 +11,7 @@ class Etiket extends Model
         'name',
         'weight',
         'price',
-        'product_id'
+        'product_id',
+        'ojrat'
     ];
 }

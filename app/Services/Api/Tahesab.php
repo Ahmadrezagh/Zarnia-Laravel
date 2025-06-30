@@ -70,7 +70,8 @@ class Tahesab{
                     'code' => $etiket['Code'],
                     'name' => $etiket['Name'],
                     'weight' => $etiket['Vazn'],
-                    'price' => $etiket['OnlinePrice']
+                    'price' => $etiket['OnlinePrice'],
+                    'ojrat' => $etiket['DarsadVazn'],
                 ]);
             }
         }

@@ -27,7 +27,8 @@ class Product extends Model implements HasMedia
         'parent_id',
         'description',
         'attribute_group_id',
-        'discount_percentage'
+        'discount_percentage',
+        'ojrat'
     ];
 
 
@@ -158,5 +159,11 @@ class Product extends Model implements HasMedia
             ->height(108)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
+    }
+
+    public function getOjratAttribute($value)
+    {
+        if($value)
+            return intval($value);
     }
 }

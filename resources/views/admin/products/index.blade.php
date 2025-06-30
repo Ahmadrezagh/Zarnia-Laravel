@@ -21,7 +21,7 @@
                             ['label' => 'تصویر محصول', 'key' => 'image', 'type' => 'image'],
                             ['label' => 'نام محصول', 'key' => 'name', 'type' => 'text','url' => 'https://google.com'],
                             ['label' => 'وزن', 'key' => 'weight', 'type' => 'text'],
-                            ['label' => 'درصد اجرت', 'key' => 'ojrat_percentage', 'type' => 'text'],
+                            ['label' => 'درصد اجرت', 'key' => 'ojrat', 'type' => 'text'],
                             ['label' => 'موجودی', 'key' => 'count', 'type' => 'text'],
                             ['label' => 'درصد تخفیف', 'key' => 'discount_percentage', 'type' => 'text'],
                             ['label' => 'دسته بندی ها', 'key' => 'categories_title', 'type' => 'text'],

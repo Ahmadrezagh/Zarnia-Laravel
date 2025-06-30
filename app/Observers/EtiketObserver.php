@@ -17,6 +17,7 @@ class EtiketObserver
             ->where('weight','=',$etiket->weight)
             ->first();
         if ($product) {
+            $product->update(['ojrat' => $etiket->ojrat]);
             $etiket->update([
                 'product_id' => $product->id,
             ]);
@@ -30,6 +31,7 @@ class EtiketObserver
                 $product = $sameNameProduct->replicate();
                 $product->parent_id = $sameNameProduct->id;
                 $product->weight = $etiket->weight;
+                $product->ojrat = $etiket->ojrat;
                 $product->save();
                 $etiket->update([
                     'product_id' => $product->id,
@@ -39,6 +41,7 @@ class EtiketObserver
                     'name' => $etiket->name,
                     'weight' => $etiket->weight,
                     'price' => $etiket->price,
+                    'ojrat' => $etiket->ojrat,
                 ]);
                 $etiket->update([
                     'product_id' => $product->id,
@@ -53,7 +56,16 @@ class EtiketObserver
      */
     public function updated(Etiket $etiket): void
     {
-        //
+        $product = Product::query()
+            ->where('name','=',$etiket->name)
+            ->where('weight','=',$etiket->weight)
+            ->first();
+        if ($product) {
+            $product->update([
+                'ojrat' => $etiket->ojrat,
+                'weight' => $etiket->weight
+            ]);
+        }
     }
 
     /**

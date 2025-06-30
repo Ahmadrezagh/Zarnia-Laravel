@@ -20,7 +20,7 @@ class AdminProductResource extends JsonResource
             'slug' => $this->slug,
             'image' => $this->image,
             'weight' => $this->weight,
-            'ojrat_percentage' => $this->ojrat_percentage,
+            'ojrat' => $this->ojrat,
             'categories_title' => $this->categories_title,
             'discount_percentage' => $this->discount_percentage,
             'count' => $this->count,
