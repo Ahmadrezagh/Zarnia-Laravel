@@ -32,11 +32,7 @@ class ProductItemResouce extends JsonResource
             'weight' => $this->weight,
             'description' => $this->description,
             'image' => $this->image,
-            'cover_image' => [
-                'large' => $coverImage->getUrl('large') ?? null,
-                'medium' => $coverImage->getUrl('medium') ?? null,
-                'small' => $coverImage->getUrl('small') ?? null,
-            ],
+            'cover_image' => $this->CoverImageResponsive,
             'gallery_images' => $galleryUrls,
             'gallery' => $this->getMedia('gallery')->map(function ($media, $index) {
                 $url = $media->getUrl();

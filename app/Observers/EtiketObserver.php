@@ -63,7 +63,8 @@ class EtiketObserver
         if ($product) {
             $product->update([
                 'ojrat' => $etiket->ojrat,
-                'weight' => $etiket->weight
+                'weight' => $etiket->weight,
+                'price' => $etiket->price,
             ]);
         }
     }

@@ -166,4 +166,21 @@ class Product extends Model implements HasMedia
         if($value)
             return intval($value);
     }
+
+    public function getCoverImageResponsiveAttribute()
+    {
+        $coverImage = $this->getFirstMedia('cover_image');
+        if($coverImage){
+            return [
+                'large' => $coverImage->getUrl('large') ?? null,
+                'medium' => $coverImage->getUrl('medium') ?? null,
+                'small' => $coverImage->getUrl('small') ?? null,
+                ];
+        }
+        return [
+            'large' => asset('img/no_image.jpg'),
+            'medium' => asset('img/no_image.jpg'),
+            'small' => asset('img/no_image.jpg'),
+        ];
+    }
 }
