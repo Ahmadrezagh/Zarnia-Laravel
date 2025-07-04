@@ -46,3 +46,7 @@ $html
 BLADE, ['html' => $html] + $data);
 }
 
+function getEtikets(){
+    $tahesab = new \App\Services\Api\Tahesab();
+    $tahesab->getAllTicketsAndStoreOrUpdate();
+}

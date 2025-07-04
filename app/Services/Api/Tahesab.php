@@ -61,7 +61,7 @@ class Tahesab{
     public function getEtiketsAndStore($from = 1 , $to = 10)
     {
         $etitkets = $this->getEtikets($from, $to);
-        if(!$etitkets->error ){
+        if(!isset($etitkets['error']) ){
             foreach ($etitkets as $etiket) {
                 Etiket::query()->updateOrCreate(
                     [
@@ -76,4 +76,62 @@ class Tahesab{
             }
         }
     }
+
+    public function GetEtiketTableInfo()
+    {
+        $params = [
+            'GetEtiketTableInfo' => []
+        ];
+
+        $response = $this->makeRequest('GET', $params);
+
+        if ($response->successful()) {
+            return $response->json(); // return decoded body
+        }
+
+        // Optionally handle errors
+        return [
+            'error' => true,
+            'status' => $response->status(),
+            'message' => $response->body()
+        ];
+    }
+
+    public function getAllTicketsAndStoreOrUpdate()
+    {
+        echo "Fetching Etiket table info...\n";
+        $GetEtiketTableInfo = $this->GetEtiketTableInfo();
+
+        if (!isset($GetEtiketTableInfo['error']) &&
+            $GetEtiketTableInfo['CountALL'] &&
+            $GetEtiketTableInfo['MinCode'] &&
+            $GetEtiketTableInfo['MaxCode']) {
+
+            $minCode = $GetEtiketTableInfo['MinCode'];
+            $maxCode = $GetEtiketTableInfo['MaxCode'];
+            $currentMax = 500;
+
+            echo "Starting to fetch etikets from code $minCode to $maxCode\n";
+
+            while (true) {
+                echo "Fetching etikets from $minCode to $currentMax\n";
+                $this->getEtiketsAndStore($minCode, $currentMax);
+                echo "done!\n";
+                $minCode = $currentMax;
+                $currentMax = $currentMax + 500;
+
+                if ($currentMax > $maxCode) {
+                    $currentMax = $maxCode;
+                }
+                if(Etiket::query()->where('code', $maxCode)->exists()) {
+                    break;
+                }
+            }
+
+            echo "Finished fetching all etikets.\n";
+        } else {
+            echo "Etiket table info fetch failed or missing required data.\n";
+        }
+    }
+
 }
