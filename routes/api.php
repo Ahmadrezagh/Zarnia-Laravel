@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\FavoriteProductController;
 use App\Http\Controllers\Api\V1\InitController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ProvinceController;
 use App\Http\Controllers\Api\V1\ShoppingCartController;
 use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,8 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
         Route::get('categories', [CategoryController::class, 'index']);
         Route::get('products', [ProductController::class, 'index']);
         Route::get('products/{product}', [ProductController::class, 'show']);
+        Route::get('provinces', [ProvinceController::class, 'index']);
+        Route::get('provinces/{province_id}', [ProvinceController::class, 'show']);
         // Protected routes
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('/user', function (Request $request) {
