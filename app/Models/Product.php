@@ -110,6 +110,14 @@ class Product extends Model implements HasMedia
     {
         return $this->hasMany(Etiket::class);
     }
+    public function getEtiketsCodeAsArrayAttribute()
+    {
+        $codes = "";
+        foreach ($this->etikets()->get() as $etiket) {
+            $codes .= $etiket->code . ", ";
+        }
+        return $codes;
+    }
     public function getCountAttribute()
     {
         return $this->etikets()->count();
