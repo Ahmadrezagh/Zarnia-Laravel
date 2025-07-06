@@ -24,9 +24,9 @@ class ProductController extends Controller
         return ProductListResouce::collection($products);
     }
 
-    public function show(Product $product)
+    public function show(Product $product, Request $request)
     {
-        return ProductItemResouce::make($product);
+        return ProductItemResouce::make($product,$request);
     }
 
 }

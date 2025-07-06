@@ -3,12 +3,21 @@
 namespace App\Http\Resources\Api\V1\Product;
 
 use App\Http\Resources\Api\V1\Categories\CategoryResource;
+use App\Models\Favorite;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductItemResouce extends JsonResource
 {
+    protected $user;
+    public function __construct($resource,$request)
+    {
+        parent::__construct($resource);
+
+        $this->user = $request->user() ?? null;
+    }
+
     /**
      * Transform the resource into an array.
      *
@@ -16,6 +25,13 @@ class ProductItemResouce extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $is_favorite = false;
+        if($this->user){
+            $is_favorite = Favorite::query()->where([
+                'user_id' => $this->user->id,
+                'product_id' => $this->id
+            ])->exists();
+        }
         $product = Product::find($this->id);
         $coverImage = $product->getFirstMedia('cover_image');
         $galleryImages = $product->getMedia('gallery');
@@ -47,6 +63,7 @@ class ProductItemResouce extends JsonResource
             'related_products' => [],
             'complementary_products' => [],
             'categories' => CategoryResource::collection($this->categories),
+            'is_favorite' => $is_favorite
         ];
     }
 }
