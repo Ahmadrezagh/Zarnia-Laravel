@@ -11,11 +11,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ProductItemResouce extends JsonResource
 {
     protected $user;
-    public function __construct($resource,$request)
+    public function __construct($resource,$user = null)
     {
         parent::__construct($resource);
 
-        $this->user = $request->user() ?? null;
+        $this->user = $user;
     }
 
     /**

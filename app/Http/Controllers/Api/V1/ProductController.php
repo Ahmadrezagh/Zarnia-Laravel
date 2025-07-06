@@ -7,6 +7,7 @@ use App\Http\Resources\Api\V1\Product\ProductItemResouce;
 use App\Http\Resources\Api\V1\Product\ProductListResouce;
 use App\Models\Favorite;
 use App\Models\Product;
+
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -24,9 +25,10 @@ class ProductController extends Controller
         return ProductListResouce::collection($products);
     }
 
-    public function show(Product $product, Request $request)
+    public function show(Request $request, Product $product)
     {
-        return ProductItemResouce::make($product,$request);
+        $user = $request->user('sanctum');
+        return ProductItemResouce::make($product,$user);
     }
 
 }
