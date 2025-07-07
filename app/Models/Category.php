@@ -86,6 +86,6 @@ class Category extends Model implements HasMedia
 
     public function scopeParents(Builder $query)
     {
-        return $query->whereNull('parent_id');
+        return $query->where('parent_id',0);
     }
 }
