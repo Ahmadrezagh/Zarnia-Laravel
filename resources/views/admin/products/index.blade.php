@@ -11,7 +11,7 @@
     <x-page>
         <x-slot name="header">
             <button class="btn btn-primary mb-3"  href="#">افزودن محصول جامع</button>
-            <button class="btn btn-primary mb-3"  id="refreshTable">refresh</button>
+            <select name="" id=""></select>
         </x-slot>
         <x-dataTable
             :url="route('table.products')"

@@ -72,6 +72,7 @@ class Tahesab{
                     'weight' => $etiket['Vazn'],
                     'price' => $etiket['OnlinePrice'],
                     'ojrat' => $etiket['DarsadVazn'],
+                    'is_mojood' => $etiket['IsMojood'],
                 ]);
             }
         }

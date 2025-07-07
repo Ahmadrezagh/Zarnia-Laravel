@@ -113,10 +113,17 @@ class Product extends Model implements HasMedia
     public function getEtiketsCodeAsArrayAttribute()
     {
         $codes = "";
+
         foreach ($this->etikets()->get() as $etiket) {
-            $codes .= $etiket->code . ", ";
+            if ($etiket->is_mojood == 0) {
+                $codes .= '<span style="color:red;">' . e($etiket->code) . '</span>, ';
+            } else {
+                $codes .= e($etiket->code) . ', ';
+            }
         }
-        return $codes;
+
+        // Remove trailing comma and space
+        return rtrim($codes, ', ');
     }
     public function getCountAttribute()
     {
@@ -190,5 +197,14 @@ class Product extends Model implements HasMedia
             'medium' => asset('img/no_image.jpg'),
             'small' => asset('img/no_image.jpg'),
         ];
+    }
+
+    public function scopeWithMojoodStatus($query)
+    {
+        return $query->select('*')->selectSub(function ($q) {
+            $q->selectRaw('IF(COUNT(CASE WHEN is_mojood = 1 THEN 1 END) > 0, 1, 0)')
+                ->from('etikets')
+                ->whereColumn('etikets.product_id', 'products.id');
+        }, 'is_mojood');
     }
 }

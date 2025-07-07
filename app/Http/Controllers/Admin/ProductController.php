@@ -160,6 +160,7 @@ class ProductController extends Controller
 
     public function table(Request $request)
     {
+//        return $request;
         $query = Product::query(); // Assuming your model is Product
 
         // Get total records before applying filters
@@ -185,6 +186,7 @@ class ProductController extends Controller
 
         // Apply sorting if provided
         if ($request->has('order') && !empty($request->input('order'))) {
+//            return $request->order;
             $order = $request->input('order')[0];
             $columnIndex = $order['column'];
             $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
@@ -198,6 +200,8 @@ class ProductController extends Controller
         $data = $query
             ->skip($start)
             ->take($length)
+            ->withMojoodStatus()
+            ->orderBy('is_mojood', 'desc')
             ->get()
             ->map(function ($item) {
                 return AdminProductResource::make($item); // Ensure all necessary fields are included

@@ -12,6 +12,7 @@ class Etiket extends Model
         'weight',
         'price',
         'product_id',
-        'ojrat'
+        'ojrat',
+        'is_mojood'
     ];
 }

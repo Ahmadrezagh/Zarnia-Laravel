@@ -71,6 +71,7 @@
                 responsive: false,
                 pageLength: defaultPerPage, // Use stored or default per-page
                 lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]], // Available options
+                order: [],
                 ajax: {
                     url: '{{ $url }}',
                     type: 'POST',
