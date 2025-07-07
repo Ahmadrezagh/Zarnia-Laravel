@@ -84,7 +84,8 @@
                     error: function(xhr, error, thrown) {
                         console.error('DataTables AJAX error:', error, thrown);
                         alert('Failed to load data. Please try again.');
-                    }
+                    },
+
                 },
                 columns: [
                         @if($hasCheckbox)
@@ -188,6 +189,10 @@
                 }
             });
 
+            // Show toastr message when AJAX data is loaded
+            table.on('xhr', function () {
+                toastr.success('بارگذاری اطلاعات با موفقیت انجام شد');
+            });
             // Override default search behavior: trigger only on Enter key
             $('#{{ $id }}_filter input').unbind();
             $('#{{ $id }}_filter input').on('keypress', function (e) {
