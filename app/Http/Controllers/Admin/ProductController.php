@@ -10,6 +10,7 @@ use App\Models\Attribute;
 use App\Models\AttributeGroup;
 use App\Models\AttributeValue;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -170,7 +171,9 @@ class ProductController extends Controller
         if ($request->has('search') && !empty($request->input('search.value'))) {
             $search = $request->input('search.value');
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%"); // Adjust columns as needed
+                $q->where('name', 'like', "%{$search}%")->orWhereHas('etikets', function ($q2) use ($search) {
+                    $q2->where('code', '=', "{$search}"); // Search in etiket code
+                });
             });
         }
 
