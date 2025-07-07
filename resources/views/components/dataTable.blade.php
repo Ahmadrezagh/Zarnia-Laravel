@@ -4,7 +4,7 @@
     'url' => '',
     'columns' => [],
     'actions' => [],
-    'perPage' => 10, // Default per-page value if not in localStorage
+    'perPage' => 10,
 ])
 
 <div class="table-responsive" style="overflow-x: auto;">
@@ -13,9 +13,7 @@
         <thead>
         <tr>
             @if($hasCheckbox)
-                <th>
-                    <input type="checkbox" class="form-control" id="selectAll">
-                </th>
+                <th><input type="checkbox" class="form-control" id="selectAll"></th>
             @endif
             @foreach($columns as $column)
                 <th>{{ $column['label'] }}</th>
@@ -28,10 +26,9 @@
         <tbody></tbody>
     </table>
 
-
-    <!-- Fullscreen Modal -->
+    <!-- Image Preview Modal -->
     <div class="modal fade" id="imagePreviewModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog " >
+        <div class="modal-dialog">
             <div class="modal-content bg-dark">
                 <div class="modal-body p-0 position-relative">
                     <button type="button" class="close text-white position-absolute" style="top: 10px; right: 15px; font-size: 2rem;" data-dismiss="modal" aria-label="Close">
@@ -42,9 +39,8 @@
             </div>
         </div>
     </div>
-
-
 </div>
+
 
 @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
@@ -53,16 +49,9 @@
 
 
 @section('js')
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script>
-        $(document).ready(function() {
-
-            // Get stored per-page value from localStorage, fallback to prop
-            const tableKey = '{{ $id }}'; // Use table ID as key
-            // Alternative: Use route name or URL for more specificity
-            // const tableKey = '{{ Route::currentRouteName() }}' || '{{ md5($url) }}';
+        $(document).ready(function () {
+            const tableKey = '{{ $id }}';
             const storedPerPage = localStorage.getItem(`datatable_per_page_${tableKey}`);
             const defaultPerPage = storedPerPage ? parseInt(storedPerPage) : {{ $perPage }};
 
@@ -70,22 +59,19 @@
                 processing: true,
                 serverSide: true,
                 responsive: false,
-                pageLength: defaultPerPage, // Use stored or default per-page
-                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]], // Available options
+                pageLength: defaultPerPage,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
                 order: [],
                 ajax: {
                     url: '{{ $url }}',
                     type: 'POST',
-                    async: false,
-                    cache: false,
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
-                    error: function(xhr, error, thrown) {
+                    error: function (xhr, error, thrown) {
                         console.error('DataTables AJAX error:', error, thrown);
                         alert('Failed to load data. Please try again.');
-                    },
-
+                    }
                 },
                 columns: [
                         @if($hasCheckbox)
@@ -93,17 +79,18 @@
                         data: 'id',
                         orderable: false,
                         searchable: false,
-                        render: function(data) {
-                            return `<input type="checkbox" class="form-control custom-select-option" value="${data}" />`;
-                        }
+                        render: data => `<input type="checkbox" class="form-control custom-select-option" value="${data}" />`
                     },
                         @endif
+
                         @foreach($columns as $column)
                     {
                         data: '{{ $column['key'] }}',
                         name: '{{ $column['key'] }}',
-                        render: function(data, type, row) {
-                            @if(isset($column['route']))
+                        render: function(data, type, row, meta) {
+                            @if(isset($column['type']) && $column['type'] === 'ajax')
+                                return `<span class="ajax-cell" data-row-index="${meta.row}" data-url-template="{{ route($column['route'], ':param') }}" data-param="${row['{{ $column['ajax_key'] }}']}">در حال بارگذاری...</span>`;
+                            @elseif(isset($column['route']))
                             let url = '{{ route($column['route'][0], array_fill(0, count($column['route'][1]), ':param')) }}';
                             @foreach($column['route'][1] as $key => $value)
                             const paramKey = '{{ trim($value, '{}') }}';
@@ -113,13 +100,11 @@
                             @elseif(isset($column['url']))
                             let url = '{{ $column['url'] }}';
                             for (const key in row) {
-                                if (row.hasOwnProperty(key)) {
-                                    url = url.replace(`{${key}}`, row[key] || '');
-                                }
+                                url = url.replace(`{${key}}`, row[key] || '');
                             }
                             return `<a href="${url}" target="_blank">${data || ''}</a>`;
                             @elseif($column['type'] === 'image')
-                                return data ? `<img src="${data}" style="width: 100px; height: 100px; border-radius: 50%" alt="Image" onclick="previewImage('${data}')" >` : '';
+                                return data ? `<img src="${data}" style="width: 100px; height: 100px; border-radius: 50%" alt="Image" onclick="previewImage('${data}')">` : '';
                             @elseif($column['type'] === 'copiableText')
                                 return `<x-form.copiable-component content="${data || ''}" />`;
                             @elseif($column['type'] === 'binaryCondition')
@@ -132,19 +117,14 @@
                         }
                     },
                         @endforeach
+
                         @if($actions)
                     {
                         data: null,
                         orderable: false,
                         searchable: false,
                         render: function(data, type, row) {
-                            let actionsHtml = `
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
-                                        عملیات
-                                    </button>
-                                    <div class="dropdown-menu">
-                            `;
+                            let actionsHtml = `<div class="btn-group"><button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">عملیات</button><div class="dropdown-menu">`;
                             @foreach($actions as $action)
                             @if(isset($action['route']))
                             let url = '{{ route($action['route'][0], array_fill(0, count($action['route'][1]), ':param')) }}';
@@ -156,13 +136,11 @@
                             @elseif(isset($action['url']))
                             let url = '{{ $action['url'] }}';
                             for (const key in row) {
-                                if (row.hasOwnProperty(key)) {
-                                    url = url.replace(`{${key}}`, row[key] || '');
-                                }
+                                url = url.replace(`{${key}}`, row[key] || '');
                             }
                             actionsHtml += `<a href="${url}" class="dropdown-item" target="_blank">{{ $action['label'] }}</a>`;
                             @else
-                                actionsHtml += `<button class="dropdown-item" data-toggle="modal" data-target="#{{ $action['type'] }}-${row.id}" onClick="{{ $action['type'] }}(${row.id})" >{{ $action['label'] }}</button>`;
+                                actionsHtml += `<button class="dropdown-item" data-toggle="modal" data-target="#{{ $action['type'] }}-${row.id}" onClick="{{ $action['type'] }}(${row.id})">{{ $action['label'] }}</button>`;
                             @endif
                                     @endforeach
                                 actionsHtml += `</div></div>`;
@@ -189,71 +167,76 @@
                 }
             });
 
-            // Show toastr message when AJAX data is loaded
-            table.on('xhr', function () {
-                toastr.success('بارگذاری اطلاعات با موفقیت انجام شد');
+            // Load AJAX cells after draw
+            table.on('draw.dt', function () {
+                $('.ajax-cell').each(function () {
+                    const span = $(this);
+                    const urlTemplate = span.data('url-template');
+                    const param = span.data('param');
+
+                    if (!urlTemplate || !param) return;
+
+                    const url = urlTemplate.replace(':param', encodeURIComponent(param));
+                    fetch(url)
+                        .then(res => res.text())
+                        .then(html => span.html(html))
+                        .catch(err => {
+                            console.error('Failed to load ajax cell:', err);
+                            span.html('<span class="text-danger">خطا</span>');
+                        });
+                });
             });
-            // Override default search behavior: trigger only on Enter key
-            $('#{{ $id }}_filter input').unbind();
-            $('#{{ $id }}_filter input').on('keypress', function (e) {
-                if (e.which === 13) { // Enter key
+
+            // Search only on Enter
+            $('#{{ $id }}_filter input').unbind().on('keypress', function (e) {
+                if (e.which === 13) {
                     table.search(this.value).draw();
                 }
             });
-            // Save per-page selection to localStorage
-            table.on('length.dt', function(e, settings, len) {
-                try {
-                    localStorage.setItem(`datatable_per_page_${tableKey}`, len);
-                    console.log('Per-page setting saved:', len);
-                } catch (error) {
-                    console.error('Error saving to localStorage:', error);
-                }
-            });
 
-            // Refresh button click handler
-            $('#refreshTable').on('click', function() {
-                window.refreshTable();
+            // Save per-page
+            table.on('length.dt', function (e, settings, len) {
+                localStorage.setItem(`datatable_per_page_${tableKey}`, len);
             });
 
             // Checkbox handling
-            $('#selectAll').on('click', function() {
-                const isChecked = this.checked;
-                table.$('.custom-select-option').prop('checked', isChecked);
+            $('#selectAll').on('click', function () {
+                table.$('.custom-select-option').prop('checked', this.checked);
                 updateHiddenInput();
             });
 
-            table.on('change', '.custom-select-option', function() {
-                const allCheckboxes = table.$('.custom-select-option');
-                $('#selectAll').prop('checked', allCheckboxes.length === table.$('.custom-select-option:checked').length);
+            table.on('change', '.custom-select-option', function () {
+                const all = table.$('.custom-select-option');
+                $('#selectAll').prop('checked', all.length === table.$('.custom-select-option:checked').length);
                 updateHiddenInput();
             });
 
             function updateHiddenInput() {
-                const selectedValues = table.$('.custom-select-option:checked').map(function() {
+                const selected = table.$('.custom-select-option:checked').map(function () {
                     return this.value;
                 }).get();
-                $('#selectedValues').val(JSON.stringify(selectedValues));
+                $('#selectedValues').val(JSON.stringify(selected));
             }
 
-            window.showArray = function() {
+            window.showArray = function () {
                 try {
-                    const selectedArray = JSON.parse($('#selectedValues').val() || '[]');
-                    console.log(selectedArray);
-                    return selectedArray;
-                } catch (error) {
-                    console.error('Error parsing selected values:', error);
+                    return JSON.parse($('#selectedValues').val() || '[]');
+                } catch (e) {
+                    console.error(e);
                     return [];
                 }
             };
 
-            window.refreshTable = function() {
+            window.refreshTable = function () {
                 table.ajax.reload(null, false);
-            }
-        });
+            };
 
-        function previewImage(src) {
-            document.getElementById('modalImage').src = src;
-            $('#imagePreviewModal').modal('show');
-        }
+            function previewImage(src) {
+                document.getElementById('modalImage').src = src;
+                $('#imagePreviewModal').modal('show');
+            }
+
+            window.previewImage = previewImage;
+        });
     </script>
 @endsection

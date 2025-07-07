@@ -18,7 +18,7 @@
             id="products-table"
             hasCheckbox="true"
             :columns="[
-                            ['label' => 'کد اتیکت', 'key' => 'etiketsCodeAsArray', 'type' => 'text'],
+                            ['label' => 'کد اتیکت', 'key' => 'etiketsCodeAsArray', 'type' => 'ajax','route' =>'product.etikets','ajax_key' => 'slug'],
                             ['label' => 'تصویر محصول', 'key' => 'image', 'type' => 'image'],
                             ['label' => 'نام محصول', 'key' => 'name', 'type' => 'text','url' => 'https://google.com'],
                             ['label' => 'وزن', 'key' => 'weight', 'type' => 'text'],

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\EtiketController;
 use App\Http\Controllers\Admin\FooterTitleController;
 use App\Http\Controllers\Admin\FooterTitleLinkController;
 use App\Http\Controllers\Admin\HeaderLinkController;
@@ -29,6 +30,9 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::get('footer_titles', [FooterTitleController::class, 'table'])->name('footer_titles');
     Route::get('footer_title_links/{footer_title}', [FooterTitleLinkController::class, 'table'])->name('footer_title_links');
     Route::any('products', [ProductController::class, 'table'])->name('products');
+});
+Route::middleware(['auth'])->prefix('product')->name('product.')->group(function () {
+    Route::get('etikets/{product}', [EtiketController::class, 'getEtiketsOfProduct'])->name('etikets');
 });
 Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('roles', RoleController::class );
