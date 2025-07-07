@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -81,5 +82,10 @@ class Category extends Model implements HasMedia
     {
         $media = $this->getFirstMedia('categories');
         return $media ? $media->getUrl() : null;
+    }
+
+    public function scopeParents(Builder $query)
+    {
+        return $query->whereNull('parent_id');
     }
 }
