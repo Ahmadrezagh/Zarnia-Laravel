@@ -127,10 +127,17 @@ class Product extends Model implements HasMedia
     }
     public function getCountAttribute()
     {
-        return $this->etikets()->count();
+        return $this->etikets()->where('is_mojood', 1)->count();
     }
 
-
+    public function scopeHasCount(Builder $query): Builder
+    {
+        return $query->withCount([
+            'etikets as count' => function ($query) {
+                $query->where('is_mojood', 1);
+            }
+        ]);
+    }
 
     public function getCategoriesTitleAttribute()
     {
