@@ -208,10 +208,55 @@ class Product extends Model implements HasMedia
 
     public function scopeWithMojoodStatus($query)
     {
-        return $query->select('*')->selectSub(function ($q) {
+        return $query->selectSub(function ($q) {
             $q->selectRaw('IF(COUNT(CASE WHEN is_mojood = 1 THEN 1 END) > 0, 1, 0)')
                 ->from('etikets')
                 ->whereColumn('etikets.product_id', 'products.id');
         }, 'is_mojood');
+    }
+
+    public function scopeSortMojood(Builder $query, $direction = null)
+    {
+        if($direction && in_array($direction, ['asc', 'desc'])){
+            return $query
+                ->withMojoodStatus()
+                ->orderBy("is_mojood", $direction);
+        }
+        return $query;
+    }
+    public function scopeWithImageStatus(Builder $query, $direction = null)
+    {
+        if($direction){
+            $query->selectSub(function ($q) {
+                $q->selectRaw('COUNT(*) > 0')
+                    ->from('media')
+                    ->whereColumn('media.model_id', 'products.id')
+                    ->where('media.model_type', '=', Product::class);
+            }, 'has_image');
+
+            if (in_array(strtolower($direction), ['asc', 'desc'])) {
+                $query->orderBy('has_image', strtolower($direction));
+            }
+        }
+
+        return $query;
+    }
+
+    public function scopeWithMojoodCount($query, $direction = null)
+    {
+        if($direction){
+            $query->selectSub(function ($q) {
+                $q->selectRaw('COUNT(*)')
+                    ->from('etikets')
+                    ->whereColumn('etikets.product_id', 'products.id')
+                    ->where('is_mojood', 1);
+            }, 'mojood_count');
+
+            if (in_array(strtolower($direction), ['asc', 'desc'])) {
+                $query->orderBy('mojood_count', strtolower($direction));
+            }
+        }
+
+        return $query;
     }
 }

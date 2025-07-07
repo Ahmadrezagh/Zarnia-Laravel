@@ -161,8 +161,7 @@ class ProductController extends Controller
 
     public function table(Request $request)
     {
-//        return $request;
-        $query = Product::query(); // Assuming your model is Product
+        $query = Product::query()->select('*'); // Assuming your model is Product
 
         // Get total records before applying filters
         $totalRecords = $query->count();
@@ -187,13 +186,24 @@ class ProductController extends Controller
             $length = 10; // Ensure length is positive to avoid SQL error
         }
 
+        $is_mojood_dir = 'desc';
+        $image_dir = null;
+        $count_dir = null;
         // Apply sorting if provided
         if ($request->has('order') && !empty($request->input('order'))) {
-//            return $request->order;
             $order = $request->input('order')[0];
             $columnIndex = $order['column'];
             $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
             $column = $request->input("columns.{$columnIndex}.data");
+            if($columnIndex == 1){
+                $is_mojood_dir = $direction;
+            }
+            if($columnIndex == 2){
+                $image_dir = $direction;
+            }
+            if($columnIndex == 6){
+                $count_dir = $direction;
+            }
             if ($column && Schema::hasColumn('products', $column)) {
                 $query->orderBy($column, $direction);
             }
@@ -203,8 +213,9 @@ class ProductController extends Controller
         $data = $query
             ->skip($start)
             ->take($length)
-            ->withMojoodStatus()
-            ->orderBy('is_mojood', 'desc')
+            ->WithMojoodCount($count_dir)
+            ->WithImageStatus($image_dir)
+            ->SortMojood($is_mojood_dir)
             ->get()
             ->map(function ($item) {
                 return AdminProductResource::make($item); // Ensure all necessary fields are included
