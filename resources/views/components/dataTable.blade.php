@@ -58,6 +58,7 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script>
         $(document).ready(function() {
+
             // Get stored per-page value from localStorage, fallback to prop
             const tableKey = '{{ $id }}'; // Use table ID as key
             // Alternative: Use route name or URL for more specificity
@@ -187,6 +188,13 @@
                 }
             });
 
+            // Override default search behavior: trigger only on Enter key
+            $('#{{ $id }}_filter input').unbind();
+            $('#{{ $id }}_filter input').on('keypress', function (e) {
+                if (e.which === 13) { // Enter key
+                    table.search(this.value).draw();
+                }
+            });
             // Save per-page selection to localStorage
             table.on('length.dt', function(e, settings, len) {
                 try {
