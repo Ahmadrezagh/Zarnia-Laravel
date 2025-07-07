@@ -47,7 +47,15 @@ class Tahesab{
         $response = $this->makeRequest('GET', $params);
 
         if ($response->successful()) {
-            return $response->json(); // return decoded body
+            $response = $response->json();
+            if(isset($response['Error'])){
+                return [
+                    'error' => true,
+                    'status' => 404,
+                    'message' => "یافت نشد"
+                ];
+            }
+            return $response;
         }
 
         // Optionally handle errors
@@ -57,26 +65,45 @@ class Tahesab{
             'message' => $response->body()
         ];
     }
-
     public function getEtiketsAndStore($from = 1 , $to = 10)
     {
         $etitkets = $this->getEtikets($from, $to);
-        if(!isset($etitkets['error']) ){
-            foreach ($etitkets as $etiket) {
-                Etiket::query()->updateOrCreate(
-                    [
+
+        if (!is_array($etitkets)) {
+            echo "Invalid response from getEtikets($from, $to): ";
+            print_r($etitkets);
+            return;
+        }
+
+        // Optional: check for error key
+        if (isset($etitkets['error'])) {
+            echo "Error in response from getEtikets($from, $to): " . $etitkets['error'] . "\n";
+            return;
+        }
+
+        foreach ($etitkets as $etiket) {
+            if (!is_array($etiket)) {
+                echo "Invalid etiket entry: ";
+                print_r($etiket);
+                continue;
+            }
+
+            Etiket::query()->updateOrCreate(
+                [
                     'code' => $etiket['Code']
-                    ],[
+                ],
+                [
                     'code' => $etiket['Code'],
                     'name' => $etiket['Name'],
                     'weight' => $etiket['Vazn'],
                     'price' => $etiket['OnlinePrice'],
                     'ojrat' => $etiket['DarsadVazn'],
                     'is_mojood' => $etiket['IsMojood'],
-                ]);
-            }
+                ]
+            );
         }
     }
+
 
     public function GetEtiketTableInfo()
     {
@@ -114,18 +141,16 @@ class Tahesab{
 
             echo "Starting to fetch etikets from code $minCode to $maxCode\n";
 
-            while (true) {
+            while ($minCode < $maxCode) {
                 echo "Fetching etikets from $minCode to $currentMax\n";
                 $this->getEtiketsAndStore($minCode, $currentMax);
                 echo "done!\n";
+                sleep(1);
                 $minCode = $currentMax;
                 $currentMax = $currentMax + 500;
 
                 if ($currentMax > $maxCode) {
                     $currentMax = $maxCode;
-                }
-                if(Etiket::query()->where('code', $maxCode)->exists()) {
-                    break;
                 }
             }
 

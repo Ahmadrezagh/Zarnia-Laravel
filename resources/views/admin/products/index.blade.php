@@ -11,7 +11,7 @@
     <x-page>
         <x-slot name="header">
             <button class="btn btn-primary mb-3"  href="#">افزودن محصول جامع</button>
-            <select name="" id=""></select>
+            <x-form.select-option title="test" id="test" name="test"></x-form.select-option>
         </x-slot>
         <x-dataTable
             :url="route('table.products')"
