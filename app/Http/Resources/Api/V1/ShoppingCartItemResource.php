@@ -17,6 +17,7 @@ class ShoppingCartItemResource extends JsonResource
         return [
             'product' => $this->product->name,
             'product_slug' => $this->product->slug,
+            'product_weight' => $this->product->weight ?? 0,
             'count' => $this->count,
             'image' => $this->product->image,
             'item_price' => $this->product->price,
