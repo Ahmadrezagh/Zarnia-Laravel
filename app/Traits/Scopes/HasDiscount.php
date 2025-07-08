@@ -6,7 +6,7 @@ trait HasDiscount{
     public function scopeHasDiscount(Builder $query, $hasDiscount = null)
     {
         if($hasDiscount){
-            return $query->whereNotNull('discounted_price');
+            return $query->where('discounted_price','!=','0');
         }
         return $query;
     }
