@@ -58,6 +58,8 @@ class ProductItemResouce extends JsonResource
             'slug' => $this->slug,
             'price' => number_format($this->price),
             'price_without_discount' => number_format($this->price_without_discount),
+
+            'discount_percentage' => $this->discount_percentage,
             'snapp_pay_each_installment' => number_format($this->price/4),
             'children' => ProductListResouce::collection($this->children),
             'related_products' => [],
