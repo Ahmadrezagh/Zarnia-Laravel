@@ -51,7 +51,7 @@ class Product extends Model implements HasMedia
     public function getPriceWithoutDiscountAttribute($value)
     {
         if($this->discounted_price){
-            $price = $value;
+            $price = $this->getRawOriginal('price');
         }else{
             $price = 0;
         }
