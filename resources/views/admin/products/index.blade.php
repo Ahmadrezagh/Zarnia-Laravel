@@ -18,7 +18,7 @@
                     <option value="?filter=only_main_products">محصولات متغییر</option>
                     <option value="?filter=only_discountables">محصولات تخفیف دار</option>
                 </x-form.select-option>
-                <x-form.select-option title="دسته بندی" id="test" multiple="multiple" name="categories" col="3" onChange="changeCategorySelectOption(this)">
+                <x-form.select-option title="دسته بندی" id="test" multiple="multiple" name="categories" col="5" onChange="changeCategorySelectOption(this)">
                     @foreach($categories as $category)
                         <option value="{{$category->id}}">{{$category->title}}</option>
                     @endforeach
