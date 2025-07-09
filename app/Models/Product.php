@@ -259,4 +259,40 @@ class Product extends Model implements HasMedia
 
         return $query;
     }
+
+    public function scopeHasImage(Builder $query): Builder
+    {
+        return $query->whereHas('media', function ($q) {
+            $q->where('collection_name', 'cover_image'); // optional: if you use specific collections
+        });
+    }
+
+    public function scopeWhereMojoodIsZero($query)
+    {
+        return $query->whereRaw('(
+        SELECT COUNT(*)
+        FROM etikets
+        WHERE etikets.product_id = products.id
+        AND is_mojood = 1
+    ) = 0');
+    }
+
+    public function scopeFilterProduct(Builder $query, $filter = null)
+    {
+        if($filter){
+            switch ($filter) {
+                case 'only_images':
+                    return $query->hasImage();
+                case 'only_unavilables':
+                    return $query->WhereMojoodIsZero();
+                case 'only_main_products':
+                    return $query->whereNull('parent_id');
+                case 'only_discountables':
+                    return $query->whereNull('discount_percentage');
+                default:
+                    return $query;
+            }
+        }
+        return $query;
+    }
 }

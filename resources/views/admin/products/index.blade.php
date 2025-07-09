@@ -12,11 +12,11 @@
         <x-slot name="header">
             <button class="btn btn-primary mb-3"  href="#">افزودن محصول جامع</button>
             <div class="row">
-                <x-form.select-option title="test" id="test" name="test" col="3">
-                    <option value="1">محصولات عکس دار</option>
-                    <option value="2">محصولات ناموجود</option>
-                    <option value="3">محصولات متغییر</option>
-                    <option value="4">محصولات تخفیف دار</option>
+                <x-form.select-option title="test" id="test" name="test" col="3" onChange="filterProductsSelectOption(this)">
+                    <option value="?filter=only_images">محصولات عکس دار</option>
+                    <option value="?filter=only_unavilables">محصولات ناموجود</option>
+                    <option value="?filter=only_main_products">محصولات متغییر</option>
+                    <option value="?filter=only_discountables">محصولات تخفیف دار</option>
                 </x-form.select-option>
             </div>
         </x-slot>
@@ -406,5 +406,16 @@
                 checkAttributeGroup(groupName, productId);
             }
         };
+    </script>
+
+    <script>
+        function filterProductsSelectOption(element){
+            let val = $(element).val()
+            if(val !== '0'){
+                window.loadDataWithNewUrl("{{route('table.products')}}"+val);
+            }else{
+                window.loadDataWithNewUrl("{{route('table.products')}}");
+            }
+        }
     </script>
 @endsection

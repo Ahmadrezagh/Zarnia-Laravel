@@ -237,6 +237,11 @@
             }
 
             window.previewImage = previewImage;
+
+
+            window.loadDataWithNewUrl = function(newUrl) {
+                table.ajax.url(newUrl).load();
+            };
         });
     </script>
 @endsection

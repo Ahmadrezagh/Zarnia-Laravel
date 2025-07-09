@@ -216,6 +216,7 @@ class ProductController extends Controller
             ->WithMojoodCount($count_dir)
             ->WithImageStatus($image_dir)
             ->SortMojood($is_mojood_dir)
+            ->FilterProduct($request->filter)
             ->get()
             ->map(function ($item) {
                 return AdminProductResource::make($item); // Ensure all necessary fields are included

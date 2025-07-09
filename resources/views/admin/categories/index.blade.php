@@ -56,4 +56,7 @@
             @endforeach
         </x-table>
     </x-page>
+
+
+
 @endsection
