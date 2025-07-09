@@ -12,11 +12,16 @@
         <x-slot name="header">
             <button class="btn btn-primary mb-3"  href="#">افزودن محصول جامع</button>
             <div class="row">
-                <x-form.select-option title="test" id="test" name="test" col="3" onChange="filterProductsSelectOption(this)">
+                <x-form.select-option title="فیلتر" id="test" name="filters" col="3" onChange="filterProductsSelectOption(this)">
                     <option value="?filter=only_images">محصولات عکس دار</option>
                     <option value="?filter=only_unavilables">محصولات ناموجود</option>
                     <option value="?filter=only_main_products">محصولات متغییر</option>
                     <option value="?filter=only_discountables">محصولات تخفیف دار</option>
+                </x-form.select-option>
+                <x-form.select-option title="دسته بندی" id="test" multiple="multiple" name="categories" col="3" onChange="changeCategorySelectOption(this)">
+                    @foreach($categories as $category)
+                        <option value="{{$category->id}}">{{$category->title}}</option>
+                    @endforeach
                 </x-form.select-option>
             </div>
         </x-slot>
@@ -416,6 +421,21 @@
             }else{
                 window.loadDataWithNewUrl("{{route('table.products')}}");
             }
+        }
+
+        function changeCategorySelectOption(element) {
+            let val = $(element).val(); // This is an array of selected IDs
+            let params = [];
+
+            val.forEach((id, index) => {
+                params.push(`category_ids[${index}]=${id}`);
+            });
+
+            let queryString = params.join('&');
+            let baseUrl = "{{ route('table.products') }}";
+            let finalUrl = baseUrl + '?' + queryString;
+
+            window.loadDataWithNewUrl(finalUrl);
         }
     </script>
 @endsection

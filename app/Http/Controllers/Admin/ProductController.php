@@ -9,6 +9,7 @@ use App\Http\Resources\Admin\Table\AdminProductResource;
 use App\Models\Attribute;
 use App\Models\AttributeGroup;
 use App\Models\AttributeValue;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -22,7 +23,8 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::query()->paginate();
-        return view('admin.products.index', compact('products'));
+        $categories = Category::query()->get();
+        return view('admin.products.index', compact('products','categories'));
     }
 
     /**
@@ -217,6 +219,8 @@ class ProductController extends Controller
             ->WithImageStatus($image_dir)
             ->SortMojood($is_mojood_dir)
             ->FilterProduct($request->filter)
+
+            ->categories($request->category_ids)
             ->get()
             ->map(function ($item) {
                 return AdminProductResource::make($item); // Ensure all necessary fields are included
