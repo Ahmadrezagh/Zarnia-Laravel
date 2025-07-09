@@ -22,7 +22,7 @@ function upload_file($file , $file_path = null , $name = null ): string
     // Upload Image
     $file->move(public_path($path), $file_name);
     // Generate image path
-    return strval($path."/".$file_name);
+    return strval($file_name);
 }
 
 function upload_files($files = null , $file_path = null , $random_name = false ): array

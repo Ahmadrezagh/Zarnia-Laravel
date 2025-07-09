@@ -233,4 +233,88 @@ class ProductController extends Controller
             'data' => $data
         ]);
     }
+
+
+
+
+
+
+    public function bulkUpdate(Request $request)
+    {
+        \Log::info('Uploaded files:', $_FILES);
+
+        if (is_string($request->product_ids)) {
+            $productIds = json_decode($request->product_ids, true);
+            $request->merge(['product_ids' => $productIds]);
+        }
+
+        $request->validate([
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'exists:products,id',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'exists:categories,id',
+            'cover_image' => 'nullable|file|image|max:2048',
+        ]);
+
+        $products = Product::whereIn('id', $request->product_ids)->get();
+
+        // Store the uploaded file in Laravel storage
+        $tempFilePath = null;
+        $originalPath = null;
+        if ($request->hasFile('cover_image')) {
+            $tempFilePath = $request->file('cover_image')->store('temp', 'public');
+            $originalPath = storage_path('app/public/' . $tempFilePath);
+            \Log::info('Temporary file stored at: ' . $originalPath);
+            if (!file_exists($originalPath)) {
+                \Log::error('Temporary file does not exist: ' . $originalPath);
+                return response()->json(['status' => 'error', 'message' => 'Stored file not found'], 500);
+            }
+        }
+
+        foreach ($products as $product) {
+            if ($request->filled('discount_percentage')) {
+                $product->update([
+                    'discount_percentage' => $request->discount_percentage
+                ]);
+            }
+
+            if ($request->filled('category_ids')) {
+                $product->categories()->sync($request->category_ids);
+            }
+
+            if ($tempFilePath) {
+                // Create a unique copy for this product
+                $fileName = basename($tempFilePath);
+                $copyPath = storage_path('app/public/temp/' . $product->id . '_' . $fileName);
+                if (!copy($originalPath, $copyPath)) {
+                    \Log::error('Failed to copy file to: ' . $copyPath);
+                    return response()->json(['status' => 'error', 'message' => 'File copy failed'], 500);
+                }
+                \Log::info('Processing cover_image for product ID: ' . $product->id . ' using file: ' . $copyPath);
+
+                try {
+                    $product->clearMediaCollection('cover_image');
+                    $product->addMedia($copyPath)
+                        ->toMediaCollection('cover_image');
+                    // Delete the copied file
+                    \Storage::disk('public')->delete('temp/' . $product->id . '_' . $fileName);
+                    \Log::info('Copied file deleted: ' . 'temp/' . $product->id . '_' . $fileName);
+                } catch (\Exception $e) {
+                    \Log::error('Error processing cover_image for product ID ' . $product->id . ': ' . $e->getMessage());
+                    return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+                }
+            }
+        }
+
+        // Clean up original temporary file
+        if ($tempFilePath) {
+            \Storage::disk('public')->delete($tempFilePath);
+            \Log::info('Original temporary file deleted: ' . $tempFilePath);
+        }
+
+        return response()->json(['status' => 'success']);
+    }
+
+
 }

@@ -32,7 +32,9 @@
                     <option value="etiket_code">اتیکت</option>
                 </x-form.select-option>
                 <x-form.input title="جستجو" name="search" id="search" />
-
+                <div class="col-3">
+                    <button type="button" class="btn btn-primary" onclick="showBulkUpdateModal()">ویرایش دسته جمعی </button>
+                </div>
             </div>
         </x-slot>
         <x-dataTable
@@ -299,8 +301,91 @@
                 }
             });
         }
-    </script>
 
+
+
+
+        function showBulkUpdateModal() {
+            eraseModalContent();
+
+            const formHtml = `
+        <form id="bulkUpdateForm" enctype="multipart/form-data">
+            <input type="hidden" name="product_ids" id="product_ids">
+
+            <div class="form-group">
+                <label>درصد تخفیف</label>
+                <input type="number" name="discount_percentage" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>دسته بندی</label>
+                <select name="category_ids[]" multiple class="form-control s2" style="width:100%">
+                    @foreach($categories as $category)
+                        <option value="{{$category->id}}">{{$category->title}}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="custom-file mt-5 mb-5">
+                <label for="product-cover-image" class="custom-file-label">تصویر کاور</label>
+                <input type="file" class="custom-file-input" name="cover_image" accept="image/*" >
+            </div>
+
+            <button type="button" onclick="submitBulkUpdate(this)" class="btn btn-primary">Update</button>
+        </form>
+    `;
+
+            appendToModalContent(formHtml);
+
+            // Set the selected product IDs from hidden input
+            $('#product_ids').val($('#selectedValues').val());
+
+            showDynamicModal();
+
+            $('.s2').select2({
+                placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
+                allowClear: true,
+                width: '100%'
+            });
+        }
+
+
+    </script>
+    <script>
+        function submitBulkUpdate(button) {
+            const form = $(button).closest('form')[0];
+            const formData = new FormData(form);
+
+            const file = formData.get('cover_image');
+            console.log('Selected file:', file);
+            if (file && file.size > 0) {
+                console.log('File name:', file.name, 'File size:', file.size);
+            } else {
+                console.log('No file selected or file is empty');
+            }
+
+            formData.append('_token', '{{ csrf_token() }}');
+
+            $.ajax({
+                url: '{{ route('products.bulk_update') }}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    // alert('Products updated successfully!');
+
+                    window.refreshTable();
+                    $('#dynamic-modal').modal('hide');
+                },
+                error: function (xhr) {
+                    alert('An error occurred: ' + xhr.responseText);
+                }
+            });
+        }
+
+
+    </script>
     <script>
         function showImagePreview(inputId, previewContainerId, originalImage) {
             const input = document.getElementById(inputId);
@@ -464,6 +549,7 @@
                 }
             });
         });
+
 
     </script>
 @endsection

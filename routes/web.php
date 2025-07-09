@@ -42,6 +42,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('setting_group.settings', SettingController::class );
     Route::resource('pages', PageController::class );
     Route::resource('products', ProductController::class );
+    Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
 
     Route::resource('header_links', HeaderLinkController::class );
     Route::resource('footer_titles', FooterTitleController::class );
