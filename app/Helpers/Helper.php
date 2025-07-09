@@ -50,3 +50,8 @@ function getEtikets(){
     $tahesab = new \App\Services\Api\Tahesab();
     $tahesab->getAllTicketsAndStoreOrUpdate();
 }
+
+function getUpdatedEtikets(){
+    $tahesab = new \App\Services\Api\Tahesab();
+    $tahesab->getUpdatedEtiketsAndStore();
+}

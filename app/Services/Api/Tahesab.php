@@ -2,6 +2,7 @@
 namespace App\Services\Api;
 use App\Models\Etiket;
 use Illuminate\Support\Facades\Http;
+use Morilog\Jalali\Jalalian;
 
 class Tahesab{
     public $api_endpoint;
@@ -160,4 +161,74 @@ class Tahesab{
         }
     }
 
+
+    public function getUpdatedEtikets($from, $to )
+    {
+        $params = [
+            'DoListGetUpdatedEtiket' => [$from, $to]
+        ];
+
+        $response = $this->makeRequest('GET', $params);
+
+        if ($response->successful()) {
+            $response = $response->json();
+            if(isset($response['Error'])){
+                return [
+                    'error' => true,
+                    'status' => 404,
+                    'message' => "یافت نشد"
+                ];
+            }
+            return $response;
+        }
+
+        // Optionally handle errors
+        return [
+            'error' => true,
+            'status' => $response->status(),
+            'message' => $response->body()
+        ];
+    }
+
+
+    public function getUpdatedEtiketsAndStore()
+    {
+        $from = Jalalian::forge(now()->addDays(-1))->format('Y-m-d');
+        $to = Jalalian::forge(now()->addDays(1))->format('Y-m-d');
+        $etitkets = $this->getUpdatedEtikets($from, $to);
+
+        if (!is_array($etitkets)) {
+            echo "Invalid response from getEtikets($from, $to): ";
+            print_r($etitkets);
+            return;
+        }
+
+        // Optional: check for error key
+        if (isset($etitkets['error'])) {
+            echo "Error in response from getEtikets($from, $to): " . $etitkets['error'] . "\n";
+            return;
+        }
+
+        foreach ($etitkets as $etiket) {
+            if (!is_array($etiket)) {
+                echo "Invalid etiket entry: ";
+                print_r($etiket);
+                continue;
+            }
+
+            Etiket::query()->updateOrCreate(
+                [
+                    'code' => $etiket['Code']
+                ],
+                [
+                    'code' => $etiket['Code'],
+                    'name' => $etiket['Name'],
+                    'weight' => $etiket['Vazn'],
+                    'price' => $etiket['OnlinePrice'],
+                    'ojrat' => $etiket['DarsadVazn'],
+                    'is_mojood' => $etiket['IsMojood'],
+                ]
+            );
+        }
+    }
 }
