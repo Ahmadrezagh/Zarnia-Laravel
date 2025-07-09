@@ -47,6 +47,11 @@ class CategoryController extends Controller
     public function store(StoreCategoryRequest $request)
     {
         $category = Category::create($request->validated());
+        if ($request->hasFile('cover_image')) {
+            $category->clearMediaCollection('cover_image');
+            $category->addMedia($request->file('cover_image'))
+                ->toMediaCollection('cover_image');
+        }
         return response()->json(['message' => 'با موفقیت انجام شد']);
 
     }
@@ -73,6 +78,11 @@ class CategoryController extends Controller
     public function update(UpdateCategoryRequest $request, Category $category)
     {
         $category->update($request->validated());
+        if ($request->hasFile('cover_image')) {
+            $category->clearMediaCollection('cover_image');
+            $category->addMedia($request->file('cover_image'))
+                ->toMediaCollection('cover_image');
+        }
         return response()->json(['message' => 'با موفقیت انجام شد']);
 
     }

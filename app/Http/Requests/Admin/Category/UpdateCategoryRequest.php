@@ -23,7 +23,8 @@ class UpdateCategoryRequest extends FormRequest
     {
         return [
             'title' => ['required'],
-            'parent_id' => ['nullable']
+            'parent_id' => ['nullable'],
+            'cover_image' => ['nullable'],
         ];
     }
 }

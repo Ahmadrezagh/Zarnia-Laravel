@@ -10,6 +10,7 @@ use Pishran\LaravelPersianSlug\HasPersianSlug;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Support\Facades\File;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Sluggable\SlugOptions;
 
 class Category extends Model implements HasMedia
@@ -80,12 +81,53 @@ class Category extends Model implements HasMedia
 
     public function getImageAttribute()
     {
-        $media = $this->getFirstMedia('categories');
-        return $media ? $media->getUrl() : null;
+        $image = $this->getFirstMediaUrl('cover_image');
+        return $image != "" ? $image : asset('img/no_image.jpg');
     }
 
     public function scopeParents(Builder $query)
     {
         return $query->where('parent_id',0);
     }
+
+    public function getCoverImageResponsiveAttribute()
+    {
+        $coverImage = $this->getFirstMedia('cover_image');
+        if($coverImage){
+            return [
+                'large' => $coverImage->getUrl('large') ?? null,
+                'medium' => $coverImage->getUrl('medium') ?? null,
+                'small' => $coverImage->getUrl('small') ?? null,
+            ];
+        }
+        return [
+            'large' => asset('img/no_image.jpg'),
+            'medium' => asset('img/no_image.jpg'),
+            'small' => asset('img/no_image.jpg'),
+        ];
+    }
+
+
+    public function registerMediaConversions(Media $media = null): void
+    {
+        $this->addMediaConversion('large')
+            ->width(505)
+            ->height(344)
+            ->format('webp')
+            ->performOnCollections('cover_image', 'gallery');
+
+        $this->addMediaConversion('medium')
+            ->width(344)
+            ->height(344)
+            ->format('webp')
+            ->performOnCollections('cover_image', 'gallery');
+
+        $this->addMediaConversion('small')
+            ->width(108)
+            ->height(108)
+            ->format('webp')
+            ->performOnCollections('cover_image', 'gallery');
+    }
+
+
 }

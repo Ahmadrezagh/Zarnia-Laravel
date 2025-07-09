@@ -21,12 +21,14 @@
                         <option value="{{$parent_category->id}}">{{$parent_category->title}}</option>
                     @endforeach
                 </x-form.select-option>
+                <x-form.file-input title="تصویر دسته بندی" name="cover_image" />
             </x-modal.create>
         </x-slot>
         <x-table
             :url="route('table.categories')"
             id="categories-table"
             :columns="[
+                            ['label' => 'تصویر', 'key' => 'image', 'type' => 'image'],
                             ['label' => 'نام', 'key' => 'title', 'type' => 'text'],
                         ]"
             :items="$categories"
@@ -49,6 +51,7 @@
                             @endif
                         @endforeach
                     </x-form.select-option>
+                    <x-form.file-input title="تصویر دسته بندی" name="cover_image" />
                 </x-modal.update>
             @endforeach
         </x-table>
