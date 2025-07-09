@@ -295,4 +295,40 @@ class Product extends Model implements HasMedia
         }
         return $query;
     }
+
+
+    public function scopeMultipleSearch(Builder $query, array $search = [])
+    {
+        $key = $search[0] ?? null;
+        $val = $search[1] ?? null;
+
+        if (!$key || !$val) {
+            return $query; // Nothing to filter
+        }
+
+        // Direct columns in the products table
+        $directColumns = ['name', 'weight', 'ojrat', 'discount_percentage'];
+
+        if (in_array($key, $directColumns)) {
+            return $query->where($key, 'like', "%$val%");
+        }
+
+        // Virtual attribute: count
+        if ($key === 'count') {
+            return $query->whereRaw("(
+            SELECT COUNT(*) FROM etikets 
+            WHERE etikets.product_id = products.id AND is_mojood = 1
+        ) = ?", [$val]);
+        }
+
+        // Related field in etikets: etiket_code
+        if ($key === 'etiket_code') {
+            return $query->whereHas('etikets', function ($q) use ($val) {
+                $q->where('code', 'like', "%$val%");
+            });
+        }
+
+        return $query; // fallback
+    }
+
 }

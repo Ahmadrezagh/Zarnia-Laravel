@@ -23,6 +23,16 @@
                         <option value="{{$category->id}}">{{$category->title}}</option>
                     @endforeach
                 </x-form.select-option>
+                <x-form.select-option title="جستجو بر اساس" id="search_key" name="search_key" col="col-3" >
+                    <option value="name">اسم محصول</option>
+                    <option value="weight">وزن</option>
+                    <option value="ojrat">درصد اجرت</option>
+                    <option value="count">موجودی</option>
+                    <option value="discount_percentage">درصد تخفیف</option>
+                    <option value="etiket_code">اتیکت</option>
+                </x-form.select-option>
+                <x-form.input title="جستجو" name="search" id="search" />
+
             </div>
         </x-slot>
         <x-dataTable
@@ -437,5 +447,23 @@
 
             window.loadDataWithNewUrl(finalUrl);
         }
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('search');
+
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    let searchVal = $("#search").val()
+                    let searchKey = $("#search_key").val()
+                    if(searchKey == '0'){
+                        toastr.error('ابتدا تعیین کنید جستجو بر اساس چه معیاری باشد')
+                    }else{
+                        window.loadDataWithNewUrl('{{ route('table.products') }}?searchKey='+searchKey+'&searchVal='+searchVal);
+                    }
+                }
+            });
+        });
+
     </script>
 @endsection

@@ -215,11 +215,12 @@ class ProductController extends Controller
         $data = $query
             ->skip($start)
             ->take($length)
+
+            ->multipleSearch([$request->searchKey,$request->searchVal])
             ->WithMojoodCount($count_dir)
             ->WithImageStatus($image_dir)
             ->SortMojood($is_mojood_dir)
             ->FilterProduct($request->filter)
-
             ->categories($request->category_ids)
             ->get()
             ->map(function ($item) {

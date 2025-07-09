@@ -9,5 +9,5 @@
 ])
 <div class="form-group {{$col}}">
     <label for="">{{$title}}</label>
-    <input value="{{$value}}" type="{{$type}}" class="form-control {{$class}}" name="{{$name}}">
+    <input value="{{$value}}" type="{{$type}}" id="{{$id}}" class="form-control {{$class}}" name="{{$name}}">
 </div>
