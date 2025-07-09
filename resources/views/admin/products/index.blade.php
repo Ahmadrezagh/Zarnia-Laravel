@@ -331,7 +331,7 @@
                 <input type="file" class="custom-file-input" name="cover_image" accept="image/*" >
             </div>
 
-            <button type="button" onclick="submitBulkUpdate(this)" class="btn btn-primary">Update</button>
+            <button type="button" onclick="submitBulkUpdate(this)" class="btn btn-primary">ویرایش</button>
         </form>
     `;
 
