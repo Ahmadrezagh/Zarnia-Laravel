@@ -288,7 +288,7 @@ class Product extends Model implements HasMedia
                 case 'only_main_products':
                     return $query->whereNull('parent_id');
                 case 'only_discountables':
-                    return $query->whereNull('discount_percentage');
+                    return $query->HasDiscount(1);
                 default:
                     return $query;
             }
