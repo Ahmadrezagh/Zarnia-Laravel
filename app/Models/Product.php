@@ -324,7 +324,7 @@ class Product extends Model implements HasMedia
         // Related field in etikets: etiket_code
         if ($key === 'etiket_code') {
             return $query->whereHas('etikets', function ($q) use ($val) {
-                $q->where('code', 'like', "%$val%");
+                $q->where('code', '=', $val);
             });
         }
 
