@@ -294,9 +294,9 @@ class ProductController extends Controller
                 \Log::info('Processing cover_image for product ID: ' . $product->id . ' using file: ' . $copyPath);
 
                 try {
-                    $product->clearMediaCollection('cover_image');
+//                    $product->clearMediaCollection('cover_image');
                     $product->addMedia($copyPath)
-                        ->toMediaCollection('cover_image');
+                        ->toMediaCollection('gallery');
                     // Delete the copied file
                     \Storage::disk('public')->delete('temp/' . $product->id . '_' . $fileName);
                     \Log::info('Copied file deleted: ' . 'temp/' . $product->id . '_' . $fileName);
