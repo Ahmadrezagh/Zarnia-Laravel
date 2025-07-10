@@ -277,12 +277,28 @@ class Product extends Model implements HasMedia
     ) = 0');
     }
 
+    public function scopeWithoutImage(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('media', function ($q) {
+            $q->where('collection_name', 'cover_image'); // optional: target a specific collection
+        });
+    }
+    public function scopeWithoutGallery(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('media', function ($q) {
+            $q->where('collection_name', 'cover_image'); // optional: target a specific collection
+        });
+    }
     public function scopeFilterProduct(Builder $query, $filter = null)
     {
         if($filter){
             switch ($filter) {
                 case 'only_images':
                     return $query->hasImage();
+                case 'only_without_images':
+                    return $query->WithoutImage();
+                case 'only_without_gallery':
+                    return $query->WithoutGallery();
                 case 'only_unavilables':
                     return $query->WhereMojoodIsZero();
                 case 'only_main_products':

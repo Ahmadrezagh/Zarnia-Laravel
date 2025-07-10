@@ -14,6 +14,8 @@
             <div class="row">
                 <x-form.select-option title="فیلتر" id="test" name="filters" col="col-3" onChange="filterProductsSelectOption(this)">
                     <option value="?filter=only_images">محصولات عکس دار</option>
+                    <option value="?filter=only_without_images">محصولات غیر عکس دار</option>
+                    <option value="?filter=only_without_gallery">محصولات بدون گالری</option>
                     <option value="?filter=only_unavilables">محصولات ناموجود</option>
                     <option value="?filter=only_main_products">محصولات متغییر</option>
                     <option value="?filter=only_discountables">محصولات تخفیف دار</option>
