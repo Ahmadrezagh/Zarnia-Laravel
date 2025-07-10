@@ -209,6 +209,8 @@ class ProductController extends Controller
             if ($column && Schema::hasColumn('products', $column)) {
                 $query->orderBy($column, $direction);
             }
+        }else{
+            $query = $query->latest('id');
         }
 
         // Fetch paginated data
