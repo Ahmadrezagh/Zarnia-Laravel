@@ -310,7 +310,7 @@ class Product extends Model implements HasMedia
         $directColumns = ['name', 'weight', 'ojrat', 'discount_percentage'];
 
         if (in_array($key, $directColumns)) {
-            return $query->where($key, 'like', "%$val%");
+            return $query->where($key, '=', $val);
         }
 
         // Virtual attribute: count
