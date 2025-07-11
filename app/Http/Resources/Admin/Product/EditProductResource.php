@@ -38,7 +38,7 @@ class EditProductResource extends JsonResource
             'discount_percentage' => $this->discount_percentage,
             'count' => $this->count,
             'description' => $this->description,
-            'price' => number_format($this->getRawOriginal('price') /10) ,
+            'price' => ($this->getRawOriginal('price') /10) ,
             'discounted_price' => $this->discounted_price,
             'categories' => CategoryResource::collection(Category::all()),
             'gallery' => $this->getMedia('gallery')->map(function ($media, $index) {
