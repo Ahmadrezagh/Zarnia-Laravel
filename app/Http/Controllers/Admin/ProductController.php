@@ -319,4 +319,30 @@ class ProductController extends Controller
     }
 
 
+    public function assignCategory(Request $request)
+    {
+        if (is_string($request->product_ids)) {
+            $productIds = json_decode($request->product_ids, true);
+            $request->merge(['product_ids' => $productIds]);
+        }
+        $fromPrice = $request->from_price ?? null;
+        $toPrice = $request->to_price ?? null;
+        $category_ids = $request->category_ids ?? null;
+        if($category_ids && ($fromPrice || $toPrice)){
+            $query = Product::query();
+            if($fromPrice){
+                $fromPrice = $fromPrice * 10;
+                $query = $query->where('price' , '>=', $fromPrice);
+            }
+            if($toPrice){
+                $toPrice = $toPrice * 10;
+                $query = $query->where('price' , '<=', $toPrice);
+            }
+            $products = $query->get();
+            foreach ($products as $product) {
+                $product->categories()->sync($category_ids);
+            }
+        }
+        return response()->json($products);
+    }
 }

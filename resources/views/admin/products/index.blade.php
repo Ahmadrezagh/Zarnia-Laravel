@@ -11,7 +11,7 @@
     <x-page>
         <x-slot name="header">
             <button class="btn btn-primary mb-3"  href="#">افزودن محصول جامع</button>
-            <div class="row">
+            <div class="row mb-3">
                 <x-form.select-option title="فیلتر" id="test" name="filters" col="col-3" onChange="filterProductsSelectOption(this)">
                     <option value="?filter=only_images">محصولات عکس دار</option>
                     <option value="?filter=only_without_images">محصولات غیر عکس دار</option>
@@ -36,6 +36,9 @@
                 <x-form.input title="جستجو" name="search" id="search" />
                 <div class="col-3">
                     <button type="button" class="btn btn-primary" onclick="showBulkUpdateModal()">ویرایش دسته جمعی </button>
+                </div>
+                <div class="col-3">
+                    <button type="button" class="btn btn-primary" onclick="showAssignCategoryModal()">ویرایش دسته بندی </button>
                 </div>
             </div>
         </x-slot>
@@ -351,6 +354,50 @@
                 width: '100%'
             });
         }
+        function showAssignCategoryModal() {
+            eraseModalContent();
+
+            const formHtml = `
+        <form id="bulkUpdateForm" enctype="multipart/form-data">
+            <input type="hidden" name="product_ids" id="product_ids">
+
+            <div class="form-group">
+                <label>از قیمت</label>
+                <input type="number" name="from_price" class="form-control">
+            </div>
+
+
+            <div class="form-group">
+                <label>تا قیمت قیمت</label>
+                <input type="number" name="to_price" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>دسته بندی</label>
+                <select name="category_ids[]" multiple class="form-control s2" style="width:100%">
+                    @foreach($categories as $category)
+                        <option value="{{$category->id}}">{{$category->title}}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <button type="button" onclick="submitAssignCategory(this)" class="btn btn-primary">ویرایش</button>
+        </form>
+    `;
+
+            appendToModalContent(formHtml);
+
+            // Set the selected product IDs from hidden input
+            $('#product_ids').val($('#selectedValues').val());
+
+            showDynamicModal();
+
+            $('.s2').select2({
+                placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
+                allowClear: true,
+                width: '100%'
+            });
+        }
 
 
     </script>
@@ -371,6 +418,30 @@
 
             $.ajax({
                 url: '{{ route('products.bulk_update') }}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    // alert('Products updated successfully!');
+
+                    window.refreshTable();
+                    $('#dynamic-modal').modal('hide');
+                },
+                error: function (xhr) {
+                    alert('An error occurred: ' + xhr.responseText);
+                }
+            });
+        }
+        function submitAssignCategory(button) {
+            const form = $(button).closest('form')[0];
+            const formData = new FormData(form);
+
+
+            formData.append('_token', '{{ csrf_token() }}');
+
+            $.ajax({
+                url: '{{ route('products.assign_category') }}',
                 method: 'POST',
                 data: formData,
                 processData: false,

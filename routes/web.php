@@ -43,6 +43,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('pages', PageController::class );
     Route::resource('products', ProductController::class );
     Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
+    Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
 
     Route::resource('header_links', HeaderLinkController::class );
     Route::resource('footer_titles', FooterTitleController::class );
