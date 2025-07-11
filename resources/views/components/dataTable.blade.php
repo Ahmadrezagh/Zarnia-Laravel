@@ -60,7 +60,7 @@
                 serverSide: true,
                 responsive: false,
                 pageLength: defaultPerPage,
-                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                lengthMenu: [[10, 25, 50, 100,250,500,1000,2000,5000,10000], [10, 25, 50, 100,250,500,1000,2000,5000,10000]],
                 order: [],
                 ajax: {
                     url: '{{ $url }}',
