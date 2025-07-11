@@ -21,6 +21,7 @@ class AdminProductResource extends JsonResource
             'image' => $this->image,
             'weight' => $this->weight,
             'ojrat' => $this->ojrat,
+            'darsad_kharid' => $this->darsad_kharid,
             'price' => number_format($this->price)." تومان",
             'categories_title' => $this->categories_title,
             'discount_percentage' => $this->discount_percentage,
