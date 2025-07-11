@@ -17,7 +17,10 @@ class EtiketObserver
             ->where('weight','=',$etiket->weight)
             ->first();
         if ($product) {
-            $product->update(['ojrat' => $etiket->ojrat]);
+            $product->update([
+                'ojrat' => $etiket->ojrat,
+                'darsad_kharid' => $etiket->darsad_kharid,
+            ]);
             $etiket->update([
                 'product_id' => $product->id,
             ]);
@@ -35,6 +38,7 @@ class EtiketObserver
                 $product->save();
                 $etiket->update([
                     'product_id' => $product->id,
+                    'darsad_kharid' => $etiket->darsad_kharid,
                 ]);
             }else{
                 $product = Product::create([
@@ -42,6 +46,7 @@ class EtiketObserver
                     'weight' => $etiket->weight,
                     'price' => $etiket->price,
                     'ojrat' => $etiket->ojrat,
+                    'darsad_kharid' => $etiket->darsad_kharid,
                 ]);
                 $etiket->update([
                     'product_id' => $product->id,
@@ -65,6 +70,7 @@ class EtiketObserver
                 'ojrat' => $etiket->ojrat,
                 'weight' => $etiket->weight,
                 'price' => $etiket->price,
+                'darsad_kharid' => $etiket->darsad_kharid,
             ]);
         }
     }

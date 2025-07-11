@@ -13,6 +13,7 @@ class Etiket extends Model
         'price',
         'product_id',
         'ojrat',
-        'is_mojood'
+        'is_mojood',
+        'darsad_kharid'
     ];
 }

@@ -28,7 +28,8 @@ class Product extends Model implements HasMedia
         'description',
         'attribute_group_id',
         'discount_percentage',
-        'ojrat'
+        'ojrat',
+        'darsad_kharid'
     ];
 
 

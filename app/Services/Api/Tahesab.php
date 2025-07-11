@@ -100,6 +100,7 @@ class Tahesab{
                     'price' => $etiket['OnlinePrice'],
                     'ojrat' => $etiket['DarsadVazn'],
                     'is_mojood' => $etiket['IsMojood'],
+                    'darsad_kharid' => $etiket['DarsadVaznMaye'],
                 ]
             );
         }
@@ -227,6 +228,7 @@ class Tahesab{
                     'price' => $etiket['OnlinePrice'],
                     'ojrat' => $etiket['DarsadVazn'],
                     'is_mojood' => $etiket['IsMojood'],
+                    'darsad_kharid' => $etiket['DarsadVaznMaye'],
                 ]
             );
         }
