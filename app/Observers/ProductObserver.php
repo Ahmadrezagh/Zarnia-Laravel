@@ -61,6 +61,7 @@ class ProductObserver
             $product->discounted_price = $product->getRawOriginal('price') - $discountedPrice;
         } else {
             $product->discounted_price = null;
+            $product->discount_percentage = 0;
         }
 
         $product->saveQuietly();
