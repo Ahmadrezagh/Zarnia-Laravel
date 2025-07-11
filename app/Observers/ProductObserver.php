@@ -53,12 +53,12 @@ class ProductObserver
     {
         if ($product->price != 0 && $product->discount_percentage != 0) {
             // Calculate discounted price
-            $discountedPrice = $product->getRawOriginal('price') * (1 - $product->discount_percentage / 100);
+            $discountedPrice = $product->originalPrice * (1 - $product->discount_percentage / 100);
 
             // Round to nearest 1000 (last three digits to 000)
             $discountedPrice = round($discountedPrice, -3);
 
-            $product->discounted_price = $product->getRawOriginal('price') - $discountedPrice;
+            $product->discounted_price = $product->originalPrice - $discountedPrice;
         } else {
             $product->discounted_price = null;
             $product->discount_percentage = 0;
