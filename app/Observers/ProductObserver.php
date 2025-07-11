@@ -58,7 +58,7 @@ class ProductObserver
             // Round to nearest 1000 (last three digits to 000)
             $discountedPrice = round($discountedPrice, -3);
 
-            $product->discounted_price = $product->originalPrice - $discountedPrice;
+            $product->discounted_price = $discountedPrice;
         } else {
             $product->discounted_price = null;
             $product->discount_percentage = 0;
