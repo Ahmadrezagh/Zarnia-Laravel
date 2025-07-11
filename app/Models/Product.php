@@ -44,9 +44,9 @@ class Product extends Model implements HasMedia
         if($this->discounted_price){
             $price = $this->discounted_price;
         }else{
-            $price = $value;
+            $price = $value/10;
         }
-        return $price/10;
+        return $price;
     }
     public function getPriceWithoutDiscountAttribute($value)
     {
