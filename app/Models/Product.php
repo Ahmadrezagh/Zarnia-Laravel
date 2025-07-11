@@ -347,4 +347,9 @@ class Product extends Model implements HasMedia
         return $query; // fallback
     }
 
+    public function getOriginalPriceAttribute()
+    {
+        return $this->getRawOriginal('price') /10;
+    }
+
 }
