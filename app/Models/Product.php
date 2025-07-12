@@ -324,10 +324,13 @@ class Product extends Model implements HasMedia
         }
 
         // Direct columns in the products table
-        $directColumns = ['name', 'weight', 'ojrat', 'discount_percentage'];
+        $directColumns = ['weight', 'ojrat', 'discount_percentage'];
 
         if (in_array($key, $directColumns)) {
             return $query->where($key, '=', $val);
+        }
+        if ($key == 'name') {
+            return $query->where($key, 'like', '%'.$val.'%');
         }
 
         // Virtual attribute: count
