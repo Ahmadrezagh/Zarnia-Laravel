@@ -65,7 +65,14 @@ class ProductItemResouce extends JsonResource
             'related_products' => [],
             'complementary_products' => [],
             'categories' => CategoryResource::collection($this->categories),
-            'is_favorite' => $is_favorite
+            'is_favorite' => $is_favorite,
+            'purity' => '18',
+            'gold_price' => '6640400',
+            'options' => [
+                'title' => 'سایز',
+                'value' => '8'
+            ],
+
         ];
     }
 }
