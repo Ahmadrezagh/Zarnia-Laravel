@@ -370,4 +370,8 @@ class Product extends Model implements HasMedia
             ->having('count', '>', 0); // <- this ensures count is not zero
     }
 
+    public function scopeMain(Builder $query)
+    {
+        return $query->whereNull('parent_id');
+    }
 }

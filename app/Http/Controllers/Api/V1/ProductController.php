@@ -15,6 +15,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $products = Product::query()
+            ->main()
             ->OrderByEffectivePrice($request->price_dir)
             ->categories($request->category_ids)
             ->search($request->search)
