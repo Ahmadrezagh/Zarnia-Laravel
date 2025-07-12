@@ -21,8 +21,7 @@ class ProductController extends Controller
             ->minPrice($request->minPrice)
             ->maxPrice($request->maxPrice)
             ->HasDiscount($request->hasDiscount)
-            ->hasCount()
-            ->hasImage()
+            ->hasCountAndImage()
             ->paginate($request->get('per_page') ?? 12);
         return ProductListResouce::collection($products);
     }

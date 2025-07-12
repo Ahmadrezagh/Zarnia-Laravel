@@ -353,4 +353,17 @@ class Product extends Model implements HasMedia
         return $this->getRawOriginal('price') /10;
     }
 
+    public function scopeHasCountAndImage(Builder $query): Builder
+    {
+        return $query
+            ->withCount([
+                'etikets as count' => function ($query) {
+                    $query->where('is_mojood', 1);
+                }
+            ])
+            ->whereHas('media', function ($q) {
+                $q->where('collection_name', 'cover_image');
+            });
+    }
+
 }
