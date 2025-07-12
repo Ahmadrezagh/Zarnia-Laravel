@@ -46,6 +46,9 @@
             :url="route('table.products')"
             id="products-table"
             hasCheckbox="true"
+            changeColorKey="parent_id"
+            changeColorHasValue="true"
+            changeColorToColor="#dbd7d7"
             :columns="[
                             ['label' => 'کد اتیکت', 'key' => 'etiketsCodeAsArray', 'type' => 'ajax','route' =>'product.etikets','ajax_key' => 'slug'],
                             ['label' => 'تصویر محصول', 'key' => 'image', 'type' => 'image'],

@@ -5,6 +5,10 @@
     'columns' => [],
     'actions' => [],
     'perPage' => 10,
+    'changeColorKey' => '',
+    'changeColorHasValue' => '',
+    'changeColorValue' => '',
+    'changeColorToColor' => '',
 ])
 
 <div class="table-responsive" style="overflow-x: auto;">
@@ -149,6 +153,22 @@
                     }
                     @endif
                 ],
+                createdRow: function(row, data, dataIndex) {
+                    @if($changeColorKey)
+                    const key = '{{ $changeColorKey }}';
+                    const hasValue = '{{ $changeColorHasValue }}' === 'true';
+                    const value = '{{ $changeColorValue }}';
+                    const color = '{{ $changeColorToColor }}';
+
+                    if (key && color) {
+                        if (hasValue && data[key]) {
+                            $(row).css('background-color', color);
+                        } else if (data[key] === value) {
+                            $(row).css('background-color', color);
+                        }
+                    }
+                    @endif
+                },
                 language: {
                     processing: 'در حال بارگذاری...',
                     emptyTable: 'داده‌ای در دسترس نیست',

@@ -165,15 +165,21 @@ class Product extends Model implements HasMedia
     // Optional: Generate thumbnail conversions for media
     public function registerMediaConversions(Media $media = null): void
     {
-        $this->addMediaConversion('large')
+        $this->addMediaConversion('xlarge')
             ->width(505)
+            ->height(505)
+            ->format('webp')
+            ->performOnCollections('cover_image', 'gallery');
+
+        $this->addMediaConversion('large')
+            ->width(344)
             ->height(344)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
 
         $this->addMediaConversion('medium')
-            ->width(344)
-            ->height(344)
+            ->width(200)
+            ->height(200)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
 
