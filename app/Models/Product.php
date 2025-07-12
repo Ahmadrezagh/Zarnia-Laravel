@@ -363,7 +363,8 @@ class Product extends Model implements HasMedia
             ])
             ->whereHas('media', function ($q) {
                 $q->where('collection_name', 'cover_image');
-            });
+            })
+            ->having('count', '>', 0); // <- this ensures count is not zero
     }
 
 }
