@@ -203,7 +203,7 @@ class Product extends Model implements HasMedia
         $coverImage = $this->getFirstMedia('cover_image');
         if($coverImage){
             return [
-                'xlarge' => $coverImage->getUrl('large') ?? null,
+                'xlarge' => $coverImage->getUrl('xlarge') ?? null,
                 'large' => $coverImage->getUrl('large') ?? null,
                 'medium' => $coverImage->getUrl('medium') ?? null,
                 'small' => $coverImage->getUrl('small') ?? null,
