@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Product;
 
+use App\Models\Favorite;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,7 +17,13 @@ class ProductListResouce extends JsonResource
     public function toArray(Request $request): array
     {
         $product = Product::find($this->id);
-
+        $is_favorite = false;
+        if($this->user){
+            $is_favorite = Favorite::query()->where([
+                'user_id' => $this->user->id,
+                'product_id' => $this->id
+            ])->exists();
+        }
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -27,7 +34,8 @@ class ProductListResouce extends JsonResource
             'price' => number_format($this->price),
             'price_without_discount' => number_format($this->price_without_discount),
             'discount_percentage' => $this->discount_percentage,
-            'snapp_pay_each_installment' => number_format($this->price/4)
+            'snapp_pay_each_installment' => number_format($this->price/4),
+            'is_favorite' => $is_favorite,
         ];
     }
 }
