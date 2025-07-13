@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\Product\ProductListCollection;
 use App\Http\Resources\Api\V1\Product\ProductListResouce;
 use App\Models\Favorite;
 use App\Models\Product;
@@ -37,6 +38,6 @@ class FavoriteProductController extends Controller
     public function list()
     {
         $user = auth()->user();
-        return ProductListResouce::collection($user->favoriteProducts()->paginate());
+        return new ProductListCollection($user->favoriteProducts()->paginate(),$user);
     }
 }

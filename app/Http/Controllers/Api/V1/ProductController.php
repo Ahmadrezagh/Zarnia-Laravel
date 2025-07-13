@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\Product\ProductItemResouce;
+use App\Http\Resources\Api\V1\Product\ProductListCollection;
 use App\Http\Resources\Api\V1\Product\ProductListResouce;
 use App\Models\Favorite;
 use App\Models\Product;
@@ -14,6 +15,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user('sanctum');
         $products = Product::query()
             ->main()
             ->OrderByEffectivePrice($request->price_dir)
@@ -24,7 +26,7 @@ class ProductController extends Controller
             ->HasDiscount($request->hasDiscount)
             ->hasCountAndImage()
             ->paginate($request->get('per_page') ?? 12);
-        return ProductListResouce::collection($products);
+        return new ProductListCollection($products, $user);
     }
 
     public function show(Request $request, Product $product)

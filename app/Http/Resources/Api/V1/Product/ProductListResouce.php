@@ -9,6 +9,14 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductListResouce extends JsonResource
 {
+    protected $user;
+    public function __construct($resource,$user = null)
+    {
+        parent::__construct($resource);
+
+        $this->user = $user;
+    }
+
     /**
      * Transform the resource into an array.
      *
@@ -18,10 +26,9 @@ class ProductListResouce extends JsonResource
     {
         $product = Product::find($this->id);
         $is_favorite = false;
-        $user = auth()->user();
-        if($user){
+        if($this->user){
             $is_favorite = Favorite::query()->where([
-                'user_id' => $user->id,
+                'user_id' => $this->user->id,
                 'product_id' => $this->id
             ])->exists();
         }
