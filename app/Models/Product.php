@@ -167,26 +167,31 @@ class Product extends Model implements HasMedia
     public function registerMediaConversions(Media $media = null): void
     {
         $this->addMediaConversion('xlarge')
-            ->crop(505,505,CropPosition::Center)
+            ->crop(505, 505, CropPosition::Center)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
 
         $this->addMediaConversion('large')
-            ->crop(344,344,CropPosition::Center)
+            ->crop(505, 505, CropPosition::Center)
+            ->width(344)
+            ->height(344)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
 
         $this->addMediaConversion('medium')
-            ->crop(200,200,CropPosition::Center)
+            ->crop(505, 505, CropPosition::Center)
+            ->width(200)
+            ->height(200)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
 
         $this->addMediaConversion('small')
-            ->crop(108,108,CropPosition::Center)
+            ->crop(505, 505, CropPosition::Center)
+            ->width(108)
+            ->height(108)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
     }
-
     public function getOjratAttribute($value)
     {
         if($value)
