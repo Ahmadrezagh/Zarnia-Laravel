@@ -38,6 +38,7 @@ class ProductItemResouce extends JsonResource
         $galleryImages = $product->getMedia('gallery');
         $galleryUrls = $galleryImages->map(function ($media) {
             return [
+                'xlarge' => $media->getUrl('xlarge'),
                 'large' => $media->getUrl('large'),
                 'medium' => $media->getUrl('medium'),
                 'small' => $media->getUrl('small'),
