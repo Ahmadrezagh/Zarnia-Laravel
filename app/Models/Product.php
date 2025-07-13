@@ -9,6 +9,7 @@ use App\Traits\Scopes\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Pishran\LaravelPersianSlug\HasPersianSlug;
+use Spatie\Image\Enums\CropPosition;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Sluggable\SlugOptions;
@@ -166,26 +167,22 @@ class Product extends Model implements HasMedia
     public function registerMediaConversions(Media $media = null): void
     {
         $this->addMediaConversion('xlarge')
-            ->width(505)
-            ->height(505)
+            ->crop(505,505,CropPosition::Center)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
 
         $this->addMediaConversion('large')
-            ->width(344)
-            ->height(344)
+            ->crop(344,344,CropPosition::Center)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
 
         $this->addMediaConversion('medium')
-            ->width(200)
-            ->height(200)
+            ->crop(200,200,CropPosition::Center)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
 
         $this->addMediaConversion('small')
-            ->width(108)
-            ->height(108)
+            ->crop(108,108,CropPosition::Center)
             ->format('webp')
             ->performOnCollections('cover_image', 'gallery');
     }
