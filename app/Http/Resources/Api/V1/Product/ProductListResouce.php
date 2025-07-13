@@ -18,9 +18,10 @@ class ProductListResouce extends JsonResource
     {
         $product = Product::find($this->id);
         $is_favorite = false;
-        if($this->user){
+        $user = auth()->user();
+        if($user){
             $is_favorite = Favorite::query()->where([
-                'user_id' => $this->user->id,
+                'user_id' => $user->id,
                 'product_id' => $this->id
             ])->exists();
         }

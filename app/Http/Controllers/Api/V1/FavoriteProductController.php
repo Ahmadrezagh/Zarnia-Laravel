@@ -37,6 +37,6 @@ class FavoriteProductController extends Controller
     public function list()
     {
         $user = auth()->user();
-        return ProductListResouce::collection($user->favoriteProducts);
+        return ProductListResouce::collection($user->favoriteProducts()->paginate());
     }
 }
