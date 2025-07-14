@@ -27,7 +27,8 @@ class ShoppingCartResource extends JsonResource
 
             'items' => ShoppingCartItemResource::collection($this->items),
             'sumPrice' => $sumPrice,
-            'sumPrice_formatted' => number_format($sumPrice)
+            'sumPriceFormatted' => number_format($sumPrice),
+            'count' => count($this->items),
         ];
     }
 
