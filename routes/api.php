@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AddressController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BlogController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteProductController;
 use App\Http\Controllers\Api\V1\GatewayController;
@@ -30,6 +31,8 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
 
         Route::get('shippings', [ShippingController::class, 'index']);
         Route::get('gateways', [GatewayController::class, 'index']);
+        Route::get('blogs', [BlogController::class, 'index']);
+        Route::get('blogs/{blog}', [GatewayController::class, 'show']);
         // Protected routes
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('/user', function (Request $request) {
