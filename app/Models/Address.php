@@ -10,6 +10,9 @@ class Address extends Model
         'user_id',
         'receiver_name',
         'receiver_phone',
-        'address'
+        'address',
+        'postal_code',
+        'province_id',
+        'city_id',
     ];
 }
