@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->integer('price');
-            $table->integer('passive_price');
+            $table->integer('passive_price')->default(0);
             $table->timestamps();
         });
     }
