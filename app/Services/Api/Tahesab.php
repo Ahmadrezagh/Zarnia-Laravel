@@ -84,25 +84,13 @@ class Tahesab{
 
         foreach ($etitkets as $etiket) {
             if (!is_array($etiket)) {
+                echo "Error in response from getEtikets($from, $to)\n";
                 echo "Invalid etiket entry: ";
                 print_r($etiket);
                 continue;
             }
 
-            Etiket::query()->updateOrCreate(
-                [
-                    'code' => $etiket['Code']
-                ],
-                [
-                    'code' => $etiket['Code'],
-                    'name' => $etiket['Name'],
-                    'weight' => $etiket['Vazn'],
-                    'price' => $etiket['OnlinePrice'],
-                    'ojrat' => $etiket['DarsadVazn'],
-                    'is_mojood' => $etiket['IsMojood'],
-                    'darsad_kharid' => $etiket['DarsadVaznMaye'],
-                ]
-            );
+            $this->updateOrCreateEtiket($etiket);
         }
     }
 
@@ -138,7 +126,7 @@ class Tahesab{
             $GetEtiketTableInfo['MaxCode']) {
 
             $minCode = $GetEtiketTableInfo['MinCode'];
-            $maxCode = $GetEtiketTableInfo['MaxCode'];
+            $maxCode = $GetEtiketTableInfo['MaxCode'] - 1;
             $currentMax = 500;
 
             echo "Starting to fetch etikets from code $minCode to $maxCode\n";
@@ -217,20 +205,25 @@ class Tahesab{
                 continue;
             }
 
-            Etiket::query()->updateOrCreate(
-                [
-                    'code' => $etiket['Code']
-                ],
-                [
-                    'code' => $etiket['Code'],
-                    'name' => $etiket['Name'],
-                    'weight' => $etiket['Vazn'],
-                    'price' => $etiket['OnlinePrice'],
-                    'ojrat' => $etiket['DarsadVazn'],
-                    'is_mojood' => $etiket['IsMojood'],
-                    'darsad_kharid' => $etiket['DarsadVaznMaye'],
-                ]
-            );
+            $this->updateOrCreateEtiket($etiket);
         }
+    }
+
+    public function updateOrCreateEtiket($etiket)
+    {
+        Etiket::query()->updateOrCreate(
+            [
+                'code' => $etiket['Code']
+            ],
+            [
+                'code' => $etiket['Code'],
+                'name' => $etiket['Name'],
+                'weight' => $etiket['Vazn'],
+                'price' => $etiket['OnlinePrice'],
+                'ojrat' => $etiket['DarsadVazn'],
+                'is_mojood' => $etiket['IsMojood'],
+                'darsad_kharid' => $etiket['DarsadVaznMaye'],
+            ]
+        );
     }
 }
