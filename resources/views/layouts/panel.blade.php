@@ -187,6 +187,9 @@
                             <li class="nav-sub-item">
                                 <a class="nav-sub-link" href="{{route('products.index')}}">محصولات</a>
                             </li>
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('products.products_not_available')}}">محصولات ناموجود</a>
+                            </li>
                         </ul>
                     </li>
                 @endif

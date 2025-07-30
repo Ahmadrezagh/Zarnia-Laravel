@@ -26,6 +26,12 @@ class ProductController extends Controller
         $categories = Category::query()->get();
         return view('admin.products.index', compact('products','categories'));
     }
+    public function notAvailable()
+    {
+        $products = Product::query()->paginate();
+        $categories = Category::query()->get();
+        return view('admin.products.index_not_available', compact('products','categories'));
+    }
 
     /**
      * Show the form for creating a new resource.
@@ -163,7 +169,81 @@ class ProductController extends Controller
 
     public function table(Request $request)
     {
-        $query = Product::query()->main()->select('*'); // Assuming your model is Product
+        $query = Product::query()->available()->main()->select('*'); // Assuming your model is Product
+
+        // Get total records before applying filters
+        $totalRecords = $query->count();
+
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->input('search.value'))) {
+            $search = $request->input('search.value');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")->orWhereHas('etikets', function ($q2) use ($search) {
+                    $q2->where('code', '=', "{$search}"); // Search in etiket code
+                });
+            });
+        }
+
+        // Get filtered records count after search
+        $filteredRecords = $query->count();
+
+        // Handle pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10); // Default to 10 if length is missing or invalid
+        if ($length <= 0) {
+            $length = 10; // Ensure length is positive to avoid SQL error
+        }
+
+        $is_mojood_dir = 'desc';
+        $image_dir = null;
+        $count_dir = null;
+        // Apply sorting if provided
+        if ($request->has('order') && !empty($request->input('order'))) {
+            $order = $request->input('order')[0];
+            $columnIndex = $order['column'];
+            $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
+            $column = $request->input("columns.{$columnIndex}.data");
+            if($columnIndex == 1){
+                $is_mojood_dir = $direction;
+            }
+            if($columnIndex == 2){
+                $image_dir = $direction;
+            }
+            if($columnIndex == 6){
+                $count_dir = $direction;
+            }
+            if ($column && Schema::hasColumn('products', $column)) {
+                $query->orderBy($column, $direction);
+            }
+        }else{
+            $query = $query->latest('id');
+        }
+
+        // Fetch paginated data
+        $data = $query
+            ->skip($start)
+            ->take($length)
+
+            ->multipleSearch([$request->searchKey,$request->searchVal])
+            ->WithMojoodCount($count_dir)
+            ->WithImageStatus($image_dir)
+            ->SortMojood($is_mojood_dir)
+            ->FilterProduct($request->filter)
+            ->categories($request->category_ids)
+            ->get()
+            ->map(function ($item) {
+                return AdminProductResource::make($item); // Ensure all necessary fields are included
+            });
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data
+        ]);
+    }
+    public function not_available_table(Request $request)
+    {
+        $query = Product::query()->notAvailable()->main()->select('*'); // Assuming your model is Product
 
         // Get total records before applying filters
         $totalRecords = $query->count();

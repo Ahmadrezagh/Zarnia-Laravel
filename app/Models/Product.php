@@ -226,6 +226,27 @@ class Product extends Model implements HasMedia
         }, 'is_mojood');
     }
 
+    public function scopeAvailable($query)
+    {
+        return $query->whereExists(function ($q) {
+            $q->selectRaw(1)
+                ->from('etikets')
+                ->whereColumn('etikets.product_id', 'products.id')
+                ->where('etikets.is_mojood', 1);
+        });
+    }
+
+    public function scopeNotAvailable($query)
+    {
+        return $query->whereNotExists(function ($q) {
+            $q->selectRaw(1)
+                ->from('etikets')
+                ->whereColumn('etikets.product_id', 'products.id')
+                ->where('etikets.is_mojood', 1);
+        });
+    }
+
+
     public function scopeSortMojood(Builder $query, $direction = null)
     {
         if($direction && in_array($direction, ['asc', 'desc'])){
