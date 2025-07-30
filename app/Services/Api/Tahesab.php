@@ -150,7 +150,6 @@ class Tahesab{
         }
     }
 
-
     public function getUpdatedEtikets($from, $to )
     {
         $params = [
