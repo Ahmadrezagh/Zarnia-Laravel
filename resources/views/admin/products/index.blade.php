@@ -10,7 +10,8 @@
 
     <x-page>
         <x-slot name="header">
-            <button class="btn btn-primary mb-3"  href="#">افزودن محصول جامع</button>
+            <button class="btn btn-primary mb-3"  type="button" onclick="createAssembledProduct()" >افزودن محصول جامع</button>
+
             <div class="row mb-3">
                 <x-form.select-option title="فیلتر" id="test" name="filters" col="col-3" onChange="filterProductsSelectOption(this)">
                     <option value="?filter=only_images">محصولات عکس دار</option>
@@ -70,7 +71,7 @@
     </x-page>
 
     <!-- Dynamic modal -->
-    <div class="modal fade" id="dynamic-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="dynamic-modal" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -312,9 +313,6 @@
             });
         }
 
-
-
-
         function showBulkUpdateModal() {
             eraseModalContent();
 
@@ -358,6 +356,7 @@
                 width: '100%'
             });
         }
+
         function showAssignCategoryModal() {
             eraseModalContent();
 
@@ -403,6 +402,51 @@
             });
         }
 
+        function createAssembledProduct(){
+            eraseModalContent()
+            appendToModalContent(`
+<form action="{{route("products.store")}}" method="POST" >
+<x-form.input  title="نام محصول  جامع" name="name" />
+<div class="form-group">
+<label for="">محصولات</label>
+<select id="etiket-select" name="product_ids" class="form-control" style="width: 100%" multiple ></select>
+</div>
+<button class="btn btn-success" type="submit">ایجاد</button>
+</form>
+
+`)
+            $('#etiket-select').select2({
+                placeholder: 'Enter exact etiket code',
+                minimumInputLength: 1,
+                ajax: {
+                    url: '{{route('etiket_search')}}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { q: params.term };
+                    },
+                    processResults: function (data) {
+                        return { results: data.results };
+                    },
+                    cache: false
+                }
+            });
+
+            $('#etiket-select').on('select2:select', function (e) {
+                const product = e.params.data.product;
+                if (product) {
+                    $('#product-info').html(`
+            <h5>Product Found</h5>
+            <p><strong>Name:</strong> ${product.name}</p>
+            <p><strong>ID:</strong> ${product.id}</p>
+        `);
+                } else {
+                    $('#product-info').html(`<p>No product found.</p>`);
+                }
+            });
+
+            showDynamicModal()
+        }
 
     </script>
     <script>

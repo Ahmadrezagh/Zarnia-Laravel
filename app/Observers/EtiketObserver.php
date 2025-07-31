@@ -61,12 +61,10 @@ class EtiketObserver
      */
     public function updated(Etiket $etiket): void
     {
-        $product = Product::query()
-            ->where('name','=',$etiket->name)
-            ->where('weight','=',$etiket->weight)
-            ->first();
+        $product = $etiket->product;
         if ($product) {
             $product->update([
+                'name' => $etiket->name,
                 'ojrat' => $etiket->ojrat,
                 'weight' => $etiket->weight,
                 'price' => $etiket->price,

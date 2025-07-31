@@ -129,8 +129,17 @@ class Product extends Model implements HasMedia
     }
     public function getCountAttribute()
     {
-        return $this->etikets()->where('is_mojood', 1)->count();
+        // Count from this product's etikets
+        $ownCount = $this->etikets()->where('is_mojood', 1)->count();
+
+        // Recursive count from children
+        $childrenCount = $this->children->sum(function ($child) {
+            return $child->count; // This will call getCountAttribute() recursively
+        });
+
+        return $ownCount + $childrenCount;
     }
+
 
     public function scopeHasCount(Builder $query): Builder
     {

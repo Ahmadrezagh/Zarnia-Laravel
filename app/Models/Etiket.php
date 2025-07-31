@@ -16,4 +16,9 @@ class Etiket extends Model
         'is_mojood',
         'darsad_kharid'
     ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 }
