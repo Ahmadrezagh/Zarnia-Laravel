@@ -131,7 +131,7 @@ class Product extends Model implements HasMedia
     {
         $codes = "";
 
-        foreach ($this->getAllEtikets as $etiket) {
+        foreach ($this->AllEtikets as $etiket) {
             if ($etiket->is_mojood == 0) {
                 $codes .= '<span style="color:red;">' . e($etiket->code) . '</span>, ';
             } else {
