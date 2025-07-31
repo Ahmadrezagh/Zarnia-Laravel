@@ -74,9 +74,11 @@ class EtiketObserver
             ->whereNull('parent_id')
             ->where('id','!=',$product->id)
             ->first();
-        $product->update([
-            'parent_id' => $sameNameProduct->id,
-        ]);
+        if ($sameNameProduct) {
+            $product->update([
+                'parent_id' => $sameNameProduct->id,
+            ]);
+        }
 
     }
 
