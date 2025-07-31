@@ -69,6 +69,15 @@ class EtiketObserver
             'price' => $etiket->price,
             'darsad_kharid' => $etiket->darsad_kharid,
         ]);
+        $sameNameProduct = Product::query()
+            ->where('name', '=', $etiket->name)
+            ->whereNull('parent_id')
+            ->where('id','!=',$product->id)
+            ->first();
+        $product->update([
+            'parent_id' => $sameNameProduct->id,
+        ]);
+
     }
 
     /**
