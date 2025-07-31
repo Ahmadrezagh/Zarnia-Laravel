@@ -112,11 +112,26 @@ class Product extends Model implements HasMedia
     {
         return $this->hasMany(Etiket::class);
     }
+
+    public function getAllEtiketsAttribute()
+    {
+        // Collect current product's etikets
+        $etikets = $this->etikets;
+
+        // Collect children's etikets
+        $this->children->each(function ($child) use ($etikets) {
+            $etikets->push(...$child->etikets);
+        });
+
+        // Return unique etikets
+        return $etikets->unique('id');
+    }
+
     public function getEtiketsCodeAsArrayAttribute()
     {
         $codes = "";
 
-        foreach ($this->etikets()->get() as $etiket) {
+        foreach ($this->getAllEtikets as $etiket) {
             if ($etiket->is_mojood == 0) {
                 $codes .= '<span style="color:red;">' . e($etiket->code) . '</span>, ';
             } else {

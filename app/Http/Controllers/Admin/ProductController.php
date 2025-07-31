@@ -178,9 +178,13 @@ class ProductController extends Controller
         if ($request->has('search') && !empty($request->input('search.value'))) {
             $search = $request->input('search.value');
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")->orWhereHas('etikets', function ($q2) use ($search) {
-                    $q2->where('code', '=', "{$search}"); // Search in etiket code
-                });
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}"); // Search in current product's etiket code
+                    })
+                    ->orWhereHas('children.etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}"); // Search in children's etiket code
+                    });
             });
         }
 
@@ -252,9 +256,13 @@ class ProductController extends Controller
         if ($request->has('search') && !empty($request->input('search.value'))) {
             $search = $request->input('search.value');
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")->orWhereHas('etikets', function ($q2) use ($search) {
-                    $q2->where('code', '=', "{$search}"); // Search in etiket code
-                });
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}"); // Search in current product's etiket code
+                    })
+                    ->orWhereHas('children.etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}"); // Search in children's etiket code
+                    });
             });
         }
 
