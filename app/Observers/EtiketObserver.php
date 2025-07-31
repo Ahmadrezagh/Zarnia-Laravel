@@ -62,15 +62,13 @@ class EtiketObserver
     public function updated(Etiket $etiket): void
     {
         $product = $etiket->product;
-        if ($product) {
-            $product->update([
-                'name' => $etiket->name,
-                'ojrat' => $etiket->ojrat,
-                'weight' => $etiket->weight,
-                'price' => $etiket->price,
-                'darsad_kharid' => $etiket->darsad_kharid,
-            ]);
-        }
+        $product->update([
+            'name' => $etiket->name,
+            'ojrat' => $etiket->ojrat,
+            'weight' => $etiket->weight,
+            'price' => $etiket->price,
+            'darsad_kharid' => $etiket->darsad_kharid,
+        ]);
     }
 
     /**
