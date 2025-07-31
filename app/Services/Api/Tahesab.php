@@ -210,7 +210,7 @@ class Tahesab{
 
     public function updateOrCreateEtiket($etiket)
     {
-        Etiket::query()->updateOrCreate(
+        $_etiket = Etiket::query()->updateOrCreate(
             [
                 'code' => $etiket['Code']
             ],
@@ -224,5 +224,6 @@ class Tahesab{
                 'darsad_kharid' => $etiket['DarsadVaznMaye'],
             ]
         );
+        $_etiket->touch();
     }
 }
