@@ -31,7 +31,7 @@ class EtiketController extends Controller
 
         return response()->json([
             'results' => [[
-                'id' => $etiket->id,
+                'id' => $etiket->product->id,
                 'text' => $etiket->code . ' - ' . $etiket->product->name,
                 'product' => $etiket->product
             ]]

@@ -181,6 +181,7 @@
 
                     $('#attributeGroup').click()
                     $('#attributeGroup').val(product.attribute_group_str)
+
                     $('#attributeGroup').change()
                     const tabEvent = new $.Event('keydown', {
                         key: 'Tab',
@@ -188,6 +189,7 @@
                         keyCode: 9
                     });
                     $('#attributeGroup').trigger(tabEvent);
+
                     // Initialize Select2 for categories dropdown
                     $('#product-categories').select2({
                         placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
@@ -312,7 +314,6 @@
                 }
             });
         }
-
         function showBulkUpdateModal() {
             eraseModalContent();
 
@@ -404,12 +405,36 @@
 
         function createAssembledProduct(){
             eraseModalContent()
+            const categoryOptions = '@foreach($categories as $category) <option value="{{$category->id}}" >{{$category->title}}</option> @endforeach'
             appendToModalContent(`
-<form action="{{route("products.store")}}" method="POST" >
+<form action="{{route("comprehensive_product.store")}}" method="POST" enctype="multipart/form-data" >
+{{ csrf_field() }}
 <x-form.input  title="نام محصول  جامع" name="name" />
 <div class="form-group">
+                        <label for="product-description">توضیحات</label>
+                        <textarea class="form-control" id="product-description" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-categories">دسته بندی</label>
+                        <select name="categories" id="product-categories" class="form-control" multiple>
+                            ${categoryOptions}
+                        </select>
+                    </div>
+                    <div class="custom-file mt-5 mb-5">
+                        <label for="product-cover-image" class="custom-file-label">تصویر کاور</label>
+                        <input type="file" class="custom-file-input" id="product-cover-image" name="cover_image" accept="image/*" onchange="showImagePreview('product-cover-image', 'image-preview', '')">
+                        <div id="image-preview" class="d-flex justify-content-center mt-2">
+
+                        </div>
+                    </div>
+                    <div class="form-group mt-5">
+                        <label for="product-gallery">گالری تصاویر</label>
+                        <div id="product-gallery"></div>
+                    </div>
+
+<div class="form-group">
 <label for="">محصولات</label>
-<select id="etiket-select" name="product_ids" class="form-control" style="width: 100%" multiple ></select>
+<select id="etiket-select" name="product_ids[]" class="form-control" style="width: 100%" multiple ></select>
 </div>
 <button class="btn btn-success" type="submit">ایجاد</button>
 </form>
@@ -431,7 +456,6 @@
                     cache: false
                 }
             });
-
             $('#etiket-select').on('select2:select', function (e) {
                 const product = e.params.data.product;
                 if (product) {
@@ -444,7 +468,37 @@
                     $('#product-info').html(`<p>No product found.</p>`);
                 }
             });
-
+            // Initialize Select2 for categories dropdown
+            $('#product-categories').select2({
+                placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
+                allowClear: true,
+                width: '100%'
+            });
+            // Check if imageUploader is available
+            if (typeof $.fn.imageUploader === 'undefined') {
+                console.error('imageUploader is not defined. Ensure the image-uploader library is loaded.');
+                $('.gallery-preview').before('<p class="text-danger">خطا: کتابخانه آپلود تصاویر بارگذاری نشده است.</p>');
+                return;
+            }
+            // Initialize image-uploader for gallery
+            $('#product-gallery').imageUploader({
+                label: 'تصاویر را انتخاب کنید یا اینجا بکشید و رها کنید',
+                imagesInputName: 'gallery',
+                maxFiles: 10,
+                maxSize: 2 * 1024 * 1024,
+                preloaded: [],
+                extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg','.JPG','.JPEG'],
+            });
+            // Client-side file size validation
+            $('#product-cover-image, #product-gallery').on('change', function() {
+                const maxSize = 2 * 1024 * 1024; // 2MB
+                for (let file of this.files) {
+                    if (file.size > maxSize) {
+                        alert('فایل‌ها باید کمتر از ۲ مگابایت باشند.');
+                        this.value = '';
+                    }
+                }
+            });
             showDynamicModal()
         }
 

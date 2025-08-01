@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Product\storeComprehensiveProductRequest;
+use App\Http\Requests\Admin\Product\updateComprehensiveProductRequest;
 use App\Http\Requests\Admin\Product\UpdateProductRequest;
 use App\Http\Resources\Admin\Product\EditProductResource;
 use App\Http\Resources\Admin\Table\AdminProductResource;
@@ -10,6 +12,7 @@ use App\Models\Attribute;
 use App\Models\AttributeGroup;
 use App\Models\AttributeValue;
 use App\Models\Category;
+use App\Models\ComprehensiveProduct;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -31,6 +34,18 @@ class ProductController extends Controller
         $products = Product::query()->paginate();
         $categories = Category::query()->get();
         return view('admin.products.index_not_available', compact('products','categories'));
+    }
+    public function withoutCategory()
+    {
+        $products = Product::query()->paginate();
+        $categories = Category::query()->get();
+        return view('admin.products.index_without_categoy', compact('products','categories'));
+    }
+    public function productsComprehensive()
+    {
+        $products = Product::query()->paginate();
+        $categories = Category::query()->get();
+        return view('admin.products.index_comprehensive', compact('products','categories'));
     }
 
     /**
@@ -323,10 +338,162 @@ class ProductController extends Controller
             'data' => $data
         ]);
     }
+    public function products_without_category_table(Request $request)
+    {
+        $query = Product::query()->wihtoutCategory()->main()->select('*'); // Assuming your model is Product
 
+        // Get total records before applying filters
+        $totalRecords = $query->count();
 
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->input('search.value'))) {
+            $search = $request->input('search.value');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}"); // Search in current product's etiket code
+                    })
+                    ->orWhereHas('children.etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}"); // Search in children's etiket code
+                    });
+            });
+        }
 
+        // Get filtered records count after search
+        $filteredRecords = $query->count();
 
+        // Handle pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10); // Default to 10 if length is missing or invalid
+        if ($length <= 0) {
+            $length = 10; // Ensure length is positive to avoid SQL error
+        }
+
+        $is_mojood_dir = 'desc';
+        $image_dir = null;
+        $count_dir = null;
+        // Apply sorting if provided
+        if ($request->has('order') && !empty($request->input('order'))) {
+            $order = $request->input('order')[0];
+            $columnIndex = $order['column'];
+            $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
+            $column = $request->input("columns.{$columnIndex}.data");
+            if($columnIndex == 1){
+                $is_mojood_dir = $direction;
+            }
+            if($columnIndex == 2){
+                $image_dir = $direction;
+            }
+            if($columnIndex == 6){
+                $count_dir = $direction;
+            }
+            if ($column && Schema::hasColumn('products', $column)) {
+                $query->orderBy($column, $direction);
+            }
+        }else{
+            $query = $query->latest('id');
+        }
+
+        // Fetch paginated data
+        $data = $query
+            ->skip($start)
+            ->take($length)
+
+            ->multipleSearch([$request->searchKey,$request->searchVal])
+            ->WithMojoodCount($count_dir)
+            ->WithImageStatus($image_dir)
+            ->SortMojood($is_mojood_dir)
+            ->FilterProduct($request->filter)
+            ->categories($request->category_ids)
+            ->get()
+            ->map(function ($item) {
+                return AdminProductResource::make($item); // Ensure all necessary fields are included
+            });
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data
+        ]);
+    }
+    public function products_comprehensive_table(Request $request)
+    {
+        $query = Product::query()->comprehensive()->main()->select('*'); // Assuming your model is Product
+
+        // Get total records before applying filters
+        $totalRecords = $query->count();
+
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->input('search.value'))) {
+            $search = $request->input('search.value');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}"); // Search in current product's etiket code
+                    })
+                    ->orWhereHas('children.etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}"); // Search in children's etiket code
+                    });
+            });
+        }
+
+        // Get filtered records count after search
+        $filteredRecords = $query->count();
+
+        // Handle pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10); // Default to 10 if length is missing or invalid
+        if ($length <= 0) {
+            $length = 10; // Ensure length is positive to avoid SQL error
+        }
+
+        $is_mojood_dir = 'desc';
+        $image_dir = null;
+        $count_dir = null;
+        // Apply sorting if provided
+        if ($request->has('order') && !empty($request->input('order'))) {
+            $order = $request->input('order')[0];
+            $columnIndex = $order['column'];
+            $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
+            $column = $request->input("columns.{$columnIndex}.data");
+            if($columnIndex == 1){
+                $is_mojood_dir = $direction;
+            }
+            if($columnIndex == 2){
+                $image_dir = $direction;
+            }
+            if($columnIndex == 6){
+                $count_dir = $direction;
+            }
+            if ($column && Schema::hasColumn('products', $column)) {
+                $query->orderBy($column, $direction);
+            }
+        }else{
+            $query = $query->latest('id');
+        }
+
+        // Fetch paginated data
+        $data = $query
+            ->skip($start)
+            ->take($length)
+
+            ->multipleSearch([$request->searchKey,$request->searchVal])
+            ->WithMojoodCount($count_dir)
+            ->WithImageStatus($image_dir)
+            ->SortMojood($is_mojood_dir)
+            ->FilterProduct($request->filter)
+            ->categories($request->category_ids)
+            ->get()
+            ->map(function ($item) {
+                return AdminProductResource::make($item); // Ensure all necessary fields are included
+            });
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data
+        ]);
+    }
 
 
     public function bulkUpdate(Request $request)
@@ -432,5 +599,60 @@ class ProductController extends Controller
             }
         }
         return response()->json($products);
+    }
+
+    public function storeComprehensiveProduct(storeComprehensiveProductRequest $request)
+    {
+        $validated = $request->validated();
+        $validated['is_comprehensive'] = 1;
+        $validated['weight'] = 0;
+
+        $validated['price'] = 0;
+        foreach ($request->product_ids as $productId) {
+            $pr = Product::find($productId);
+            if($pr){
+                $validated['price'] = $validated['price'] +  $pr->price;
+                $validated['weight'] = $validated['weight'] + $pr->weight;
+            }
+        }
+        $product = Product::create($validated);
+        // Handle cover image
+        if ($request->hasFile('cover_image')) {
+            $product->clearMediaCollection('cover_image');
+            $product->addMedia($request->file('cover_image'))
+                ->toMediaCollection('cover_image');
+        }
+
+        // Handle gallery images
+        $existingGallery = $request->existing_gallery ? json_decode($request->existing_gallery, true) : [];
+        // Clear gallery collection except for retained images
+        $currentMedia = $product->getMedia('gallery');
+        foreach ($currentMedia as $media) {
+            if (!in_array($media->getUrl(), $existingGallery)) {
+                $media->delete();
+            }
+        }
+
+        if ($request->hasFile('gallery')) {
+            foreach ($request->file('gallery') as $image) {
+                $product->addMedia($image)
+                    ->toMediaCollection('gallery');
+            }
+        }
+
+        // Handle categories
+        $product->categories()->sync($request->category_ids);
+
+        foreach ($request->product_ids as $productId) {
+            ComprehensiveProduct::create([
+                'comprehensive_product_id' => $product->id,
+                'product_id' => $productId,
+            ]);
+        }
+        return back();
+    }
+    public function updateComprehensiveProduct(updateComprehensiveProductRequest $request)
+    {
+
     }
 }

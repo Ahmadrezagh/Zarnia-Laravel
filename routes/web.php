@@ -32,6 +32,8 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::get('footer_title_links/{footer_title}', [FooterTitleLinkController::class, 'table'])->name('footer_title_links');
     Route::any('products', [ProductController::class, 'table'])->name('products');
     Route::any('products_not_available', [ProductController::class, 'not_available_table'])->name('products_not_available');
+    Route::any('products_without_category', [ProductController::class, 'products_without_category_table'])->name('products_without_category');
+    Route::any('products_comprehensive', [ProductController::class, 'products_comprehensive_table'])->name('products_comprehensive');
 });
 Route::middleware(['auth'])->prefix('product')->name('product.')->group(function () {
     Route::get('etikets/{product}', [EtiketController::class, 'getEtiketsOfProduct'])->name('etikets');
@@ -47,10 +49,13 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
     Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
     Route::get('products_not_available', [ProductController::class,'notAvailable' ])->name('products.products_not_available');
+    Route::get('products_without_category', [ProductController::class,'withoutCategory' ])->name('products.product_without_category');
+    Route::get('products_comprehensive', [ProductController::class,'productsComprehensive' ])->name('products.products_comprehensive');
     Route::resource('header_links', HeaderLinkController::class );
     Route::resource('footer_titles', FooterTitleController::class );
     Route::resource('footer_title.footer_title_links', FooterTitleLinkController::class );
     Route::get('etiket_search', [EtiketController::class, 'search'])->name('etiket_search');
+    Route::post('store_comprehensive_product', [ProductController::class, 'storeComprehensiveProduct'])->name('comprehensive_product.store');
 
 
     Route::post('load_attribute_group',[\App\Http\Controllers\Admin\AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');

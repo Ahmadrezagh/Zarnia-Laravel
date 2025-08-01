@@ -30,7 +30,8 @@ class Product extends Model implements HasMedia
         'attribute_group_id',
         'discount_percentage',
         'ojrat',
-        'darsad_kharid'
+        'darsad_kharid',
+        'is_comprehensive'
     ];
 
 
@@ -108,6 +109,10 @@ class Product extends Model implements HasMedia
         return $query;
     }
 
+    public function products()
+    {
+        return $this->belongsToMany(Product::class,'comprehensive_products','comprehensive_product_id','product_id');
+    }
     public function etikets()
     {
         return $this->hasMany(Etiket::class);
@@ -122,6 +127,13 @@ class Product extends Model implements HasMedia
         $this->children->each(function ($child) use ($etikets) {
             $etikets->push(...$child->etikets);
         });
+
+        if($this->is_comprehensive == 1){
+            // Collect children's etikets
+            $this->products->each(function ($child) use ($etikets) {
+                $etikets->push(...$child->etikets);
+            });
+        }
 
         // Return unique etikets
         return $etikets->unique('id');
@@ -428,5 +440,15 @@ class Product extends Model implements HasMedia
     public function scopeMain(Builder $query)
     {
         return $query->whereNull('parent_id');
+    }
+
+    public function scopeWihtoutCategory(Builder $query)
+    {
+        return $query->whereDoesntHave('categories');
+    }
+
+    public function scopeComprehensive(Builder $query)
+    {
+        return $query->where('is_comprehensive','=',1);
     }
 }
