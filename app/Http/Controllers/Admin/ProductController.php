@@ -611,7 +611,7 @@ class ProductController extends Controller
         foreach ($request->product_ids as $productId) {
             $pr = Product::find($productId);
             if($pr){
-                $validated['price'] = $validated['price'] +  $pr->price;
+                $validated['price'] = $validated['price'] + ( $pr->price * 10 );
                 $validated['weight'] = $validated['weight'] + $pr->weight;
             }
         }
