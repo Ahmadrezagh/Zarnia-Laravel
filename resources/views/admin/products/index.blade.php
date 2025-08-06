@@ -487,7 +487,7 @@
                 maxFiles: 10,
                 maxSize: 2 * 1024 * 1024,
                 preloaded: [],
-                extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg','.JPG','.JPEG'],
+                extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg','.JPG','.JPEG','.webp','.WEBP'],
             });
             // Client-side file size validation
             $('#product-cover-image, #product-gallery').on('change', function() {
