@@ -211,7 +211,7 @@
                         maxFiles: 10,
                         maxSize: 2 * 1024 * 1024,
                         preloaded: product.gallery || [],
-                        extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg','.JPG','.JPEG'],
+                        extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg','.JPG','.JPEG','.webp','.WEBP'],
                     });
 
                     // Client-side file size validation
