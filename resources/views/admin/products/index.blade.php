@@ -212,6 +212,7 @@
                         maxSize: 2 * 1024 * 1024,
                         preloaded: product.gallery || [],
                         extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg','.JPG','.JPEG','.webp','.WEBP'],
+                        mimes: ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp']
                     });
 
                     // Client-side file size validation
@@ -488,6 +489,7 @@
                 maxSize: 2 * 1024 * 1024,
                 preloaded: [],
                 extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg','.JPG','.JPEG','.webp','.WEBP'],
+                mimes: ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp']
             });
             // Client-side file size validation
             $('#product-cover-image, #product-gallery').on('change', function() {
