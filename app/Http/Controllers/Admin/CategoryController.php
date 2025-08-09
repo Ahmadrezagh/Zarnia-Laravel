@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\Category\UpdateCategoryRequest;
 use App\Models\AttributeGroup;
 use App\Models\Category;
 use App\Models\Permission;
+use App\Models\Product;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
@@ -30,9 +31,10 @@ class CategoryController extends Controller
      */
     public function index()
     {
+        $products = Product::query()->get();
         $attribute_groups = AttributeGroup::query()->latest()->get();
         $categories = Category::query()->paginate();
-        return view('admin.categories.index',compact('categories','attribute_groups'));
+        return view('admin.categories.index',compact('categories','attribute_groups','products'));
     }
 
     /**
@@ -55,6 +57,8 @@ class CategoryController extends Controller
                 ->toMediaCollection('cover_image');
         }
         $category->attributeGroups()->sync($request->attribute_group_ids);
+        $category->syncComplementary($request->input('complementary_products', []));
+        $category->syncRelated($request->input('related_products', []));
         return response()->json(['message' => 'با موفقیت انجام شد']);
 
     }
@@ -87,6 +91,8 @@ class CategoryController extends Controller
                 ->toMediaCollection('cover_image');
         }
         $category->attributeGroups()->sync($request->attribute_group_ids);
+        $category->syncComplementary($request->input('complementary_products', []));
+        $category->syncRelated($request->input('related_products', []));
         return response()->json(['message' => 'با موفقیت انجام شد']);
 
     }

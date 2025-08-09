@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasComplementaryProducts;
+use App\Traits\HasRelatedProducts;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
 use Pishran\LaravelPersianSlug\HasPersianSlug;
 use Spatie\MediaLibrary\HasMedia;
@@ -18,6 +21,7 @@ class Category extends Model implements HasMedia
     use HasFactory;
     use InteractsWithMedia;
 
+    use HasComplementaryProducts,HasRelatedProducts;
     use HasPersianSlug;
     protected $fillable = [
         'title',
@@ -132,6 +136,52 @@ class Category extends Model implements HasMedia
     public function attributeGroups()
     {
         return $this->belongsToMany(AttributeGroup::class,'attribute_group_categories','category_id','attribute_group_id');
+    }
+
+
+    // Category → products
+    public function complementaryProducts(): MorphToMany
+    {
+        return $this->morphToMany(
+            Product::class,
+            'source',
+            'complementary_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Product::class);
+    }
+
+    // Category → categories (optional, if you also want category-category)
+    public function complementaryCategories(): MorphToMany
+    {
+        return $this->morphToMany(
+            Category::class,
+            'source',
+            'complementary_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Category::class);
+    } public function relatedProducts(): MorphToMany
+    {
+        return $this->morphToMany(
+            Product::class,
+            'source',
+            'related_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Product::class);
+    }
+
+    // Category → categories (optional, if you also want category-category)
+    public function relatedCategories(): MorphToMany
+    {
+        return $this->morphToMany(
+            Category::class,
+            'source',
+            'related_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Category::class);
     }
 
 }

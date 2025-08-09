@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\HasComplementaryProducts;
+use App\Traits\HasRelatedProducts;
 use App\Traits\Scopes\HasDiscount;
 use App\Traits\Scopes\MaxPrice;
 use App\Traits\Scopes\MinPrice;
 use App\Traits\Scopes\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Pishran\LaravelPersianSlug\HasPersianSlug;
 use Spatie\Image\Enums\CropPosition;
 use Spatie\MediaLibrary\HasMedia;
@@ -19,6 +22,7 @@ class Product extends Model implements HasMedia
     use InteractsWithMedia;
     use HasPersianSlug;
     use Search,HasDiscount,MaxPrice,MinPrice;
+    use HasComplementaryProducts,HasRelatedProducts;
     protected $fillable = [
         'name',
         'slug',
@@ -451,4 +455,107 @@ class Product extends Model implements HasMedia
     {
         return $query->where('is_comprehensive','=',1);
     }
+
+
+    // Related products via direct product → product links
+    public function complementaryProductsDirect(): MorphToMany
+    {
+        return $this->morphToMany(
+            Product::class,
+            'source',
+            'complementary_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Product::class);
+    }
+
+    // Related products via category links
+    public function complementaryProductsViaCategories()
+    {
+        return $this->morphToMany(
+            Category::class,
+            'source',
+            'complementary_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Category::class)
+            ->with('products'); // Eager load category → products
+    }
+
+    // Combined accessor: products regardless of direct/indirect
+    public function complementaryProducts()
+    {
+        $related = collect();
+
+        // 1️⃣ Append direct products first
+        $related = $related->concat($this->complementaryProductsDirect()->get());
+
+        // 2️⃣ Append products from related categories
+        $related = $related->concat(
+            $this->complementaryProductsViaCategories()
+                ->get()
+                ->flatMap(fn ($category) => $category->products)
+        );
+
+        // Remove duplicates, keep original order
+        return $related->unique('id')->values();
+    }
+
+
+    // Direct product → product relations
+    public function relatedProductsDirect(): MorphToMany
+    {
+        return $this->morphToMany(
+            Product::class,
+            'source',
+            'related_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Product::class);
+    }
+
+    // Related categories
+    public function relatedCategories(): MorphToMany
+    {
+        return $this->morphToMany(
+            Category::class,
+            'source',
+            'related_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Category::class)
+            ->with('products');
+    }
+
+    // Main method to get related products with fallbacks
+    public function relatedProducts()
+    {
+        $related = collect();
+
+        // 1️⃣ Direct products
+        $related = $related->concat($this->relatedProductsDirect()->get());
+
+        // 2️⃣ Products from related categories
+        $related = $related->concat(
+            $this->relatedCategories()
+                ->get()
+                ->flatMap(fn ($category) => $category->products)
+        );
+
+        // 3️⃣ If still empty → products from same categories as this product
+        if ($related->isEmpty()) {
+            $related = $related->concat(
+                $this->categories()
+                    ->with('products')
+                    ->get()
+                    ->flatMap(fn ($category) => $category->products)
+                    ->where('id', '!=', $this->id) // exclude self
+            );
+        }
+
+        // Remove duplicates & keep order
+        return $related->unique('id')->values();
+    }
+
+
 }

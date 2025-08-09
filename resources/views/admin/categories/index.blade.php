@@ -62,6 +62,42 @@
                             <option value="{{ $attribute_group->id }}" @if($category->attributeGroups()->where('attribute_group_id','=',$attribute_group->id)->exists()) selected @endif >{{ $attribute_group->name }}</option>
                         @endforeach
                     </x-form.select-option>
+
+                    <x-form.select-option title="محصولات مکمل" name="complementary_products[]" multiple="true" >
+                        <optgroup label="محصولات">
+                            @foreach($products as $product)
+                                <option value="Product:{{ $product->id }}" @if($category->complementaryProducts()->where('target_id','=',$product->id)->exists()) selected @endif >
+                                    {{ $product->name }}
+                                </option>
+                            @endforeach
+                        </optgroup>
+
+                        <optgroup label="دسته بندی ها">
+                            @foreach($categories as $_category)
+                                <option value="Category:{{ $_category->id }}" @if($category->complementaryCategories()->where('target_id','=',$_category->id)->exists()) selected @endif >
+                                    {{ $_category->title }}
+                                </option>
+                            @endforeach
+                        </optgroup>
+                    </x-form.select-option>
+                    <x-form.select-option title="محصولات مرتبط" name="related_products[]" multiple="true" >
+                        <optgroup label="محصولات">
+                            @foreach($products as $product)
+                                <option value="Product:{{ $product->id }}" @if($category->relatedProducts()->where('target_id','=',$product->id)->exists()) selected @endif >
+                                    {{ $product->name }}
+                                </option>
+                            @endforeach
+                        </optgroup>
+
+                        <optgroup label="دسته بندی ها">
+                            @foreach($categories as $_category)
+                                <option value="Category:{{ $_category->id }}" @if($category->relatedCategories()->where('target_id','=',$_category->id)->exists()) selected @endif >
+                                    {{ $_category->title }}
+                                </option>
+                            @endforeach
+                        </optgroup>
+                    </x-form.select-option>
+
                 </x-modal.update>
             @endforeach
         </x-table>
