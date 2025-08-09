@@ -31,7 +31,7 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $products = Product::query()->get();
+        $products = Product::query()->main()->get();
         $attribute_groups = AttributeGroup::query()->latest()->get();
         $categories = Category::query()->paginate();
         return view('admin.categories.index',compact('categories','attribute_groups','products'));
