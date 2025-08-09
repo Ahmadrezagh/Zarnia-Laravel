@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Category\StoreCategoryRequest;
 use App\Http\Requests\Admin\Category\UpdateCategoryRequest;
+use App\Models\AttributeGroup;
 use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Role;
@@ -29,8 +30,9 @@ class CategoryController extends Controller
      */
     public function index()
     {
+        $attribute_groups = AttributeGroup::query()->latest()->get();
         $categories = Category::query()->paginate();
-        return view('admin.categories.index',compact('categories'));
+        return view('admin.categories.index',compact('categories','attribute_groups'));
     }
 
     /**
@@ -52,6 +54,7 @@ class CategoryController extends Controller
             $category->addMedia($request->file('cover_image'))
                 ->toMediaCollection('cover_image');
         }
+        $category->attributeGroups()->sync($request->attribute_group_ids);
         return response()->json(['message' => 'با موفقیت انجام شد']);
 
     }
@@ -83,6 +86,7 @@ class CategoryController extends Controller
             $category->addMedia($request->file('cover_image'))
                 ->toMediaCollection('cover_image');
         }
+        $category->attributeGroups()->sync($request->attribute_group_ids);
         return response()->json(['message' => 'با موفقیت انجام شد']);
 
     }
@@ -102,6 +106,7 @@ class CategoryController extends Controller
     {
         $categories = Category::query()->paginate();
 
+        $attribute_groups = AttributeGroup::query()->latest()->get();
         // Initialize slot content
         $slotContent = '';
 
@@ -121,9 +126,14 @@ class CategoryController extends Controller
                             @endif
                         @endforeach
                     </x-form.select-option>
+                    <x-form.select-option title="گروه ویژگی" name="attribute_group_ids[]" multiple="true" >
+                        @foreach($attribute_groups as $attribute_group)
+                            <option value="{{ $attribute_group->id }}" @if($category->attributeGroups()->where('attribute_group_id','=',$attribute_group->id)->exists()) selected @endif >{{ $attribute_group->name }}</option>
+                        @endforeach
+                    </x-form.select-option>
                 </x-modal.update>
             BLADE,
-                ['category' => $category, 'categories' => $categories]
+                ['category' => $category, 'categories' => $categories,'attribute_groups' => $attribute_groups]
             );
         }
         return view('components.table', [

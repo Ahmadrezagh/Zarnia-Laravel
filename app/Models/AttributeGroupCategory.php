@@ -4,11 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Attribute extends Model
+class AttributeGroupCategory extends Model
 {
     protected $fillable = [
-        'name',
-        'prefix_sentence',
-        'postfix_sentence'
+        'attribute_group_id','category_id'
     ];
 }

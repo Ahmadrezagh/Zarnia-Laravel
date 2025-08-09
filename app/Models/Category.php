@@ -129,5 +129,9 @@ class Category extends Model implements HasMedia
             ->performOnCollections('cover_image', 'gallery');
     }
 
+    public function attributeGroups()
+    {
+        return $this->belongsToMany(AttributeGroup::class,'attribute_group_categories','category_id','attribute_group_id');
+    }
 
 }

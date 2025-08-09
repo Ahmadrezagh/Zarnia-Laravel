@@ -2,6 +2,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AttributeController;
+use App\Http\Controllers\Admin\AttributeGroupController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\EtiketController;
 use App\Http\Controllers\Admin\FooterTitleController;
@@ -34,6 +36,8 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::any('products_not_available', [ProductController::class, 'not_available_table'])->name('products_not_available');
     Route::any('products_without_category', [ProductController::class, 'products_without_category_table'])->name('products_without_category');
     Route::any('products_comprehensive', [ProductController::class, 'products_comprehensive_table'])->name('products_comprehensive');
+    Route::any('attributes', [AttributeController::class, 'table'])->name('attributes');
+    Route::any('attribute_groups', [AttributeController::class, 'table'])->name('attribute_groups');
 });
 Route::middleware(['auth'])->prefix('product')->name('product.')->group(function () {
     Route::get('etikets/{product}', [EtiketController::class, 'getEtiketsOfProduct'])->name('etikets');
@@ -57,7 +61,10 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::get('etiket_search', [EtiketController::class, 'search'])->name('etiket_search');
     Route::post('store_comprehensive_product', [ProductController::class, 'storeComprehensiveProduct'])->name('comprehensive_product.store');
 
+    Route::resource('attributes', AttributeController::class );
+    Route::resource('attribute_groups', AttributeGroupController::class );
 
-    Route::post('load_attribute_group',[\App\Http\Controllers\Admin\AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
+
+    Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
 });
 

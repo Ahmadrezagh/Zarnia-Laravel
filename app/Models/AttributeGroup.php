@@ -12,6 +12,6 @@ class AttributeGroup extends Model
 
     public function attributes()
     {
-        return $this->hasMany(Attribute::class);
+        return $this->belongsToMany(Attribute::class,'attribute_group_attributes','attribute_group_id','attribute_id');
     }
 }

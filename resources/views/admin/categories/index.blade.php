@@ -22,6 +22,11 @@
                     @endforeach
                 </x-form.select-option>
                 <x-form.file-input title="تصویر دسته بندی" name="cover_image" />
+                <x-form.select-option title="گروه ویژگی" name="attribute_group_ids[]" multiple="true" >
+                    @foreach($attribute_groups as $attribute_group)
+                        <option value="{{ $attribute_group->id }}">{{ $attribute_group->name }}</option>
+                    @endforeach
+                </x-form.select-option>
             </x-modal.create>
         </x-slot>
         <x-table
@@ -52,6 +57,11 @@
                         @endforeach
                     </x-form.select-option>
                     <x-form.file-input title="تصویر دسته بندی" name="cover_image" />
+                    <x-form.select-option title="گروه ویژگی" name="attribute_group_ids[]" multiple="true" >
+                        @foreach($attribute_groups as $attribute_group)
+                            <option value="{{ $attribute_group->id }}" @if($category->attributeGroups()->where('attribute_group_id','=',$attribute_group->id)->exists()) selected @endif >{{ $attribute_group->name }}</option>
+                        @endforeach
+                    </x-form.select-option>
                 </x-modal.update>
             @endforeach
         </x-table>

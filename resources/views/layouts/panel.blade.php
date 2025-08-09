@@ -199,6 +199,23 @@
                         </ul>
                     </li>
                 @endif
+            @if ((Auth::user()->isAdmin() && Auth::user()->can('Attribute')) || Auth::user()->isSuperAdmin() )
+                    <li class="nav-item">
+                        <a class="nav-link with-sub" href="#">
+                            <span class="shape1"></span>
+                            <span class="shape2"></span>
+                            <i class="fas fa-pen sidemenu-icon"></i>
+                            <span class="sidemenu-label">مدیریت ویژگی ها</span><i class="angle fe fe-chevron-left"></i></a>
+                        <ul class="nav-sub">
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('attributes.index')}}">ویژگی ها</a>
+                            </li>
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('attribute_groups.index')}}">گروه ویژگی ها</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
                 @if ((Auth::user()->isAdmin() && Auth::user()->can('Setting')) || Auth::user()->isSuperAdmin() )
                     <li class="nav-item">
                         <a class="nav-link with-sub" href="#">

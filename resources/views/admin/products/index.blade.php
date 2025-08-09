@@ -147,7 +147,7 @@
                     </div>
                     <div class="form-group">
                         <label for="product-categories">دسته بندی</label>
-                        <select name="categories" id="product-categories" class="form-control" multiple>
+                        <select name="categories" id="product-categories" class="form-control" onchange="categoryChanged(this,${product.id})" multiple>
                             ${categoryOptions}
                         </select>
                     </div>
@@ -164,8 +164,6 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="attributeGroup">گروه ویژگی</label>
-                        <input type="text" name="attribute_group" class="form-control" id="attributeGroup" name="attribute_group" placeholder="نام گروه ویژگی را وارد کنید" onkeydown="handleGroupKeydown(event)">
                         <div id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status">
                             <span class="sr-only">در حال بارگذاری...</span>
                         </div>
@@ -329,7 +327,7 @@
 
             <div class="form-group">
                 <label>دسته بندی</label>
-                <select name="category_ids[]" multiple class="form-control s2" style="width:100%">
+                <select name="category_ids[]" multiple class="form-control s2" style="width:100%" >
                     @foreach($categories as $category)
                         <option value="{{$category->id}}">{{$category->title}}</option>
                     @endforeach
@@ -625,9 +623,9 @@
 `;
 
         const addAddButton = () => {
-            const addButton = $('<button type="button" class="btn btn-success btn-sm mt-2 mb-2">+ افزودن ویژگی</button>');
-            addButton.on('click', () => addAttributeInput(null, '', '', $('.attribute-row').length));
-            $('#attributeInputs').append(addButton);
+            // const addButton = $('<button type="button" class="btn btn-success btn-sm mt-2 mb-2">+ افزودن ویژگی</button>');
+            // addButton.on('click', () => addAttributeInput(null, '', '', $('.attribute-row').length));
+            // $('#attributeInputs').append(addButton);
         };
 
         const addAttributeInput = (attributeId, name, value, index) => {
@@ -671,6 +669,32 @@
                 }
             });
         };
+
+        function categoryChanged(element,productId) {
+            // Convert selected options to an array of values
+            const category_ids = Array.from(element.selectedOptions).map(option => option.value);
+            $.ajax({
+                url: '{{ route('load_attribute_group') }}',
+                method: 'POST',
+                data: {
+                    category_ids: category_ids,
+                    product_id: productId,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: (response) => {
+                    hideLoading();
+                    $('#attributeInputs').empty();
+                    addAddButton();
+                    if (response.attributes) {
+                        loadAttributes(response.attributes, response.attributeValues || []);
+                    }
+                },
+                error: () => {
+                    hideLoading();
+                    alert('خطا در بررسی گروه ویژگی');
+                }
+            });
+        }
 
         const removeAttributeRow = (button) => {
             $(button).closest('.attribute-row').remove();

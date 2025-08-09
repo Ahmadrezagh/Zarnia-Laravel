@@ -145,7 +145,7 @@
                     </div>
                     <div class="form-group">
                         <label for="product-categories">دسته بندی</label>
-                        <select name="categories" id="product-categories" class="form-control" multiple>
+                        <select name="categories" id="product-categories" class="form-control" onchange="categoryChanged(this,${product.id})" multiple>
                             ${categoryOptions}
                         </select>
                     </div>
@@ -572,6 +572,32 @@
                 }
             });
         };
+        function categoryChanged(element,productId) {
+            // Convert selected options to an array of values
+            const category_ids = Array.from(element.selectedOptions).map(option => option.value);
+            $.ajax({
+                url: '{{ route('load_attribute_group') }}',
+                method: 'POST',
+                data: {
+                    category_ids: category_ids,
+                    product_id: productId,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: (response) => {
+                    hideLoading();
+                    $('#attributeInputs').empty();
+                    addAddButton();
+                    if (response.attributes) {
+                        loadAttributes(response.attributes, response.attributeValues || []);
+                    }
+                },
+                error: () => {
+                    hideLoading();
+                    alert('خطا در بررسی گروه ویژگی');
+                }
+            });
+        }
+
 
         const removeAttributeRow = (button) => {
             $(button).closest('.attribute-row').remove();
