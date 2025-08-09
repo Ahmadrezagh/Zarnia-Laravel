@@ -22,7 +22,14 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::middleware(['auth'])->get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
+
+    Route::get('/categories/{category}/complementary-products', [CategoryController::class, 'getComplementaryProducts']);
+    Route::get('/categories/{category}/related-products', [CategoryController::class, 'getRelatedProducts']);
+    Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+});
 Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () {
     Route::get('admins', [AdminController::class, 'table'])->name('admins');
     Route::get('users', [UserController::class, 'table'])->name('users');

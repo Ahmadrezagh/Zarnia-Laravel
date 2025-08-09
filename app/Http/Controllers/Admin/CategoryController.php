@@ -31,10 +31,9 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $products = Product::query()->main()->get();
         $attribute_groups = AttributeGroup::query()->latest()->get();
         $categories = Category::query()->paginate();
-        return view('admin.categories.index',compact('categories','attribute_groups','products'));
+        return view('admin.categories.index',compact('categories','attribute_groups'));
     }
 
     /**
@@ -156,4 +155,33 @@ class CategoryController extends Controller
             'slot' => $slotContent
         ]);
     }
+
+    public function getComplementaryProducts(Category $category)
+    {
+        $products = $category->complementaryProducts()->get(['id', 'name']);
+
+        $results = $products->map(function($product) {
+            return [
+                'id' => "Product:{$product->id}",
+                'text' => $product->name,
+            ];
+        });
+
+        return response()->json($results);
+    }
+
+    public function getRelatedProducts(Category $category)
+    {
+        $products = $category->relatedProducts()->get(['id', 'name']);
+
+        $results = $products->map(function($product) {
+            return [
+                'id' => "Product:{$product->id}",
+                'text' => $product->name,
+            ];
+        });
+
+        return response()->json($results);
+    }
+
 }

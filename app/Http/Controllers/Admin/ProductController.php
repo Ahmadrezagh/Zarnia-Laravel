@@ -655,4 +655,23 @@ class ProductController extends Controller
     {
 
     }
+
+    public function search(Request $request)
+    {
+        $query = $request->get('q', '');
+
+        $products = Product::where('name', 'LIKE', "%{$query}%")
+            ->limit(20)
+            ->get(['id', 'name']);
+
+        $results = $products->map(function($product) {
+            return [
+                'id' => "Product:{$product->id}",
+                'text' => $product->name,
+            ];
+        });
+
+        return response()->json($results);
+    }
+
 }
