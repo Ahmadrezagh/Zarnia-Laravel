@@ -504,45 +504,6 @@
         const showLoading = () => $('#loadingSpinner').removeClass('d-none');
         const hideLoading = () => $('#loadingSpinner').addClass('d-none');
 
-        const createAttributeRow = (attributeId, name, value, index) => `
-    <div class="attribute-row row mt-2 mb-2">
-        <div class="col-5">
-            <input type="text" class="form-control attribute-name"
-                   name="attributes[${index}][name]"
-                   data-attribute-id="${attributeId || ''}"
-                   value="${name || ''}"
-                   placeholder="نام ویژگی"
-                   ${attributeId ? 'readonly' : ''}>
-        </div>
-        <div class="col-6">
-            <input type="text" class="form-control attribute-value"
-                   name="attributes[${index}][value]"
-                   value="${value || ''}"
-                   placeholder="مقدار ویژگی">
-        </div>
-        <div class="col-1">
-            <button type="button" class="btn btn-danger btn-sm remove-btn" onclick="removeAttributeRow(this)">-</button>
-        </div>
-    </div>
-`;
-
-        const addAddButton = () => {
-            const addButton = $('<button type="button" class="btn btn-success btn-sm mt-2 mb-2">+ افزودن ویژگی</button>');
-            addButton.on('click', () => addAttributeInput(null, '', '', $('.attribute-row').length));
-            $('#attributeInputs').append(addButton);
-        };
-
-        const addAttributeInput = (attributeId, name, value, index) => {
-            $('#attributeInputs').append(createAttributeRow(attributeId, name, value, index));
-        };
-
-        const loadAttributes = (attributes, attributeValues) => {
-            attributes.forEach((attr, index) => {
-                const value = attributeValues.find(val => val.attribute_id === attr.id)?.value || '';
-                addAttributeInput(attr.id, attr.name, value, index);
-            });
-        };
-
         const checkAttributeGroup = (groupName, productId) => {
             if (!groupName) return;
 

@@ -643,6 +643,51 @@
     </script>
 @endforeach
 
+
+<script>
+    const createAttributeRow = (attributeId, name, value, index,prefix,postfix) => `
+    <div class="attribute-row row mt-2 mb-2">
+        <div class="col-5">
+            <input type="text" class="form-control attribute-name"
+                   name="attributes[${index}][name]"
+                   data-attribute-id="${attributeId || ''}"
+                   value="${name || ''}"
+                   placeholder="نام ویژگی"
+                   ${attributeId ? 'readonly' : ''}>
+        </div>
+        <div class="col-6 d-flex nowrap ">
+        ${prefix}
+            <input type="text" class="form-control attribute-value"
+                   name="attributes[${index}][value]"
+                   value="${value || ''}"
+                   placeholder="مقدار ویژگی">${postfix}
+        </div>
+        <div class="col-1">
+            <button type="button" class="btn btn-danger btn-sm remove-btn" onclick="removeAttributeRow(this)">-</button>
+        </div>
+    </div>
+`;
+
+    const addAddButton = () => {
+        // const addButton = $('<button type="button" class="btn btn-success btn-sm mt-2 mb-2">+ افزودن ویژگی</button>');
+        // addButton.on('click', () => addAttributeInput(null, '', '', $('.attribute-row').length));
+        // $('#attributeInputs').append(addButton);
+    };
+
+    const addAttributeInput = (attributeId, name, value, index,prefix,postfix) => {
+        $('#attributeInputs').append(createAttributeRow(attributeId, name, value, index,prefix,postfix));
+    };
+
+    const loadAttributes = (attributes, attributeValues) => {
+        attributes.forEach((attr, index) => {
+            const value = attributeValues.find(val => val.attribute_id === attr.id)?.value || '';
+            addAttributeInput(attr.id, attr.name, value, index,attr.prefix_sentence,attr.postfix_sentence);
+        });
+    };
+
+</script>
+
+
 @yield('js')
 
 <script>
@@ -1011,5 +1056,7 @@
 
     }
 </script>
+
+
 </body>
 </html>
