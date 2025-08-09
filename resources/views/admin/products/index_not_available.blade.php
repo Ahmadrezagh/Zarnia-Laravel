@@ -193,6 +193,7 @@
                         width: '100%'
                     });
 
+                    $('#product-categories').change();
                     // Check if imageUploader is available
                     if (typeof $.fn.imageUploader === 'undefined') {
                         console.error('imageUploader is not defined. Ensure the image-uploader library is loaded.');
