@@ -158,6 +158,11 @@ class Product extends Model implements HasMedia
         // Remove trailing comma and space
         return rtrim($codes, ', ');
     }
+    public function getSingleCountAttribute()
+    {
+        return $this->etikets()->where('is_mojood', 1)->count();
+    }
+
     public function getCountAttribute()
     {
         // Count from this product's etikets

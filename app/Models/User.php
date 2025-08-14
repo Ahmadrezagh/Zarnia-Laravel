@@ -130,4 +130,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Address::class);
     }
+
+    public function getFullNameAttribute()
+    {
+        return $this->name.' '.$this->last_name;
+    }
 }

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\EtiketController;
 use App\Http\Controllers\Admin\FooterTitleController;
 use App\Http\Controllers\Admin\FooterTitleLinkController;
 use App\Http\Controllers\Admin\HeaderLinkController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
@@ -39,6 +40,7 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::get('header_links', [HeaderLinkController::class, 'table'])->name('header_links');
     Route::get('footer_titles', [FooterTitleController::class, 'table'])->name('footer_titles');
     Route::get('footer_title_links/{footer_title}', [FooterTitleLinkController::class, 'table'])->name('footer_title_links');
+    Route::any('order', [OrderController::class, 'table'])->name('orders');
     Route::any('products', [ProductController::class, 'table'])->name('products');
     Route::any('products_not_available', [ProductController::class, 'not_available_table'])->name('products_not_available');
     Route::any('products_without_category', [ProductController::class, 'products_without_category_table'])->name('products_without_category');
@@ -57,6 +59,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('setting_group.settings', SettingController::class );
     Route::resource('pages', PageController::class );
     Route::resource('products', ProductController::class );
+    Route::resource('orders', OrderController::class );
     Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
     Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
     Route::get('products_not_available', [ProductController::class,'notAvailable' ])->name('products.products_not_available');

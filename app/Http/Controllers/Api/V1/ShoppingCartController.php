@@ -14,6 +14,13 @@ class ShoppingCartController extends Controller
     {
         $user = auth()->user();
 
+        // Check if product is out of stock
+        if ($product->SingleCount <= 0) {
+            return response()->json([
+                'message' => 'This product is out of stock.'
+            ], 400);
+        }
+
         $item = ShoppingCartItem::query()
             ->firstOrCreate(
                 [
@@ -21,13 +28,22 @@ class ShoppingCartController extends Controller
                     'user_id' => $user->id,
                 ],
                 [
-                    'count' => 0 // this only applies on creation
+                    'count' => 0 // applies only on creation
                 ]
             );
 
+        // Check if adding one more exceeds stock
+        if ($item->count + 1 > $product->SingleCount) {
+            return response()->json([
+                'message' => 'You cannot add more than available stock.'
+            ], 400);
+        }
+
         $item->increment('count');
-        return ShoppingCartResource::make([],$user->shoppingCartItems);
+
+        return ShoppingCartResource::make([], $user->shoppingCartItems);
     }
+
 
     public function minus(Product $product)
     {

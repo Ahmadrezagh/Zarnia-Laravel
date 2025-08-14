@@ -51,6 +51,7 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
             Route::get('profile', [ProfileController::class, 'index']);
             Route::post('profile', [ProfileController::class, 'update']);
             Route::resource('addresses', AddressController::class);
+            Route::resource('addresses', AddressController::class)->only('index','store');
         });
     });
 });
