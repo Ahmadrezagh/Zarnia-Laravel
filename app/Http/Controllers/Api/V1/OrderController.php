@@ -12,7 +12,7 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $user = auth()->guard('sanctum')->user();
+        $user = auth('sanctum')->user();
         return OrderItemResource::collection($user->orders);
     }
     public function store(createOrderRequest $request)
