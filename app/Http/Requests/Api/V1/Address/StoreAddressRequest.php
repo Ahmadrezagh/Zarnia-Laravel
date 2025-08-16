@@ -25,6 +25,9 @@ class StoreAddressRequest extends FormRequest
             'receiver_name' => 'string|required',
             'receiver_phone' => 'string|required',
             'address' => 'string|required',
+            'postal_code' => 'numeric|required|digits:10',
+            'province_id' => 'numeric|required|exists:provinces,id',
+            'city_id' => 'numeric|required|exists:cities,id',
         ];
     }
 }
