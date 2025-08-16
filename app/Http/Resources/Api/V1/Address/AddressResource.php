@@ -18,7 +18,10 @@ class AddressResource extends JsonResource
             'id' => $this->id,
             'receiver_name' => $this->receiver_name,
             'receiver_phone' => $this->receiver_phone,
-            'address' => $this->address
+            'address' => $this->address,
+            'province' => $this->province->name ,
+            'city' => $this->city->name,
+            'postal_code' => $this->postal_code
         ];
     }
 }

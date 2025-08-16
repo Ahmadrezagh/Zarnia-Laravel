@@ -15,4 +15,13 @@ class Address extends Model
         'province_id',
         'city_id',
     ];
+
+    public function province()
+    {
+        return $this->belongsTo(IranProvince::class);
+    }
+    public function city()
+    {
+        return $this->belongsTo(IranCity::class);
+    }
 }
