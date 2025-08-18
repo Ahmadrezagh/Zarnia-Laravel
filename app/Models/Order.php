@@ -107,10 +107,10 @@ class Order extends Model
 
     public function getProductNameColAttribute()
     {
-
-        return new HtmlString(
-            $this->FirstNameOfOrderItem . "<br/>" . number_format($this->final_amount)
-        );
+        $result = $this->FirstNameOfOrderItem . "<br/>" . number_format($this->final_amount);
+        return request()->expectsJson() ?
+            $result :
+            new HtmlString($result );
     }
 
     public function getWeightAttribute()
@@ -128,17 +128,18 @@ class Order extends Model
 
     public function getWeightColAttribute()
     {
-
-        return new HtmlString(
-            $this->weight . "<br/>" . $this->Percentage
-        );
+        $result = $this->weight . "<br/>" . $this->Percentage
+        return request()->expectsJson() ?
+            $result :
+            new HtmlString($result);
     }
 
     public function getAddressColAttribute()
     {
-        return new HtmlString(
-            $this->address->address . "<br/> نوع پرداخت :" . $this->gatewayName
-        );
+        $result = $this->address->address . "<br/> نوع پرداخت :" . $this->gatewayName;
+        return request()->expectsJson() ?
+            $result :
+            new HtmlString($result);
     }
 
     public function getSumCountBeforeAttribute()
@@ -151,8 +152,10 @@ class Order extends Model
     }
     public function getSumCountAndAmountColAttribute()
     {
-        return new HtmlString(
-            number_format($this->SumCountBefore) ."عدد". "<br/> " . number_format($this->SumFinalPriceBefore)
-        );
+        $result =    number_format($this->SumCountBefore) ."عدد". "<br/> " . number_format($this->SumFinalPriceBefore)
+
+        return request()->expectsJson() ?
+            $result :
+            new HtmlString($result);
     }
 }
