@@ -72,67 +72,45 @@ class OrderController extends Controller
     }
 
 
-    public function table()
+    public function table(Request $request)
     {
-        $orders = Order::query()->latest()->paginate();
+        $query = Order::query()->latest();
+        $totalRecords = $query->count();
 
-        // Initialize slot content
-        $slotContent = '';
-
-        // Loop through users and render the Blade string for each
-        foreach ($orders as $order) {
-            $slotContent .= Blade::render(
-                <<<'BLADE'
-                 <x-modal.destroy id="modal-destroy-{{$order->id}}" title="حذف سفارش" action="{{route('orders.destroy', $order->id)}}" title="{{$order->name}}" />
-                <!-- Modal -->
-                <x-modal.update id="modal-edit-{{$order->id}}" title="ویرایش سفارش" action="{{route('orders.update', $order->id)}}" >
-                    <input type="hidden" name="id" value="{{$order->id}}">
-                    <x-form.input title="شماره سفارش" :value="$order->id" name="none" />
-                    <x-form.input title="نام سفارش" :value="$order->userName" name="none" />
-                    <x-form.input title="شیوه ارسال" :value="$order->shippingName" name="none" />
-                    <x-form.input title="بازه زمانی ارسال" :value="$order->shippingTimeName" name="none" />
-                    <x-form.input title="درگاه پرداخت" :value="$order->gatewayName" name="none" />
-                    <x-form.input title="زمان پرداخت" :value="$order->paid_at" name="none" />
-                    <x-form.input title="کد تخفیف" :value="$order->discount_code" name="none" />
-                    <x-form.input title="درصد تخفیف" :value="$order->discount_percentage" name="none" />
-                    <x-form.input title="مبلغ تخفیف" :value="$order->discount_price" name="none" />
-                    <x-form.input title="مبلغ" :value="$order->total_amount" name="none" />
-                    <x-form.input title="مبلغ قابل پرداخت" :value="$order->final_amount" name="none" />
-                    <x-form.select-option name="status" title="وضعیت" >
-                        @foreach(\App\Models\Order::$PERSIAN_STATUSES as $statusEn => $statusFa)
-                            <option value="{{$statusEn}}" @if($statusEn == $order->status) selected @endif >{{$statusFa}}</option>
-                        @endforeach
-                    </x-form.select-option>
-                </x-modal.update>
-                <!-- /Modal -->
-            BLADE,
-                ['attribute' => $order]
-            );
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->input('search.value'))) {
+            $search = $request->input('search.value');
+            $query->where('id','LIKE',"%{$search}%")
+                ->orWhereHas('address', function ($query) use ($search) {
+                    $query->where('receiver_name', 'LIKE',"%{$search}%");
+                })
+                ->orWhereHas('orderItems',function ($query) use ($search) {
+                    $query->where('name', 'LIKE',"%{$search}%");
+                });
         }
 
-        return view('components.table', [
-            'id' => 'attributes-table',
-            'columns' => [
-                ['label' => 'شماره سفارش', 'key' => 'id', 'type' => 'text'],
-                ['label' => 'نام مشتری', 'key' => 'userName', 'type' => 'text'],
-                ['label' => 'شیوه ارسال', 'key' => 'shippingName', 'type' => 'text'],
-                ['label' => 'بازه زمانی ارسال', 'key' => 'shippingTimeName', 'type' => 'text'],
-                ['label' => 'درگاه پرداخت', 'key' => 'gatewayName', 'type' => 'text'],
-                ['label' => 'زمان پرداخت', 'key' => 'paid_at', 'type' => 'text'],
-                ['label' => 'کد تخفیف', 'key' => 'discount_code', 'type' => 'text'],
-                ['label' => 'درصد تخفیف', 'key' => 'discount_percentage', 'type' => 'text'],
-                ['label' => 'مبلغ تخفیف', 'key' => 'discount_price', 'type' => 'text'],
-                ['label' => 'مبلغ', 'key' => 'total_amount', 'type' => 'text'],
-                ['label' => 'مبلغ قابل پرداخت', 'key' => 'final_amount', 'type' => 'text'],
-                ['label' => 'وضعیت', 'key' => 'persianStatus', 'type' => 'text'],
-            ],
-            'url' => route('table.attributes'),
-            'items' => $orders,
-            'actions' => [
-                ['label' => 'ویرایش', 'type' => 'modal-edit'],
-                ['label' => 'حذف', 'type' => 'modal-destroy']
-            ],
-            'slot' => $slotContent
+
+        // Handle pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10); // Default to 10 if length is missing or invalid
+        if ($length <= 0) {
+            $length = 10; // Ensure length is positive to avoid SQL error
+        }
+
+
+        // Fetch paginated data
+        $data = $query
+            ->skip($start)
+            ->take($length)
+            ->get();
+        // Initialize slot content
+        $filteredRecords = $data->count();
+
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $query
         ]);
     }
 }

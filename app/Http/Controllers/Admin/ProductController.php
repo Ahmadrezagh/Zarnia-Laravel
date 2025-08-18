@@ -188,8 +188,6 @@ class ProductController extends Controller
             });
         }
 
-        // Get filtered records count after search
-        $filteredRecords = $query->count();
 
         // Handle pagination
         $start = $request->input('start', 0);
@@ -238,6 +236,10 @@ class ProductController extends Controller
             ->map(function ($item) {
                 return AdminProductResource::make($item); // Ensure all necessary fields are included
             });
+
+        // Get filtered records count after search
+        $filteredRecords = $data->count();
+
         return response()->json([
             'draw' => (int) $request->input('draw', 1),
             'recordsTotal' => $totalRecords,
