@@ -89,9 +89,11 @@ class Order extends Model
     }
     public function getOrderColumnAttribute()
     {
-        return new HtmlString(
-            $this->id . "<br/>" . $this->userName . "<br/>" . $this->createdAtJalali
-        );
+        $value = $this->id . "<br/>" . $this->userName . "<br/>" . $this->createdAtJalali;
+
+        return request()->expectsJson()
+            ? $value    // JSON: plain string
+            : new HtmlString($value); // Blade: safe HTML
     }
 
     public function getFirstImageOfOrderItemAttribute()
