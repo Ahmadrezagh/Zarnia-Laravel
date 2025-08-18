@@ -29,8 +29,8 @@
                             ['label' => 'وزن و درصد', 'key' => 'WeightCol', 'type' => 'text'],
                             ['label' => 'آدرس و درگاه', 'key' => 'AddressCol', 'type' => 'text'],
                             ['label' => 'تعداد و مقدار سفارش قبلی', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
-                            ['label' => 'فاکتور', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
-                            ['label' => 'منبع ورود یوزر', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
+                            ['label' => 'فاکتور', 'key' => '', 'type' => 'text'],
+                            ['label' => 'منبع ورود یوزر', 'key' => '', 'type' => 'text'],
                         ]"
             :items="$orders"
             :actions="[
