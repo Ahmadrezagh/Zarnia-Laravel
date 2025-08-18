@@ -22,7 +22,7 @@
             hasCheckbox="true"
             :columns="[
                             ['label' => 'سفارش', 'key' => 'orderColumn', 'type' => 'text'],
-                            ['label' => 'وضعیت', 'key' => 'status', 'type' => 'select-option','values' => \App\Models\Order::$PERSIAN_STATUSES],
+                            ['label' => 'وضعیت', 'key' => 'status', 'type' => 'select-option','values' => \App\Models\Order::$PERSIAN_STATUSES,'colors' => \App\Models\Order::$STATUS_COLORS],
                             ['label' => 'تصویر اولین محصول', 'key' => 'firstImageOfOrderItem', 'type' => 'image'],
                             ['label' => 'عملیات', 'key' => '', 'type' => 'text'],
                             ['label' => 'اسم محصول', 'key' => 'productNameCol', 'type' => 'text'],

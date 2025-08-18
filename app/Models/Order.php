@@ -47,18 +47,34 @@ class Order extends Model
     public static $STATUSES = [
         'pending',
         'paid',
+        'failed',
+        'canceled',
         'boxing',
         'sent',
-        'canceled',
-        'failed',
+        'post',
+        'completed',
     ];
+
     public static $PERSIAN_STATUSES = [
-        'pending' => 'در انتظار پرداخت',
-        'paid' => 'پرداخت شده',
-        'boxing' => 'جمع آوری',
-        'sent' => 'ارسال شده',
-        'canceled' => 'لغو شده',
-        'failed' => 'خطا',
+        'pending'   => 'در انتظار پرداخت',
+        'paid'      => 'موفق',
+        'failed'    => 'نا موفق (خطای درگاه)',
+        'canceled'  => 'لغو (رها شدن خرید در مراحل پرداخت)',
+        'boxing'    => 'بسته بندی',
+        'sent'      => 'تحویل به پیک',
+        'post'      => 'پست',
+        'completed' => 'تکمیل شده',
+    ];
+
+    public static $STATUS_COLORS = [
+        'pending'   => '#C0C0C0', // خاکستری
+        'paid'      => '#80EF80', // سبز
+        'failed'    => '#F84F31', // قرمز
+        'canceled'  => '#ffd3d6', // صورتی
+        'boxing'    => '#0076BE', // آبی
+        'sent'      => '#7B52AE', // بنفش
+        'post'      => '#FFE20B', // زرد
+        'completed' => '#033500', // مشکی
     ];
 
     public function getPersianStatusAttribute()

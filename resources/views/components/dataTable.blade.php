@@ -54,6 +54,19 @@
 
 @section('js')
     <script>
+        function applySelectColors() {
+            $('.table-select-option').each(function () {
+                const select = $(this);
+                const selected = select.find('option:selected');
+                const bgColor = selected.data('bg') || '';
+
+                // Always keep text color stable
+                select.css({
+                    'background-color': bgColor || '',
+                    'color': '#000' // always stable (black text)
+                });
+            });
+        }
         $(document).ready(function () {
             const tableKey = '{{ $id }}';
             const storedPerPage = localStorage.getItem(`datatable_per_page_${tableKey}`);
@@ -117,12 +130,15 @@
                                 : `<button class="btn btn-danger">{{ $column['texts']['false'] }}</button>`;
                             @elseif($column['type'] === 'select-option')
                                 let options = @json($column['values']);
+                                let colors = @json($column['colors'] ?? []); // safe default []
                                 let html = `<select class="form-control table-select-option" data-key="{{ $column['key'] }}" data-id="${row.id}">`;
                                 for (const [val, label] of Object.entries(options)) {
-                                    html += `<option value="${val}" ${val == data ? 'selected' : ''}>${label}</option>`;
+                                    const color = colors[val] || '';
+                                    html += `<option value="${val}" ${color ? `data-bg="${color}"` : ''} ${val == data ? 'selected' : ''}>${label}</option>`;
                                 }
                                 html += `</select>`;
                                 return html;
+
                             @else
                                 return data || '';
                             @endif
@@ -270,6 +286,29 @@
             window.loadDataWithNewUrl = function(newUrl) {
                 table.ajax.url(newUrl).load();
             };
+
+
+            // Run once after initialization
+            applySelectColors();
+
+            // Apply after DataTable redraw
+            table.on('draw.dt', applySelectColors);
         });
+
+
+
+
+        // Apply when user changes
+        $('#{{ $id }}').on('change', '.table-select-option', function () {
+            applySelectColors();
+
+            // your AJAX save code here...
+        });
+
+        // Run once after initialization
+        applySelectColors();
+
+        // Apply after DataTable redraw
+        table.on('draw.dt', applySelectColors);
     </script>
 @endsection
