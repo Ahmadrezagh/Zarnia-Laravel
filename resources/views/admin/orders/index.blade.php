@@ -21,7 +21,6 @@
             id="orders-table"
             hasCheckbox="true"
             :columns="[
-                            ['label' => '#', 'key' => 'id', 'type' => 'checkbox'],
                             ['label' => 'سفارش', 'key' => 'orderColumn', 'type' => 'text'],
                             ['label' => 'وضعیت', 'key' => 'persianStatus', 'type' => 'text'],
                             ['label' => 'تصویر اولین محصول', 'key' => 'firstImageOfOrderItem', 'type' => 'image'],

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Order\AdminUpdateOrderRequest;
+use App\Http\Resources\Admin\Order\OrderItemResource;
+use App\Http\Resources\Admin\Table\AdminProductResource;
 use App\Models\Attribute;
 use App\Models\Order;
 use App\Models\Page;
@@ -102,7 +104,10 @@ class OrderController extends Controller
         $data = $query
             ->skip($start)
             ->take($length)
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                return OrderItemResource::make($item); // Ensure all necessary fields are included
+            });
         // Initialize slot content
         $filteredRecords = $data->count();
 
