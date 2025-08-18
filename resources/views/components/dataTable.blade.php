@@ -20,7 +20,7 @@
                 <th><input type="checkbox" class="form-control" id="selectAll"></th>
             @endif
             @foreach($columns as $column)
-                <th>{{ $column['label'] }}</th>
+                <th class="text-right">{{ $column['label'] }}</th>
             @endforeach
             @if($actions)
                 <th>عملیات</th>
