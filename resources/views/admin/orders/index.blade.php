@@ -16,9 +16,10 @@
 {{--            </x-modal.create>--}}
         </x-slot>
 
-        <x-table
+        <x-dataTable
             :url="route('table.orders')"
             id="orders-table"
+            hasCheckbox="true"
             :columns="[
                             ['label' => '#', 'key' => 'id', 'type' => 'checkbox'],
                             ['label' => 'سفارش', 'key' => 'orderColumn', 'type' => 'text'],
@@ -63,6 +64,6 @@
                 </x-modal.update>
                 <!-- /Modal -->
             @endforeach
-        </x-table>
+        </x-dataTable>
     </x-page>
 @endsection
