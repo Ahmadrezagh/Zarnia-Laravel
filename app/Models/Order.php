@@ -128,7 +128,7 @@ class Order extends Model
 
     public function getWeightColAttribute()
     {
-        $result = $this->weight . "<br/>" . $this->Percentage
+        $result = $this->weight . "<br/>" . $this->Percentage;
         return request()->expectsJson() ?
             $result :
             new HtmlString($result);
