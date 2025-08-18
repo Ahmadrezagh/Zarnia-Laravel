@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HtmlString;
+use Morilog\Jalali\Jalalian;
 
 class Order extends Model
 {
@@ -79,5 +81,76 @@ class Order extends Model
     public function getGatewayNameAttribute()
     {
         return $this->Gateway ? $this->Gateway->title : '';
+    }
+
+    public function getCreatedAtJalaliAttribute()
+    {
+        return Jalalian::forge($this->created_at)->format('Y/m/d');
+    }
+    public function getOrderColumnAttribute()
+    {
+        return new HtmlString(
+            $this->id . "<br/>" . $this->userName . "<br/>" . $this->createdAtJalali
+        );
+    }
+
+    public function getFirstImageOfOrderItemAttribute()
+    {
+        return $this->orderItems()->first()->product->image ?? '';
+    }
+    public function getFirstNameOfOrderItemAttribute()
+    {
+        return $this->orderItems()->first()->product->name ?? '';
+    }
+
+    public function getProductNameColAttribute()
+    {
+
+        return new HtmlString(
+            $this->FirstNameOfOrderItem . "<br/>" . number_format($this->final_amount)
+        );
+    }
+
+    public function getWeightAttribute()
+    {
+        $weight = 0;
+        foreach ($this->orderItems as $orderItem) {
+            $weight = $weight + $orderItem->product->weight * $orderItem->count;
+        }
+        return $weight;
+    }
+    public function getPercentageAttribute()
+    {
+        return $this->orderItems()->first()->product->darsad_kharid ?? 0;
+    }
+
+    public function getWeightColAttribute()
+    {
+
+        return new HtmlString(
+            $this->weight . "<br/>" . $this->Percentage
+        );
+    }
+
+    public function getAddressColAttribute()
+    {
+        return new HtmlString(
+            $this->address->address . "<br/> نوع پرداخت :" . $this->gatewayName
+        );
+    }
+
+    public function getSumCountBeforeAttribute()
+    {
+        return $this->user->orders()->where('id','<',$this->id)->count();
+    }
+    public function getSumFinalPriceBeforeAttribute()
+    {
+        return $this->user->orders()->where('id','<',$this->id)->sum('final_amount');
+    }
+    public function getSumCountAndAmountColAttribute()
+    {
+        return new HtmlString(
+            number_format($this->SumCountBefore) ."عدد". "<br/> " . number_format($this->SumFinalPriceBefore)
+        );
     }
 }

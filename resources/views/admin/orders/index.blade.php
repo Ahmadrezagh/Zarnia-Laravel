@@ -20,18 +20,17 @@
             :url="route('table.orders')"
             id="orders-table"
             :columns="[
-                            ['label' => 'شماره سفارش', 'key' => 'id', 'type' => 'text'],
-                            ['label' => 'نام مشتری', 'key' => 'userName', 'type' => 'text'],
-                            ['label' => 'شیوه ارسال', 'key' => 'shippingName', 'type' => 'text'],
-                            ['label' => 'بازه زمانی ارسال', 'key' => 'shippingTimeName', 'type' => 'text'],
-                            ['label' => 'درگاه پرداخت', 'key' => 'gatewayName', 'type' => 'text'],
-                            ['label' => 'زمان پرداخت', 'key' => 'paid_at', 'type' => 'text'],
-                            ['label' => 'کد تخفیف', 'key' => 'discount_code', 'type' => 'text'],
-                            ['label' => 'درصد تخفیف', 'key' => 'discount_percentage', 'type' => 'text'],
-                            ['label' => 'مبلغ تخفیف', 'key' => 'discount_price', 'type' => 'text'],
-                            ['label' => 'مبلغ', 'key' => 'total_amount', 'type' => 'text'],
-                            ['label' => 'مبلغ قابل پرداخت', 'key' => 'final_amount', 'type' => 'text'],
+                            ['label' => '#', 'key' => 'id', 'type' => 'checkbox'],
+                            ['label' => 'سفارش', 'key' => 'orderColumn', 'type' => 'text'],
                             ['label' => 'وضعیت', 'key' => 'persianStatus', 'type' => 'text'],
+                            ['label' => 'تصویر اولین محصول', 'key' => 'firstImageOfOrderItem', 'type' => 'image'],
+                            ['label' => 'عملیات', 'key' => '', 'type' => 'text'],
+                            ['label' => 'اسم محصول', 'key' => 'productNameCol', 'type' => 'text'],
+                            ['label' => 'وزن و درصد', 'key' => 'WeightCol', 'type' => 'text'],
+                            ['label' => 'آدرس و درگاه', 'key' => 'AddressCol', 'type' => 'text'],
+                            ['label' => 'تعداد و مقدار سفارش قبلی', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
+                            ['label' => 'فاکتور', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
+                            ['label' => 'منبع ورود یوزر', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
                         ]"
             :items="$orders"
             :actions="[
