@@ -68,7 +68,7 @@ class Order extends Model
 
     public function getUserNameAttribute()
     {
-        return $this->user ? $this->user->full_name : '';
+        return $this->address ? $this->address->receiver_name : '';
     }
     public function getShippingNameAttribute()
     {
