@@ -115,6 +115,14 @@
                                 return data == '1'
                                 ? `<button class="btn btn-success">{{ $column['texts']['true'] }}</button>`
                                 : `<button class="btn btn-danger">{{ $column['texts']['false'] }}</button>`;
+                            @elseif($column['type'] === 'select-option')
+                                let options = @json($column['values']);
+                                let html = `<select class="form-control table-select-option" data-key="{{ $column['key'] }}" data-id="${row.id}">`;
+                                for (const [val, label] of Object.entries(options)) {
+                                    html += `<option value="${val}" ${val == data ? 'selected' : ''}>${label}</option>`;
+                                }
+                                html += `</select>`;
+                                return html;
                             @else
                                 return data || '';
                             @endif
