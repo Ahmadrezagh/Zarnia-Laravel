@@ -152,7 +152,7 @@ class Order extends Model
     }
     public function getSumCountAndAmountColAttribute()
     {
-        $result =    number_format($this->SumCountBefore) ."عدد". "<br/> " . number_format($this->SumFinalPriceBefore)
+        $result =    number_format($this->SumCountBefore) ."عدد". "<br/> " . number_format($this->SumFinalPriceBefore);
 
         return request()->expectsJson() ?
             $result :
