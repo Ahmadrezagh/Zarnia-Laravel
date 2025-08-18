@@ -110,7 +110,7 @@ class OrderController extends Controller
             'draw' => (int) $request->input('draw', 1),
             'recordsTotal' => $totalRecords,
             'recordsFiltered' => $filteredRecords,
-            'data' => $query
+            'data' => $data
         ]);
     }
 }
