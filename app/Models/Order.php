@@ -142,9 +142,13 @@ class Order extends Model
         return $this->orderItems()->first()->product->darsad_kharid ?? 0;
     }
 
+    public function getDarsadKharidAttribute()
+    {
+        return $this->orderItems()->first() ? $this->orderItems()->first()->product->darsad_kharid: 0 ;
+    }
     public function getWeightColAttribute()
     {
-        $result = $this->weight . "<br/>" . $this->Percentage;
+        $result = $this->weight ." گرم ". "<br/>" . $this->Percentage." درصد "."<br/>".$this->DarsadKharid." درصد "."<br/>".$this->discount_percentage." درصد ";
         return request()->expectsJson() ?
             $result :
             new HtmlString($result);
