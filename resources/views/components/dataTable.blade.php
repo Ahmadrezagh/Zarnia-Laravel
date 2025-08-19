@@ -49,6 +49,30 @@
 @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+
+    <style>
+        /* ✅ Fix 1: Select option full width */
+        #{{ $id }} .table-select-option {
+            width: 100% !important;
+            min-width: 120px;
+        }
+
+        /* ✅ Fix 2: Scrollable AJAX columns */
+        #{{ $id }} .ajax-cell {
+             display: block;
+             max-width: 220px;   /* adjust as needed */
+             max-height: 120px;  /* adjust as needed */
+             overflow-y: auto;
+             overflow-x: hidden;
+             white-space: normal;
+         }
+
+        /* ✅ Keep table layout consistent */
+        #{{ $id }} td,
+        #{{ $id }} th {
+            vertical-align: middle;
+        }
+    </style>
 @endsection
 
 
@@ -60,13 +84,13 @@
                 const selected = select.find('option:selected');
                 const bgColor = selected.data('bg') || '';
 
-                // Always keep text color stable
                 select.css({
                     'background-color': bgColor || '',
-                    'color': 'white' // always stable (black text)
+                    'color': 'white'
                 });
             });
         }
+
         $(document).ready(function () {
             const tableKey = '{{ $id }}';
             const storedPerPage = localStorage.getItem(`datatable_per_page_${tableKey}`);
@@ -129,23 +153,21 @@
                                 ? `<button class="btn btn-success">{{ $column['texts']['true'] }}</button>`
                                 : `<button class="btn btn-danger">{{ $column['texts']['false'] }}</button>`;
                             @elseif($column['type'] === 'select-option')
-                                let options = @json($column['values']);
-                                let colors = @json($column['colors'] ?? []); // safe default []
-                                let onChange = @json($column['onChange'] ?? null); // safe default null
+                            let options = @json($column['values']);
+                            let colors = @json($column['colors'] ?? []);
+                            let onChange = @json($column['onChange'] ?? null);
 
-                                let html = `<select class="form-control table-select-option"
+                            let html = `<select class="form-control table-select-option"
                                 data-key="{{ $column['key'] }}"
                                 data-id="${row.id}"
                                 ${onChange ? `onChange="${onChange}"` : ''}>`;
 
-                                    for (const [val, label] of Object.entries(options)) {
-                                        const color = colors[val] || '';
-                                        html += `<option value="${val}" ${color ? `data-bg="${color}"` : ''} ${val == data ? 'selected' : ''}>${label}</option>`;
-                                    }
-                                    html += `</select>`;
-                                    return html;
-
-
+                            for (const [val, label] of Object.entries(options)) {
+                                const color = colors[val] || '';
+                                html += `<option value="${val}" ${color ? `data-bg="${color}"` : ''} ${val == data ? 'selected' : ''}>${label}</option>`;
+                            }
+                            html += `</select>`;
+                            return html;
                             @else
                                 return data || '';
                             @endif
@@ -289,11 +311,9 @@
 
             window.previewImage = previewImage;
 
-
             window.loadDataWithNewUrl = function(newUrl) {
                 table.ajax.url(newUrl).load();
             };
-
 
             // Run once after initialization
             applySelectColors();
@@ -302,20 +322,10 @@
             table.on('draw.dt', applySelectColors);
         });
 
-
-
-
         // Apply when user changes
         $('#{{ $id }}').on('change', '.table-select-option', function () {
             applySelectColors();
-
             // your AJAX save code here...
         });
-
-        // Run once after initialization
-        applySelectColors();
-
-        // Apply after DataTable redraw
-        table.on('draw.dt', applySelectColors);
     </script>
 @endsection
