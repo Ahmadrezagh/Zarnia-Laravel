@@ -121,7 +121,7 @@
                             }
                             return `<a href="${url}" target="_blank">${data || ''}</a>`;
                             @elseif($column['type'] === 'image')
-                                return data ? `<img src="${data}" style="width: 100px; height: 100px; border-radius: 50%" alt="Image" onclick="previewImage('${data}')">` : '';
+                                return data ? `<img src="${data}" style="width: 100px; height: 100px;" alt="Image" onclick="previewImage('${data}')">` : '';
                             @elseif($column['type'] === 'copiableText')
                                 return `<x-form.copiable-component content="${data || ''}" />`;
                             @elseif($column['type'] === 'binaryCondition')
