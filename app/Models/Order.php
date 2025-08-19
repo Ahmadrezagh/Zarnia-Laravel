@@ -188,4 +188,12 @@ class Order extends Model
             $result :
             new HtmlString($result);
     }
+    public function getDiscountColAttribute()
+    {
+        $result =    number_format($this->discount_code) . "<br/> " . number_format($this->discount_price).' تومان ';
+
+        return request()->expectsJson() ?
+            $result :
+            new HtmlString($result);
+    }
 }

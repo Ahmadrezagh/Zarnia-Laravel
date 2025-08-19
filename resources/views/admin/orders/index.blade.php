@@ -29,6 +29,7 @@
                             ['label' => 'وزن و درصد', 'key' => 'WeightCol', 'type' => 'text'],
                             ['label' => 'آدرس و درگاه', 'key' => 'AddressCol', 'type' => 'text'],
                             ['label' => 'تعداد و مقدار سفارش قبلی', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
+                            ['label' => 'تخفیف', 'key' => 'discountCol', 'type' => 'text'],
                             ['label' => 'فاکتور', 'key' => '', 'type' => 'text'],
                             ['label' => 'منبع ورود یوزر', 'key' => '', 'type' => 'text'],
                         ]"
