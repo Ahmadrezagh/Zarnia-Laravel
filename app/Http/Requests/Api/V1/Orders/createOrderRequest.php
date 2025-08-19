@@ -31,6 +31,7 @@ class createOrderRequest extends FormRequest
             'discount_code' => ['nullable', 'string', 'max:255'],
 
             'note' => ['nullable', 'string', 'max:2000'],
+            'user_agent' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

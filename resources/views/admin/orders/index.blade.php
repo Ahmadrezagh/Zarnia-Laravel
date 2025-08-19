@@ -24,13 +24,12 @@
                             ['label' => 'سفارش', 'key' => 'orderColumn', 'type' => 'text'],
                             ['label' => 'وضعیت', 'key' => 'status', 'type' => 'select-option','values' => \App\Models\Order::$PERSIAN_STATUSES,'colors' => \App\Models\Order::$STATUS_COLORS],
                             ['label' => 'تصویر اولین محصول', 'key' => 'firstImageOfOrderItem', 'type' => 'image'],
-                            ['label' => 'عملیات', 'key' => '', 'type' => 'text'],
                             ['label' => 'اسم محصول', 'key' => 'productNameCol', 'type' => 'text'],
                             ['label' => 'وزن و درصد', 'key' => 'WeightCol', 'type' => 'text'],
                             ['label' => 'آدرس و درگاه', 'key' => 'AddressCol', 'type' => 'text'],
                             ['label' => 'تعداد و مقدار سفارش قبلی', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
                             ['label' => 'تخفیف', 'key' => 'discountCol', 'type' => 'text'],
-                            ['label' => 'فاکتور', 'key' => '', 'type' => 'text'],
+                            ['label' => 'فاکتور', 'key' => 'factorCol', 'type' => 'text'],
                             ['label' => 'منبع ورود یوزر', 'key' => '', 'type' => 'text'],
                         ]"
             :items="$orders"

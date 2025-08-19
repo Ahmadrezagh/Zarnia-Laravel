@@ -58,6 +58,7 @@ class OrderController extends Controller
             'total_amount' => $totalAmount,
             'final_amount' => $finalAmount,
             'note' => $validated['note'] ?? null,
+            'user_agent' => $validated['user_agent'] ?? null,
         ]);
 
         // Create order items from cart

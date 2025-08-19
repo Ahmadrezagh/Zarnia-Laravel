@@ -23,6 +23,8 @@ class OrderItemResource extends JsonResource
             'WeightCol' => $this->WeightCol,
             'AddressCol' => $this->AddressCol,
             'SumCountAndAmountCol' => $this->SumCountAndAmountCol,
+            'factorCol' => $this->factorCol,
+            'discountCol' => $this->discountCol,
         ];
     }
 }

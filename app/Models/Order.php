@@ -21,7 +21,8 @@ class Order extends Model
         'total_amount',
         'final_amount',
         'paid_at',
-        'note'
+        'note',
+        'user_agent'
     ];
 
     protected $dates = ['paid_at'];
@@ -190,7 +191,15 @@ class Order extends Model
     }
     public function getDiscountColAttribute()
     {
-        $result =    number_format($this->discount_code) . "<br/> " . number_format($this->discount_price).' تومان ';
+        $result =  $this->discount_code . "<br/> " . number_format($this->discount_price).' تومان ';
+
+        return request()->expectsJson() ?
+            $result :
+            new HtmlString($result);
+    }
+    public function getFactorColAttribute()
+    {
+        $result =  "<button class='btn btn-primary'>دانلود pdf</button> <button class='btn btn-success'>پرینت</button> ";
 
         return request()->expectsJson() ?
             $result :
