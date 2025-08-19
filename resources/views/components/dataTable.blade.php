@@ -63,7 +63,7 @@
                 // Always keep text color stable
                 select.css({
                     'background-color': bgColor || '',
-                    'color': '#000' // always stable (black text)
+                    'color': 'white' // always stable (black text)
                 });
             });
         }
