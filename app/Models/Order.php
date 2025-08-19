@@ -123,7 +123,7 @@ class Order extends Model
 
     public function getProductNameColAttribute()
     {
-        $result = $this->FirstNameOfOrderItem . "<br/>" . number_format($this->final_amount);
+        $result = $this->FirstNameOfOrderItem . "<br/>" . number_format($this->final_amount)." تومان ";
         return request()->expectsJson() ?
             $result :
             new HtmlString($result );
