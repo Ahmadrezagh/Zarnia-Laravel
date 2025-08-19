@@ -131,13 +131,20 @@
                             @elseif($column['type'] === 'select-option')
                                 let options = @json($column['values']);
                                 let colors = @json($column['colors'] ?? []); // safe default []
-                                let html = `<select class="form-control table-select-option" data-key="{{ $column['key'] }}" data-id="${row.id}">`;
-                                for (const [val, label] of Object.entries(options)) {
-                                    const color = colors[val] || '';
-                                    html += `<option value="${val}" ${color ? `data-bg="${color}"` : ''} ${val == data ? 'selected' : ''}>${label}</option>`;
-                                }
-                                html += `</select>`;
-                                return html;
+                                let onChange = @json($column['onChange'] ?? null); // safe default null
+
+                                let html = `<select class="form-control table-select-option"
+                                data-key="{{ $column['key'] }}"
+                                data-id="${row.id}"
+                                ${onChange ? `onChange="${onChange}"` : ''}>`;
+
+                                    for (const [val, label] of Object.entries(options)) {
+                                        const color = colors[val] || '';
+                                        html += `<option value="${val}" ${color ? `data-bg="${color}"` : ''} ${val == data ? 'selected' : ''}>${label}</option>`;
+                                    }
+                                    html += `</select>`;
+                                    return html;
+
 
                             @else
                                 return data || '';

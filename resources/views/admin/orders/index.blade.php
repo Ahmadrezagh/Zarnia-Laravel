@@ -22,7 +22,7 @@
             hasCheckbox="true"
             :columns="[
                             ['label' => 'سفارش', 'key' => 'orderColumn', 'type' => 'text'],
-                            ['label' => 'وضعیت', 'key' => 'status', 'type' => 'select-option','values' => \App\Models\Order::$PERSIAN_STATUSES,'colors' => \App\Models\Order::$STATUS_COLORS],
+                            ['label' => 'وضعیت', 'key' => 'status', 'type' => 'select-option','values' => \App\Models\Order::$PERSIAN_STATUSES,'colors' => \App\Models\Order::$STATUS_COLORS,'onChange' => 'changeStatus(this)'],
                             ['label' => 'تصویر اولین محصول', 'key' => 'firstImageOfOrderItem', 'type' => 'image'],
                             ['label' => 'اسم محصول', 'key' => 'productNameCol', 'type' => 'text'],
                             ['label' => 'وزن و درصد', 'key' => 'WeightCol', 'type' => 'text'],
@@ -65,4 +65,39 @@
             @endforeach
         </x-dataTable>
     </x-page>
+
+    <script>
+        function changeStatus(element) {
+            let rowId = element.getAttribute('data-id');
+            let key   = element.getAttribute('data-key');
+            let value = element.value;
+
+            $.ajax({
+                url: "{{ route('update_order_status') }}", // <-- adjust route to your Laravel endpoint
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    orderId : rowId,
+                    orderStatus: value
+                },
+                success: function (response) {
+                    // ✅ Success toast
+                    if (typeof toastr !== "undefined") {
+                        toastr.success("وضعیت با موفقیت ویرایش شد");
+                    } else {
+                        alert("خطا در ویرایش وضعیت");
+                    }
+                },
+                error: function (xhr) {
+                    // ❌ Error toast
+                    if (typeof toastr !== "undefined") {
+                        toastr.error("Failed to update status!");
+                    } else {
+                        alert("Failed to update status!");
+                    }
+                }
+            });
+        }
+    </script>
+
 @endsection

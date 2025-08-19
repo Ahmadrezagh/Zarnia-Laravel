@@ -25,6 +25,7 @@ class OrderItemResource extends JsonResource
             'SumCountAndAmountCol' => $this->SumCountAndAmountCol,
             'factorCol' => $this->factorCol,
             'discountCol' => $this->discountCol,
+            'status' => $this->status,
         ];
     }
 }

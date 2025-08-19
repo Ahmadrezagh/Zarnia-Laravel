@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Order\AdminUpdateOrderRequest;
+use App\Http\Requests\Admin\Order\AdminUpdateOrderStatusRequest;
 use App\Http\Resources\Admin\Order\OrderItemResource;
 use App\Http\Resources\Admin\Table\AdminProductResource;
 use App\Models\Attribute;
@@ -117,5 +118,14 @@ class OrderController extends Controller
             'recordsFiltered' => $filteredRecords,
             'data' => $data
         ]);
+    }
+
+    public function updateOrderStatus(AdminUpdateOrderStatusRequest $request)
+    {
+        $order = Order::find($request->input('orderId'));
+        $order->update([
+            'status' => $request->orderStatus
+        ]);
+        return response()->json();
     }
 }
