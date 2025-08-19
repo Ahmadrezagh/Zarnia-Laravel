@@ -38,6 +38,16 @@ class Product extends Model implements HasMedia
         'is_comprehensive'
     ];
 
+    public function setNameAttribute($value)
+    {
+        // Arabic Ye characters → Persian Ye (U+06CC)
+        $value = str_replace(['ي', 'ی'], 'ی', $value);
+
+        // (Optional) also handle Arabic Kaf → Persian Kaf
+        $value = str_replace('ك', 'ک', $value);
+
+        $this->attributes['name'] = $value;
+    }
 
     public function getSlugOptions(): SlugOptions
     {
