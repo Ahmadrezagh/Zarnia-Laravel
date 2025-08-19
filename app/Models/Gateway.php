@@ -13,7 +13,8 @@ class Gateway extends Model implements HasMedia
     use InteractsWithMedia;
     protected $fillable = [
         'title',
-        'sub_title'
+        'sub_title',
+        'color'
     ];
 
     public function getImageAttribute()

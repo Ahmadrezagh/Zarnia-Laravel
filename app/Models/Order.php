@@ -99,6 +99,11 @@ class Order extends Model
         return $this->Gateway ? $this->Gateway->title : '';
     }
 
+    public function getGatewayColorAttribute()
+    {
+        return $this->Gateway ? $this->Gateway->color : '';
+    }
+
     public function getCreatedAtJalaliAttribute()
     {
         return Jalalian::forge($this->created_at)->format('Y/m/d');
@@ -156,11 +161,16 @@ class Order extends Model
 
     public function getAddressColAttribute()
     {
-        $result = $this->address->address . "<br/> نوع پرداخت :" . $this->gatewayName;
-        return request()->expectsJson() ?
-            $result :
-            new HtmlString($result);
+        $gateway = '<span style="background-color:' . e($this->gatewayColor) . ';border-radius:2.5rem;padding:4px">'
+            . e($this->gatewayName) . '</span>';
+
+        $result = $this->address->address . "<br/> نوع پرداخت : " . $gateway;
+
+        return request()->expectsJson()
+            ? ($result) // return plain text for JSON
+            : new HtmlString($result);
     }
+
 
     public function getSumCountBeforeAttribute()
     {
