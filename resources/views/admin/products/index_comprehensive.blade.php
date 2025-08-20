@@ -13,28 +13,43 @@
             <button class="btn btn-primary mb-3"  type="button" onclick="createAssembledProduct()" >افزودن محصول جامع</button>
 
             <div class="row mb-3">
-                <x-form.select-option title="فیلتر" id="test" name="filters" col="col-3" onChange="filterProductsSelectOption(this)">
-                    <option value="?filter=only_images">محصولات عکس دار</option>
-                    <option value="?filter=only_without_images">محصولات غیر عکس دار</option>
-                    <option value="?filter=only_without_gallery">محصولات بدون گالری</option>
-                    <option value="?filter=only_unavilables">محصولات ناموجود</option>
-                    <option value="?filter=only_main_products">محصولات متغییر</option>
-                    <option value="?filter=only_discountables">محصولات تخفیف دار</option>
-                </x-form.select-option>
-                <x-form.select-option title="دسته بندی" id="test" multiple="multiple" name="categories" col="col-3" onChange="changeCategorySelectOption(this)">
-                    @foreach($categories as $category)
-                        <option value="{{$category->id}}">{{$category->title}}</option>
-                    @endforeach
-                </x-form.select-option>
-                <x-form.select-option title="جستجو بر اساس" id="search_key" name="search_key" col="col-3" >
-                    <option value="name">اسم محصول</option>
-                    <option value="weight">وزن</option>
-                    <option value="ojrat">درصد اجرت</option>
-                    <option value="count">موجودی</option>
-                    <option value="discount_percentage">درصد تخفیف</option>
-                    <option value="etiket_code">اتیکت</option>
-                </x-form.select-option>
-                <x-form.input title="جستجو" name="search" id="search" />
+
+                <form id="filterForm" action="" class="col-12 ">
+                    <div class="row">
+
+                        <x-form.select-option title="فیلتر" id="test" name="filter" col="col-3 mb-3 ">
+                            <option value="only_images" @if(request('filter')  == 'only_images' ) selected @endif >محصولات عکس دار</option>
+                            <option value="only_without_images" @if(request('filter')  == 'only_without_images' ) selected @endif >محصولات غیر عکس دار</option>
+                            <option value="only_without_gallery" @if(request('filter')  == 'only_without_gallery' ) selected @endif >محصولات بدون گالری</option>
+                            <option value="only_unavilables" @if(request('filter')  == 'only_unavilables' ) selected @endif >محصولات ناموجود</option>
+                            <option value="only_main_products" @if(request('filter')  == 'only_main_products' ) selected @endif >محصولات متغییر</option>
+                            <option value="only_discountables" @if(request('filter')  == 'only_discountables') selected @endif >محصولات تخفیف دار</option>
+                        </x-form.select-option>
+                        <x-form.select-option title="دسته بندی" id="test" multiple="multiple" name="category_ids[]" col="col-3">
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}"
+                                        @if(in_array($category->id, request()->input('categories', []))) selected @endif>
+                                    {{ $category->title }}
+                                </option>
+                            @endforeach
+                        </x-form.select-option>
+
+                        <x-form.select-option title="جستجو بر اساس" id="search_key" name="searchKey" col="col-3" >
+
+                            <option value="name" @if(request('searchKey')  == 'name' ) selected @endif >اسم محصول</option>
+                            <option value="weight" @if(request('searchKey')  == 'weight' ) selected @endif >وزن</option>
+                            <option value="ojrat" @if(request('searchKey')  == 'ojrat' ) selected @endif >درصد اجرت</option>
+                            <option value="count" @if(request('searchKey')  == 'count' ) selected @endif >موجودی</option>
+                            <option value="discount_percentage" @if(request('searchKey')  == 'discount_percentage' ) selected @endif >درصد تخفیف</option>
+                            <option value="etiket_code" @if(request('searchKey')  == 'etiket_code' ) selected @endif >اتیکت</option>
+                        </x-form.select-option>
+                        <x-form.input title="جستجو" name="searchVal" value="{{request('searchVal')}}" />
+                        <div class="col-12">
+                            <button type="button" onclick="filterProducts('filterForm')" class="btn btn-success" style="width:100%">فیلتر</button>
+                        </div>
+                    </div>
+                </form>
+
                 <div class="col-3">
                     <button type="button" class="btn btn-primary" onclick="showBulkUpdateModal()">ویرایش دسته جمعی </button>
                 </div>
@@ -87,6 +102,24 @@
     </div>
 
     <script>
+
+        function filterProducts(formId) {
+            // Get the form element by ID
+            const form = document.getElementById(formId);
+
+            // Create a FormData object from the form
+            const formData = new FormData(form);
+
+            // Convert FormData to URL-encoded query string
+            const query = new URLSearchParams(formData).toString();
+
+            // Construct the URL with the query string
+            const url = "<?php echo e(route('table.products')); ?>?" + query;
+
+            // Call the loadDataWithNewUrl function with the constructed URL
+            window.loadDataWithNewUrl(url);
+        }
+
         function modalEdit(id){
             eraseModalContent()
             getApiResult(id)
