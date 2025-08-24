@@ -61,26 +61,42 @@ class EtiketObserver
      */
     public function updated(Etiket $etiket): void
     {
-        $product = $etiket->product;
-        $product->update([
-            'name' => $etiket->name,
-            'ojrat' => $etiket->ojrat,
-            'weight' => $etiket->weight,
-            'price' => $etiket->price,
-            'darsad_kharid' => $etiket->darsad_kharid,
-        ]);
+        // Look for another product with the same name
         $sameNameProduct = Product::query()
-            ->where('name', '=', $etiket->name)
-            ->whereNull('parent_id')
-            ->where('id','!=',$product->id)
+            ->where('name', $etiket->name)
             ->first();
+
         if ($sameNameProduct) {
-            $product->update([
-                'parent_id' => $sameNameProduct->id,
+            // ✅ If product exists with same name → update it
+            $sameNameProduct->update([
+                'weight' => $etiket->weight,
+                'price' => $etiket->price,
+                'ojrat' => $etiket->ojrat,
+                'darsad_kharid' => $etiket->darsad_kharid,
+            ]);
+
+            // Link Etiket to that product
+            $etiket->update([
+                'product_id' => $sameNameProduct->id,
+            ]);
+
+        } else {
+            // ❌ No product with same name → create new one
+            $newProduct = Product::create([
+                'name' => $etiket->name,
+                'weight' => $etiket->weight,
+                'price' => $etiket->price,
+                'ojrat' => $etiket->ojrat,
+                'darsad_kharid' => $etiket->darsad_kharid,
+            ]);
+
+            // Link Etiket to new product
+            $etiket->update([
+                'product_id' => $newProduct->id,
             ]);
         }
-
     }
+
 
     /**
      * Handle the Etiket "deleted" event.
