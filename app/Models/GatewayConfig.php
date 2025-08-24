@@ -11,4 +11,14 @@ class GatewayConfig extends Model
         'key',
         'value'
     ];
+
+    public function gateway()
+    {
+        return $this->belongsTo(Gateway::class);
+    }
+
+    public static function getConfig($key)
+    {
+        return GatewayConfig::query()->where('key', $key)->first()->value ?? null;
+    }
 }

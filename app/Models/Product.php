@@ -11,6 +11,7 @@ use App\Traits\Scopes\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Facades\DB;
 use Pishran\LaravelPersianSlug\HasPersianSlug;
 use Spatie\Image\Enums\CropPosition;
 use Spatie\MediaLibrary\HasMedia;
@@ -73,6 +74,11 @@ class Product extends Model implements HasMedia
             $price = 0;
         }
         return $price/10;
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(self::class, 'parent_id');
     }
 
     public function children()
@@ -572,5 +578,31 @@ class Product extends Model implements HasMedia
         return $related->unique('id')->values();
     }
 
+    public static function syncChildren()
+    {
+        DB::transaction(function () {
+            // Get all products grouped by name
+            $groups = Product::select('name')
+                ->groupBy('name')
+                ->get();
 
+            foreach ($groups as $group) {
+                // Get all products with the same name
+                $products = Product::where('name', $group->name)->get();
+
+                if ($products->count() > 1) {
+                    // Choose the first one as parent
+                    $parent = $products->first();
+
+                    foreach ($products as $product) {
+                        // Only update if it has no parent yet and it's not the parent itself
+                        if (is_null($product->parent_id) && $product->id !== $parent->id) {
+                            $product->parent_id = $parent->id;
+                            $product->save();
+                        }
+                    }
+                }
+            }
+        });
+    }
 }

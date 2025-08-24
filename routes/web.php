@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Api\V1\GatewayController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -78,4 +79,5 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
 
     Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
 });
-
+Route::get('/payment/request', [GatewayController::class, 'request'])->name('payment.request');
+Route::post('/payment/callback', [GatewayController::class, 'callback'])->name('payment.callback');
