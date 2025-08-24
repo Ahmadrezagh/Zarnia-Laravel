@@ -60,7 +60,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('setting_group.settings', SettingController::class );
     Route::resource('pages', PageController::class );
     Route::resource('products', ProductController::class );
-    Route::resource('orders', OrderController::class );
+    Route::resource('admin_orders', OrderController::class );
     Route::post('update_order_status', [OrderController::class,'updateOrderStatus'] )->name('update_order_status');
     Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
     Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');

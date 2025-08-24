@@ -9,7 +9,7 @@
         <x-slot name="header">
             <h5>سفارشات</h5>
 {{--            <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن سفارش</button>--}}
-{{--            <x-modal.create id="modal-create" title="ساخت سفارش" action="{{route('orders.store')}}" >--}}
+{{--            <x-modal.create id="modal-create" title="ساخت سفارش" action="{{route('admin_orders.store')}}" >--}}
 {{--                <x-form.input title="نام"  name="name" />--}}
 {{--                <x-form.input title="جمله پیشوند"  name="prefix_sentence" />--}}
 {{--                <x-form.input title="جمله پسوند"  name="postfix_sentence" />--}}
@@ -40,9 +40,9 @@
         >
 
             @foreach($orders as $order)
-                <x-modal.destroy id="modal-destroy-{{$order->id}}" title="حذف سفارش" action="{{route('orders.destroy', $order->id)}}" title="{{$order->name}}" />
+                <x-modal.destroy id="modal-destroy-{{$order->id}}" title="حذف سفارش" action="{{route('admin_orders.destroy', $order->id)}}" title="{{$order->name}}" />
                 <!-- Modal -->
-                <x-modal.update id="modal-edit-{{$order->id}}" title="ویرایش سفارش" action="{{route('orders.update', $order->id)}}" >
+                <x-modal.update id="modal-edit-{{$order->id}}" title="ویرایش سفارش" action="{{route('admin_orders.update', $order->id)}}" >
                     <input type="hidden" name="id" value="{{$order->id}}">
                     <x-form.input title="شماره سفارش" :value="$order->id" name="none" />
                     <x-form.input title="نام سفارش" :value="$order->userName" name="none" />
