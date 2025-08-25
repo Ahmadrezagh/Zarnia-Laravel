@@ -662,4 +662,38 @@ class ProductController extends Controller
     }
 
 
+    public function ajaxSearch(Request $request)
+    {
+
+        $query = $request->input('q');
+
+        // Search products
+        $products = Product::where('name', 'LIKE', "%{$query}%")
+            ->select('id', 'name as text')
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => "Product:{$product->id}",
+                    'text' => $product->text
+                ];
+            });
+
+        // Search categories
+        $categories = Category::where('title', 'LIKE', "%{$query}%")
+            ->select('id', 'title as text')
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => "Category:{$category->id}",
+                    'text' => $category->text
+                ];
+            });
+        // Combine results
+        $results = $products->concat($categories);
+
+        return response()->json([
+            'results' => $results,
+            'pagination' => ['more' => false]
+        ]);
+    }
 }

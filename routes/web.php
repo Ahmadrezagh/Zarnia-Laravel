@@ -67,6 +67,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::get('products_not_available', [ProductController::class,'notAvailable' ])->name('products.products_not_available');
     Route::get('products_without_category', [ProductController::class,'withoutCategory' ])->name('products.product_without_category');
     Route::get('products_comprehensive', [ProductController::class,'productsComprehensive' ])->name('products.products_comprehensive');
+    Route::get('/products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
     Route::resource('header_links', HeaderLinkController::class );
     Route::resource('footer_titles', FooterTitleController::class );
     Route::resource('footer_title.footer_title_links', FooterTitleLinkController::class );
