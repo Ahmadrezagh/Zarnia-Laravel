@@ -42,6 +42,7 @@ class SamanGateway
     public function requestPayment($amount, $orderId, $callbackUrl, $extra = []): array
     {
         $data = [
+            'Action'  => 'Token',
             'TerminalId'  => $this->merchantId,
             'Amount'      => $amount,
             'ResNum'      => $orderId,       // required by Saman
@@ -52,7 +53,6 @@ class SamanGateway
         if (!empty($extra['mobile'])) {
             $data['CellNumber'] = $extra['mobile'];
         }
-
         try {
             $response = $this->http->post($this->cfg['init_endpoint'], [
                 'json' => $data,
@@ -61,7 +61,7 @@ class SamanGateway
 
             $body = json_decode((string)$response->getBody(), true);
 
-            Log::info('Saman init response', ['request' => $data, 'response' => $body]);
+            Log::info('Saman init response', ['request' => $data, 'response' => $response]);
 
             if (isset($body['status']) && $body['status'] == 1 && !empty($body['token'])) {
                 return [

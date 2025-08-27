@@ -12,6 +12,7 @@ class EtiketObserver
      */
     public function created(Etiket $etiket): void
     {
+//        echo "Creating etiket $etiket->id";
         $product = Product::query()
             ->where('name','=',$etiket->name)
             ->where('weight','=',$etiket->weight)
@@ -61,6 +62,7 @@ class EtiketObserver
      */
     public function updated(Etiket $etiket): void
     {
+//        echo "Updating etiket $etiket->id";
         // Look for another product with the same name
         $sameNameProduct = Product::query()
             ->where('name', $etiket->name)
@@ -68,7 +70,7 @@ class EtiketObserver
 
         if ($sameNameProduct) {
             // ✅ If product exists with same name → update it
-            $sameNameProduct->update([
+            $sameNameProduct->saveQuietly([
                 'weight' => $etiket->weight,
                 'price' => $etiket->price,
                 'ojrat' => $etiket->ojrat,
@@ -76,7 +78,7 @@ class EtiketObserver
             ]);
 
             // Link Etiket to that product
-            $etiket->update([
+            $etiket->saveQuietly([
                 'product_id' => $sameNameProduct->id,
             ]);
 
@@ -91,7 +93,7 @@ class EtiketObserver
             ]);
 
             // Link Etiket to new product
-            $etiket->update([
+            $etiket->saveQuietly([
                 'product_id' => $newProduct->id,
             ]);
         }

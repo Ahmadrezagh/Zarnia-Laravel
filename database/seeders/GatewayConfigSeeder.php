@@ -13,9 +13,10 @@ class GatewayConfigSeeder extends Seeder
     public function run(): void
     {
         $configs = [
+            // ================= Saman =================
             [
                 'key'        => 'saman_merchant_id',
-                'value'      => '14631093', // put your merchant id here
+                'value'      => '14631093',
                 'gateway_id' => 4,
             ],
             [
@@ -40,8 +41,35 @@ class GatewayConfigSeeder extends Seeder
             ],
             [
                 'key'        => 'saman_sandbox',
-                'value'      => '0', // 0 = false, 1 = true
+                'value'      => '0',
                 'gateway_id' => 4,
+            ],
+
+            // ================= SnappPay =================
+            [
+                'key'        => 'SNAPPPAY_USERNAME',
+                'value'      => 'your-username',
+                'gateway_id' => 3,
+            ],
+            [
+                'key'        => 'SNAPPPAY_PASSWORD',
+                'value'      => 'your-password',
+                'gateway_id' => 3,
+            ],
+            [
+                'key'        => 'SNAPPPAY_CLIENT_ID',
+                'value'      => 'your-client-id',
+                'gateway_id' => 3,
+            ],
+            [
+                'key'        => 'SNAPPPAY_CLIENT_SECRET',
+                'value'      => 'your-client-secret',
+                'gateway_id' => 3,
+            ],
+            [
+                'key'        => 'SNAPPPAY_BASE_URL',
+                'value'      => 'https://example.snappay.ir',
+                'gateway_id' => 3,
             ],
         ];
 
