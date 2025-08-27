@@ -16,7 +16,7 @@ class AdminProductResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'nameUrl' => $this->nameUrl,
             'slug' => $this->slug,
             'image' => $this->image,
             'weight' => $this->weight,

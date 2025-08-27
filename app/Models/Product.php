@@ -605,4 +605,18 @@ class Product extends Model implements HasMedia
             }
         });
     }
+
+    public function getNameUrlAttribute()
+    {
+        if($this->parent_id == null && $this->children()->count() > 0 && ($this->is_comprehensive == 0)) {
+            $url = route('products.products_children_of',$this->slug);
+            return "<a href='$url' target='_blank' >$this->name</a>";
+        }
+        return $this->name;
+    }
+
+    public function scopeChildrenOf(Builder $query, $product_id)
+    {
+        return $query->where('parent_id', $product_id);
+    }
 }

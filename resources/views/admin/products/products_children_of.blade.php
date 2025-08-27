@@ -10,56 +10,9 @@
 
     <x-page>
         <x-slot name="header">
-            <button class="btn btn-primary mb-3"  type="button" onclick="createAssembledProduct()" >افزودن محصول جامع</button>
-
-            <div class="row mb-3">
-
-                <form id="filterForm" action="" class="col-12 ">
-                    <div class="row">
-
-                        <x-form.select-option title="فیلتر" id="test" name="filter" col="col-3 mb-3 ">
-                            <option value="only_images" @if(request('filter')  == 'only_images' ) selected @endif >محصولات عکس دار</option>
-                            <option value="only_without_images" @if(request('filter')  == 'only_without_images' ) selected @endif >محصولات غیر عکس دار</option>
-                            <option value="only_without_gallery" @if(request('filter')  == 'only_without_gallery' ) selected @endif >محصولات بدون گالری</option>
-                            <option value="only_unavilables" @if(request('filter')  == 'only_unavilables' ) selected @endif >محصولات ناموجود</option>
-                            <option value="only_main_products" @if(request('filter')  == 'only_main_products' ) selected @endif >محصولات متغییر</option>
-                            <option value="only_discountables" @if(request('filter')  == 'only_discountables') selected @endif >محصولات تخفیف دار</option>
-                        </x-form.select-option>
-                        <x-form.select-option title="دسته بندی" id="test" multiple="multiple" name="category_ids[]" col="col-3">
-                            @foreach($categories as $category)
-                                <option value="{{ $category->id }}"
-                                        @if(in_array($category->id, request()->input('categories', []))) selected @endif>
-                                    {{ $category->title }}
-                                </option>
-                            @endforeach
-                        </x-form.select-option>
-
-                        <x-form.select-option title="جستجو بر اساس" id="search_key" name="searchKey" col="col-3" >
-
-                            <option value="name" @if(request('searchKey')  == 'name' ) selected @endif >اسم محصول</option>
-                            <option value="weight" @if(request('searchKey')  == 'weight' ) selected @endif >وزن</option>
-                            <option value="ojrat" @if(request('searchKey')  == 'ojrat' ) selected @endif >درصد اجرت</option>
-                            <option value="count" @if(request('searchKey')  == 'count' ) selected @endif >موجودی</option>
-                            <option value="discount_percentage" @if(request('searchKey')  == 'discount_percentage' ) selected @endif >درصد تخفیف</option>
-                            <option value="etiket_code" @if(request('searchKey')  == 'etiket_code' ) selected @endif >اتیکت</option>
-                        </x-form.select-option>
-                        <x-form.input title="جستجو" name="searchVal" value="{{request('searchVal')}}" />
-                        <div class="col-12">
-                            <button type="button" onclick="filterProducts('filterForm')" class="btn btn-success" style="width:100%">فیلتر</button>
-                        </div>
-                    </div>
-                </form>
-
-                <div class="col-3">
-                    <button type="button" class="btn btn-primary" onclick="showBulkUpdateModal()">ویرایش دسته جمعی </button>
-                </div>
-                <div class="col-3">
-                    <button type="button" class="btn btn-primary" onclick="showAssignCategoryModal()">ویرایش دسته بندی </button>
-                </div>
-            </div>
         </x-slot>
         <x-dataTable
-            :url="route('table.products_comprehensive')"
+            :url="route('table.products_children_of',$product->slug)"
             id="products-table"
             hasCheckbox="true"
             changeColorKey="parent_id"
@@ -68,7 +21,7 @@
             :columns="[
                             ['label' => 'کد اتیکت', 'key' => 'etiketsCodeAsArray', 'type' => 'ajax','route' =>'product.etikets','ajax_key' => 'slug'],
                             ['label' => 'تصویر محصول', 'key' => 'image', 'type' => 'image'],
-                            ['label' => 'نام محصول', 'key' => 'nameUrl', 'type' => 'text',],
+                            ['label' => 'نام محصول', 'key' => 'nameUrl', 'type' => 'text'],
                             ['label' => 'وزن', 'key' => 'weight', 'type' => 'text'],
                             ['label' => 'قیمت', 'key' => 'price', 'type' => 'text'],
                             ['label' => 'درصد خرید', 'key' => 'darsad_kharid', 'type' => 'text'],
@@ -114,12 +67,11 @@
             const query = new URLSearchParams(formData).toString();
 
             // Construct the URL with the query string
-            const url = "<?php echo e(route('table.products')); ?>?" + query;
+            const url = "{{route('table.products_children_of',$product->id)}}?" + query;
 
             // Call the loadDataWithNewUrl function with the constructed URL
             window.loadDataWithNewUrl(url);
         }
-
         function modalEdit(id){
             eraseModalContent()
             getApiResult(id)
@@ -180,7 +132,7 @@
                     </div>
                     <div class="form-group">
                         <label for="product-categories">دسته بندی</label>
-                        <select name="categories" id="product-categories" class="form-control" onchange="categoryChanged(this,${product.id})" multiple>
+                        <select name="categories" id="product-categories" class="form-control"  onchange="categoryChanged(this,${product.id})"  multiple>
                             ${categoryOptions}
                         </select>
                     </div>
@@ -669,7 +621,6 @@
             });
         };
 
-
         function categoryChanged(element,productId) {
             // Convert selected options to an array of values
             const category_ids = Array.from(element.selectedOptions).map(option => option.value);
@@ -715,9 +666,9 @@
         function filterProductsSelectOption(element){
             let val = $(element).val()
             if(val !== '0'){
-                window.loadDataWithNewUrl("{{route('table.products')}}"+val);
+                window.loadDataWithNewUrl("{{route('table.products_children_of',$product->id)}}"+val);
             }else{
-                window.loadDataWithNewUrl("{{route('table.products')}}");
+                window.loadDataWithNewUrl("{{route('table.products_children_of',$product->id)}}");
             }
         }
 
@@ -730,7 +681,7 @@
             });
 
             let queryString = params.join('&');
-            let baseUrl = "{{ route('table.products') }}";
+            let baseUrl = "{{ route('table.products_children_of',$product->id) }}";
             let finalUrl = baseUrl + '?' + queryString;
 
             window.loadDataWithNewUrl(finalUrl);
@@ -747,7 +698,7 @@
                     if(searchKey == '0'){
                         toastr.error('ابتدا تعیین کنید جستجو بر اساس چه معیاری باشد')
                     }else{
-                        window.loadDataWithNewUrl('{{ route('table.products') }}?searchKey='+searchKey+'&searchVal='+searchVal);
+                        window.loadDataWithNewUrl('{{ route('table.products_children_of',$product->id) }}?searchKey='+searchKey+'&searchVal='+searchVal);
                     }
                 }
             });
