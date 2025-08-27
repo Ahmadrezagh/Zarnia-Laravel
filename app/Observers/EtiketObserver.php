@@ -70,7 +70,7 @@ class EtiketObserver
 
         if ($sameNameProduct) {
             // ✅ If product exists with same name → update it
-            $sameNameProduct->saveQuietly([
+            $sameNameProduct->update([
                 'weight' => $etiket->weight,
                 'price' => $etiket->price,
                 'ojrat' => $etiket->ojrat,
@@ -78,7 +78,7 @@ class EtiketObserver
             ]);
 
             // Link Etiket to that product
-            $etiket->saveQuietly([
+            $etiket->updateQuietly([
                 'product_id' => $sameNameProduct->id,
             ]);
 
@@ -93,7 +93,7 @@ class EtiketObserver
             ]);
 
             // Link Etiket to new product
-            $etiket->saveQuietly([
+            $etiket->updateQuietly([
                 'product_id' => $newProduct->id,
             ]);
         }
