@@ -19,8 +19,35 @@ class ProductObserver
      */
     public function updated(Product $product): void
     {
+        // Keep your existing logic
         $this->updateDiscountedPrice($product);
+
+        // ✅ Only check if product has a parent
+        if ($product->parent_id) {
+            $parent = Product::find($product->parent_id);
+
+            if ($parent && $product->name !== $parent->name) {
+                // Look for another parent with the same name
+                $newParent = Product::query()
+                    ->whereNull('parent_id')
+                    ->where('name', $product->name)
+                    ->first();
+
+                if ($newParent) {
+                    // ✅ Connect product to the correct parent
+                    $product->updateQuietly([
+                        'parent_id' => $newParent->id,
+                    ]);
+                } else {
+                    // ❌ No matching parent → detach from current parent
+                    $product->updateQuietly([
+                        'parent_id' => null,
+                    ]);
+                }
+            }
+        }
     }
+
 
     /**
      * Handle the Product "deleted" event.
