@@ -60,16 +60,18 @@ class EtiketObserver
     /**
      * Handle the Etiket "updated" event.
      */
+
     public function updated(Etiket $etiket): void
     {
-//        echo "Updating etiket $etiket->id";
+        // Keep track of old product before update
+        $oldProductId = $etiket->getOriginal('product_id');
+
         // Look for another product with the same name
         $sameNameProduct = Product::query()
             ->where('name', $etiket->name)
             ->first();
 
         if ($sameNameProduct) {
-            // ✅ If product exists with same name → update it
             $sameNameProduct->update([
                 'weight' => $etiket->weight,
                 'price' => $etiket->price,
@@ -77,13 +79,11 @@ class EtiketObserver
                 'darsad_kharid' => $etiket->darsad_kharid,
             ]);
 
-            // Link Etiket to that product
             $etiket->updateQuietly([
                 'product_id' => $sameNameProduct->id,
             ]);
 
         } else {
-            // ❌ No product with same name → create new one
             $newProduct = Product::create([
                 'name' => $etiket->name,
                 'weight' => $etiket->weight,
@@ -92,10 +92,41 @@ class EtiketObserver
                 'darsad_kharid' => $etiket->darsad_kharid,
             ]);
 
-            // Link Etiket to new product
             $etiket->updateQuietly([
                 'product_id' => $newProduct->id,
             ]);
+        }
+
+        // ✅ Step 2: Handle old product (cleanup/repair)
+        if ($oldProductId && $oldProductId !== $etiket->product_id) {
+            $oldProduct = Product::find($oldProductId);
+
+            if ($oldProduct) {
+                // If no etikets left → optional: delete old product
+                if ($oldProduct->etikets()->count() === 0) {
+                    // $oldProduct->delete(); // uncomment if you want auto-delete
+                } else {
+                    // Otherwise: re-run parent-name consistency repair
+                    $this->fixParentRelation($oldProduct);
+                }
+            }
+        }
+    }
+
+// ✅ Helper to enforce parent-child consistency (same as ProductObserver)
+    protected function fixParentRelation(Product $product): void
+    {
+        $parent = Product::query()
+            ->where('name', $product->name)
+            ->whereNull('parent_id')
+            ->first();
+
+        if ($parent) {
+            if ($product->id !== $parent->id) {
+                $product->updateQuietly(['parent_id' => $parent->id]);
+            }
+        } else {
+            $product->updateQuietly(['parent_id' => null]);
         }
     }
 
