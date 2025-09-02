@@ -3,14 +3,26 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
+use App\Models\SettingGroup;
 use Illuminate\Http\Request;
 
 class InitController extends Controller
 {
     public function index()
     {
+        $footer_setting_group = SettingGroup::query()->where('title', 'فوتر')->first();
+        $footer = [];
+        $footer_settings = Setting::query()->where('setting_group_id', $footer_setting_group->id)->get();
+        foreach ($footer_settings as $setting) {
+            $footer[$setting->key] = $setting->value;
+        }
         return response()->json([
-            'name' => setting('name')
+            'name' => setting('name'),
+            'telegram' => setting('telegram'),
+            'whatsapp' => setting('whatsapp'),
+            'instagram' => setting('instagram'),
+            'footer' => $footer
         ]);
     }
 }
