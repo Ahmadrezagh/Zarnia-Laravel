@@ -35,6 +35,8 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
         Route::get('gateways', [GatewayController::class, 'index']);
         Route::get('blogs', [BlogController::class, 'index']);
         Route::get('blogs/{blog}', [GatewayController::class, 'show']);
+
+        Route::get('qa',[QAController::class,'index']);
         // Protected routes
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('/user', function (Request $request) {
@@ -55,7 +57,6 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
             Route::resource('addresses', AddressController::class);
             Route::resource('orders', OrderController::class)->only('index','store');
 
-            Route::get('qa',[QAController::class,'index']);
         });
     });
 });
