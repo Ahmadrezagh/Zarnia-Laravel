@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ProvinceController;
+use App\Http\Controllers\Api\V1\QAController;
 use App\Http\Controllers\Api\V1\ShippingController;
 use App\Http\Controllers\Api\V1\ShoppingCartController;
 use App\Http\Middleware\ForceJsonResponse;
@@ -53,6 +54,8 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
             Route::post('profile', [ProfileController::class, 'update']);
             Route::resource('addresses', AddressController::class);
             Route::resource('orders', OrderController::class)->only('index','store');
+
+            Route::get('qa',[QAController::class,'index']);
         });
     });
 });

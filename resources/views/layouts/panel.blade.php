@@ -230,6 +230,20 @@
                         </ul>
                     </li>
                 @endif
+            @if ((Auth::user()->isAdmin() && Auth::user()->can('QA')) || Auth::user()->isSuperAdmin() )
+                    <li class="nav-item">
+                        <a class="nav-link with-sub" href="#">
+                            <span class="shape1"></span>
+                            <span class="shape2"></span>
+                            <i class="fas fa-question sidemenu-icon"></i>
+                            <span class="sidemenu-label">پرسش های پر تکرار</span><i class="angle fe fe-chevron-left"></i></a>
+                        <ul class="nav-sub">
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('qas.index')}}">سوال ها</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
                 @if ((Auth::user()->isAdmin() && Auth::user()->can('Setting')) || Auth::user()->isSuperAdmin() )
                     <li class="nav-item">
                         <a class="nav-link with-sub" href="#">
