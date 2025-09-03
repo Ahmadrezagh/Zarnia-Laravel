@@ -33,7 +33,7 @@ class AuthController extends Controller
 
         // Send OTP via SMS (using an SMS gateway like Kavenegar)
         $sms = new Kavehnegar();
-        $sms->send_with_pattern($phoneNumber,$otp,'jeebetootp');
+        $sms->send_with_pattern($phoneNumber,$otp,'otp');
         return response()->json(['message' => 'OTP sent successfully']);
     }
 

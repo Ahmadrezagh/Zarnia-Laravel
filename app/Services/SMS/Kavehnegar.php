@@ -34,7 +34,7 @@ class Kavehnegar {
 
     public function send_with_pattern($receiver,$token,$template)
     {
-        $t = '38357570726F49527A66306C4550426A7042714833394C4E32366B2F7A37782B';
+        $t = '3438695A44513638314F654D4A71722F67493430396B4D616B50524B3153445457484B7670496C357A34303D';
         $url = 'https://api.kavenegar.com/v1/'.$t.'/verify/lookup.json';
         try {
             $d = [
