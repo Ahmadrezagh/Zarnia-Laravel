@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\EtiketController;
 use App\Http\Controllers\Admin\FooterTitleController;
 use App\Http\Controllers\Admin\FooterTitleLinkController;
 use App\Http\Controllers\Admin\HeaderLinkController;
+use App\Http\Controllers\Admin\IndexBannerController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
@@ -40,6 +41,7 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::get('users', [UserController::class, 'table'])->name('users');
     Route::get('roles', [RoleController::class, 'table'])->name('roles');
     Route::get('qas', [QAController::class, 'table'])->name('qas');
+    Route::get('index_banners', [IndexBannerController::class, 'table'])->name('index_banners');
     Route::get('product_sliders', [ProductSliderController::class, 'table'])->name('product_sliders');
     Route::get('product_slider_buttons/{product_slider}', [ProductSliderButtonController::class, 'table'])->name('product_slider_buttons');
     Route::get('categories', [CategoryController::class, 'table'])->name('categories');
@@ -76,6 +78,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::get('products_comprehensive', [ProductController::class,'productsComprehensive' ])->name('products.products_comprehensive');
     Route::get('products_children_of/{product}', [ProductController::class,'productsChildrenOf' ])->name('products.products_children_of');
     Route::get('/products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
+    Route::resource('index_banners', IndexBannerController::class );
     Route::resource('qas', QAController::class );
     Route::resource('product_sliders', ProductSliderController::class );
     Route::resource('product_sliders.product_slider_buttons', ProductSliderButtonController::class );

@@ -249,11 +249,25 @@
                         <a class="nav-link with-sub" href="#">
                             <span class="shape1"></span>
                             <span class="shape2"></span>
-                            <i class="fas fa-question sidemenu-icon"></i>
+                            <i class="fas fa-sliders sidemenu-icon"></i>
                             <span class="sidemenu-label">اسلاید محصول</span><i class="angle fe fe-chevron-left"></i></a>
                         <ul class="nav-sub">
                             <li class="nav-sub-item">
                                 <a class="nav-sub-link" href="{{route('product_sliders.index')}}">اسلاید ها</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
+            @if ((Auth::user()->isAdmin() && Auth::user()->can('IndexBanner')) || Auth::user()->isSuperAdmin() )
+                    <li class="nav-item">
+                        <a class="nav-link with-sub" href="#">
+                            <span class="shape1"></span>
+                            <span class="shape2"></span>
+                            <i class="fas fa-sliders sidemenu-icon"></i>
+                            <span class="sidemenu-label">بنر ها</span><i class="angle fe fe-chevron-left"></i></a>
+                        <ul class="nav-sub">
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('index_banners.index')}}">بنر ها</a>
                             </li>
                         </ul>
                     </li>
