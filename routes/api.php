@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\BlogController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\FavoriteProductController;
 use App\Http\Controllers\Api\V1\GatewayController;
+use App\Http\Controllers\Api\V1\IndexButtonController;
 use App\Http\Controllers\Api\V1\InitController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ProductController;
@@ -39,6 +40,7 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
 
         Route::get('qa',[QAController::class,'index']);
         Route::get('product_slider',[ProductSliderController::class,'index']);
+        Route::get('index_buttons',[IndexButtonController::class,'index']);
         // Protected routes
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('/user', function (Request $request) {
