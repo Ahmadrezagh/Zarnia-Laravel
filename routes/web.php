@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\HeaderLinkController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductSliderButtonController;
+use App\Http\Controllers\Admin\ProductSliderController;
 use App\Http\Controllers\Admin\QAController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
@@ -38,6 +40,8 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::get('users', [UserController::class, 'table'])->name('users');
     Route::get('roles', [RoleController::class, 'table'])->name('roles');
     Route::get('qas', [QAController::class, 'table'])->name('qas');
+    Route::get('product_sliders', [ProductSliderController::class, 'table'])->name('product_sliders');
+    Route::get('product_slider_buttons/{product_slider}', [ProductSliderButtonController::class, 'table'])->name('product_slider_buttons');
     Route::get('categories', [CategoryController::class, 'table'])->name('categories');
     Route::get('pages', [PageController::class, 'table'])->name('pages');
     Route::get('header_links', [HeaderLinkController::class, 'table'])->name('header_links');
@@ -73,6 +77,8 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::get('products_children_of/{product}', [ProductController::class,'productsChildrenOf' ])->name('products.products_children_of');
     Route::get('/products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
     Route::resource('qas', QAController::class );
+    Route::resource('product_sliders', ProductSliderController::class );
+    Route::resource('product_sliders.product_slider_buttons', ProductSliderButtonController::class );
     Route::resource('header_links', HeaderLinkController::class );
     Route::resource('footer_titles', FooterTitleController::class );
     Route::resource('footer_title.footer_title_links', FooterTitleLinkController::class );

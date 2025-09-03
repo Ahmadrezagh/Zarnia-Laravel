@@ -75,7 +75,7 @@ class QAController extends Controller
 
     public function table()
     {
-        $qas = qa::query()->paginate();
+        $qas = QA::query()->paginate();
 
 
         // Loop through users and render the Blade string for each

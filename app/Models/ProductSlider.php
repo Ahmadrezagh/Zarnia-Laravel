@@ -16,4 +16,9 @@ class ProductSlider extends Model
     {
         return $this->hasMany(ProductSliderButton::class);
     }
+
+    public function getButtonsTitleAttribute()
+    {
+        return "لیست دکمه ها";
+    }
 }
