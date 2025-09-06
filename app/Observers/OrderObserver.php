@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Gateway;
 use App\Models\Order;
+use App\Services\SMS\Kavehnegar;
 
 class OrderObserver
 {
@@ -14,6 +15,8 @@ class OrderObserver
     {
         $gateway = Gateway::find($order->gateway_id);
         $gateway->createTransaction($order);
+        $sms = new Kavehnegar();
+        $sms->send_with_two_token($order->address->receiver_phone,$order->address->receiver_phone,$order->id,$order->status);
     }
 
     /**
@@ -21,7 +24,10 @@ class OrderObserver
      */
     public function updated(Order $order): void
     {
-        //
+        if ($order->wasChanged('status')) {
+            $sms = new Kavehnegar();
+            $sms->send_with_two_token($order->address->receiver_phone,$order->address->receiver_phone,$order->id,$order->status);
+        }
     }
 
     /**
