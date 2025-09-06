@@ -10,7 +10,7 @@ class Kavehnegar {
     public function send($receiver, $message)
     {
         try{
-            $sender = "10009000700011";		//This is the Sender number
+            $sender = "20006000412";		//This is the Sender number
             $receptor = array($receiver);			//Receptors numbers
 
             $result = Kavenegar::Send($sender,$receptor,$message);
@@ -42,7 +42,7 @@ class Kavehnegar {
                 'token' => $token,
                 'template' => $template
             ];
-            $post = Http::get($url,$d);
+            return  Http::get($url,$d);
             $this->log(1,$receiver,$token,json_encode($d));
         }catch (\Exception $exception)
         {
@@ -51,7 +51,7 @@ class Kavehnegar {
     }
     public function send_with_three_token($receiver,$token,$token2,$token3,$template)
     {
-        $t = '38357570726F49527A66306C4550426A7042714833394C4E32366B2F7A37782B';
+        $t = '3438695A44513638314F654D4A71722F67493430396B4D616B50524B3153445457484B7670496C357A34303D';
         $url = 'https://api.kavenegar.com/v1/'.$t.'/verify/lookup.json';
         try {
             $d = [

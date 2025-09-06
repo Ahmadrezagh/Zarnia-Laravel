@@ -8,6 +8,7 @@ use App\Models\Gateway;
 use App\Services\PaymentGateways\SamanGateway;
 use App\Services\PaymentGateways\SnappPayGateway;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class GatewayController extends Controller
@@ -61,43 +62,30 @@ class GatewayController extends Controller
         $gateway = new SnappPayGateway();
 
         $payload = [
-            "amount" => 3500000, // total purchase amount
+            "amount" => 45000, // total purchase amount
             "cartList" => [
                 [
                     "cartId" => 0,
                     "cartItems" => [
                         [
-                            "amount" => 600000,
+                            "amount" => 45000,
                             "category" => "هدفون",
                             "count" => 1,
                             "id" => 0,
                             "name" => "هندزفری رنگ سفید",
                         ],
-                        [
-                            "amount" => 1300000,
-                            "category" => "اکسسوری",
-                            "count" => 2,
-                            "id" => 0,
-                            "name" => "بند ساعت رنگ صورتی تیره",
-                        ],
                     ],
-                    "isShipmentIncluded" => true,
-                    "isTaxIncluded" => true,
-                    "shippingAmount" => 350000,
-                    "taxAmount" => 300000,
-                    "totalAmount" => 3850000,
+                    "totalAmount" => 45000,
                 ]
             ],
-            "discountAmount" => 310000,
-            "externalSourceAmount" => 40000,
             "mobile" => "+989139759913",
             "paymentMethodTypeDto" => "INSTALLMENT",
-            "returnURL" => 'https://zarniagoldgallery.ir/payment/callback', // Laravel callback route
+            "returnURL" => route('payment.callback'), // Laravel callback route
             "transactionId" => (string) Str::uuid(),
         ];
 
         $response = $gateway->getPaymentToken($payload);
-//        return $response;
+        Log::info('transactionId: ' . $payload['transactionId']."\n"."paymentToken: ".$response['paymentToken']);
         if ($response && isset($response['paymentPageUrl'])) {
             return redirect($response['paymentPageUrl']);
         }
@@ -107,10 +95,11 @@ class GatewayController extends Controller
 
     public function callback2(Request $request)
     {
+        return $request;
         $gateway = new SnappPayGateway();
 
-        $verify = $gateway->verify($request->paymentToken);
-
+        $verify = $gateway->verify($request->transactionId);
+        return $verify;
         if ($verify) {
             // success
             return "✅ Payment verified successfully!";

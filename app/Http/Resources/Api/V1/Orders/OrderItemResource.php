@@ -33,7 +33,8 @@ class OrderItemResource extends JsonResource
             'total_amount' => $this->total_amount,
             'final_amount' => $this->final_amount,
             'paid_at' => $this->paid_at,
-            'note' => $this->note
+            'note' => $this->notem,
+            'payment_url' => $this->payment_url
         ];
     }
 }

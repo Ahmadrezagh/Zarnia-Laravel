@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Etiket;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\SettingGroup;
 use App\Observers\EtiketObserver;
+use App\Observers\OrderObserver;
 use App\Observers\ProductObserver;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\App;
@@ -45,5 +47,6 @@ class AppServiceProvider extends ServiceProvider
 
         Etiket::observe(EtiketObserver::class);
         Product::Observe(ProductObserver::class);
+        Order::observe(OrderObserver::class);
     }
 }

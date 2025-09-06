@@ -94,5 +94,5 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
 
     Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
 });
-Route::get('/payment/request', [GatewayController::class, 'request'])->name('payment.request');
-Route::post('/payment/callback', [GatewayController::class, 'callback'])->name('payment.callback');
+Route::get('/payment/request', [GatewayController::class, 'pay'])->name('payment.request');
+Route::post('/payment/callback', [GatewayController::class, 'callback2'])->name('payment.callback');

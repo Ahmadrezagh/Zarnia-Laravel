@@ -22,7 +22,10 @@ class Order extends Model
         'final_amount',
         'paid_at',
         'note',
-        'user_agent'
+        'user_agent',
+        'transaction_id',
+        'payment_token',
+        'payment_url'
     ];
 
     protected $dates = ['paid_at'];
@@ -54,12 +57,14 @@ class Order extends Model
         'sent',
         'post',
         'completed',
+        'rejected',
     ];
 
     public static $PERSIAN_STATUSES = [
         'pending'   => 'در انتظار پرداخت',
         'paid'      => 'موفق',
         'failed'    => 'نا موفق (خطای درگاه)',
+        'rejected'    => 'مسترد شده',
         'canceled'  => 'لغو (رها شدن خرید در مراحل پرداخت)',
         'boxing'    => 'بسته بندی',
         'sent'      => 'تحویل به پیک',
