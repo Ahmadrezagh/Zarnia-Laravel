@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\PaymentGateways\SnappPayGateway;
+use App\Services\SMS\Kavehnegar;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Morilog\Jalali\Jalalian;
@@ -209,5 +211,27 @@ class Order extends Model
         return request()->expectsJson() ?
             $result :
             new HtmlString($result);
+    }
+
+    public function verify()
+    {
+        if($this->gateway->key == 'snapp'){
+            return $this->verifySnapp();
+        }
+    }
+
+    public function verifySnapp()
+    {
+        $gateway = new SnappPayGateway();
+        $verify = $gateway->verify($this->payment_token);
+        if($verify){
+            $this->update([
+                'status' => 'paid'
+            ]);
+            $sms = new Kavehnegar();
+            $sms->send_with_two_token($this->address->receiver_phone,$this->address->receiver_name,$this->id,$this->status);
+            return true;
+        }
+        return false;
     }
 }

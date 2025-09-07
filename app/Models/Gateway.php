@@ -38,22 +38,23 @@ class Gateway extends Model implements HasMedia
     public function createSnappTransaction($order)
     {
         $gateway = new SnappPayGateway();
-
+//        $final_amount = $order->final_amount;
+        $final_amount = 45000;
         $payload = [
-            "amount" => $order->final_amount, // total purchase amount
+            "amount" => $final_amount, // total purchase amount
             "cartList" => [
                 [
                     "cartId" => 0,
                     "cartItems" => [
                         [
-                            "amount" => $order->final_amount,
+                            "amount" => $final_amount,
                             "category" => "هدفون",
                             "count" => 1,
                             "id" => 0,
                             "name" => "هندزفری رنگ سفید",
                         ],
                     ],
-                    "totalAmount" => $order->final_amount,
+                    "totalAmount" => $final_amount,
                 ]
             ],
             "mobile" => "+989139759913",

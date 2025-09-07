@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\GatewayResource;
 use App\Models\Gateway;
+use App\Models\Order;
 use App\Services\PaymentGateways\SamanGateway;
 use App\Services\PaymentGateways\SnappPayGateway;
+use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -95,16 +97,15 @@ class GatewayController extends Controller
 
     public function callback2(Request $request)
     {
-        return $request;
-        $gateway = new SnappPayGateway();
 
-        $verify = $gateway->verify($request->transactionId);
-        return $verify;
-        if ($verify) {
-            // success
-            return "✅ Payment verified successfully!";
+        $transaction_id = $request->transactionId;
+        $order = Order::query()->where('transaction_id', $transaction_id)->first();
+        if($order) {
+            if ($order->status == Order::$STATUSES[0]) {
+                $order->verify();
+            }
+            return view('thank-you.index', compact('order'));
         }
-
-        return "❌ Payment verification failed!";
+        return abort(404);
     }
 }
