@@ -60,7 +60,7 @@ class Kavehnegar {
                 'token2' => $token2,
                 'template' => $template
             ];
-            $post = Http::get($url,$d);
+            return Http::get($url,$d);
             $this->log(1,$receiver,$token,json_encode($d));
         }catch (\Exception $exception)
         {
