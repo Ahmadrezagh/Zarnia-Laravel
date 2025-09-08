@@ -34,6 +34,7 @@
                         ]"
             :items="$orders"
             :actions="[
+                            ['label' => 'پرینت','type' =>'route','route' => ['admin_order.print',   ['id'=>'{id}'] ] ],
                             ['label' => 'ویرایش', 'type' => 'modal-edit'],
                             ['label' => 'حذف', 'type' => 'modal-destroy']
                         ]"

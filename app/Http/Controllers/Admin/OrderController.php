@@ -10,6 +10,7 @@ use App\Http\Resources\Admin\Table\AdminProductResource;
 use App\Models\Attribute;
 use App\Models\Order;
 use App\Models\Page;
+use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 
@@ -62,6 +63,8 @@ class OrderController extends Controller
     public function update(AdminUpdateOrderRequest $request, Order $order)
     {
         $order->update($request->validated());
+        $sms = new Kavehnegar();
+        $sms->send_with_two_token($order->address->receiver_phone,$order->address->receiver_name,$order->id,$order->status);
         return response()->json();
     }
 
@@ -127,5 +130,10 @@ class OrderController extends Controller
             'status' => $request->orderStatus
         ]);
         return response()->json();
+    }
+
+    public function print(Order $order)
+    {
+        return view('pdf.order', compact('order'));
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\FooterTitleController;
 use App\Http\Controllers\Admin\FooterTitleLinkController;
 use App\Http\Controllers\Admin\HeaderLinkController;
 use App\Http\Controllers\Admin\IndexBannerController;
+use App\Http\Controllers\Admin\InvoiceTemplateController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
@@ -57,6 +58,7 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::any('products_children_of/{product}', [ProductController::class, 'products_children_of_table'])->name('products_children_of');
     Route::any('attributes', [AttributeController::class, 'table'])->name('attributes');
     Route::any('attribute_groups', [AttributeController::class, 'table'])->name('attribute_groups');
+    Route::any('templates', [InvoiceTemplateController::class, 'table'])->name('templates');
 });
 Route::middleware(['auth'])->prefix('product')->name('product.')->group(function () {
     Route::get('etikets/{product}', [EtiketController::class, 'getEtiketsOfProduct'])->name('etikets');
@@ -70,6 +72,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('pages', PageController::class );
     Route::resource('products', ProductController::class );
     Route::resource('admin_orders', OrderController::class );
+    Route::get('admin_order/print/{order}', [OrderController::class, 'print'])->name('admin_order.print');
     Route::post('update_order_status', [OrderController::class,'updateOrderStatus'] )->name('update_order_status');
     Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
     Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
@@ -90,6 +93,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
 
     Route::resource('attributes', AttributeController::class );
     Route::resource('attribute_groups', AttributeGroupController::class );
+    Route::resource('invoice_templates', InvoiceTemplateController::class );
 
 
     Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
