@@ -134,21 +134,28 @@
         const url = '{{ Storage::url($template->background_path) }}';
         pdfjsLib.getDocument(url).promise.then(pdf => {
             pdf.getPage(1).then(page => {
-                const viewport = page.getViewport({ scale: 1.5 });
+                const viewport = page.getViewport({ scale: 1.0 });
                 const canvas = document.getElementById('pdf-canvas');
                 const container = document.getElementById('editor-container');
                 const overlay = document.getElementById('overlay-container');
 
-                // match sizes
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                container.style.width = viewport.width + 'px';
-                container.style.height = viewport.height + 'px';
-                overlay.style.width = viewport.width + 'px';
-                overlay.style.height = viewport.height + 'px';
+                const a4WidthMm = 210;
+                const a4HeightMm = 297;
+                const dpi = 96;
+                const mmToPx = mm => mm * dpi / 25.4;
+                const targetWidthPx = mmToPx(a4WidthMm);
+                const targetHeightPx = mmToPx(a4HeightMm);
+                const scale = Math.min(targetWidthPx / viewport.width, targetHeightPx / viewport.height);
 
-                // render PDF
-                page.render({ canvasContext: canvas.getContext('2d'), viewport });
+                const scaledViewport = page.getViewport({ scale: scale });
+                canvas.height = scaledViewport.height;
+                canvas.width = scaledViewport.width;
+                container.style.width = targetWidthPx + 'px';
+                container.style.height = targetHeightPx + 'px';
+                overlay.style.width = targetWidthPx + 'px';
+                overlay.style.height = targetHeightPx + 'px';
+
+                page.render({ canvasContext: canvas.getContext('2d'), viewport: scaledViewport });
             });
         });
     </script>
