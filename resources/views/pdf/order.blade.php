@@ -50,14 +50,24 @@
                 height: 297mm !important; /* Exact A4 height */
                 margin: 0 auto;
                 padding: 20px; /* Preserve existing padding */
-                box-sizing: border-box; /* Ensure padding doesn't add to size */
+                box-sizing: border-box; /* Ensure padding fits within size */
                 overflow: hidden !important; /* Prevent overflow on print */
                 transform-origin: top center;
-                transform: scale(1); /* Reset scale to fit exact size */
+                transform: scale(1); /* Fit exact size */
             }
             #pdf-canvas, #bg-image {
                 width: 100% !important;
                 height: 100% !important;
+            }
+            .field {
+                position: absolute !important; /* Ensure fields retain absolute positioning */
+                top: auto !important; /* Reset top for recalculation */
+                left: auto !important; /* Reset left for recalculation */
+                right: {{ $pos->x }}px !important; /* Adjust for RTL */
+                top: {{ $pos->y }}px !important; /* Maintain original Y position */
+                font-family: {{ $pos->font_family ?? 'tahoma' }} !important;
+                font-size: {{ $pos->font_size ?? 12 }}px !important;
+                color: {{ $pos->color ?? '#000' }} !important;
             }
             .print-button {
                 display: none;
