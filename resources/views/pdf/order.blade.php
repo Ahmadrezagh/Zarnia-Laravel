@@ -25,6 +25,20 @@
             direction: rtl;
         }
     </style>
+    <style>
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
+                color-adjust: exact !important;               /* Firefox */
+                print-color-adjust: exact !important;         /* Modern browsers */
+            }
+
+            #pdf-canvas, #bg-image {
+                display: block !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+        }
+    </style>
 </head>
 <body>
 @php
