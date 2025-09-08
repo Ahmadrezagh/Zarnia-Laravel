@@ -1,29 +1,30 @@
-{{-- resources/views/admin/invoice-templates/edit.blade.php --}}
-        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<script src="{{ asset('pdfEditor/pdf.min.js') }}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/interactjs@1/dist/interact.min.js"></script>
-<style>
-    body { margin: 0; padding: 0; }
-    #editor-container {
-        position: relative;
-        width: 800px;
-        height: 1120px; /* A4 تقریبی */
-        margin: auto;
-    }
-    #pdf-canvas, #bg-image {
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
-    .field {
-        position: absolute;
-        white-space: nowrap;
-        direction: rtl;
-    }
-</style>
+    <script src="{{ asset('pdfEditor/pdf.min.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs@1/dist/interact.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #editor-container {
+            position: relative;
+            width: 210mm; /* Exact A4 width */
+            height: 297mm; /* Exact A4 height */
+            margin: auto;
+            overflow: hidden; /* Prevent overflow */
+            box-sizing: border-box;
+        }
+        #pdf-canvas, #bg-image {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .field {
+            position: absolute;
+            white-space: nowrap;
+            direction: rtl;
+        }
+    </style>
     <title>editor</title>
 </head>
 <body>
@@ -43,21 +44,30 @@
     const url = '{{ Storage::url($template->background_path) }}';
     pdfjsLib.getDocument(url).promise.then(pdf => {
         pdf.getPage(1).then(page => {
-            const viewport = page.getViewport({ scale: 1.5 });
+            const viewport = page.getViewport({ scale: 1.0 }); // Adjusted scale to fit A4
             const canvas = document.getElementById('pdf-canvas');
             const container = document.getElementById('editor-container');
             const overlay = document.getElementById('overlay-container');
 
-            // match sizes
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            container.style.width = viewport.width + 'px';
-            container.style.height = viewport.height + 'px';
-            overlay.style.width = viewport.width + 'px';
-            overlay.style.height = viewport.height + 'px';
+            // match sizes to A4, adjusting scale if needed
+            const a4WidthMm = 210; // mm
+            const a4HeightMm = 297; // mm
+            const dpi = 96; // standard screen DPI
+            const mmToPx = mm => mm * dpi / 25.4;
+            const targetWidthPx = mmToPx(a4WidthMm);
+            const targetHeightPx = mmToPx(a4HeightMm);
+            const scale = Math.min(targetWidthPx / viewport.width, targetHeightPx / viewport.height);
+
+            const scaledViewport = page.getViewport({ scale: scale });
+            canvas.height = scaledViewport.height;
+            canvas.width = scaledViewport.width;
+            container.style.width = targetWidthPx + 'px';
+            container.style.height = targetHeightPx + 'px';
+            overlay.style.width = targetWidthPx + 'px';
+            overlay.style.height = targetHeightPx + 'px';
 
             // render PDF
-            page.render({ canvasContext: canvas.getContext('2d'), viewport });
+            page.render({ canvasContext: canvas.getContext('2d'), viewport: scaledViewport });
 
             // now add positions
             addPositions();
