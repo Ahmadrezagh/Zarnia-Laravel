@@ -64,6 +64,10 @@
                 height: auto;
                 width: 100%;
             }
+            #pdf-canvas{
+                visibility: hidden;
+                display: none;
+            }
         }
     </style>
 </head>
