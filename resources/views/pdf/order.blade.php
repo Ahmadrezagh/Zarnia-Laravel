@@ -53,15 +53,6 @@
                 visibility: visible;
             }
 
-            #pdf-canvas, #bg-image {
-                width: 210mm !important;
-                height: 297mm !important;
-            }
-            .field {
-                position: absolute !important;
-                right: calc({{ $containerWidth }}px - var(--x-pos)) !important;
-                top: var(--y-pos) !important;
-            }
             .print-button {
                 display: none;
             }
