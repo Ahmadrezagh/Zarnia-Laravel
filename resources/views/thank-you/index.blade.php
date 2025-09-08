@@ -53,14 +53,14 @@
             <hr class="divider">
 
             <div class="action-buttons">
-                <button class="download-btn" onclick="downloadInvoice()">
+                <button class="download-btn" onclick="openUrl('{{route('order.print',$order->id)}}')">
                     <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
                         <path d="M10 3v10m0 0l-3-3m3 3l3-3" stroke="#bca27b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         <rect x="3" y="15" width="14" height="2" rx="1" fill="#bca27b"/>
                     </svg>
                     دانلود فاکتور
                 </button>
-                <button class="complete-btn" onclick="https://zarnia2.mlcp.ir/profile">تکمیل خرید</button>
+                <button class="complete-btn" onclick="openUrl('https://zarnia2.mlcp.ir/profile')">تکمیل خرید</button>
             </div>
         </div>
     </div>
@@ -68,6 +68,9 @@
 
 <script src="script.js"></script>
 <script>
+    function openUrl(url){
+        window.location = url;
+    }
     // Function to convert English numbers to Persian numbers
     function toPersianNumber(num) {
         if (num === undefined || num === null) return '';
