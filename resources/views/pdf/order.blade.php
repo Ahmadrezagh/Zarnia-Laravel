@@ -11,7 +11,7 @@
         #editor-container {
             position: relative;
             width: 800px;
-            height: 1120px; /* A4 تقریبی */
+            height: 1120px; /* A4 تقریبی برای نمایش */
             margin: auto;
             overflow: hidden; /* Prevent overflow on screen */
             box-sizing: border-box;
@@ -46,19 +46,18 @@
                 position: relative; /* Reset positioning for print */
             }
             #editor-container {
-                width: 100% !important;
-                height: auto !important;
+                width: 210mm !important; /* Exact A4 width */
+                height: 297mm !important; /* Exact A4 height */
                 margin: 0 auto;
-                max-width: 800px; /* Limit max width to A4-like size */
+                padding: 20px; /* Preserve existing padding */
+                box-sizing: border-box; /* Ensure padding doesn't add to size */
+                overflow: hidden !important; /* Prevent overflow on print */
                 transform-origin: top center;
-                transform: scale(0.9); /* Scale down if content overflows */
-                overflow: visible !important; /* Ensure all content is visible */
-                padding: 20px; /* Add 20px padding for print only */
-                box-sizing: border-box; /* Ensure padding doesn't add to width */
+                transform: scale(1); /* Reset scale to fit exact size */
             }
             #pdf-canvas, #bg-image {
                 width: 100% !important;
-                height: auto !important;
+                height: 100% !important;
             }
             .print-button {
                 display: none;
@@ -68,8 +67,8 @@
                 margin: 0;
             }
             html, body {
-                height: auto;
-                width: 100%;
+                height: 297mm;
+                width: 210mm;
             }
         }
     </style>
