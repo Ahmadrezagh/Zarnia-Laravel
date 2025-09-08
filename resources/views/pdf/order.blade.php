@@ -45,41 +45,6 @@
             cursor: pointer;
             font-family: tahoma, sans-serif;
         }
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #editor-container, #editor-container * {
-                visibility: visible;
-            }
-            #editor-container {
-                width: 210mm !important;
-                height: 297mm !important;
-                margin: 0;
-                padding: 0;
-                overflow: hidden !important;
-            }
-            #pdf-canvas, #bg-image {
-                width: 210mm !important;
-                height: 297mm !important;
-            }
-            .field {
-                position: absolute !important;
-                right: calc({{ $containerWidth }}px - var(--x-pos)) !important;
-                top: var(--y-pos) !important;
-            }
-            .print-button {
-                display: none;
-            }
-            @page {
-                size: A4;
-                margin: 0;
-            }
-            html, body {
-                height: auto;
-                width: 100%;
-            }
-        }
     </style>
 </head>
 <body>
