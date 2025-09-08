@@ -7,13 +7,16 @@
     <script src="{{ asset('pdfEditor/pdf.min.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; }
+        body {
+            margin: 0;
+            padding: 0;
+        }
         #editor-container {
             position: relative;
-            width: 800px;
-            height: 1120px; /* A4 تقریبی برای نمایش */
+            width: {{ $containerWidth }}px; /* A4 width in pixels */
+            height: {{ $containerHeight }}px; /* A4 height in pixels */
             margin: auto;
-            overflow: hidden; /* Prevent overflow on screen */
+            overflow: hidden;
             box-sizing: border-box;
         }
         #pdf-canvas, #bg-image {
@@ -45,18 +48,20 @@
                 visibility: visible;
             }
             #editor-container {
-                width: auto !important;
-                height: auto !important;
-                margin: 0 auto;
-                padding: 20px;
-                box-sizing: border-box;
+                width: 210mm !important;
+                height: 297mm !important;
+                margin: 0;
+                padding: 0;
                 overflow: hidden !important;
-                max-width: 210mm; /* Limit to A4 width */
-                max-height: 297mm; /* Limit to A4 height */
             }
             #pdf-canvas, #bg-image {
-                width: 100% !important;
-                height: auto !important;
+                width: 210mm !important;
+                height: 297mm !important;
+            }
+            .field {
+                position: absolute !important;
+                right: calc({{ $containerWidth }}px - var(--x-pos)) !important;
+                top: var(--y-pos) !important;
             }
             .print-button {
                 display: none;
@@ -75,6 +80,12 @@
 <body>
 @php
     $template = \App\Models\InvoiceTemplate::with('positions')->latest()->first();
+    $a4WidthMm = 210;
+    $a4HeightMm = 297;
+    $dpi = 96;
+    $mmToPx = fn($mm) => $mm * $dpi / 25.4;
+    $containerWidth = $mmToPx($a4WidthMm);
+    $containerHeight = $mmToPx($a4HeightMm);
     $map = [
         'invoice_id' => $order->id,
         'receiver_name' => $order->address->receiver_name ?? '',
@@ -91,42 +102,32 @@
     ];
 @endphp
 
-<div id="editor-container" style="position: relative; margin: auto;" >
-    {{-- پس‌زمینه --}}
+<div id="editor-container" style="position: relative; margin: auto; width: {{ $containerWidth }}px; height: {{ $containerHeight }}px;">
     @if (str_ends_with($template->background_path, '.pdf'))
         <canvas id="pdf-canvas"></canvas>
     @else
-        <img src="{{ Storage::url($template->background_path) }}" id="bg-image">
+        <img src="{{ Storage::url($template->background_path) }}" id="bg-image" style="width: {{ $containerWidth }}px; height: {{ $containerHeight }}px;">
     @endif
-
-    <div id="overlay-container" style="position: absolute; top: 0; left: 0;"></div>
-    {{-- فیلدها --}}
+    <div id="overlay-container" style="position: absolute; top: 0; left: 0; width: {{ $containerWidth }}px; height: {{ $containerHeight }}px;"></div>
     @foreach ($template->positions as $pos)
         <div class="field"
              style="
                     position: absolute;
+                    right: {{ $containerWidth - $pos->x }}px;
                     top: {{ $pos->y }}px;
-                    right: {{ $pos->x }}px; /* Adjusted for RTL */
                     font-family: {{ $pos->font_family ?? 'tahoma' }};
                     font-size: {{ $pos->font_size ?? 12 }}px;
                     color: {{ $pos->color ?? '#000' }};
                     white-space: nowrap;
                     direction: rtl;
-                    @media print {
-                        position: absolute !important;
-                        top: {{ $pos->y }}px !important;
-                        right: {{ $pos->x }}px !important;
-                        font-family: {{ $pos->font_family ?? 'tahoma' }} !important;
-                        font-size: {{ $pos->font_size ?? 12 }}px !important;
-                        color: {{ $pos->color ?? '#000' }} !important;
-                    }
-                 ">
+                    --x-pos: {{ $pos->x }}px;
+                    --y-pos: {{ $pos->y }}px;
+                    ">
             {{ $map[$pos->key] ?? $pos->value }}
         </div>
     @endforeach
 </div>
 
-<!-- Print Button -->
 <button class="print-button" onclick="printDiv('editor-container')">چاپ فاکتور</button>
 
 @if (str_ends_with($template->background_path, '.pdf'))
@@ -162,21 +163,18 @@
 @endif
 
 <script>
-    // تبدیل اعداد انگلیسی به فارسی
     function toPersianDigits(str) {
         return str.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
     }
 
-    // بعد از لود صفحه همه متن‌ها رو چک کن
     document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll("body *").forEach(el => {
-            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) { // فقط متن خالص
+            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
                 el.textContent = toPersianDigits(el.textContent);
             }
         });
     });
 
-    // تابع چاپ
     function printDiv(divId) {
         window.print();
     }
