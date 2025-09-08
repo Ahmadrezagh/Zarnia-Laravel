@@ -13,8 +13,8 @@
         }
         #editor-container {
             position: relative;
-            width: {{ $containerWidth }}px; /* A4 width in pixels */
-            height: {{ $containerHeight }}px; /* A4 height in pixels */
+            width: 210mm; /* Exact A4 width */
+            height: 297mm; /* Exact A4 height */
             margin: auto;
             overflow: hidden;
             box-sizing: border-box;
