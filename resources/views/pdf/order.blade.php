@@ -25,20 +25,6 @@
             direction: rtl;
         }
     </style>
-    <style>
-        @media print {
-            body {
-                -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
-                color-adjust: exact !important;               /* Firefox */
-                print-color-adjust: exact !important;         /* Modern browsers */
-            }
-
-            #pdf-canvas, #bg-image {
-                display: block !important;
-                -webkit-print-color-adjust: exact !important;
-            }
-        }
-    </style>
 </head>
 <body>
 @php
@@ -62,7 +48,7 @@
 <div id="editor-container" style="position: relative; margin: auto;" >
     {{-- پس‌زمینه --}}
     @if (str_ends_with($template->background_path, '.pdf'))
-        <canvas id="pdf-canvas"></canvas>
+{{--        <canvas id="pdf-canvas"></canvas>--}}
     @else
         <img src="{{ Storage::url($template->background_path) }}" id="bg-image">
     @endif
