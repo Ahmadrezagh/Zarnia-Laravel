@@ -43,7 +43,6 @@
             }
             #editor-container, #editor-container * {
                 visibility: visible;
-                position: relative; /* Reset positioning for print */
             }
             #editor-container {
                 width: 210mm !important; /* Exact A4 width */
@@ -58,16 +57,6 @@
             #pdf-canvas, #bg-image {
                 width: 100% !important;
                 height: 100% !important;
-            }
-            .field {
-                position: absolute !important; /* Ensure fields retain absolute positioning */
-                top: auto !important; /* Reset top for recalculation */
-                left: auto !important; /* Reset left for recalculation */
-                right: {{ $pos->x }}px !important; /* Adjust for RTL */
-                top: {{ $pos->y }}px !important; /* Maintain original Y position */
-                font-family: {{ $pos->font_family ?? 'tahoma' }} !important;
-                font-size: {{ $pos->font_size ?? 12 }}px !important;
-                color: {{ $pos->color ?? '#000' }} !important;
             }
             .print-button {
                 display: none;
@@ -115,11 +104,22 @@
     @foreach ($template->positions as $pos)
         <div class="field"
              style="
+                    position: absolute;
                     top: {{ $pos->y }}px;
-                    left: {{ $pos->x }}px;
+                    right: {{ $pos->x }}px; /* Adjusted for RTL */
                     font-family: {{ $pos->font_family ?? 'tahoma' }};
                     font-size: {{ $pos->font_size ?? 12 }}px;
                     color: {{ $pos->color ?? '#000' }};
+                    white-space: nowrap;
+                    direction: rtl;
+                    @media print {
+                        position: absolute !important;
+                        top: {{ $pos->y }}px !important;
+                        right: {{ $pos->x }}px !important;
+                        font-family: {{ $pos->font_family ?? 'tahoma' }} !important;
+                        font-size: {{ $pos->font_size ?? 12 }}px !important;
+                        color: {{ $pos->color ?? '#000' }} !important;
+                    }
                  ">
             {{ $map[$pos->key] ?? $pos->value }}
         </div>
