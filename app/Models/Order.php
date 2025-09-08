@@ -159,7 +159,7 @@ class Order extends Model
 
     public function getDarsadKharidAttribute()
     {
-        return $this->orderItems()->first() ? $this->orderItems()->first()->product->darsad_kharid: 0 ;
+        return $this->orderItems()->first() && $this->orderItems()->first()->product ? $this->orderItems()->first()->product->darsad_kharid: 0 ;
     }
     public function getWeightColAttribute()
     {
