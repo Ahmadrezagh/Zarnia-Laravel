@@ -12,7 +12,7 @@
             position: relative;
             width: 800px;
             height: 1120px; /* A4 تقریبی */
-            margin: auto;
+            margin: 0;
         }
         #pdf-canvas, #bg-image {
             width: 100%;
@@ -74,7 +74,7 @@
     ];
 @endphp
 
-<div id="editor-container" style="position: relative; margin: auto;" >
+<div id="editor-container" style="position: relative; margin: 0;" >
     {{-- پس‌زمینه --}}
     @if (str_ends_with($template->background_path, '.pdf'))
         <canvas id="pdf-canvas"></canvas>
