@@ -45,18 +45,18 @@
                 visibility: visible;
             }
             #editor-container {
-                width: 210mm !important; /* Exact A4 width */
-                height: 297mm !important; /* Exact A4 height */
+                width: auto !important;
+                height: auto !important;
                 margin: 0 auto;
-                padding: 20px; /* Preserve existing padding */
-                box-sizing: border-box; /* Ensure padding fits within size */
-                overflow: hidden !important; /* Prevent overflow on print */
-                transform-origin: top center;
-                transform: scale(1); /* Fit exact size */
+                padding: 20px;
+                box-sizing: border-box;
+                overflow: hidden !important;
+                max-width: 210mm; /* Limit to A4 width */
+                max-height: 297mm; /* Limit to A4 height */
             }
             #pdf-canvas, #bg-image {
                 width: 100% !important;
-                height: 100% !important;
+                height: auto !important;
             }
             .print-button {
                 display: none;
@@ -66,8 +66,8 @@
                 margin: 0;
             }
             html, body {
-                height: 297mm;
-                width: 210mm;
+                height: auto;
+                width: 100%;
             }
         }
     </style>
