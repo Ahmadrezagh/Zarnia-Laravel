@@ -12,7 +12,9 @@
             position: relative;
             width: 800px;
             height: 1120px; /* A4 تقریبی */
-            margin: 0;
+            margin: auto;
+            overflow: hidden; /* Prevent overflow on screen */
+            box-sizing: border-box;
         }
         #pdf-canvas, #bg-image {
             width: 100%;
@@ -41,16 +43,33 @@
             }
             #editor-container, #editor-container * {
                 visibility: visible;
+                position: relative; /* Reset positioning for print */
             }
             #editor-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: auto;
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 auto;
+                max-width: 800px; /* Limit max width to A4-like size */
+                transform-origin: top center;
+                transform: scale(0.9); /* Scale down if content overflows */
+                overflow: visible !important; /* Ensure all content is visible */
+                padding: 20px; /* Add 20px padding for print only */
+                box-sizing: border-box; /* Ensure padding doesn't add to width */
+            }
+            #pdf-canvas, #bg-image {
+                width: 100% !important;
+                height: auto !important;
             }
             .print-button {
                 display: none;
+            }
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            html, body {
+                height: auto;
+                width: 100%;
             }
         }
     </style>
@@ -74,7 +93,7 @@
     ];
 @endphp
 
-<div id="editor-container" style="position: relative; margin: 0;" >
+<div id="editor-container" style="position: relative; margin: auto;" >
     {{-- پس‌زمینه --}}
     @if (str_ends_with($template->background_path, '.pdf'))
         <canvas id="pdf-canvas"></canvas>
