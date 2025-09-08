@@ -6,6 +6,11 @@
     <title>فاکتور #{{ $order->id }}</title>
     <script src="{{ asset('pdfEditor/pdf.min.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+    @php
+        $containerWidth = '210mm';
+        $containerHeight = '297mm';
+
+    @endphp
     <style>
         body {
             margin: 0;
@@ -13,8 +18,8 @@
         }
         #editor-container {
             position: relative;
-            width: 210mm; /* Exact A4 width */
-            height: 297mm; /* Exact A4 height */
+            width: {{ $containerWidth }}px; /* A4 width in pixels */
+            height: {{ $containerHeight }}px; /* A4 height in pixels */
             margin: auto;
             overflow: hidden;
             box-sizing: border-box;
