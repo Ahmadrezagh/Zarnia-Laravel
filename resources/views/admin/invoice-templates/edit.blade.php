@@ -1,121 +1,178 @@
-{{-- resources/views/admin/invoice-templates/edit.blade.php --}}
+{{-- resources/views/pdf/print.blade.php --}}
         <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<script src="{{ asset('pdfEditor/pdf.min.js') }}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/interactjs@1/dist/interact.min.js"></script>
-<style>
-    body { margin: 0; padding: 0; }
-    #editor-container {
-        position: relative;
-        width: 800px;
-        height: 1120px; /* A4 تقریبی */
-        margin: auto;
-    }
-    #pdf-canvas, #bg-image {
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
-    .field {
-        position: absolute;
-        white-space: nowrap;
-        direction: rtl;
-    }
-</style>
-    <title>editor</title>
+    <meta charset="UTF-8">
+    <title>فاکتور #{{ $order->id }}</title>
+    <script src="{{ asset('pdfEditor/pdf.min.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #editor-container {
+            position: relative;
+            width: 800px;
+            height: 1120px; /* A4 تقریبی برای نمایش */
+            margin: auto;
+            overflow: hidden; /* Prevent overflow on screen */
+            box-sizing: border-box;
+        }
+        #pdf-canvas, #bg-image {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .field {
+            position: absolute;
+            white-space: nowrap;
+            direction: rtl;
+        }
+        .print-button {
+            margin: 20px auto;
+            display: block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: tahoma, sans-serif;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #editor-container, #editor-container * {
+                visibility: visible;
+            }
+            #editor-container {
+                width: auto !important;
+                height: auto !important;
+                margin: 0 auto;
+                padding: 20px;
+                box-sizing: border-box;
+                overflow: hidden !important;
+                max-width: 210mm; /* Limit to A4 width */
+                max-height: 297mm; /* Limit to A4 height */
+            }
+            #pdf-canvas, #bg-image {
+                width: 100% !important;
+                height: auto !important;
+            }
+            .print-button {
+                display: none;
+            }
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            html, body {
+                height: auto;
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-<div id="editor-container" style="position: relative; margin: auto;">
+@php
+    $template = \App\Models\InvoiceTemplate::with('positions')->latest()->first();
+    $map = [
+        'invoice_id' => $order->id,
+        'receiver_name' => $order->address->receiver_name ?? '',
+        'purchase_date' => jdate($order->created_at)->format('Y/m/d'),
+        'gold_price' => number_format($order->gold_price ?? 6640400),
+        'total_label' => number_format($order->total_amount),
+        'notes_label' => $order->notes ?? '',
+        'invoice_number' => $order->number ?? '',
+        'previous_purchase_count' => 1,
+        'purchase_type' => $order->type ?? 'آنلاین',
+        'receiver_phone' => $order->address->receiver_phone ?? '',
+        'postal_code' => $order->address->postal_code ?? '',
+        'address' => $order->address->address ?? '',
+    ];
+@endphp
+
+<div id="editor-container" style="position: relative; margin: auto;" >
+    {{-- پس‌زمینه --}}
     @if (str_ends_with($template->background_path, '.pdf'))
         <canvas id="pdf-canvas"></canvas>
     @else
-        <img src="{{ Storage::url($template->background_path) }}" id="bg-image" style="width: 100%; height: 100%;">
+        <img src="{{ Storage::url($template->background_path) }}" id="bg-image">
     @endif
+
     <div id="overlay-container" style="position: absolute; top: 0; left: 0;"></div>
+    {{-- فیلدها --}}
+    @foreach ($template->positions as $pos)
+        <div class="field"
+             style="
+                    position: absolute;
+                    top: {{ $pos->y }}px;
+                    right: {{ $pos->x }}px; /* Adjusted for RTL */
+                    font-family: {{ $pos->font_family ?? 'tahoma' }};
+                    font-size: {{ $pos->font_size ?? 12 }}px;
+                    color: {{ $pos->color ?? '#000' }};
+                    white-space: nowrap;
+                    direction: rtl;
+                    @media print {
+                        position: absolute !important;
+                        top: {{ $pos->y }}px !important;
+                        right: {{ $pos->x }}px !important;
+                        font-family: {{ $pos->font_family ?? 'tahoma' }} !important;
+                        font-size: {{ $pos->font_size ?? 12 }}px !important;
+                        color: {{ $pos->color ?? '#000' }} !important;
+                    }
+                 ">
+            {{ $map[$pos->key] ?? $pos->value }}
+        </div>
+    @endforeach
 </div>
 
-<button id="save-btn">ذخیره موقعیت‌ها</button>
+<!-- Print Button -->
+<button class="print-button" onclick="printDiv('editor-container')">چاپ فاکتور</button>
+
+@if (str_ends_with($template->background_path, '.pdf'))
+    <script>
+        const url = '{{ Storage::url($template->background_path) }}';
+        pdfjsLib.getDocument(url).promise.then(pdf => {
+            pdf.getPage(1).then(page => {
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.getElementById('pdf-canvas');
+                const container = document.getElementById('editor-container');
+                const overlay = document.getElementById('overlay-container');
+
+                // match sizes
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                container.style.width = viewport.width + 'px';
+                container.style.height = viewport.height + 'px';
+                overlay.style.width = viewport.width + 'px';
+                overlay.style.height = viewport.height + 'px';
+
+                // render PDF
+                page.render({ canvasContext: canvas.getContext('2d'), viewport });
+            });
+        });
+    </script>
+@endif
 
 <script>
-    @if (str_ends_with($template->background_path, '.pdf'))
-    const url = '{{ Storage::url($template->background_path) }}';
-    pdfjsLib.getDocument(url).promise.then(pdf => {
-        pdf.getPage(1).then(page => {
-            const viewport = page.getViewport({ scale: 1.5 });
-            const canvas = document.getElementById('pdf-canvas');
-            const container = document.getElementById('editor-container');
-            const overlay = document.getElementById('overlay-container');
-
-            // match sizes
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            container.style.width = viewport.width + 'px';
-            container.style.height = viewport.height + 'px';
-            overlay.style.width = viewport.width + 'px';
-            overlay.style.height = viewport.height + 'px';
-
-            // render PDF
-            page.render({ canvasContext: canvas.getContext('2d'), viewport });
-
-            // now add positions
-            addPositions();
-        });
-    });
-    @else
-    addPositions(); // if image background
-    @endif
-
-    function addPositions() {
-        const positions = @json($template->positions->where('type', 'fixed'));
-        positions.forEach(pos => {
-            const elem = document.createElement('div');
-            elem.className = 'draggable-fixed';
-            elem.textContent = pos.value || pos.key;
-            elem.style.position = 'absolute';
-            elem.style.left = `${pos.x}px`;
-            elem.style.top = `${pos.y}px`;
-            elem.setAttribute('data-id', pos.id);
-            document.getElementById('overlay-container').appendChild(elem);
-
-            interact(elem).draggable({
-                onmove: event => {
-                    const x = (parseFloat(event.target.style.left) + event.dx);
-                    const y = (parseFloat(event.target.style.top) + event.dy);
-                    event.target.style.left = `${x}px`;
-                    event.target.style.top = `${y}px`;
-                }
-            });
-        });
+    // تبدیل اعداد انگلیسی به فارسی
+    function toPersianDigits(str) {
+        return str.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
     }
 
-    // ذخیره با AJAX
-    document.getElementById('save-btn').addEventListener('click', () => {
-        const updatedPositions = [];
-        document.querySelectorAll('.draggable-fixed').forEach(elem => {
-            updatedPositions.push({
-                id: elem.getAttribute('data-id'),
-                x: parseFloat(elem.style.left),
-                y: parseFloat(elem.style.top)
-            });
+    // بعد از لود صفحه همه متن‌ها رو چک کن
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll("body *").forEach(el => {
+            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) { // فقط متن خالص
+                el.textContent = toPersianDigits(el.textContent);
+            }
         });
-        fetch('{{ route('invoice_templates.update', $template->id) }}', {
-            method: 'PUT',
-            body: JSON.stringify(updatedPositions),
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-        }).then(response => response.json()).then(data => alert('ذخیره شد'));
     });
+
+    // تابع چاپ
+    function printDiv(divId) {
+        window.print();
+    }
 </script>
-
-<style>
-    .draggable-fixed {
-        background: rgba(0, 255, 0, 0.3);
-        padding: 5px;
-        border: 1px dashed green;
-        cursor: move;
-        direction: rtl;
-    }
-</style>
 </body>
 </html>
