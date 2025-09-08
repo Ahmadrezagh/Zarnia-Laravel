@@ -24,6 +24,35 @@
             white-space: nowrap;
             direction: rtl;
         }
+        .print-button {
+            margin: 20px auto;
+            display: block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: tahoma, sans-serif;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #editor-container, #editor-container * {
+                visibility: visible;
+            }
+            #editor-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: auto;
+            }
+            .print-button {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -48,7 +77,7 @@
 <div id="editor-container" style="position: relative; margin: auto;" >
     {{-- پس‌زمینه --}}
     @if (str_ends_with($template->background_path, '.pdf'))
-{{--        <canvas id="pdf-canvas"></canvas>--}}
+        <canvas id="pdf-canvas"></canvas>
     @else
         <img src="{{ Storage::url($template->background_path) }}" id="bg-image">
     @endif
@@ -68,6 +97,9 @@
         </div>
     @endforeach
 </div>
+
+<!-- Print Button -->
+<button class="print-button" onclick="printDiv('editor-container')">چاپ فاکتور</button>
 
 @if (str_ends_with($template->background_path, '.pdf'))
     <script>
@@ -89,16 +121,11 @@
 
                 // render PDF
                 page.render({ canvasContext: canvas.getContext('2d'), viewport });
-
             });
         });
     </script>
 @endif
 
-<script>
-    // باز کردن چاپ خودکار
-    // window.print();
-</script>
 <script>
     // تبدیل اعداد انگلیسی به فارسی
     function toPersianDigits(str) {
@@ -113,6 +140,11 @@
             }
         });
     });
+
+    // تابع چاپ
+    function printDiv(divId) {
+        window.print();
+    }
 </script>
 </body>
 </html>
