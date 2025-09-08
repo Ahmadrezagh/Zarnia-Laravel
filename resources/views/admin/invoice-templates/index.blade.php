@@ -3,16 +3,16 @@
 
 
     <!-- Page Header -->
-    <x-breadcrumb :title="'بنر ها'" :items="[
+    <x-breadcrumb :title="'قالب ها'" :items="[
             ['label' => 'خانه', 'url' => route('home')],
-            ['label' => 'بنر ها']
+            ['label' => 'قالب ها']
       ]" />
     <!-- End Page Header -->
 
     <x-page>
         <x-slot name="header">
-            <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن بنر</button>
-            <x-modal.create id="modal-create" title="ساخت بنر" action="{{route('invoice_templates.store')}}" >
+            <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن قالب</button>
+            <x-modal.create id="modal-create" title="ساخت قالب" action="{{route('invoice_templates.store')}}" >
                 <x-form.input title="نام"  name="name" />
                 <x-form.file-input title="فایل بک گراند" name="background" />
             </x-modal.create>
@@ -32,9 +32,9 @@
         >
             @foreach($templates as $template)
 
-                <x-modal.destroy id="modal-destroy-{{$template->id}}" title="حذف بنر" action="{{route('invoice_templates.destroy', $template->id)}}" title="{{$template->title}}" />
+                <x-modal.destroy id="modal-destroy-{{$template->id}}" title="حذف قالب" action="{{route('invoice_templates.destroy', $template->id)}}" title="{{$template->title}}" />
 
-                <x-modal.update id="modal-edit-{{$template->id}}" title="ویرایش بنر" action="{{route('invoice_templates.update',$template->id)}}" >
+                <x-modal.update id="modal-edit-{{$template->id}}" title="ویرایش قالب" action="{{route('invoice_templates.update',$template->id)}}" >
                     <x-form.input title="نام"  name="name" :value="$template->name" />
                     <x-form.file-input title="فایل بک گراند" name="background" />
                 </x-modal.update>
