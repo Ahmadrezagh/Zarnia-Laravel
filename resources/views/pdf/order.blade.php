@@ -13,7 +13,7 @@
             width: 800px;
             height: 1120px; /* A4 تقریبی */
             margin: auto;
-            padding-left: 20px;
+            padding-left: 200px;
         }
         #pdf-canvas, #bg-image {
             width: 100%;
