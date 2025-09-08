@@ -84,8 +84,8 @@
     $a4HeightMm = 297;
     $dpi = 96;
     $mmToPx = fn($mm) => $mm * $dpi / 25.4;
-    $containerWidth = $mmToPx($a4WidthMm);
-    $containerHeight = $mmToPx($a4HeightMm);
+    $containerWidth = $mmToPx($a4WidthMm); // 793.7px
+    $containerHeight = $mmToPx($a4HeightMm); // 1122.5px
     $map = [
         'invoice_id' => $order->id,
         'receiver_name' => $order->address->receiver_name ?? '',
