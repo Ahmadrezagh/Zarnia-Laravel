@@ -28,21 +28,10 @@ class OrderItemResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user' => UserResource::make($this->user),
-            'address' => AddressResource::make($this->address),
-            'shipping' => ShippingResource::make($this->shipping),
-            'shipping_time' => ShippingTimeResource::make($this->shippingTime),
-            'gateway' => GatewayResource::make($this->gateway),
-            'status' => $this->persianStatus,
-            'status_en' => $this->status,
-            'discount_code' => $this->discount_code,
-            'discount_percentage' => $this->discount_percentage,
-            'discount_price' => $this->discount_price,
-            'total_amount' => $this->total_amount,
-            'final_amount' => $this->final_amount,
-            'paid_at' => $this->paid_at,
-            'note' => $this->notem,
-            'payment_url' => $this->payment_urll
+            'etiket' => $this->etiket,
+            'name' => $this->name,
+            'count' => $this->count,
+            'price' => $this->price,
         ];
     }
 }

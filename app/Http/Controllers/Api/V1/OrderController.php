@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Orders\createOrderRequest;
 use App\Http\Resources\Api\V1\Orders\OrderItemResource;
+use App\Http\Resources\Api\V1\Orders\OrderResource;
 use App\Models\Etiket;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -16,7 +17,7 @@ class OrderController extends Controller
     public function index()
     {
         $user = auth('sanctum')->user();
-        return OrderItemResource::collection($user->orders);
+        return OrderResource::collection($user->orders);
     }
     public function store(createOrderRequest $request)
     {
@@ -81,7 +82,7 @@ class OrderController extends Controller
         // Clear the shopping cart
         $user->shoppingCartItems()->delete();
         $order_url = $order->gateway->createSnappTransaction($order);
-        return OrderItemResource::make(Order::find($order->id),$order_url['response']['paymentPageUrl']);
+        return OrderResource::make(Order::find($order->id),$order_url['response']['paymentPageUrl']);
     }
 
     public function status(Order $order)
