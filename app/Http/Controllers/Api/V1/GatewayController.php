@@ -103,6 +103,7 @@ class GatewayController extends Controller
         if($order) {
             if ($order->status == Order::$STATUSES[0]) {
                 $order->verify();
+                $order->settle();
             }
             return view('thank-you.index', compact('order'));
         }
