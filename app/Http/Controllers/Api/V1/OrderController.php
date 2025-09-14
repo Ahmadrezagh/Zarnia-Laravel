@@ -79,7 +79,7 @@ class OrderController extends Controller
         }
 
         // Clear the shopping cart
-//        $user->shoppingCartItems()->delete();
+        $user->shoppingCartItems()->delete();
         $order_url = $order->gateway->createSnappTransaction($order);
         return OrderItemResource::make(Order::find($order->id),$order_url['response']['paymentPageUrl']);
     }
