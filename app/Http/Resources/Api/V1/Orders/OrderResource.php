@@ -12,6 +12,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrderResource extends JsonResource
 {
+    protected $payment_urll;
+    public function __construct($resource,$payment_url = null)
+    {
+        $this->payment_urll = $payment_url;
+        parent::__construct($resource);
+    }
     /**
      * Transform the resource into an array.
      *
