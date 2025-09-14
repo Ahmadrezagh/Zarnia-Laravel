@@ -8,6 +8,7 @@ use App\Http\Resources\Api\V1\Orders\OrderItemResource;
 use App\Models\Etiket;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -91,6 +92,8 @@ class OrderController extends Controller
     {
         $response = $order->cancel();
         $order->update(['status' => Order::$STATUSES[3]]);
+        $sms = new Kavehnegar();
+        $sms->send_with_two_token($order->address->receiver_phone,$order->address->receiver_name,$order->id,$order->status);
         return $response;
     }
     public function settle(Order $order)
