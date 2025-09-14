@@ -103,6 +103,14 @@ class OrderController extends Controller
     }
     public function updateSnappTransaction(Request $request, Order $order)
     {
+        $orderItemIds = $request->input('order_item_ids', []);
+
+        if (!empty($orderItemIds)) {
+            // Delete all order items of this order where id is not in the given list
+            $order->orderItems()
+                ->whereNotIn('id', $orderItemIds)
+                ->delete();
+        }
         return $order->updateSnappTransaction();
     }
 }
