@@ -89,7 +89,9 @@ class OrderController extends Controller
     }
     public function cancel(Order $order)
     {
-        return $order->cancel();
+        $response = $order->cancel();
+        $order->update(['status' => Order::$STATUSES[3]]);
+        return $response;
     }
     public function settle(Order $order)
     {
@@ -97,6 +99,6 @@ class OrderController extends Controller
     }
     public function updateSnappTransaction(Request $request, Order $order)
     {
-        return $order->updateSnappTransaction($request->toArray());
+        return $order->updateSnappTransaction();
     }
 }
