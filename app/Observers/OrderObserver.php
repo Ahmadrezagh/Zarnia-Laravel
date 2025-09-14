@@ -16,7 +16,7 @@ class OrderObserver
         $gateway = Gateway::find($order->gateway_id);
         $gateway->createTransaction($order);
         $sms = new Kavehnegar();
-        $sms->send_with_two_token($order->address->receiver_phone,$order->address->receiver_name,$order->id,$order->status);
+//        $sms->send_with_two_token($order->address->receiver_phone,$order->address->receiver_name,$order->id,$order->status);
     }
 
     /**

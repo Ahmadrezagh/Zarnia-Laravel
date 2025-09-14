@@ -8,6 +8,8 @@ use App\Http\Resources\Api\V1\Orders\OrderItemResource;
 use App\Models\Etiket;
 use App\Models\Order;
 use App\Models\OrderItem;
+use Illuminate\Http\Request;
+
 class OrderController extends Controller
 {
     public function index()
@@ -76,8 +78,25 @@ class OrderController extends Controller
         }
 
         // Clear the shopping cart
-        $user->shoppingCartItems()->delete();
+//        $user->shoppingCartItems()->delete();
+        $order_url = $order->gateway->createSnappTransaction($order);
+        return OrderItemResource::make(Order::find($order->id),$order_url['response']['paymentPageUrl']);
+    }
 
-        return OrderItemResource::make($order);
+    public function status(Order $order)
+    {
+        return $order->status();
+    }
+    public function cancel(Order $order)
+    {
+        return $order->cancel();
+    }
+    public function settle(Order $order)
+    {
+        return $order->settle();
+    }
+    public function updateSnappTransaction(Request $request, Order $order)
+    {
+        return $order->updateSnappTransaction($request->toArray());
     }
 }

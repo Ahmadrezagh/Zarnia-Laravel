@@ -48,7 +48,7 @@ class Order extends Model
         return $this->belongsTo(Gateway::class);
     }
     public function orderItems(){
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(OrderItem::class,'order_id','id');
     }
     public static $STATUSES = [
         'pending',
@@ -237,4 +237,22 @@ class Order extends Model
         }
         return false;
     }
+
+    public function status()
+    {
+        return $this->gateway->status($this->payment_token);
+    }
+    public function cancel()
+    {
+        return $this->gateway->cancel($this->payment_token);
+    }
+    public function settle()
+    {
+        return $this->gateway->settle($this->payment_token);
+    }
+    public function updateSnappTransaction()
+    {
+        return $this->gateway->updateSnappTransaction(Order::find($this->id));
+    }
+
 }

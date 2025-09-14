@@ -62,7 +62,10 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
             Route::post('profile', [ProfileController::class, 'update']);
             Route::resource('addresses', AddressController::class);
             Route::resource('orders', OrderController::class)->only('index','store');
-
+            Route::get('order/{order}/status', [OrderController::class, 'status']);
+            Route::post('order/{order}/update', [OrderController::class, 'updateSnappTransaction']);
+            Route::get('order/{order}/cancel', [OrderController::class, 'cancel']);
+            Route::get('order/{order}/settle', [OrderController::class, 'settle']);
         });
     });
 });

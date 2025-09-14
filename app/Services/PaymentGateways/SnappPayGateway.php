@@ -54,66 +54,88 @@ class SnappPayGateway
         }
     }
 
-    public function getPaymentToken(array $payload): ?array
+    public function getPaymentToken(array $payload): array
     {
         $token = $this->authenticate();
-        if (!$token) return null;
+        if (!$token) return ['error' => 'خطا در بررسی پرداخت'];
 
         $response = Http::withToken($token)
             ->post($this->config('SNAPPPAY_BASE_URL') . '/api/online/payment/v1/token', $payload);
 
-        return $response->successful() ? $response->json('response') : null;
+        return $response->successful() ? $response->json('response') : $response->json();
     }
 
-    public function verify(string $paymentToken): ?array
+    public function verify(string $paymentToken): array
     {
         $token = $this->authenticate();
-        if (!$token) return null;
+        if (!$token) return ['error' => 'خطا در بررسی پرداخت'];
 
         $response = Http::withToken($token)
             ->post($this->config('SNAPPPAY_BASE_URL') . '/api/online/payment/v1/verify', [
                 'paymentToken' => $paymentToken,
             ]);
 
-        return $response->successful() ? $response->json('response') : null;
+        return $response->successful() ? $response->json('response') : $response->json();
     }
 
-    public function settle(string $paymentToken): ?array
+    public function settle(string $paymentToken): array
     {
         $token = $this->authenticate();
-        if (!$token) return null;
+        if (!$token) return ['error' => 'خطا در بررسی پرداخت'];
 
         $response = Http::withToken($token)
             ->post($this->config('SNAPPPAY_BASE_URL') . '/api/online/payment/v1/settle', [
                 'paymentToken' => $paymentToken,
             ]);
 
-        return $response->successful() ? $response->json('response') : null;
+        return $response->successful() ? $response->json('response') : $response->json();
     }
 
-    public function revert(string $paymentToken): ?array
+    public function revert(string $paymentToken): array
     {
         $token = $this->authenticate();
-        if (!$token) return null;
+        if (!$token) return ['error' => 'خطا در بررسی پرداخت'];
 
         $response = Http::withToken($token)
             ->post($this->config('SNAPPPAY_BASE_URL') . '/api/online/payment/v1/revert', [
                 'paymentToken' => $paymentToken,
             ]);
 
-        return $response->successful() ? $response->json('response') : null;
+        return $response->successful() ? $response->json('response') : $response->json();
     }
 
-    public function getStatus(string $paymentToken): ?array
+    public function getStatus(string $paymentToken): array
     {
         $token = $this->authenticate();
-        if (!$token) return null;
+        if (!$token) return ['error' => 'خطا در بررسی پرداخت'];
 
         $response = Http::withToken($token)
             ->get($this->config('SNAPPPAY_BASE_URL') . '/api/online/payment/v1/status', [
                 'paymentToken' => $paymentToken,
             ]);
 
-        return $response->successful() ? $response->json('response') : null;
+        return $response->successful() ? $response->json('response') : $response->json();
+    }
+
+    public function update(array $payload):array
+    {
+        $token = $this->authenticate();
+        if (!$token) return ['error' => 'خطا در بررسی پرداخت'];
+
+        $response = Http::withToken($token)
+            ->post($this->config('SNAPPPAY_BASE_URL') . '/api/online/payment/v1/update', $payload);
+        return $response->successful() ? $response->json('response') : $response->json();
+    }
+
+    public function cancel(string $paymentToken): array
+    {
+        $token = $this->authenticate();
+        if (!$token) return ['error' => 'خطا در بررسی پرداخت'];
+
+        $response = Http::withToken($token)
+            ->post($this->config('SNAPPPAY_BASE_URL') . '/api/online/payment/v1/cancel', [
+                'paymentToken' => $paymentToken,
+            ]);
+        return $response->successful() ? $response->json('response') : $response->json();
     }
 }
