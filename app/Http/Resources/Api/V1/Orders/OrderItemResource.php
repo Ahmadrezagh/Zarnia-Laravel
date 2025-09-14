@@ -34,6 +34,7 @@ class OrderItemResource extends JsonResource
             'shipping_time' => ShippingTimeResource::make($this->shippingTime),
             'gateway' => GatewayResource::make($this->gateway),
             'status' => $this->persianStatus,
+            'status_en' => $this->status,
             'discount_code' => $this->discount_code,
             'discount_percentage' => $this->discount_percentage,
             'discount_price' => $this->discount_price,
