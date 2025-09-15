@@ -59,7 +59,7 @@ class Gateway extends Model implements HasMedia
         })->toArray();
 
         $payload = [
-            "amount" => $static_amount,
+            "amount" => $final_amount,
             "cartList" => [
                 [
                     "cartId"            => 0,
@@ -71,7 +71,7 @@ class Gateway extends Model implements HasMedia
                     "taxAmount" => 0
                 ]
             ],
-            "discountAmount"      => $final_amount - $static_amount,
+            "discountAmount"      => 0,
             "externalSourceAmount"=> 0,
             "mobile"              => $mobile,
             "paymentMethodTypeDto"=> "INSTALLMENT",
@@ -205,7 +205,7 @@ class Gateway extends Model implements HasMedia
                     "taxAmount" => 0,
                 ]
             ],
-            "discountAmount" => $final_amount - $static_amount,
+            "discountAmount" => 0,
             "externalSourceAmount" => 0,
             "paymentMethodTypeDto" => "INSTALLMENT",
             "paymentToken"         => $order->payment_token, // from createSnappTransaction
