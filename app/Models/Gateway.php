@@ -45,27 +45,34 @@ class Gateway extends Model implements HasMedia
 
         // Final amount (can come from DB or computed)
         $final_amount = $order->final_amount ?? $order->orderItems->sum(fn($item) => $item->price * $item->count);
-        $final_amount = 45000;
+        $static_amount = 45000;
         // Build cart items dynamically from orderItems
         $cartItems = $order->orderItems->map(function ($item,$index) use ($final_amount) {
             return [
-                "amount"         => $final_amount,
+                "amount"         => $item->amount * 10,
                 "category"       => "طلا",
                 "count"          => $item->count,
                 "id"             => $index,
                 "name"           => $item->name,
+                "commissionType" => 100
             ];
         })->toArray();
 
         $payload = [
-            "amount" => $final_amount,
+            "amount" => $static_amount,
             "cartList" => [
                 [
                     "cartId"            => 0,
                     "cartItems"         => $cartItems,
                     "totalAmount"       => $final_amount,
+                    "isShipmentIncluded" => true,
+                    "shippingAmount"=> 0,
+                    "isTaxIncluded"=> true,
+                    "taxAmount" => 0
                 ]
             ],
+            "discountAmount"      => $final_amount - $static_amount,
+            "externalSourceAmount"=> 0,
             "mobile"              => $mobile,
             "paymentMethodTypeDto"=> "INSTALLMENT",
             "returnURL"           => route('payment.callback'),
@@ -164,7 +171,7 @@ class Gateway extends Model implements HasMedia
 
         // Compute reduced final amount (example: sum of orderItems * price)
         $final_amount = $order->final_amount ?? $order->orderItems->sum(fn($item) => $item->price * $item->count);
-        $final_amount = 35000;
+        $static_amount = 35000;
 
         // IMPORTANT: Update must reduce -> make sure amount is less than original
 //        if ($final_amount >= $order->original_amount) {
@@ -177,10 +184,11 @@ class Gateway extends Model implements HasMedia
         $cartItems = $order->orderItems->map(function ($item, $index) use ($final_amount) {
             return [
                 "id"             => $index,
-                "amount"         => $final_amount,
+                "amount"         => $item->price * 10,
                 "category"       => $item->etiket ?? "General",
                 "count"          => $item->count,
                 "name"           => $item->name,
+                "commissionType" => 100
             ];
         })->toArray();
 
@@ -191,8 +199,14 @@ class Gateway extends Model implements HasMedia
                     "cartId"            => $order->id,
                     "cartItems"         => $cartItems,
                     "totalAmount"       => $final_amount,
+                    "isShipmentIncluded" => true,
+                    "isTaxIncluded" => false,
+                    "shippingAmount" => 0,
+                    "taxAmount" => 0,
                 ]
             ],
+            "discountAmount" => $final_amount - $static_amount,
+            "externalSourceAmount" => 0,
             "paymentMethodTypeDto" => "INSTALLMENT",
             "paymentToken"         => $order->payment_token, // from createSnappTransaction
         ];
