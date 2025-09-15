@@ -138,4 +138,13 @@ class SnappPayGateway
             ]);
         return $response->successful() ? $response->json('response') : $response->json();
     }
+    public function eligible(string $price): array
+    {
+        $token = $this->authenticate();
+        if (!$token) return ['error' => 'خطا در بررسی پرداخت'];
+
+        $response = Http::withToken($token)
+            ->get($this->config('SNAPPPAY_BASE_URL') . '/api/online/offer/v1/eligible?amount='.$price);
+        return $response->successful() ? $response->json('response') : $response->json();
+    }
 }

@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\Orders\OrderResource;
 use App\Models\Etiket;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
 
@@ -112,5 +113,11 @@ class OrderController extends Controller
                 ->delete();
         }
         return $order->updateSnappTransaction();
+    }
+
+    public function eligible($price)
+    {
+        $snapp = new SnappPayGateway();
+        return $snapp->eligible($price);
     }
 }
