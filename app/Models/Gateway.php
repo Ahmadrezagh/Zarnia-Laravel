@@ -223,7 +223,7 @@ class Gateway extends Model implements HasMedia
             ];
         }
 
-        return response()->withErrors('SnappPay: Failed to update transaction.');
+        return ['error' => 'SnappPay: Failed to update transaction.'];
     }
 
 }
