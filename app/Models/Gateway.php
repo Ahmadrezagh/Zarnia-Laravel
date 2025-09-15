@@ -169,7 +169,7 @@ class Gateway extends Model implements HasMedia
         $mobile = $this->normalizeIranPhone($order->address->receiver_phone) ?? "+989000000000";
 
         // Compute reduced final amount (example: sum of orderItems * price)
-        $final_amount = $order->final_amount ?? $order->orderItems->sum(fn($item) => $item->price * $item->count);
+        $final_amount = $order->orderItems->sum(fn($item) => $item->price * $item->count);
 
         // IMPORTANT: Update must reduce -> make sure amount is less than original
 //        if ($final_amount >= $order->original_amount) {
@@ -213,7 +213,7 @@ class Gateway extends Model implements HasMedia
         if ($response && isset($response['transactionId'])) {
             $order->update([
                 'transaction_id' => $response['transactionId'],
-                'final_amount'   => $final_amount,
+                'amount'   => $final_amount,
             ]);
 
             return [
