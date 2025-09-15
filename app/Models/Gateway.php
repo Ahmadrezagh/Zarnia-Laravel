@@ -75,7 +75,7 @@ class Gateway extends Model implements HasMedia
             "mobile"              => $mobile,
             "paymentMethodTypeDto"=> "INSTALLMENT",
             "returnURL"           => route('payment.callback'),
-            "transactionId"       => (string) Str::uuid(),
+            "transactionId"       => Str::random(20),
         ];
         $response = $gateway->getPaymentToken($payload);
 
