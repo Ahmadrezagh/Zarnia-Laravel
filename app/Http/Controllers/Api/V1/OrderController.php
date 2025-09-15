@@ -118,6 +118,6 @@ class OrderController extends Controller
     public function eligible($price)
     {
         $snapp = new SnappPayGateway();
-        return $snapp->eligible($price);
+        return $snapp->eligible($price * 10);
     }
 }
