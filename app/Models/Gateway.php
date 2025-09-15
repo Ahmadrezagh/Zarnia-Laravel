@@ -45,12 +45,11 @@ class Gateway extends Model implements HasMedia
 
         // Final amount (can come from DB or computed)
         $final_amount = $order->final_amount ?? $order->orderItems->sum(fn($item) => $item->price * $item->count);
-        $static_amount = 45000;
         // Build cart items dynamically from orderItems
         $cartItems = $order->orderItems->map(function ($item,$index) use ($final_amount) {
             return [
                 "amount"         => $item->amount * 10,
-                "category"       => "طلا",
+                "category"       => "انگشتر",
                 "count"          => $item->count,
                 "id"             => $index,
                 "name"           => $item->name,
@@ -171,7 +170,6 @@ class Gateway extends Model implements HasMedia
 
         // Compute reduced final amount (example: sum of orderItems * price)
         $final_amount = $order->final_amount ?? $order->orderItems->sum(fn($item) => $item->price * $item->count);
-        $static_amount = 35000;
 
         // IMPORTANT: Update must reduce -> make sure amount is less than original
 //        if ($final_amount >= $order->original_amount) {
