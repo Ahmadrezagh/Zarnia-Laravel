@@ -48,7 +48,7 @@ class Gateway extends Model implements HasMedia
         // Build cart items dynamically from orderItems
         $cartItems = $order->orderItems->map(function ($item,$index) use ($final_amount) {
             return [
-                "amount"         => $item->amount * 10,
+                "amount"         => $item->price * 10,
                 "category"       => "انگشتر",
                 "count"          => $item->count,
                 "id"             => $index,
