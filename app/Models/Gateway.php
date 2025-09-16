@@ -75,7 +75,7 @@ class Gateway extends Model implements HasMedia
             "mobile"              => $mobile,
             "paymentMethodTypeDto"=> "INSTALLMENT",
             "returnURL"           => route('payment.callback'),
-            "transactionId"       => Str::random(20),
+            "transactionId"       => Order::generateUniqueTransactionId(),
         ];
         $response = $gateway->getPaymentToken($payload);
 
@@ -163,65 +163,72 @@ class Gateway extends Model implements HasMedia
 
     public function updateSnappTransaction($order): array
     {
-        $gateway = new SnappPayGateway();
-        $order   = Order::find($order->id);
-        // Normalize phone (not strictly needed for update, but keep consistent)
-        $mobile = $this->normalizeIranPhone($order->address->receiver_phone) ?? "+989000000000";
 
-        // Compute reduced final amount (example: sum of orderItems * price)
-        $final_amount = $order->orderItems->sum(fn($item) => $item->price * $item->count);
+        if($this->key == 'snapp') {
+            $gateway = new SnappPayGateway();
+            $order = Order::find($order->id);
+            // Normalize phone (not strictly needed for update, but keep consistent)
+            $mobile = $this->normalizeIranPhone($order->address->receiver_phone) ?? "+989000000000";
 
-        // IMPORTANT: Update must reduce -> make sure amount is less than original
+            // Compute reduced final amount (example: sum of orderItems * price)
+            $final_amount = $order->orderItems->sum(fn($item) => $item->price * $item->count);
+
+            // IMPORTANT: Update must reduce -> make sure amount is less than original
 //        if ($final_amount >= $order->original_amount) {
 //            return response()->json([
 //                'error' => 'Update must reduce the transaction amount.'
 //            ]);
 //        }
 
-        // Build reduced cart items (exclude removed ones, or adjust counts)
-        $cartItems = $order->orderItems->map(function ($item, $index) use ($final_amount) {
-            return [
-                "id"             => $index,
-                "amount"         => $item->price * 10,
-                "category"       => $item->etiket ?? "General",
-                "count"          => $item->count,
-                "name"           => $item->name,
-                "commissionType" => 100
+            // Build reduced cart items (exclude removed ones, or adjust counts)
+            $cartItems = $order->orderItems->map(function ($item, $index) use ($final_amount) {
+                return [
+                    "id" => $index,
+                    "amount" => $item->price * 10,
+                    "category" => $item->etiket ?? "General",
+                    "count" => $item->count,
+                    "name" => $item->name,
+                    "commissionType" => 100
+                ];
+            })->toArray();
+
+            $payload = [
+                "amount" => $final_amount * 10,
+                "cartList" => [
+                    [
+                        "cartId" => $order->id,
+                        "cartItems" => $cartItems,
+                        "totalAmount" => $final_amount * 10,
+                        "isShipmentIncluded" => true,
+                        "isTaxIncluded" => true,
+                        "shippingAmount" => 0,
+                        "taxAmount" => 0,
+                    ]
+                ],
+                "discountAmount" => 0,
+                "externalSourceAmount" => 0,
+                "paymentMethodTypeDto" => "INSTALLMENT",
+                "paymentToken" => $order->payment_token, // from createSnappTransaction
             ];
-        })->toArray();
-
-        $payload = [
-            "amount"              => $final_amount * 10,
-            "cartList"            => [
-                [
-                    "cartId"            => $order->id,
-                    "cartItems"         => $cartItems,
-                    "totalAmount"       => $final_amount * 10,
-                    "isShipmentIncluded" => true,
-                    "isTaxIncluded" => true,
-                    "shippingAmount" => 0,
-                    "taxAmount" => 0,
-                ]
-            ],
-            "discountAmount" => 0,
-            "externalSourceAmount" => 0,
-            "paymentMethodTypeDto" => "INSTALLMENT",
-            "paymentToken"         => $order->payment_token, // from createSnappTransaction
-        ];
 //        return $payload;
-        $response = $gateway->update($payload);
-        if ($response && isset($response['transactionId'])) {
-            $order->update([
-                'transaction_id' => $response['transactionId'],
-                'amount'   => $final_amount,
-            ]);
+            $response = $gateway->update($payload);
+            if ($response && isset($response['transactionId'])) {
+                $order->update([
+                    'transaction_id' => $response['transactionId'],
+                    'final_amount' => $final_amount,
+                ]);
 
+                return [
+                    'response' => $response,
+                ];
+            }
+
+            return ['error' => 'SnappPay: Failed to update transaction.'];
+        }else{
             return [
-                'response' => $response,
+              'error' => 'این قابلیت فقط برای سفارشات اسنپ امکان پذیر است'
             ];
         }
-
-        return ['error' => 'SnappPay: Failed to update transaction.'];
     }
 
 }

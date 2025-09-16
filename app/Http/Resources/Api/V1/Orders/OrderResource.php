@@ -42,7 +42,8 @@ class OrderResource extends JsonResource
             'paid_at' => $this->paid_at,
             'note' => $this->notem,
             'payment_url' => $this->payment_urll,
-            'items' => OrderItemResource::collection($this->orderItems)
+            'items' => OrderItemResource::collection($this->orderItems),
+            'transaction_id' => $this->transaction_id
         ];
     }
 }

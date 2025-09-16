@@ -34,33 +34,38 @@
                         ]"
             :items="$orders"
             :actions="[
-                            ['label' => 'پرینت','type' =>'route','route' => ['admin_order.print',   ['id'=>'{id}'] ] ],
-                            ['label' => 'ویرایش', 'type' => 'modal-edit'],
-                            ['label' => 'حذف', 'type' => 'modal-destroy']
+                            ['label' => 'پرینت','type' =>'route','route' => ['admin_order.print',   ['order'=>'{id}'] ] ],
+                            ['label' => 'ویرایش', 'type' => 'modalEdit'],
+                            ['label' => 'لغو', 'type' => 'modalCancel'],
+                            ['label' => 'حذف', 'type' => 'modalDestroy']
                         ]"
         >
 
             @foreach($orders as $order)
+                <x-modal.cancel id="modal-cancel-{{$order->id}}" title="لغو سفارش" action="{{route('admin_order.cancel', $order->id)}}" title="{{$order->name}}" />
+
                 <x-modal.destroy id="modal-destroy-{{$order->id}}" title="حذف سفارش" action="{{route('admin_orders.destroy', $order->id)}}" title="{{$order->name}}" />
                 <!-- Modal -->
-                <x-modal.update id="modal-edit-{{$order->id}}" title="ویرایش سفارش" action="{{route('admin_orders.update', $order->id)}}" >
+                <x-modal.update id="modal-edit-{{$order->id}}" class=" modal-lg " title="ویرایش سفارش" action="{{route('admin_orders.update', $order->id)}}" >
                     <input type="hidden" name="id" value="{{$order->id}}">
-                    <x-form.input title="شماره سفارش" :value="$order->id" name="none" />
-                    <x-form.input title="نام سفارش" :value="$order->userName" name="none" />
-                    <x-form.input title="شیوه ارسال" :value="$order->shippingName" name="none" />
-                    <x-form.input title="بازه زمانی ارسال" :value="$order->shippingTimeName" name="none" />
-                    <x-form.input title="درگاه پرداخت" :value="$order->gatewayName" name="none" />
-                    <x-form.input title="زمان پرداخت" :value="$order->paid_at" name="none" />
-                    <x-form.input title="کد تخفیف" :value="$order->discount_code" name="none" />
-                    <x-form.input title="درصد تخفیف" :value="$order->discount_percentage" name="none" />
-                    <x-form.input title="مبلغ تخفیف" :value="$order->discount_price" name="none" />
-                    <x-form.input title="مبلغ" :value="$order->total_amount" name="none" />
-                    <x-form.input title="مبلغ قابل پرداخت" :value="$order->final_amount" name="none" />
-                    <x-form.select-option name="status" title="وضعیت" >
-                        @foreach(\App\Models\Order::$PERSIAN_STATUSES as $statusEn => $statusFa)
-                            <option value="{{$statusEn}}" @if($statusEn == $order->status) selected @endif >{{$statusFa}}</option>
-                        @endforeach
-                    </x-form.select-option>
+                    <div class="row">
+                        <x-form.input col="col-6" title="شماره سفارش" :value="$order->id" name="none" />
+                        <x-form.input col="col-6" title="نام سفارش" :value="$order->userName" name="none" />
+                        <x-form.input col="col-6" title="شیوه ارسال" :value="$order->shippingName" name="none" />
+                        <x-form.input col="col-6" title="بازه زمانی ارسال" :value="$order->shippingTimeName" name="none" />
+                        <x-form.input col="col-6" title="درگاه پرداخت" :value="$order->gatewayName" name="none" />
+                        <x-form.input col="col-6" title="زمان پرداخت" :value="$order->paid_at" name="none" />
+                        <x-form.input col="col-6" title="کد تخفیف" :value="$order->discount_code" name="none" />
+                        <x-form.input col="col-6" title="درصد تخفیف" :value="$order->discount_percentage" name="none" />
+                        <x-form.input col="col-6" title="مبلغ تخفیف" :value="$order->discount_price" name="none" />
+                        <x-form.input col="col-6" title="مبلغ" :value="$order->total_amount" name="none" />
+                        <x-form.input col="col-6" title="مبلغ قابل پرداخت" :value="$order->final_amount" name="none" />
+                        <x-form.select-option col="col-12" name="order_item_ids[]" title="آیتم های سفارش" multiple="true" >
+                            @foreach($order->orderItems as $itm)
+                                <option value="{{$itm->id}}" selected >{{$itm->name}}</option>
+                            @endforeach
+                        </x-form.select-option>
+                    </div>
                 </x-modal.update>
                 <!-- /Modal -->
             @endforeach
@@ -99,6 +104,56 @@
                 }
             });
         }
+
+        function modalEdit(id){
+            const dModal = $("#modal-edit-"+id)
+            dModal.modal("show")
+        }
+
+        function modalDestroy(id){
+            const dModal = $("#modal-destroy-"+id)
+            dModal.modal("show")
+        }
+        function modalCancel(id){
+            const dModal = $("#modal-cancel-"+id)
+            dModal.modal("show")
+        }
+
+
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            $('body').on('submit', 'form', function(e) {
+                let form = $(this);
+                let modal = form.closest('.modal');
+
+                // Only intercept if inside modal with id starting with "modal-"
+                if (modal.length && modal.attr('id').startsWith('modal-')) {
+                    e.preventDefault();
+
+                    let action = form.attr('action');
+                    let method = form.attr('method') || 'POST';
+                    let data = new FormData(this);
+
+                    $.ajax({
+                        url: action,
+                        type: method,
+                        data: data,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            modal.modal('hide');
+                            location.reload();
+                        },
+                        error: function(xhr) {
+                            alert('خطایی رخ داد ❌');
+                            console.log(xhr.responseText);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+
 
 @endsection

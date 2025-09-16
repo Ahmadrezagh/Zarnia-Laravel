@@ -24,7 +24,7 @@ class AdminUpdateOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required',Rule::in(Order::$STATUSES)],
+            'order_item_ids' => ['required'],
         ];
     }
 }

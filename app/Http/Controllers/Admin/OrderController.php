@@ -10,6 +10,7 @@ use App\Http\Resources\Admin\Table\AdminProductResource;
 use App\Models\Attribute;
 use App\Models\Order;
 use App\Models\Page;
+use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
@@ -60,11 +61,18 @@ class OrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(AdminUpdateOrderRequest $request, Order $order)
+    public function update(AdminUpdateOrderRequest $request, $order)
     {
-        $order->update($request->validated());
-        $sms = new Kavehnegar();
-        $sms->send_with_two_token($order->address->receiver_phone,$order->address->receiver_name,$order->id,$order->status);
+        $order = Order::query()->findOrFail($order);
+        $orderItemIds = $request->input('order_item_ids', []);
+
+        if (!empty($orderItemIds)) {
+            // Delete all order items of this order where id is not in the given list
+            $order->orderItems()
+                ->whereNotIn('id', $orderItemIds)
+                ->delete();
+        }
+        return $order->updateSnappTransaction();
         return response()->json();
     }
 
@@ -135,5 +143,46 @@ class OrderController extends Controller
     public function print(Order $order)
     {
         return view('pdf.order', compact('order'));
+    }
+
+
+    function normalizeIranPhone(?string $phone): ?string
+    {
+        if (!$phone) return null;
+
+        $phone = trim($phone);
+
+        // If already in +98 format, keep it
+        if (preg_match('/^\+98\d{10}$/', $phone)) {
+            return $phone;
+        }
+
+        // If starts with 09xxxxxxxxx → convert to +98
+        if (preg_match('/^09\d{9}$/', $phone)) {
+            return '+98' . substr($phone, 1);
+        }
+
+        // If starts with 9xxxxxxxxx → convert to +98
+        if (preg_match('/^9\d{9}$/', $phone)) {
+            return '+98' . $phone;
+        }
+
+        // Otherwise return null (invalid format)
+        return null;
+    }
+
+
+    public function cancel($order_id): array
+    {
+        $order = Order::query()->findOrFail($order_id);
+        if($order->gateway->key == 'snapp'){
+            $snapp = new SnappPayGateway();
+            $result = $snapp->cancel($order->payment_token);
+            $order->update(['status' => Order::$STATUSES[8]]);
+            return $result;
+        }
+        return [
+            'error' => 'این قابلیت صرفا جهت سفارشات با درگاه اسنپ می باشد'
+        ];
     }
 }

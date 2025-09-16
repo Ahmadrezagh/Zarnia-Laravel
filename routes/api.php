@@ -63,8 +63,8 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
             Route::resource('addresses', AddressController::class);
             Route::resource('orders', OrderController::class)->only('index','store');
             Route::get('order/{order}/status', [OrderController::class, 'status']);
-            Route::post('order/{order}/update', [OrderController::class, 'updateSnappTransaction']);
-            Route::get('order/{order}/cancel', [OrderController::class, 'cancel']);
+//            Route::post('order/{order}/update', [OrderController::class, 'updateSnappTransaction']);
+//            Route::get('order/{order}/cancel', [OrderController::class, 'cancel']);
             Route::get('order/{order}/settle', [OrderController::class, 'settle']);
             Route::get('order/eligible/{price}', [OrderController::class, 'eligible']);
         });

@@ -78,6 +78,7 @@ class Order extends Model
         'pending'   => '#C0C0C0', // خاکستری
         'paid'      => '#80EF80', // سبز
         'failed'    => '#F84F31', // قرمز
+        'rejected'    => '#F84F31', // قرمز
         'canceled'  => '#ffd3d6', // صورتی
         'boxing'    => '#0076BE', // آبی
         'sent'      => '#7B52AE', // بنفش
@@ -255,4 +256,13 @@ class Order extends Model
         return $this->gateway->updateSnappTransaction(Order::find($this->id));
     }
 
+    public static function generateUniqueTransactionId()
+    {
+        do {
+            // Generate a random 10-digit number
+            $transactionId = mt_rand(1000000000, 9999999999);
+        } while (self::where('transaction_id', $transactionId)->exists());
+
+        return $transactionId;
+    }
 }
