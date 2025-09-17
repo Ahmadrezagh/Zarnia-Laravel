@@ -222,6 +222,7 @@ class Tahesab{
                 'ojrat' => $etiket['DarsadVazn'],
                 'is_mojood' => $etiket['IsMojood'],
                 'darsad_kharid' => $etiket['DarsadVaznMaye'],
+                'mazaneh' => $etiket['Mazaneh'],
             ]
         );
         $_etiket->touch();

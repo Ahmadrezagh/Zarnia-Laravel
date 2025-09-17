@@ -36,7 +36,8 @@ class Product extends Model implements HasMedia
         'discount_percentage',
         'ojrat',
         'darsad_kharid',
-        'is_comprehensive'
+        'is_comprehensive',
+        'mazaneh'
     ];
 
     public function setNameAttribute($value)
