@@ -337,7 +337,7 @@ class Tahesab{
     {
         $params = [
             'DoDeleteSanad' => [
-                intval($order_number),
+                strval($order_number)
             ]
         ];
 //        return $params;
