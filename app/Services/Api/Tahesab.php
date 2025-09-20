@@ -266,7 +266,6 @@ class Tahesab{
                 1
             ]
         ];
-        return $params;
         $response = $this->makeRequest('GET', $params);
 
         if ($response->successful()) {
