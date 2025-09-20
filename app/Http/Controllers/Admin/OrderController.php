@@ -137,6 +137,9 @@ class OrderController extends Controller
         $order->update([
             'status' => $request->orderStatus
         ]);
+        if($request->orderStatus == Order::$STATUSES[1]){
+            $order->submitInAccountingApp();
+        }
         return response()->json();
     }
 
