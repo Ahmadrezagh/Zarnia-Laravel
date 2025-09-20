@@ -271,13 +271,13 @@ class Order extends Model
     {
         $accounting_app = new Tahesab();
         foreach ($this->orderItems as $orderItem) {
-            return $accounting_app->DoNewSanadBuySaleEtiket($this->transaction_id,$orderItem->etiket,$orderItem->product->mazaneh,$orderItem->price,$this->address->receiver_name);
+            $accounting_app->DoNewSanadBuySaleEtiket($this->transaction_id,$orderItem->etiket,$orderItem->product->mazaneh,$orderItem->price,$this->address->receiver_name);
         }
         if($this->shipping->key == 'post'){
             $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,0,150000,0,1);
         }
         if($this->gateway->key == 'snapp'){
-            $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$this->final_amount,210,1);
+            return $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$this->final_amount,210,1);
         }
     }
 }

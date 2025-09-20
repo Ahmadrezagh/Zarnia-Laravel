@@ -298,17 +298,17 @@ class Tahesab{
                 3037,
                 $order_number,
                 1,
-                $year,
-                $month,
-                $day,
-                $IsBedehiOrTalab_0_1,
-                $Mablagh,
+                intval($year),
+                intval($month),
+                intval($day),
+                intval($IsBedehiOrTalab_0_1),
+                intval($Mablagh),
                 "Sharh",
                 "Baabat",
                 0,
-                $order_number,
-                $HavalehBe_Mcode,
-                $MultiRadif
+                intval($order_number),
+                intval($HavalehBe_Mcode),
+                intval($MultiRadif)
             ]
         ];
 
