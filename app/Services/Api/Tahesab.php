@@ -237,7 +237,7 @@ class Tahesab{
             'DoNewSanadBuySaleEtiket' => [
                 1,
                 3037,
-                $order_number,
+                intval($order_number),
                 1,
                 intval($year),
                 intval($month),
@@ -261,7 +261,7 @@ class Tahesab{
                 0,
                 intval($etiket_code),
                 $full_name,
-                $order_number,
+                intval($order_number),
                 0,
                 1
             ]
