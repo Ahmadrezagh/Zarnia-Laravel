@@ -239,17 +239,17 @@ class Tahesab{
                 3037,
                 $order_number,
                 1,
-                $year,
-                $month,
-                $day,
+                intval($year),
+                intval($month),
+                intval($day),
                 0,
                 0,
                 0,
                 "",
                 1,
-                $mazaneh,
+                intval($mazaneh),
                 0,
-                $price,
+                intval($price),
                 1,
                 0,
                 0,
@@ -259,14 +259,13 @@ class Tahesab{
                 0,
                 "",
                 0,
-                $etiket_code,
+                intval($etiket_code),
                 $full_name,
                 $order_number,
                 0,
                 1
             ]
         ];
-
         $response = $this->makeRequest('GET', $params);
 
         if ($response->successful()) {
