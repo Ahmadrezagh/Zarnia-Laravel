@@ -271,7 +271,7 @@ class Order extends Model
     {
         $accounting_app = new Tahesab();
         foreach ($this->orderItems as $orderItem) {
-            $accounting_app->DoNewSanadBuySaleEtiket($this->transaction_id,$orderItem->etiket,$orderItem->product->mazaneh,$orderItem->price,$this->address->receiver_name);
+            return $accounting_app->DoNewSanadBuySaleEtiket($this->transaction_id,$orderItem->etiket,$orderItem->product->mazaneh,$orderItem->price,$this->address->receiver_name);
         }
         if($this->shipping->key == 'post'){
             $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,0,150000,0,1);
