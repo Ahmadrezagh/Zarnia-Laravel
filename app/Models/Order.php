@@ -270,14 +270,16 @@ class Order extends Model
     public function submitInAccountingApp()
     {
         $accounting_app = new Tahesab();
+        $final_amount = $this->final_amount;
         foreach ($this->orderItems as $orderItem) {
             $accounting_app->DoNewSanadBuySaleEtiket($this->transaction_id,$orderItem->etiket,$orderItem->product->mazaneh,$orderItem->price,$this->address->receiver_name);
         }
         if($this->shipping->key == 'post'){
+            $final_amount = $final_amount + 150000;
             $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,0,150000,0,1);
         }
         if($this->gateway->key == 'snapp'){
-            return $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$this->final_amount,210,1);
+             $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$final_amount,210,1);
         }
     }
 }

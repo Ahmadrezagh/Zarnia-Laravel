@@ -293,16 +293,16 @@ class Tahesab{
         $month = Jalalian::now()->format('m');
         $day = Jalalian::now()->format('d');
         $params = [
-            'DoNewSanadBuySaleEtiket' => [
+            'DoNewSanadTalabBedehi' => [
                 1,
                 3037,
                 $order_number,
-                1,
+                -1,
                 intval($year),
                 intval($month),
                 intval($day),
-                intval($IsBedehiOrTalab_0_1),
-                intval($Mablagh),
+                $IsBedehiOrTalab_0_1,
+                $Mablagh,
                 "Sharh",
                 "Baabat",
                 0,
@@ -311,7 +311,7 @@ class Tahesab{
                 intval($MultiRadif)
             ]
         ];
-
+//        return $params;
         $response = $this->makeRequest('GET', $params);
 
         if ($response->successful()) {
