@@ -237,7 +237,7 @@ class Tahesab{
             'DoNewSanadBuySaleEtiket' => [
                 1,
                 3037,
-                intval($order_number),
+                $order_number,
                 1,
                 intval($year),
                 intval($month),
@@ -266,6 +266,7 @@ class Tahesab{
                 1
             ]
         ];
+        return $params;
         $response = $this->makeRequest('GET', $params);
 
         if ($response->successful()) {
