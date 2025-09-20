@@ -283,4 +283,10 @@ class Order extends Model
              $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$final_amount,210,1);
         }
     }
+
+    public function cancelOrder()
+    {
+        $accounting_app = new Tahesab();
+        $accounting_app->DoDeleteSanad($this->transaction_id);
+    }
 }

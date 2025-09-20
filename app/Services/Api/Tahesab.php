@@ -333,4 +333,33 @@ class Tahesab{
             'message' => $response->body()
         ];
     }
+    public function DoDeleteSanad( $order_number  )
+    {
+        $params = [
+            'DoDeleteSanad' => [
+                intval($order_number),
+            ]
+        ];
+//        return $params;
+        $response = $this->makeRequest('GET', $params);
+
+        if ($response->successful()) {
+            $response = $response->json();
+            if(isset($response['Error'])){
+                return [
+                    'error' => true,
+                    'status' => 404,
+                    'message' => "یافت نشد"
+                ];
+            }
+            return $response;
+        }
+
+        // Optionally handle errors
+        return [
+            'error' => true,
+            'status' => $response->status(),
+            'message' => $response->body()
+        ];
+    }
 }
