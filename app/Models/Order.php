@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Api\Tahesab;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Database\Eloquent\Model;
@@ -264,5 +265,19 @@ class Order extends Model
         } while (self::where('transaction_id', $transactionId)->exists());
 
         return $transactionId;
+    }
+
+    public function submitInAccountingApp()
+    {
+        $accounting_app = new Tahesab();
+        foreach ($this->orderItems as $orderItem) {
+            $accounting_app->DoNewSanadBuySaleEtiket($this->transaction_id,$orderItem->etiket,$orderItem->product->mazaneh,$orderItem->price,$this->address->receiver_name);
+        }
+        if($this->shipping->key == 'post'){
+            $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,0,150000,0,1);
+        }
+        if($this->gateway->key == 'snapp'){
+            $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$this->final_amount,210,1);
+        }
     }
 }

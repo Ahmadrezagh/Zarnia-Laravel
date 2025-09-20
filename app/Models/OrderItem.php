@@ -12,11 +12,34 @@ class OrderItem extends Model
         'etiket',
         'name',
         'count',
-        'price'
+        'price',
+//        'unique_order_number_per_etiket'
     ];
+
+//    protected static function boot()
+//    {
+//        parent::boot();
+//
+//        static::creating(function ($orderItem) {
+//            if (empty($orderItem->unique_order_number_per_etiket)) {
+//                $orderItem->unique_order_number_per_etiket = self::generateUniqueNumber();
+//            }
+//        });
+//    }
 
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
+
+    private static function generateUniqueNumber()
+    {
+        do {
+            // Generate a random 25-digit number
+            $number = str_pad(mt_rand(1, 9999999999999999999999999), 25, '0', STR_PAD_LEFT);
+        } while (self::where('unique_order_number_per_etiket', $number)->exists());
+
+        return $number;
+    }
+
 }

@@ -227,4 +227,111 @@ class Tahesab{
         );
         $_etiket->touch();
     }
+
+    public function DoNewSanadBuySaleEtiket($order_number, $etiket_code, $mazaneh, $price, $full_name  )
+    {
+        $year = Jalalian::now()->format('Y');
+        $month = Jalalian::now()->format('m');
+        $day = Jalalian::now()->format('d');
+        $params = [
+            'DoNewSanadBuySaleEtiket' => [
+                1,
+                3037,
+                $order_number,
+                1,
+                $year,
+                $month,
+                $day,
+                0,
+                0,
+                0,
+                "",
+                1,
+                $mazaneh,
+                0,
+                $price,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                "",
+                0,
+                $etiket_code,
+                $full_name,
+                $order_number,
+                0,
+                1
+            ]
+        ];
+
+        $response = $this->makeRequest('GET', $params);
+
+        if ($response->successful()) {
+            $response = $response->json();
+            if(isset($response['Error'])){
+                return [
+                    'error' => true,
+                    'status' => 404,
+                    'message' => "یافت نشد"
+                ];
+            }
+            return $response;
+        }
+
+        // Optionally handle errors
+        return [
+            'error' => true,
+            'status' => $response->status(),
+            'message' => $response->body()
+        ];
+    }
+    public function DoNewSanadTalabBedehi( $order_number , $IsBedehiOrTalab_0_1, $Mablagh, $HavalehBe_Mcode, $MultiRadif  )
+    {
+        $year = Jalalian::now()->format('Y');
+        $month = Jalalian::now()->format('m');
+        $day = Jalalian::now()->format('d');
+        $params = [
+            'DoNewSanadBuySaleEtiket' => [
+                1,
+                3037,
+                $order_number,
+                1,
+                $year,
+                $month,
+                $day,
+                $IsBedehiOrTalab_0_1,
+                $Mablagh,
+                "Sharh",
+                "Baabat",
+                0,
+                $order_number,
+                $HavalehBe_Mcode,
+                $MultiRadif
+            ]
+        ];
+
+        $response = $this->makeRequest('GET', $params);
+
+        if ($response->successful()) {
+            $response = $response->json();
+            if(isset($response['Error'])){
+                return [
+                    'error' => true,
+                    'status' => 404,
+                    'message' => "یافت نشد"
+                ];
+            }
+            return $response;
+        }
+
+        // Optionally handle errors
+        return [
+            'error' => true,
+            'status' => $response->status(),
+            'message' => $response->body()
+        ];
+    }
 }
