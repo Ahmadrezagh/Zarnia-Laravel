@@ -21,6 +21,7 @@ class EtiketObserver
             $product->update([
                 'ojrat' => $etiket->ojrat,
                 'darsad_kharid' => $etiket->darsad_kharid,
+                     'mazaneh' => $etiket->mazaneh,
             ]);
             $etiket->update([
                 'product_id' => $product->id,
@@ -40,6 +41,7 @@ class EtiketObserver
                 $etiket->update([
                     'product_id' => $product->id,
                     'darsad_kharid' => $etiket->darsad_kharid,
+                     'mazaneh' => $etiket->mazaneh,
                 ]);
             }else{
                 $product = Product::create([
@@ -48,6 +50,7 @@ class EtiketObserver
                     'price' => $etiket->price,
                     'ojrat' => $etiket->ojrat,
                     'darsad_kharid' => $etiket->darsad_kharid,
+                     'mazaneh' => $etiket->mazaneh,
                 ]);
                 $etiket->update([
                     'product_id' => $product->id,
@@ -77,6 +80,7 @@ class EtiketObserver
                 'price' => $etiket->price,
                 'ojrat' => $etiket->ojrat,
                 'darsad_kharid' => $etiket->darsad_kharid,
+                     'mazaneh' => $etiket->mazaneh,
             ]);
 
             $etiket->updateQuietly([
@@ -90,6 +94,7 @@ class EtiketObserver
                 'price' => $etiket->price,
                 'ojrat' => $etiket->ojrat,
                 'darsad_kharid' => $etiket->darsad_kharid,
+                     'mazaneh' => $etiket->mazaneh,
             ]);
 
             $etiket->updateQuietly([
