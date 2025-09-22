@@ -137,12 +137,12 @@ class OrderController extends Controller
         $order->update([
             'status' => $request->orderStatus
         ]);
-        if($request->orderStatus == Order::$STATUSES[1]){
-            $order->submitInAccountingApp();
-        }
-        if($request->orderStatus == Order::$STATUSES[8]){
-            $order->cancelOrder();
-        }
+//        if($request->orderStatus == Order::$STATUSES[1]){
+//            $order->submitInAccountingApp();
+//        }
+//        if($request->orderStatus == Order::$STATUSES[8]){
+//            $order->cancelOrder();
+//        }
         return response()->json();
     }
 

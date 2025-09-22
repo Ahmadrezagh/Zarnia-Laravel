@@ -235,7 +235,7 @@ class Order extends Model
             ]);
             $sms = new Kavehnegar();
             $sms->send_with_two_token($this->address->receiver_phone,$this->address->receiver_name,$this->id,$this->status);
-            $this->submitInAccountingApp();
+//            $this->submitInAccountingApp();
             return true;
         }
         return false;
