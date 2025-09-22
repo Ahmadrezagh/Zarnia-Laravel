@@ -24,7 +24,7 @@ class InitController extends Controller
             'telegram' => setting('telegram'),
             'whatsapp' => setting('whatsapp'),
             'instagram' => setting('instagram'),
-            'gold_price' => $gold_price,
+            'gold_price' => number_format($gold_price),
             'footer' => $footer
         ]);
     }
