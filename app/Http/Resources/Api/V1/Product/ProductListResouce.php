@@ -32,11 +32,21 @@ class ProductListResouce extends JsonResource
                 'product_id' => $this->id
             ])->exists();
         }
+        $galleryImages = $product->getMedia('gallery');
+        $galleryUrls = $galleryImages->map(function ($media) {
+            return [
+                'xlarge' => $media->getUrl('xlarge'),
+                'large' => $media->getUrl('large'),
+                'medium' => $media->getUrl('medium'),
+                'small' => $media->getUrl('small'),
+            ];
+        })->toArray();
         return [
             'id' => $this->id,
             'name' => $this->name,
             'weight' => $this->weight,
             'image' => $this->image,
+            'images' => $galleryUrls,
             'cover_image' => $this->CoverImageResponsive,
             'slug' => $this->slug,
             'price' => number_format($this->price),
