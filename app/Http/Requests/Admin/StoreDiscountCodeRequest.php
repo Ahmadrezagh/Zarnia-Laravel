@@ -23,7 +23,7 @@ class StoreDiscountCodeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['nullable',Rule::unique('discount_codes', 'code')],
+            'code' => ['nullable',Rule::unique('discounts', 'code')],
             'percentage' => ['nullable','numeric','between:0,100'],
             'amount' => ['nullable','numeric'],
             'min_price' => ['nullable','numeric'],
