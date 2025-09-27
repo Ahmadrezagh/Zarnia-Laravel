@@ -213,6 +213,20 @@
                         </ul>
                     </li>
                 @endif
+            @if ((Auth::user()->isAdmin() && Auth::user()->can('DiscontCode')) || Auth::user()->isSuperAdmin() )
+                    <li class="nav-item">
+                        <a class="nav-link with-sub" href="#">
+                            <span class="shape1"></span>
+                            <span class="shape2"></span>
+                            <i class="fas fa-percentage sidemenu-icon"></i>
+                            <span class="sidemenu-label">کد تخفیف</span><i class="angle fe fe-chevron-left"></i></a>
+                        <ul class="nav-sub">
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('discount_codes.index')}}">کد های تخفیف</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
             @if ((Auth::user()->isAdmin() && Auth::user()->can('Attribute')) || Auth::user()->isSuperAdmin() )
                     <li class="nav-item">
                         <a class="nav-link with-sub" href="#">
