@@ -126,6 +126,15 @@ class User extends Authenticatable
         return $this->hasMany(ShoppingCartItem::class);
     }
 
+    public function totalShoppingCart()
+    {
+        $total = 0;
+        foreach ($this->shoppingCartItems as $shoppingCartItem){
+            $total = $total + ($shoppingCartItem->count * $shoppingCartItem->product->price);
+        }
+        return $total;
+    }
+
     public function addresses()
     {
         return $this->hasMany(Address::class);

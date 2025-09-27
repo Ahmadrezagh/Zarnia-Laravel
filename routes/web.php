@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\AttributeGroupController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\EtiketController;
 use App\Http\Controllers\Admin\FooterTitleController;
 use App\Http\Controllers\Admin\FooterTitleLinkController;
@@ -59,6 +60,7 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::any('attributes', [AttributeController::class, 'table'])->name('attributes');
     Route::any('attribute_groups', [AttributeController::class, 'table'])->name('attribute_groups');
     Route::any('templates', [InvoiceTemplateController::class, 'table'])->name('templates');
+    Route::any('discounts', [DiscountController::class, 'table'])->name('discounts');
 });
 Route::middleware(['auth'])->prefix('product')->name('product.')->group(function () {
     Route::get('etikets/{product}', [EtiketController::class, 'getEtiketsOfProduct'])->name('etikets');
@@ -96,6 +98,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('attributes', AttributeController::class );
     Route::resource('attribute_groups', AttributeGroupController::class );
     Route::resource('invoice_templates', InvoiceTemplateController::class );
+    Route::resource('discounts', DiscountController::class );
 
 
     Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
