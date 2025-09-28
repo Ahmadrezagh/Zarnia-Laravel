@@ -10,14 +10,20 @@ use Illuminate\Http\Request;
 
 class ShoppingCartController extends Controller
 {
-    public function plus(Product $product)
+    public function plus($product_slug)
     {
         $user = auth()->user();
 
+        $product = Product::findBySlug($product_slug);
+        if (!$product) {
+            return response()->json([
+                'message' => 'محصول یافت نشد'
+            ], 404);
+        }
         // Check if product is out of stock
         if ($product->SingleCount <= 0) {
             return response()->json([
-                'message' => 'This product is out of stock.'
+                'message' => 'این محصول قابل فروش نیست'
             ], 400);
         }
 
@@ -35,7 +41,7 @@ class ShoppingCartController extends Controller
         // Check if adding one more exceeds stock
         if ($item->count + 1 > $product->SingleCount) {
             return response()->json([
-                'message' => 'You cannot add more than available stock.'
+                'message' => 'میزان درخواست شما بیشتر از موجودی انبار می باشد'
             ], 400);
         }
 
