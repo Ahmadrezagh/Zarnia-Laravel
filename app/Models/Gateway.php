@@ -201,11 +201,11 @@ class Gateway extends Model implements HasMedia
                         "totalAmount" => $final_amount * 10,
                         "isShipmentIncluded" => true,
                         "isTaxIncluded" => true,
-                        "shippingAmount" => 0,
+                        "shippingAmount" => $order->shipping_price,
                         "taxAmount" => 0,
                     ]
                 ],
-                "discountAmount" => 0,
+                "discountAmount" => $order->discount_price,
                 "externalSourceAmount" => 0,
                 "paymentMethodTypeDto" => "INSTALLMENT",
                 "paymentToken" => $order->payment_token, // from createSnappTransaction

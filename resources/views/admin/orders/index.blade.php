@@ -65,11 +65,38 @@
                         <x-form.input col="col-6" title="مبلغ تخفیف" :value="$order->discount_price" name="none" />
                         <x-form.input col="col-6" title="مبلغ" :value="$order->total_amount" name="none" />
                         <x-form.input col="col-6" title="مبلغ قابل پرداخت" :value="$order->final_amount" name="none" />
-                        <x-form.select-option col="col-12" name="order_item_ids[]" title="آیتم های سفارش" multiple="true" >
-                            @foreach($order->orderItems as $itm)
-                                <option value="{{$itm->id}}" selected >{{$itm->name}}</option>
-                            @endforeach
-                        </x-form.select-option>
+                        {{-- hidden input برای هر سفارش --}}
+                        <input type="hidden" name="updated_items" id="updated-items-{{$order->id}}">
+
+                        <div class="table-responsive col-12">
+                            <table class="table-bordered" style="width: 100%" >
+                                <thead>
+                                    <tr class="text-center">
+                                        <th>محصول</th>
+                                        <th>تعداد</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody class="order-items-table">
+                                @foreach($order->orderItems as $orderItem)
+                                    <tr class="text-center"
+                                        data-id="{{$orderItem->id}}"
+                                        data-order-id="{{$order->id}}">
+
+                                        <td>{{$orderItem->product->name}}</td>
+                                        <td class="item-count">{{$orderItem->count}}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-warning decrease-count" data-order-id="{{$order->id}}">-</button>
+                                            <button type="button" class="btn btn-sm btn-danger delete-item" data-order-id="{{$order->id}}">حذف</button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+
+
+                            </table>
+                        </div>
                     </div>
                 </x-modal.update>
                 <!-- /Modal -->
@@ -163,6 +190,67 @@
             window.loadDataWithNewUrl("{{route('table.orders')}}?transaction_id="+transaction_id);
         }
     </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // شی برای ذخیره تغییرات همه سفارش‌ها
+            // مثلا: { 12: { 45: 2, 46: 0 }, 13: { 77: 1 } }
+            let updates = {};
+
+            // دکمه کاهش
+            document.querySelectorAll(".decrease-count").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    let row = this.closest("tr");
+                    let orderId = this.dataset.orderId;
+                    let itemId = row.dataset.id;
+                    let countEl = row.querySelector(".item-count");
+                    let count = parseInt(countEl.innerText);
+
+                    count--;
+
+                    if (count <= 0) {
+                        row.remove();
+                        updates[orderId] = updates[orderId] || {};
+                        updates[orderId][itemId] = 0; // حذف
+                    } else {
+                        countEl.innerText = count;
+                        updates[orderId] = updates[orderId] || {};
+                        updates[orderId][itemId] = count;
+                    }
+                });
+            });
+
+            // دکمه حذف مستقیم
+            document.querySelectorAll(".delete-item").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    let row = this.closest("tr");
+                    let orderId = this.dataset.orderId;
+                    let itemId = row.dataset.id;
+
+                    row.remove();
+                    updates[orderId] = updates[orderId] || {};
+                    updates[orderId][itemId] = 0; // حذف
+                });
+            });
+
+            // هندل همه فرم‌ها → قبل از submit آپدیت‌ها رو تو hidden بریزیم
+            document.querySelectorAll("form").forEach(form => {
+                form.addEventListener("submit", function () {
+                    let orderId = form.querySelector("[name='id']").value;
+                    let hiddenInput = form.querySelector(`#updated-items-${orderId}`);
+
+                    if (hiddenInput) {
+                        let payload = {
+                            order_id: orderId,
+                            items: updates[orderId] || {}
+                        };
+                        hiddenInput.value = JSON.stringify(payload);
+                    }
+                });
+            });
+        });
+    </script>
+
 
 
 @endsection

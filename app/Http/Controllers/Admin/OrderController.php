@@ -67,13 +67,28 @@ class OrderController extends Controller
     public function update(AdminUpdateOrderRequest $request, $order)
     {
         $order = Order::query()->findOrFail($order);
-        $orderItemIds = $request->input('order_item_ids', []);
+        // از hidden input
+        $payload = json_decode($request->updated_items, true);
 
-        if (!empty($orderItemIds)) {
-            // Delete all order items of this order where id is not in the given list
-            $order->orderItems()
-                ->whereNotIn('id', $orderItemIds)
-                ->delete();
+        if ($payload && isset($payload['order_id'], $payload['items'])) {
+            $order = Order::findOrFail($payload['order_id']);
+
+            foreach ($payload['items'] as $itemId => $newCount) {
+                $orderItem = $order->orderItems()->find($itemId);
+
+                if (!$orderItem) {
+                    continue; // آیتم معتبر نبود
+                }
+
+                if ($newCount == 0) {
+                    // یعنی حذف
+                    $orderItem->delete();
+                } else {
+                    // آپدیت تعداد
+                    $orderItem->count = $newCount;
+                    $orderItem->save();
+                }
+            }
         }
         return $order->updateSnappTransaction();
         return response()->json();

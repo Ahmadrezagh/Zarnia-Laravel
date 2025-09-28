@@ -24,7 +24,7 @@ class AdminUpdateOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'order_item_ids' => ['required'],
+            'order_item_ids' => ['nullable'],
         ];
     }
 }
