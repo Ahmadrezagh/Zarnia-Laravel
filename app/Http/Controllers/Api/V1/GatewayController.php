@@ -102,8 +102,7 @@ class GatewayController extends Controller
         $order = Order::query()->where('transaction_id', $transaction_id)->first();
         if($order) {
             if ($order->status == Order::$STATUSES[0]) {
-                $order->verify();
-                $order->settle();
+                 $order->verify();
             }
             return view('thank-you.index', compact('order'));
         }

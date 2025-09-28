@@ -106,4 +106,4 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
 
 Route::get('order/print/{order}', [OrderController::class, 'print'])->name('order.print');
 Route::get('/payment/request', [GatewayController::class, 'pay'])->name('payment.request');
-Route::post('/payment/callback', [GatewayController::class, 'callback2'])->name('payment.callback');
+Route::any('/payment/callback', [GatewayController::class, 'callback2'])->name('payment.callback');

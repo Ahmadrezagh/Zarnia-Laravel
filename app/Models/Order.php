@@ -234,20 +234,85 @@ class Order extends Model
         }
     }
 
+//    public function verifySnapp()
+//    {
+//        $gateway = new SnappPayGateway();
+//        $verify = $gateway->verify($this->payment_token);
+//        if($verify){
+//            $this->update([
+//                'status' => 'paid'
+//            ]);
+//            $sms = new Kavehnegar();
+//            $sms->send_with_two_token($this->address->receiver_phone,$this->address->receiver_name,$this->id,$this->status);
+////            $this->submitInAccountingApp();
+//            return true;
+//        }
+//        return false;
+//    }
+
     public function verifySnapp()
     {
         $gateway = new SnappPayGateway();
+
+        // Step 1: Call verify (initial attempt)
         $verify = $gateway->verify($this->payment_token);
-        if($verify){
-            $this->update([
-                'status' => 'paid'
-            ]);
-            $sms = new Kavehnegar();
-            $sms->send_with_two_token($this->address->receiver_phone,$this->address->receiver_name,$this->id,$this->status);
-//            $this->submitInAccountingApp();
+
+        // Step 2: Always check status after verify
+        $response = $gateway->getStatus($this->payment_token);
+        $paymentStatus = strtolower($response['status']);
+        if ( !isset($response['status']) ) {
+            // Optional: Retry verify once more
+            $verify = $gateway->verify($this->payment_token);
+            $status = $gateway->getStatus($this->payment_token);
+            $paymentStatus = strtolower($status['status'] ?? 'pending');
+        }
+
+        if ($paymentStatus === 'verify') {
+            // Try to settle
+            $settle = $gateway->settle($this->payment_token);
+
+            $status = $gateway->getStatus($this->payment_token);
+            $paymentStatus = strtolower($status['status'] ?? 'pending');
+            if ($paymentStatus === 'settle') {
+                $this->markAsPaid();
+                return true;
+            } else {
+                // Check status again if settle failed
+                $status = $gateway->getStatus($this->payment_token);
+                $paymentStatus = strtolower($status['response']['status'] ?? '');
+                if ($paymentStatus === 'settle') {
+                    $this->markAsPaid();
+                    return true;
+                }
+            }
+        } elseif ($paymentStatus === 'settle') {
+            // Already settled → mark as paid
+            $this->markAsPaid();
             return true;
         }
+
+        // Any other case → not paid yet
         return false;
+    }
+
+    /**
+     * Mark order as paid and send SMS
+     */
+    private function markAsPaid()
+    {
+        $this->update([
+            'status' => 'paid'
+        ]);
+
+        $sms = new Kavehnegar();
+        $sms->send_with_two_token(
+            $this->address->receiver_phone,
+            $this->address->receiver_name,
+            $this->id,
+            $this->status
+        );
+
+        // $this->submitInAccountingApp(); // Uncomment if needed
     }
 
     public function status()
