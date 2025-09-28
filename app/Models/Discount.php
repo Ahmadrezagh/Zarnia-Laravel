@@ -93,8 +93,21 @@ class Discount extends Model
             }
         }
 
+        // محاسبه مبلغ تخفیف
+        $discountAmount = 0;
+        if ($discount->type === 'amount') { // مبلغ ثابت
+            $discountAmount = $discount->value;
+        } elseif ($discount->type === 'percentage') { // درصدی
+            $discountAmount = ($discount->value / 100) * $totalPrice;
+        }
+
         // اگر همه چیز درست بود
-        return ['valid' => true, 'message' => 'کد تخفیف معتبر است.', 'discount' => $discount];
+        return [
+            'valid' => true,
+            'message' => 'کد تخفیف معتبر است. مبلغ تخفیف: ' . number_format($discountAmount) . ' تومان',
+            'discount' => $discount,
+            'discount_amount' => $discountAmount
+        ];
     }
 
 
