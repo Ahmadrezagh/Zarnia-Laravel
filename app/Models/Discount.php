@@ -95,10 +95,10 @@ class Discount extends Model
 
         // محاسبه مبلغ تخفیف
         $discountAmount = 0;
-        if ($discount->type === 'amount') { // مبلغ ثابت
-            $discountAmount = $discount->value;
-        } elseif ($discount->type === 'percentage') { // درصدی
-            $discountAmount = ($discount->value / 100) * $totalPrice;
+        if ($discount->amount) { // مبلغ ثابت
+            $discountAmount = $discount->amount;
+        } elseif ($discount->percentage) { // درصدی
+            $discountAmount = ($discount->percentage / 100) * $totalPrice;
         }
 
         // اگر همه چیز درست بود
