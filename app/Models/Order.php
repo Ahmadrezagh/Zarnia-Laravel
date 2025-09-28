@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Services\Api\Tahesab;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Morilog\Jalali\Jalalian;
@@ -34,6 +35,13 @@ class Order extends Model
 
     protected $dates = ['paid_at'];
 
+    public function scopeFilterByTransactionId(Builder $query, string $transactionId = null)
+    {
+        if($transactionId){
+            $query->where('transaction_id', $transactionId);
+        }
+        return $query;
+    }
     public function user(){
         return $this->belongsTo(User::class);
     }

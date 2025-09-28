@@ -20,9 +20,12 @@ class OrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::query()->latest()->paginate();
+        $orders = Order::query()
+            ->filterByTransactionId($request->transaction_id)
+            ->latest()
+            ->paginate();
         return view('admin.orders.index', compact('orders'));
     }
 
@@ -88,7 +91,9 @@ class OrderController extends Controller
 
     public function table(Request $request)
     {
-        $query = Order::query()->latest();
+        $query = Order::query()
+            ->filterByTransactionId($request->transaction_id)
+            ->latest();
         $totalRecords = $query->count();
 
         // Apply search filter if provided

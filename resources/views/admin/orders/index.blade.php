@@ -8,6 +8,11 @@
     <x-page>
         <x-slot name="header">
             <h5>سفارشات</h5>
+            <hr>
+            <form  method="GET">
+                <x-form.input title="کد پیگیری" name="transaction_id" id="transaction_id" />
+                <button class="btn btn-success" type="button" onclick="filterTransaction()" >فیلتر</button>
+            </form>
 {{--            <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن سفارش</button>--}}
 {{--            <x-modal.create id="modal-create" title="ساخت سفارش" action="{{route('admin_orders.store')}}" >--}}
 {{--                <x-form.input title="نام"  name="name" />--}}
@@ -114,11 +119,11 @@
             const dModal = $("#modal-destroy-"+id)
             dModal.modal("show")
         }
+
         function modalCancel(id){
             const dModal = $("#modal-cancel-"+id)
             dModal.modal("show")
         }
-
 
     </script>
     <script>
@@ -153,6 +158,10 @@
                 }
             });
         });
+        function filterTransaction(){
+            let transaction_id = $("#transaction_id").val()
+            window.loadDataWithNewUrl("{{route('table.orders')}}?transaction_id="+transaction_id);
+        }
     </script>
 
 
