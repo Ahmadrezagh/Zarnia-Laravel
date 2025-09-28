@@ -28,7 +28,8 @@ class Order extends Model
         'user_agent',
         'transaction_id',
         'payment_token',
-        'payment_url'
+        'payment_url',
+        'shipping_price'
     ];
 
     protected $dates = ['paid_at'];

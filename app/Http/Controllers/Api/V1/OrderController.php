@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Orders\createOrderRequest;
 use App\Http\Resources\Api\V1\Orders\OrderItemResource;
 use App\Http\Resources\Api\V1\Orders\OrderResource;
+use App\Models\Discount;
 use App\Models\Etiket;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Shipping;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
@@ -40,14 +42,26 @@ class OrderController extends Controller
         foreach ($cartItems as $cartItem) {
             $totalAmount += $cartItem->product->price * $cartItem->count;
         }
-
+        $discountPercentage = 0;
         // Apply discount if code exists
         if (!empty($validated['discount_code'])) {
-            // Example: 10% discount
-            $discountPrice = intval($totalAmount * 0.10);
+            $discount = Discount::verify($validated['discount_code'], $totalAmount, $user->id);
+            if ($discount['valid']) {
+                $discount = Discount::query()->where('code',$validated['discount_code'])->first();
+                if($discount->amount){
+                    $discountPrice = $discount->amount;
+                }elseif($discount->percentage){
+                    $discountPrice = ($discount->percentage/100) * $totalAmount;
+                    $discountPercentage = $discount->percentage;
+                }
+            }
         }
-
-        $finalAmount = $totalAmount - $discountPrice;
+        $shipping_price = 0;
+        $shipping = Shipping::query()->where('id',$validated['shipping_id'])->first();
+        if($shipping && $shipping->price){
+            $shipping_price = $shipping->price;
+        }
+        $finalAmount = ($totalAmount + $shipping_price) - $discountPrice;
 
         // Create the order
         $order = Order::create([
@@ -59,11 +73,12 @@ class OrderController extends Controller
             'status' => 'pending',
             'discount_code' => $validated['discount_code'] ?? '',
             'discount_price' => $discountPrice,
-            'discount_percentage' => $discountPrice > 0 ? round(($discountPrice / $totalAmount) * 100) : null,
+            'discount_percentage' => $discountPercentage,
             'total_amount' => $totalAmount,
             'final_amount' => $finalAmount,
             'note' => $validated['note'] ?? null,
             'user_agent' => $validated['user_agent'] ?? null,
+            'shipping_price' => $shipping_price,
         ]);
 
         // Create order items from cart
