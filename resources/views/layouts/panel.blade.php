@@ -1140,7 +1140,14 @@
 
     }
 </script>
-
+<script>
+    function confirmation() {
+        let text = "آیا از عملیات درحال انجام اطمینان دارید ؟";
+        return confirm(text);
+        // ✅ if user presses OK → returns true → form submits
+        // ❌ if user presses Cancel → returns false → form won't submit
+    }
+</script>
 
 </body>
 </html>

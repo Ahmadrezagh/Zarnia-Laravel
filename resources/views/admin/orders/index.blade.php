@@ -47,11 +47,11 @@
         >
 
             @foreach($orders as $order)
-                <x-modal.cancel id="modal-cancel-{{$order->id}}" title="لغو سفارش" action="{{route('admin_order.cancel', $order->id)}}" title="{{$order->name}}" />
+                <x-modal.cancel id="modal-cancel-{{$order->id}}" title="لغو سفارش" action="{{route('admin_order.cancel', $order->id)}}" title="سفارش {{$order->id}}" />
 
-                <x-modal.destroy id="modal-destroy-{{$order->id}}" title="حذف سفارش" action="{{route('admin_orders.destroy', $order->id)}}" title="{{$order->name}}" />
+                <x-modal.destroy id="modal-destroy-{{$order->id}}" title="حذف سفارش" action="{{route('admin_orders.destroy', $order->id)}}" title="سفارش {{$order->id}}" />
                 <!-- Modal -->
-                <x-modal.update id="modal-edit-{{$order->id}}" class=" modal-lg " title="ویرایش سفارش" action="{{route('admin_orders.update', $order->id)}}" >
+                <x-modal.update id="modal-edit-{{$order->id}}" class=" modal-lg " title="ویرایش سفارش" action="{{route('admin_orders.update', $order->id)}}" confirmation="true" >
                     <input type="hidden" name="id" value="{{$order->id}}">
                     <div class="row">
                         <x-form.input col="col-6" title="شماره سفارش" :value="$order->id" name="none" />
