@@ -103,6 +103,7 @@ class OrderController extends Controller
         // Save the updated order
         $order->save();
 
+        $order = Order::query()->find($order->id);
         // Call external transaction update
         $transactionResult = $order->updateSnappTransaction();
 
