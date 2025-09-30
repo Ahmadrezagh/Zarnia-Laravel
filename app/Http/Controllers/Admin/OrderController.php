@@ -14,6 +14,7 @@ use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -90,8 +91,27 @@ class OrderController extends Controller
                 }
             }
         }
-        return $order->updateSnappTransaction();
-        return response()->json();
+        // Recalculate total_amount: sum of (price * count) for all order items
+        $totalAmount = $order->orderItems()->sum(DB::raw('price * count'));
+        $order->total_amount = $totalAmount;
+
+        // Recalculate final_amount: (total_amount + shipping_price) - discount_price
+        $shippingPrice = $order->shipping_price ?? 0; // Adjust based on your model
+        $discountPrice = $order->discount_price ?? 0; // Adjust based on your model
+        $order->final_amount = ($totalAmount + $shippingPrice) - $discountPrice;
+
+        // Save the updated order
+        $order->save();
+
+        // Call external transaction update
+        $transactionResult = $order->updateSnappTransaction();
+
+        // Return response
+        return response()->json([
+            'message' => 'Order updated successfully',
+            'order' => $order->load('orderItems'), // Optionally include updated items
+            'transaction' => $transactionResult, // Include transaction result if needed
+        ]);
     }
 
     /**
