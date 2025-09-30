@@ -58,12 +58,12 @@ class Gateway extends Model implements HasMedia
         })->toArray();
 
         $payload = [
-            "amount" => $final_amount * 10,
+            "amount" => $order->final_amount * 10,
             "cartList" => [
                 [
                     "cartId"            => 0,
                     "cartItems"         => $cartItems,
-                    "totalAmount"       => $final_amount * 10,
+                    "totalAmount"       => ($order->final_price + $order->discount_price) * 10,
                     "isShipmentIncluded" => true,
                     "shippingAmount"=> $order->shipping_price * 10,
                     "isTaxIncluded"=> true,
@@ -77,6 +77,7 @@ class Gateway extends Model implements HasMedia
             "returnURL"           => route('payment.callback'),
             "transactionId"       => Order::generateUniqueTransactionId(),
         ];
+
         $response = $gateway->getPaymentToken($payload);
 
         if ($response && isset($response['paymentToken'])) {
@@ -193,12 +194,12 @@ class Gateway extends Model implements HasMedia
             })->toArray();
 
             $payload = [
-                "amount" => $final_amount * 10,
+                "amount" => $order->final_price * 10,
                 "cartList" => [
                     [
                         "cartId" => $order->id,
                         "cartItems" => $cartItems,
-                        "totalAmount" => $final_amount * 10,
+                        "totalAmount" => ($order->final_price + $order->discount_price) * 10,
                         "isShipmentIncluded" => true,
                         "isTaxIncluded" => true,
                         "shippingAmount" => $order->shipping_price * 10,
