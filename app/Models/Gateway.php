@@ -63,7 +63,7 @@ class Gateway extends Model implements HasMedia
                 [
                     "cartId"            => 0,
                     "cartItems"         => $cartItems,
-                    "totalAmount"       => ($order->final_price + $order->discount_price) * 10,
+                    "totalAmount"       => ($order->total_amount + $order->shipping_price) * 10,
                     "isShipmentIncluded" => true,
                     "shippingAmount"=> $order->shipping_price * 10,
                     "isTaxIncluded"=> true,
