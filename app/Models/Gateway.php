@@ -44,7 +44,7 @@ class Gateway extends Model implements HasMedia
         $mobile = $this->normalizeIranPhone($order->address->receiver_phone) ?? "+989000000000";
 
         // Final amount (can come from DB or computed)
-        $final_amount = $order->final_amount ?? $order->orderItems->sum(fn($item) => $item->price * $item->count);
+        $total_cart = $order->final_amount ?? $order->orderItems->sum(fn($item) => $item->price * $item->count);
         // Build cart items dynamically from orderItems
         $cartItems = $order->orderItems->map(function ($item,$index) use ($final_amount) {
             return [
