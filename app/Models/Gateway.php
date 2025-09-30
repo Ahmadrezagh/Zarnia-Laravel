@@ -224,7 +224,7 @@ class Gateway extends Model implements HasMedia
                 ];
             }
 
-            return ['error' => 'SnappPay: Failed to update transaction.'];
+            return $response;
         }else{
             return [
               'error' => 'این قابلیت فقط برای سفارشات اسنپ امکان پذیر است'
