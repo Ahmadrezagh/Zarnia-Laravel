@@ -194,7 +194,7 @@ class Gateway extends Model implements HasMedia
             })->toArray();
 
             $payload = [
-                "amount" => $order->final_price * 10,
+                "amount" => $order->final_amount * 10,
                 "cartList" => [
                     [
                         "cartId" => $order->id,
