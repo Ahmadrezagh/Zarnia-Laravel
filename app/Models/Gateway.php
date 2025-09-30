@@ -211,7 +211,7 @@ class Gateway extends Model implements HasMedia
                 "paymentMethodTypeDto" => "INSTALLMENT",
                 "paymentToken" => $order->payment_token, // from createSnappTransaction
             ];
-//        return $payload;
+        return $payload;
             $response = $gateway->update($payload);
             if ($response && isset($response['transactionId'])) {
                 $order->update([
