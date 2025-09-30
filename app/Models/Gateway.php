@@ -77,7 +77,7 @@ class Gateway extends Model implements HasMedia
             "returnURL"           => route('payment.callback'),
             "transactionId"       => Order::generateUniqueTransactionId(),
         ];
-        return $payload;
+        Log::info(json_encode($payload));
         $response = $gateway->getPaymentToken($payload);
 
         if ($response && isset($response['paymentToken'])) {
