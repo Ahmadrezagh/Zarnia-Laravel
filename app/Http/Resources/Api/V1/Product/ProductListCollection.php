@@ -17,10 +17,24 @@ class ProductListCollection extends ResourceCollection
 
     public function toArray($request)
     {
+        // Transform each product using ProductListResource
         return [
-            'data' => collect($this->collection)->map(function ($item) {
-                return (new ProductListResouce($item, $this->user))->toArray(request());
+            'data' => $this->collection->map(function ($item) use ($request) {
+                return (new ProductListResouce($item, $this->user))->toArray($request);
             }),
+        ];
+    }
+
+    public function with($request)
+    {
+        // Add pagination meta automatically if the resource is a paginator
+        return [
+            'meta' => [
+                'current_page' => $this->resource->currentPage(),
+                'last_page'    => $this->resource->lastPage(),
+                'per_page'     => $this->resource->perPage(),
+                'total'        => $this->resource->total(),
+            ],
         ];
     }
 }
