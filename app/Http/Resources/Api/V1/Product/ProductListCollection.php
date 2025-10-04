@@ -18,8 +18,8 @@ class ProductListCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            'data' => $this->collection->map(function ($item) {
-                return (new ProductListResouce($item, $this->user))->toArray(request());
+            'data' => collect($this->collection)->map(function ($item) use ($request) {
+                return (new ProductListResouce($item, $this->user))->toArray($request);
             }),
         ];
     }
