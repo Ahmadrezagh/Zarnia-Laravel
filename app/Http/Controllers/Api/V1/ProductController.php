@@ -24,23 +24,11 @@ class ProductController extends Controller
             ->minPrice($request->minPrice)
             ->maxPrice($request->maxPrice)
             ->HasDiscount($request->hasDiscount)
-            ->hasCountAndImage()
-            ->paginate($request->get('per_page') ?? 12);
-        return new ProductListCollection($products, $user);
-    }
-    public function random_products(Request $request)
-    {
-        $user = $request->user('sanctum');
-        $products = Product::query()
-            ->main()
-            ->OrderByEffectivePrice($request->price_dir)
-            ->categories($request->category_ids)
-            ->search($request->search)
-            ->minPrice($request->minPrice)
-            ->maxPrice($request->maxPrice)
-            ->HasDiscount($request->hasDiscount)
-            ->hasCountAndImage()
-            ->inRandomOrder()
+            ->hasCountAndImage();
+        if($request->has('random')){
+            $products->inRandomOrder();
+        }
+        $products = $products
             ->paginate($request->get('per_page') ?? 12);
         return new ProductListCollection($products, $user);
     }
