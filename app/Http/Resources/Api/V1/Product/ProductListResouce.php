@@ -33,9 +33,9 @@ class ProductListResouce extends JsonResource
             ])->exists();
         }
         $galleryImages = $product->getMedia('gallery');
-        $galleryUrls = $galleryImages->map(function ($media) {
+        $galleryUrls = $galleryImages ? $galleryImages->map(function ($media) {
             return $media->getUrl();
-        })->toArray();
+        })->toArray() : [] ;
         return [
             'id' => $this->id,
             'name' => $this->name,
