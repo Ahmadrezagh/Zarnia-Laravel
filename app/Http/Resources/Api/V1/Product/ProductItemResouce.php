@@ -26,7 +26,10 @@ class ProductItemResouce extends JsonResource
     public function toArray(Request $request): array
     {
         $is_favorite = false;
-        $sampleProducts = new ProductListCollection(Product::query()->inRandomOrder()->take(15)->get());
+        $sampleProducts = new ProductListCollection(
+            Product::query()->inRandomOrder()->take(15)->get(),
+            $this->user
+        );
         if($this->user){
             $is_favorite = Favorite::query()->where([
                 'user_id' => $this->user->id,
@@ -63,7 +66,7 @@ class ProductItemResouce extends JsonResource
 
             'discount_percentage' => $this->discount_percentage,
             'snapp_pay_each_installment' => number_format($this->price/4),
-            'children' => ProductListCollection::collection($this->children),
+            'children' => new ProductListCollection($this->children, $this->user),
             'related_products' => $sampleProducts,
             'complementary_products' => $sampleProducts,
             'categories' => CategoryResource::collection($this->categories),
