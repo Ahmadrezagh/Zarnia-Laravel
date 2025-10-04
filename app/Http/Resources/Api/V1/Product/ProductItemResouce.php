@@ -72,7 +72,7 @@ class ProductItemResouce extends JsonResource
             'categories' => CategoryResource::collection($this->categories),
             'is_favorite' => $is_favorite,
             'purity' => '18',
-            'gold_price' => get_gold_price(),
+            'gold_price' => get_gold_price()/10,
             'options' => [
                 'title' => 'سایز',
                 'value' => '8'
