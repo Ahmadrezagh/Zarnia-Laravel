@@ -15,7 +15,7 @@ class InitController extends Controller
         $footer_setting_group = SettingGroup::query()->where('title', 'فوتر')->first();
         $footer = [];
         $footer_settings = Setting::query()->where('setting_group_id', $footer_setting_group->id)->get();
-        $gold_price = Product::query()->whereNotNull('mazaneh')->first() ? Product::query()->whereNotNull('mazaneh')->first()->mazaneh : 0;
+        $gold_price = get_gold_price();
         foreach ($footer_settings as $setting) {
             $footer[$setting->key] = $setting->value;
         }

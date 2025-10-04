@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Product;
 use Illuminate\Support\Facades\Blade;
 
 function setting($name)
@@ -54,4 +55,8 @@ function getEtikets(){
 function getUpdatedEtikets(){
     $tahesab = new \App\Services\Api\Tahesab();
     $tahesab->getUpdatedEtiketsAndStore();
+}
+
+function get_gold_price(){
+    return Product::query()->whereNotNull('mazaneh')->first() ? Product::query()->whereNotNull('mazaneh')->first()->mazaneh : 0;
 }
