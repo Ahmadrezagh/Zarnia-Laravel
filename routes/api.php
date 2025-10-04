@@ -30,6 +30,7 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
         //Public Routes
         Route::get('init', [InitController::class, 'index']);
         Route::get('categories', [CategoryController::class, 'index']);
+        Route::get('random_products', [ProductController::class, 'random_products']);
         Route::get('products', [ProductController::class, 'index']);
         Route::get('products/{product}', [ProductController::class, 'show']);
         Route::get('provinces', [ProvinceController::class, 'index']);
