@@ -22,7 +22,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: 'IRANSans', sans-serif;
+            font-family: 'IRANSans';
         }
         #editor-container {
             position: relative;
