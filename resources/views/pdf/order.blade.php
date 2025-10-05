@@ -95,8 +95,21 @@
         'receiver_phone' => $order->address->receiver_phone ?? '',
         'postal_code' => $order->address->postal_code ?? '',
         'address' => $order->address->address ?? '',
-        'sum_of_prev_purchase' => \App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->sum('final_amount')
+        'sum_of_prev_purchase' => \App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->sum('final_amount'),
+
+
     ];
+    foreach ($order->orderItems as $index => $orderItem){
+        $idx = $index + 1;
+        $map['product_'.$idx.'_image'] = "<img src='$orderItem->product->image' ></img>";
+        $map['product_'.$idx.'_title'] = $orderItem->name;
+        $map['product_'.$idx.'_count'] = $orderItem->count;
+        $map['product_'.$idx.'_weight'] = $orderItem->product->weight;
+        $map['product_'.$idx.'_weight2'] = $orderItem->product->weight;
+        $map['product_'.$idx.'_ayar'] = '';
+        $map['product_'.$idx.'_etiket'] = $orderItem->etiket;
+        $map['product_'.$idx.'_price'] = $orderItem->price;
+    }
 @endphp
 
 <div id="editor-container" style="position: relative; margin: auto; width: {{ $containerWidth }}px; height: {{ $containerHeight }}px;">
