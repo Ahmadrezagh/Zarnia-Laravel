@@ -106,7 +106,7 @@
         $map['product_'.$idx.'_title'] = $orderItem->name;
         $map['product_'.$idx.'_count'] = $orderItem->count;
         $map['product_'.$idx.'_weight'] = $orderItem->product->weight;
-        $map['product_'.$idx.'_weight2'] = $orderItem->product->weight;
+        $map['product_'.$idx.'_weight_2'] = $orderItem->product->weight;
         $map['product_'.$idx.'_ayar'] = '';
         $map['product_'.$idx.'_etiket'] = $orderItem->etiket;
         $map['product_'.$idx.'_price'] = number_format($orderItem->price);
