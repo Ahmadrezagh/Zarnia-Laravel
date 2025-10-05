@@ -137,7 +137,7 @@
                     position: absolute;
                     right: {{ $containerWidth - $pos->x }}px;
                     top: {{ $pos->y }}px;
-                    font-family: {{ $pos->font_family ?? 'tahoma' }};
+                    font-family: 'IRANSans';
                     font-size: 14px;
                     color: {{ $pos->color ?? '#000' }};
                     white-space: nowrap;
