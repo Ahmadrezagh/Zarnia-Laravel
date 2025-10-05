@@ -112,6 +112,7 @@ class InvoiceTemplateController extends Controller
     public function destroy($id)
     {
         $template = InvoiceTemplate::findOrFail($id);
+        InvoicePosition::query()->where('template_id', $template->id)->delete();
         $template->delete();
         return response()->json(['success' => true]);
     }
