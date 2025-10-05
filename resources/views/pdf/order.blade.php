@@ -127,7 +127,7 @@
                     right: {{ $containerWidth - $pos->x }}px;
                     top: {{ $pos->y }}px;
                     font-family: {{ $pos->font_family ?? 'tahoma' }};
-                    font-size: {{ $pos->font_size ?? 14 }}px;
+                    font-size: 14px;
                     color: {{ $pos->color ?? '#000' }};
                     white-space: nowrap;
                     direction: rtl;
