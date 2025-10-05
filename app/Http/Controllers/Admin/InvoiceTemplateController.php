@@ -109,9 +109,11 @@ class InvoiceTemplateController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function destroy()
+    public function destroy($id)
     {
-        
+        $template = InvoiceTemplate::findOrFail($id);
+        $template->delete();
+        return response()->json(['success' => true]);
     }
 
 
