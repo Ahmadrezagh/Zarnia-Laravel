@@ -12,9 +12,17 @@
 
     @endphp
     <style>
+        @font-face {
+            font-family: 'IRANSans';
+            src: url('{{ asset('fonts/IRANSansWeb.ttf') }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
         body {
             margin: 0;
             padding: 0;
+            font-family: 'IRANSans', sans-serif;
         }
         #editor-container {
             position: relative;
@@ -71,16 +79,7 @@
         }
     </style>
     <style>
-        @font-face {
-            font-family: 'IRANSans';
-            src: url('{{ asset('fonts/IRANSansWeb.ttf') }}') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
 
-        body {
-            font-family: 'IRANSans', sans-serif;
-        }
     </style>
 </head>
 <body>
