@@ -102,7 +102,7 @@
     foreach ($order->orderItems as $index => $orderItem){
         $idx = $index + 1;
         $img = $orderItem->product->image;
-        $map['product_'.$idx.'_image'] = "<img src='$img' style='width:150px;height:150px' ></img>";
+        $map['product_'.$idx.'_image'] = "<img src='$img' style='width:100px;height:100px' ></img>";
         $map['product_'.$idx.'_title'] = $orderItem->name;
         $map['product_'.$idx.'_count'] = $orderItem->count;
         $map['product_'.$idx.'_weight'] = $orderItem->product->weight;
