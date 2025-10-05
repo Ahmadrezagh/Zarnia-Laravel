@@ -133,7 +133,7 @@
                     --x-pos: {{ $pos->x }}px;
                     --y-pos: {{ $pos->y }}px;
                     ">
-            {{ $map[$pos->key] ?? $pos->value }}
+            {!! $map[$pos->key] ?? ' ' !!}
         </div>
     @endforeach
 </div>
