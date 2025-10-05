@@ -86,7 +86,7 @@
         'receiver_name2' => $order->address->receiver_name ?? '',
         'purchase_date' => jdate($order->created_at)->format('Y/m/d'),
         'purchase_date2' => jdate($order->created_at)->format('Y/m/d'),
-        'gold_price' => get_gold_price(),
+        'gold_price' => number_format(get_gold_price()/10),
         'total_label' => number_format($order->total_amount),
         'notes_label' => $order->note ?? '',
         'invoice_number' => $order->id ?? '',
