@@ -95,7 +95,7 @@
         'receiver_phone' => $order->address->receiver_phone ?? '',
         'postal_code' => $order->address->postal_code ?? '',
         'address' => $order->address->address ?? '',
-        'sum_of_prev_purchase' => \App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->sum('final_amount'),
+        'sum_of_prev_purchase' => number_format(\App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->sum('final_amount')),
 
 
     ];
