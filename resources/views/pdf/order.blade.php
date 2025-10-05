@@ -70,6 +70,18 @@
             }
         }
     </style>
+    <style>
+        @font-face {
+            font-family: 'IRANSans';
+            src: url('{{ asset('fonts/IRANSansWeb.ttf') }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            font-family: 'IRANSans', sans-serif;
+        }
+    </style>
 </head>
 <body>
 @php
