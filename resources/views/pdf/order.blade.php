@@ -101,14 +101,15 @@
     ];
     foreach ($order->orderItems as $index => $orderItem){
         $idx = $index + 1;
-        $map['product_'.$idx.'_image'] = "<img src='$orderItem->product->image' ></img>";
+        $img = $orderItem->product->image;
+        $map['product_'.$idx.'_image'] = "<img src='$img' ></img>";
         $map['product_'.$idx.'_title'] = $orderItem->name;
         $map['product_'.$idx.'_count'] = $orderItem->count;
         $map['product_'.$idx.'_weight'] = $orderItem->product->weight;
         $map['product_'.$idx.'_weight2'] = $orderItem->product->weight;
         $map['product_'.$idx.'_ayar'] = '';
         $map['product_'.$idx.'_etiket'] = $orderItem->etiket;
-        $map['product_'.$idx.'_price'] = $orderItem->price;
+        $map['product_'.$idx.'_price'] = number_format($orderItem->price);
     }
 @endphp
 
