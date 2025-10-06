@@ -79,7 +79,6 @@ class Gateway extends Model implements HasMedia
         ];
         Log::info(json_encode($payload));
         $response = $gateway->getPaymentToken($payload);
-        return $response;
         if ($response && isset($response['paymentToken'])) {
             $order->update([
                 'transaction_id' => $payload['transactionId'],
