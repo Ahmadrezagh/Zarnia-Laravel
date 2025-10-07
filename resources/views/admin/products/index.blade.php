@@ -143,6 +143,10 @@
                         <input type="text" class="form-control" id="product-name" value="${product.name || ''}" disabled>
                     </div>
                     <div class="form-group">
+                        <label for="product-name">لینک</label>
+                        <input type="text" dir="ltr" class="form-control" id="product-name" value="${product.urlOfProduct || ''}" >
+                    </div>
+                    <div class="form-group">
                         <label for="product-price">قیمت</label>
                         <input type="number" class="form-control" id="product-price" value="${product.price || ''}" disabled>
                     </div>

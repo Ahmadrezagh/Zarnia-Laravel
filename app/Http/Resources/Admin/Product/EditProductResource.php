@@ -27,6 +27,7 @@ class EditProductResource extends JsonResource
         }
         return [
             'id' => $this->id,
+            'urlOfProduct' => url($this->slug) ,
             'name' => $this->name,
             'attribute_group_str' => $attribute_group_str ,
             'slug' => $this->slug,
