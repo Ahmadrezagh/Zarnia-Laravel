@@ -77,7 +77,15 @@ class ProductItemResouce extends JsonResource
                 'title' => 'سایز',
                 'value' => '8'
             ],
-
+            'weights' => collect([$this]) // start with the current product
+            ->merge($this->children) // add all children
+            ->filter(fn($product) => $product->single_count >= 1)
+                ->map(fn($product) => [
+                    'id' => $product->id,
+                    'weight' => $product->weight,
+                    'name' => $product->name,
+                ])
+                ->values(),
         ];
     }
 }
