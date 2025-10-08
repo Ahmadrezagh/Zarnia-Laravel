@@ -312,7 +312,7 @@ class Order extends Model
             $this->status
         );
 
-        // $this->submitInAccountingApp(); // Uncomment if needed
+         $this->submitInAccountingApp(); // Uncomment if needed
     }
 
     public function status()
