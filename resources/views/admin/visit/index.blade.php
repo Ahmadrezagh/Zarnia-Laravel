@@ -402,11 +402,12 @@
 
                 // Define color map: only countries with visits > 0 get blue
                 const countryColors = {};
-                Object.entries(visitsByCountry).forEach(([code, visits]) => {
-                    if (visits > 0) {
-                        countryColors[code] = '#007bff'; // blue for visited countries
+                globalDistribution.forEach(item => {
+                    if (item.country_code && item.visits > 0) {
+                        visitsByCountry[item.country_code.toUpperCase()] = item.visits;
                     }
                 });
+
                 $('#world-map').vectorMap({
                     map: 'world_en',
                     backgroundColor: '#f8f9fa',
