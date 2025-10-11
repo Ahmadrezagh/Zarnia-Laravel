@@ -211,7 +211,7 @@ class Visit extends Model
 
     public static function getTopPages($limit = 10, $startDate = null, $endDate = null)
     {
-        $query = Visit::select('url', DB::raw('count(*) as visits'))
+        $query = Visit::select(['url','title'], DB::raw('count(*) as visits'))
             ->groupBy('url')
             ->orderBy('visits', 'desc');
         if ($startDate) $query->whereDate('created_at', '>=', $startDate);
