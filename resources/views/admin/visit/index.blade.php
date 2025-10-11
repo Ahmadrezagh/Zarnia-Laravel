@@ -10,7 +10,7 @@
     <!-- Row -->
     <x-page>
         <!-- Summary Traffic -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>خلاصه ترافیک</h4>
             </div>
@@ -32,7 +32,7 @@
         </div>
 
         <!-- Browser Usage -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>آمار استفاده از مرورگر</h4>
             </div>
@@ -59,7 +59,7 @@
         </div>
 
         <!-- OS Usage -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>سیستم‌عامل‌های پر کاربرد</h4>
             </div>
@@ -86,7 +86,7 @@
         </div>
 
         <!-- Device Usage -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>تفکیک استفاده از دستگاه</h4>
             </div>
@@ -113,7 +113,7 @@
         </div>
 
         <!-- Top Pages -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>برترین برگه‌ها</h4>
             </div>
@@ -140,7 +140,7 @@
         </div>
 
         <!-- Top Countries -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>کشورهای برتر</h4>
             </div>
@@ -165,7 +165,7 @@
         </div>
 
         <!-- Active Users -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>فعال‌ترین بازدیدکنندگان</h4>
             </div>
@@ -190,7 +190,7 @@
         </div>
 
         <!-- Recent Visitors -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>بازدیدکنندگان اخیر</h4>
             </div>
@@ -221,7 +221,7 @@
         </div>
 
         <!-- Top Referrers -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>برترین ارجاع‌دهندگان</h4>
             </div>
@@ -246,7 +246,7 @@
         </div>
 
         <!-- Online Users -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>در حال حاضر آنلاین</h4>
             </div>
@@ -256,7 +256,7 @@
         </div>
 
         <!-- Traffic Trend Chart -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>روند ترافیک</h4>
                 <select id="traffic-trend-type">
@@ -270,7 +270,7 @@
         </div>
 
         <!-- Search Engine Referrals Chart -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>ارجاعات از موتورهای جستجو</h4>
             </div>
@@ -280,7 +280,7 @@
         </div>
 
         <!-- Global Distribution Map -->
-        <div class="card">
+        <div class="card mt-3">
             <div class="card-header">
                 <h4>توزیع جهانی بازدیدکنندگان</h4>
             </div>
