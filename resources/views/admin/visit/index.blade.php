@@ -386,26 +386,18 @@
                     return;
                 }
 
-                // Convert array to { 'IR': 52, 'US': 10, ... }
+                // Convert array to { 'IR': 1, 'NL': 2 }
                 const visitsByCountry = {};
-                globalDistribution.forEach(item => {
-                    if (item.country_code) {
-                        visitsByCountry[item.country_code.toUpperCase()] = item.visits;
-                    }
-                });
-
-                // Create a color map: blue for visited, gray for others
-                const colors = {};
-                Object.keys(visitsByCountry).forEach(code => {
-                    colors[code] = '#007bff'; // Bootstrap blue
-                });
-
-                // Define color map: only countries with visits > 0 get blue
-                const countryColors = {};
                 globalDistribution.forEach(item => {
                     if (item.country_code && item.visits > 0) {
                         visitsByCountry[item.country_code.toUpperCase()] = item.visits;
                     }
+                });
+
+                // Assign blue color only to visited countries
+                const countryColors = {};
+                Object.entries(visitsByCountry).forEach(([code, visits]) => {
+                    countryColors[code] = '#007bff'; // blue fill
                 });
 
                 $('#world-map').vectorMap({
