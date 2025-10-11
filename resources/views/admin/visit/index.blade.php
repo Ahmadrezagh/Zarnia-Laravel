@@ -386,42 +386,42 @@
                     return;
                 }
 
-                // 🗺 Convert array to { 'IR': 1, 'NL': 2, ... }
+                // Normalize and map countries with visits
                 const visitsByCountry = {};
                 globalDistribution.forEach(item => {
                     if (item.country_code && item.visits > 0) {
-                        visitsByCountry[item.country_code.toUpperCase()] = item.visits;
+                        const code = item.country_code.trim().toUpperCase();
+                        visitsByCountry[code] = item.visits;
                     }
                 });
 
-                // 🎨 Dynamically set blue shades based on visit count
+                // Calculate color intensity (more visits = darker blue)
                 const maxVisits = Math.max(...Object.values(visitsByCountry));
                 const countryColors = {};
                 Object.entries(visitsByCountry).forEach(([code, visits]) => {
-                    // Opacity between 0.3 (low) to 1.0 (max)
                     const intensity = 0.3 + 0.7 * (visits / maxVisits);
-                    countryColors[code] = `rgba(0, 123, 255, ${intensity.toFixed(2)})`;
+                    countryColors[code.toLowerCase()] = `rgba(0, 123, 255, ${intensity.toFixed(2)})`;
                 });
 
                 // 🗺 Initialize the world map
-                $('#world-map').vectorMap({
+                const map = $('#world-map').vectorMap({
                     map: 'world_en',
                     backgroundColor: '#f8f9fa',
                     borderColor: '#ffffff',
                     borderWidth: 0.5,
-                    color: '#e5e5e5', // default gray
+                    color: '#e5e5e5',
                     hoverOpacity: 0.9,
                     enableZoom: false,
                     showTooltip: true,
-                    colors: countryColors, // 🎯 apply blue shades to visited countries
+                    colors: countryColors, // apply dynamic blue shades
 
                     onLabelShow: function (event, label, code) {
-                        const visits = visitsByCountry[code.toUpperCase()] || 0;
+                        const codeUpper = code.toUpperCase();
+                        const visits = visitsByCountry[codeUpper] || 0;
                         const flagUrl = `https://flagcdn.com/24x18/${code.toLowerCase()}.png`;
                         const formatted = visits.toLocaleString('fa-IR');
                         const countryName = label.text();
 
-                        // 🏳️ Tooltip with flag + name + visits
                         if (visits > 0) {
                             label.html(`
                             <div style="text-align:center;direction:rtl;padding:5px;">
@@ -440,12 +440,21 @@
                         `);
                         }
                     }
+                }).vectorMap('get', 'mapObject');
+
+                // ✅ Force-refresh map colors after initialization (handles map ID mismatch)
+                Object.entries(visitsByCountry).forEach(([code, visits]) => {
+                    const regionCode = code.toLowerCase();
+                    if (map.regions[regionCode]) {
+                        map.regions[regionCode].element.setFill(countryColors[regionCode]);
+                    }
                 });
 
-                console.log('✅ World map initialized successfully — visited countries highlighted in blue.');
+                console.log('✅ Map initialized — all visited countries are now blue (including Iran).');
             });
         </script>
     @endpush
+
 
 
 
