@@ -354,7 +354,6 @@
                 <canvas id="search-engine-chart"></canvas>
             </div>
         </div>
-
         <div class="card">
             <div class="card-header">
                 <h4>توزیع جهانی بازدیدکنندگان</h4>
@@ -365,26 +364,34 @@
         </div>
     </x-page>
 
-
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <!-- JQVMap CSS (local) -->
         <link rel="stylesheet" href="{{ asset('map/jqvmap.min.css') }}"/>
-        <!-- JQVMap Core (local) -->
         <script src="{{ asset('map/jquery.vmap.min.js') }}"></script>
-        <!-- JQVMap World Map Data (local) -->
-        <script src="{{ asset('map/jquery.vmap.world.js') }}"></script>
+        <script src="{{ asset('map/jquery.vmap.world.js?v=' . time()) }}"></script>
+
         <script>
-            // Function to initialize the JQVMap
             function initWorldMap() {
                 if (typeof jQuery.fn.vectorMap === 'undefined') {
-                    console.error('JQVMap core library is not loaded. Check jquery.vmap.min.js path.');
+                    console.error('❌ JQVMap core library not loaded.');
                     renderFallbackMap();
                     return false;
                 }
-                if (typeof jQuery.fn.vectorMap.maps === 'undefined' || typeof jQuery.fn.vectorMap.maps.world_en === 'undefined') {
-                    console.error('JQVMap world map data is not loaded. Check jquery.vmap.world.js path.');
+
+                if (typeof jQuery.fn.vectorMap.maps === 'undefined') {
+                    console.error('❌ No maps found in JQVMap.');
+                    renderFallbackMap();
+                    return false;
+                }
+
+                // Detect map name dynamically
+                const availableMaps = Object.keys(jQuery.fn.vectorMap.maps);
+                const mapName = availableMaps.includes('world_en') ? 'world_en' :
+                    availableMaps.includes('world') ? 'world' : null;
+
+                if (!mapName) {
+                    console.error('❌ World map data not found in JQVMap.');
                     renderFallbackMap();
                     return false;
                 }
@@ -396,7 +403,7 @@
                 });
 
                 $('#world-map').vectorMap({
-                    map: 'world_en', // JQVMap uses 'world_en' for its world map
+                    map: mapName,
                     backgroundColor: '#f8f9fa',
                     borderColor: '#ffffff',
                     borderWidth: 0.5,
@@ -405,7 +412,6 @@
                     enableZoom: false,
                     showTooltip: true,
                     normalizeFunction: 'polynomial',
-                    multiSelectRegion: false,
                     scaleColors: ['#C8EEFF', '#0071A4'],
                     values: visitsByCountry,
                     onRegionLabelShow: function(e, el, code) {
@@ -413,24 +419,26 @@
                         const countryName = el.html();
                         const flagUrl = `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
                         el.html(`
-                        <div style="text-align: center;">
-                            <img src="${flagUrl}" alt="Flag" style="width: 16px; height: 12px; margin-right: 5px;">
+                        <div style="text-align:center;">
+                            <img src="${flagUrl}" alt="Flag" style="width:16px;height:12px;margin-right:5px;">
                             <strong>${countryName}</strong><br>
                             بازدید: ${visits}
                         </div>
                     `);
                     }
                 });
-                console.log('JQVMap initialized successfully with world_en map.');
+
+                console.log(`✅ JQVMap initialized successfully with map: ${mapName}`);
                 return true;
             }
 
-            // Fallback: Chart.js doughnut for global distribution
             function renderFallbackMap() {
-                console.warn('Using Chart.js fallback for world map due to JQVMap failure.');
+                console.warn('⚠️ Using Chart.js fallback for world map.');
                 const globalDistribution = @json($global_distribution);
+
                 if (globalDistribution.length === 0) {
-                    document.getElementById('world-map').innerHTML = '<p style="text-align: center; padding: 20px;">No global data available.</p>';
+                    document.getElementById('world-map').innerHTML =
+                        '<p style="text-align:center;padding:20px;">No global data available.</p>';
                     return;
                 }
 
@@ -438,15 +446,19 @@
                 const visits = globalDistribution.map(item => item.visits);
                 const totalVisits = visits.reduce((a, b) => a + b, 0);
 
-                new Chart(document.getElementById('world-map'), {
+                const canvas = document.createElement('canvas');
+                document.getElementById('world-map').innerHTML = '';
+                document.getElementById('world-map').appendChild(canvas);
+
+                new Chart(canvas, {
                     type: 'doughnut',
                     data: {
                         labels: countryCodes,
                         datasets: [{
                             data: visits,
                             backgroundColor: [
-                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
-                                '#FF6384', '#C9CBCF', '#4BC0C0', '#FFCE56'
+                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                                '#9966FF', '#FF9F40', '#C9CBCF', '#FFCD56'
                             ],
                             borderWidth: 2,
                             borderColor: '#fff'
@@ -467,8 +479,8 @@
                                         const percentage = ((visits / totalVisits) * 100).toFixed(1);
                                         const flagUrl = `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
                                         return [
-                                            `<img src="${flagUrl}" alt="Flag" style="width: 16px; height: 12px; margin-right: 5px;"> ${code}`,
-                                            `بازدید: ${visits} (${percentage}%)`
+                                            `${code} (${percentage}%)`,
+                                            `بازدید: ${visits}`
                                         ];
                                     }
                                 }
@@ -478,73 +490,17 @@
                 });
             }
 
-            // Main initialization
             document.addEventListener('DOMContentLoaded', function () {
                 if (typeof jQuery === 'undefined') {
-                    console.error('jQuery is not loaded. Check jQuery CDN or use local copy.');
+                    console.error('❌ jQuery is not loaded.');
                     renderFallbackMap();
                     return;
                 }
 
-                // Your existing charts (unchanged)
-                const dailyVisits = @json($daily_visits);
-                const trafficTrendChart = new Chart(document.getElementById('traffic-trend-chart'), {
-                    type: 'line',
-                    data: {
-                        labels: dailyVisits.map(item => item.date),
-                        datasets: [{
-                            label: 'بازدیدها',
-                            data: dailyVisits.map(item => item.visits),
-                            borderColor: '#36a2eb',
-                            fill: false
-                        }]
-                    },
-                    options: {responsive: true}
-                });
-
-                document.getElementById('traffic-trend-type').addEventListener('change', (e) => {
-                    const type = e.target.value;
-                    if (type === 'weekly') {
-                        const weeklyData = [];
-                        let weekVisits = 0;
-                        let weekStart = null;
-                        dailyVisits.forEach((item, index) => {
-                            const date = new Date(item.date);
-                            if (!weekStart) weekStart = date;
-                            weekVisits += item.visits;
-                            if (date.getDay() === 0 || index === dailyVisits.length - 1) {
-                                weeklyData.push({date: weekStart.toISOString().split('T')[0], visits: weekVisits});
-                                weekStart = null;
-                                weekVisits = 0;
-                            }
-                        });
-                        trafficTrendChart.data.labels = weeklyData.map(item => item.date);
-                        trafficTrendChart.data.datasets[0].data = weeklyData.map(item => item.visits);
-                        trafficTrendChart.update();
-                    } else {
-                        trafficTrendChart.data.labels = dailyVisits.map(item => item.date);
-                        trafficTrendChart.data.datasets[0].data = dailyVisits.map(item => item.visits);
-                        trafficTrendChart.update();
-                    }
-                });
-
-                const searchEngineReferrals = @json($search_engine_referrals);
-                new Chart(document.getElementById('search-engine-chart'), {
-                    type: 'pie',
-                    data: {
-                        labels: searchEngineReferrals.map(item => item.referrer),
-                        datasets: [{
-                            data: searchEngineReferrals.map(item => item.visits),
-                            backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0'],
-                        }]
-                    },
-                    options: {responsive: true}
-                });
-
-                // Initialize JQVMap
                 initWorldMap();
             });
         </script>
     @endpush
+
 
 @endsection
