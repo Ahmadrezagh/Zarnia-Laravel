@@ -369,18 +369,17 @@
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <!-- jVectorMap CSS via jsDelivr -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/jquery-jvectormap.min.css"/>
-        <!-- jVectorMap Core via jsDelivr -->
-        <script src="https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/jquery-jvectormap.min.js"></script>
-        <!-- World Map Data via jsDelivr -->
-        <script src="https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/maps/jquery-jvectormap-world-mill.js"></script>
+        <!-- JQVMap CSS (via jsDelivr) -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/jqvmap.min.css"/>
+        <!-- JQVMap Core (via jsDelivr) -->
+        <script src="https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/jquery.vmap.min.js"></script>
+        <!-- JQVMap World Map Data (via jsDelivr) -->
+        <script src="https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/maps/jquery.vmap.world.js"></script>
         <script>
-            // Function to initialize the map (can be called multiple times)
+            // Function to initialize the JQVMap
             function initWorldMap() {
-                if (typeof jvm === 'undefined') {
-                    console.error('jVectorMap still not loaded after retry.');
-                    // Fallback: Render a Chart.js doughnut chart for global distribution
+                if (typeof jQuery.fn.vectorMap === 'undefined') {
+                    console.error('JQVMap core library is not loaded.');
                     renderFallbackMap();
                     return false;
                 }
@@ -392,29 +391,19 @@
                 });
 
                 $('#world-map').vectorMap({
-                    map: 'world_mill',
+                    map: 'world', // JQVMap uses 'world' for its world map
                     backgroundColor: '#f8f9fa',
-                    regionStyle: {
-                        initial: {
-                            fill: '#d3d3d3',
-                            "fill-opacity": 1,
-                            stroke: '#ffffff',
-                            "stroke-width": 0.5,
-                            "stroke-opacity": 1
-                        },
-                        hover: {
-                            "fill-opacity": 0.8,
-                            cursor: 'pointer'
-                        }
-                    },
-                    series: {
-                        regions: [{
-                            values: visitsByCountry,
-                            scale: ['#C8EEFF', '#0071A4'],
-                            normalizeFunction: 'polynomial'
-                        }]
-                    },
-                    onRegionTipShow: function(e, el, code) {
+                    borderColor: '#ffffff',
+                    borderWidth: 0.5,
+                    color: '#d3d3d3',
+                    hoverOpacity: 0.8,
+                    enableZoom: false,
+                    showTooltip: true,
+                    normalizeFunction: 'polynomial',
+                    multiSelectRegion: false,
+                    scaleColors: ['#C8EEFF', '#0071A4'],
+                    values: visitsByCountry,
+                    onRegionLabelShow: function(e, el, code) {
                         const visits = visitsByCountry[code] || 0;
                         const countryName = el.html();
                         const flagUrl = `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
@@ -427,13 +416,13 @@
                     `);
                     }
                 });
-                console.log('jVectorMap initialized successfully.');
+                console.log('JQVMap initialized successfully with world map.');
                 return true;
             }
 
-            // Fallback function: Chart.js doughnut for global distribution
+            // Fallback: Chart.js doughnut for global distribution
             function renderFallbackMap() {
-                console.warn('Using Chart.js fallback for world map.');
+                console.warn('Using Chart.js fallback for world map due to JQVMap failure.');
                 const globalDistribution = @json($global_distribution);
                 if (globalDistribution.length === 0) {
                     document.getElementById('world-map').innerHTML = '<p style="text-align: center; padding: 20px;">No global data available.</p>';
@@ -452,7 +441,7 @@
                             data: visits,
                             backgroundColor: [
                                 '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
-                                '#FF6384', '#C9CBCF', '#4BC0C0', '#FFCE56' // Cycle colors if more countries
+                                '#FF6384', '#C9CBCF', '#4BC0C0', '#FFCE56'
                             ],
                             borderWidth: 2,
                             borderColor: '#fff'
@@ -484,10 +473,11 @@
                 });
             }
 
-            // Main initialization with dynamic loading fallback
+            // Main initialization
             document.addEventListener('DOMContentLoaded', function () {
                 if (typeof jQuery === 'undefined') {
                     console.error('jQuery is not loaded.');
+                    renderFallbackMap();
                     return;
                 }
 
@@ -546,26 +536,8 @@
                     options: {responsive: true}
                 });
 
-                // Try to initialize jVectorMap
-                if (initWorldMap()) {
-                    return; // Success
-                }
-
-                // If failed, try dynamic loading
-                console.warn('jVectorMap not found. Attempting dynamic load...');
-                const jvmScript = document.createElement('script');
-                jvmScript.src = 'https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/jquery-jvectormap.min.js';
-                jvmScript.onload = function() {
-                    const mapScript = document.createElement('script');
-                    mapScript.src = 'https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/maps/jquery-jvectormap-world-mill.js';
-                    mapScript.onload = initWorldMap;
-                    document.head.appendChild(mapScript);
-                };
-                jvmScript.onerror = function() {
-                    console.error('Failed to dynamically load jVectorMap.');
-                    renderFallbackMap();
-                };
-                document.head.appendChild(jvmScript);
+                // Initialize JQVMap
+                initWorldMap();
             });
         </script>
     @endpush
