@@ -383,6 +383,11 @@
                     renderFallbackMap();
                     return false;
                 }
+                if (typeof jQuery.fn.vectorMap.maps === 'undefined' || typeof jQuery.fn.vectorMap.maps.world === 'undefined') {
+                    console.error('JQVMap world map data is not loaded.');
+                    renderFallbackMap();
+                    return false;
+                }
 
                 const globalDistribution = @json($global_distribution);
                 const visitsByCountry = {};
@@ -391,7 +396,7 @@
                 });
 
                 $('#world-map').vectorMap({
-                    map: 'world', // JQVMap uses 'world' for its world map
+                    map: 'world',
                     backgroundColor: '#f8f9fa',
                     borderColor: '#ffffff',
                     borderWidth: 0.5,
@@ -536,9 +541,26 @@
                     options: {responsive: true}
                 });
 
-                // Initialize JQVMap
-                initWorldMap();
+                // Try to initialize JQVMap
+                if (initWorldMap()) {
+                    return; // Success
+                }
+
+                // Retry by dynamically loading the map file
+                console.warn('JQVMap world map not found. Attempting dynamic load...');
+                const mapScript = document.createElement('script');
+                mapScript.src = 'https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/maps/jquery.vmap.world.js';
+                mapScript.onload = function() {
+                    console.log('World map script loaded dynamically.');
+                    initWorldMap();
+                };
+                mapScript.onerror = function() {
+                    console.error('Failed to load JQVMap world map script.');
+                    renderFallbackMap();
+                };
+                document.head.appendChild(mapScript);
             });
         </script>
     @endpush
+
 @endsection
