@@ -661,8 +661,10 @@ class Product extends Model implements HasMedia
 
     public function getViewCountAttribute()
     {
+        $encodedSlug = urlencode($this->slug);
+
         return DB::table('visits')
-            ->where('url', 'like', '%' . $this->slug)
+            ->where('url', 'like', "%$encodedSlug")
             ->count();
     }
 }
