@@ -68,7 +68,7 @@ class ProductItemResouce extends JsonResource
             'snapp_pay_each_installment' => number_format($this->price/4),
             'children' => new ProductListCollection($this->children, $this->user),
             'related_products' => ProductListResouce::collection($this->relatedProducts()),
-            'complementary_products' => $this->complementaryProducts(),
+            'complementary_products' => ProductListResouce::collection($this->complementaryProducts()),
             'categories' => CategoryResource::collection($this->categories),
             'is_favorite' => $is_favorite,
             'purity' => '18',
