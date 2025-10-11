@@ -370,11 +370,11 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <!-- jVectorMap CSS via jsDelivr -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jvectormap@2.0.5/jquery-jvectormap.min.css"/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/jquery-jvectormap.min.css"/>
         <!-- jVectorMap Core via jsDelivr -->
-        <script src="https://cdn.jsdelivr.net/npm/jvectormap@2.0.5/jquery-jvectormap.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/jquery-jvectormap.min.js"></script>
         <!-- World Map Data via jsDelivr -->
-        <script src="https://cdn.jsdelivr.net/npm/jvectormap@2.0.5/maps/jquery-jvectormap-world-mill.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/maps/jquery-jvectormap-world-mill.js"></script>
         <script>
             // Function to initialize the map (can be called multiple times)
             function initWorldMap() {
@@ -554,10 +554,10 @@
                 // If failed, try dynamic loading
                 console.warn('jVectorMap not found. Attempting dynamic load...');
                 const jvmScript = document.createElement('script');
-                jvmScript.src = 'https://cdn.jsdelivr.net/npm/jvectormap@2.0.5/jquery-jvectormap.min.js';
+                jvmScript.src = 'https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/jquery-jvectormap.min.js';
                 jvmScript.onload = function() {
                     const mapScript = document.createElement('script');
-                    mapScript.src = 'https://cdn.jsdelivr.net/npm/jvectormap@2.0.5/maps/jquery-jvectormap-world-mill.js';
+                    mapScript.src = 'https://cdn.jsdelivr.net/npm/jvectormap@2.0.4/maps/jquery-jvectormap-world-mill.js';
                     mapScript.onload = initWorldMap;
                     document.head.appendChild(mapScript);
                 };
