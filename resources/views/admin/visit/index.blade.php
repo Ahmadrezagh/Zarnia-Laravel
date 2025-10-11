@@ -15,6 +15,14 @@
 
     <!-- Row -->
     <x-page>
+        <div class="card mt-3">
+            <div class="card-header">
+                <h4>در حال حاضر آنلاین</h4>
+            </div>
+            <div class="card-body">
+                <p>کاربران آنلاین: {{ $online_users }}</p>
+            </div>
+        </div>
         <!-- Summary Traffic -->
         <div class="card mt-3">
             <div class="card-header">
@@ -324,14 +332,7 @@
             </div>
         </div>
 
-        <div class="card mt-3">
-            <div class="card-header">
-                <h4>در حال حاضر آنلاین</h4>
-            </div>
-            <div class="card-body">
-                <p>کاربران آنلاین: {{ $online_users }}</p>
-            </div>
-        </div>
+
 
         <div class="card mt-3">
             <div class="card-header">
