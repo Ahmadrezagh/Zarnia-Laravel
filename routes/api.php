@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\ProvinceController;
 use App\Http\Controllers\Api\V1\QAController;
 use App\Http\Controllers\Api\V1\ShippingController;
 use App\Http\Controllers\Api\V1\ShoppingCartController;
+use App\Http\Controllers\Api\V1\TrackingController;
 use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,7 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
         Route::get('product_slider',[ProductSliderController::class,'index']);
         Route::get('index_buttons',[IndexButtonController::class,'index']);
         Route::get('index_banners',[IndexBannerController::class,'index']);
+        Route::post('track-visit', [TrackingController::class, 'trackVisit']);
         // Protected routes
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('/user', function (Request $request) {
