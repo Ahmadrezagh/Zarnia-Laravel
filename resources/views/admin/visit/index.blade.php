@@ -51,7 +51,7 @@
                             $browserIcon = match (strtolower($item['browser'])) {
                                 'chrome', 'google chrome' => 'chrome',
                                 'firefox' => 'firefox',
-                                'safari' => 'apple',
+                                'safari','mobile safari' => 'apple',
                                 'edge', 'microsoft edge' => 'edge',
                                 'opera' => 'opera',
                                 'internet explorer' => 'internet-explorer',
@@ -100,8 +100,7 @@
                         @php
                             $osIcon = match (strtolower($item['os'])) {
                                 'windows' => 'windows',
-                                'macos', 'apple',
-                                'mac os x','ios' => 'apple',
+                                'mac','macos', 'apple','mac os x','ios' => 'apple',
                                 'android' => 'android',
                                 'linux' => 'linux',
                                 default => 'desktop'
