@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\QAController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VisitController;
 use App\Http\Controllers\Api\V1\GatewayController;
 use Illuminate\Support\Facades\Route;
 
@@ -102,6 +103,9 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
 
 
     Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
+
+    Route::get('visit',[VisitController::class,'index'])->name('visit.index');
+
 });
 
 Route::get('order/print/{order}', [OrderController::class, 'print'])->name('order.print');

@@ -116,6 +116,20 @@
                         </ul>
                     </li>
                 @endif
+                @if ((Auth::user()->isAdmin() && Auth::user()->can('Admin')) || Auth::user()->isSuperAdmin() )
+                    <li class="nav-item">
+                        <a class="nav-link with-sub" href="#">
+                            <span class="shape1"></span>
+                            <span class="shape2"></span>
+                            <i class="fas chart-circle-value sidemenu-icon"></i>
+                            <span class="sidemenu-label">آمار</span><i class="angle fe fe-chevron-left"></i></a>
+                        <ul class="nav-sub">
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('visit.index')}}">مدیر ها</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
                 @if ((Auth::user()->isAdmin() && Auth::user()->can('Categories')) || Auth::user()->isSuperAdmin() )
                     <li class="nav-item">
                         <a class="nav-link with-sub" href="#">

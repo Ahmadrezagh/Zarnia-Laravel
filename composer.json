@@ -6,11 +6,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "geoip2/geoip2": "~2.0",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "laravel/ui": "^4.5",
         "livewire/livewire": "^3.6",
+        "matomo/device-detector": "^6.4",
         "morilog/jalali": "^3.4",
         "pishran/laravel-persian-slug": "^2.2",
         "salibhdr/typhoon-iran-cities": "^3.1",

@@ -2,134 +2,210 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use DeviceDetector\DeviceDetector;
+use GeoIp2\Database\Reader;
 
 class Visit extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'ip','title', 'user_agent', 'url', 'referrer', 'user_id'
+        'ip', 'country_code', 'title', 'user_agent', 'url', 'referrer', 'user_id'
     ];
 
-    // Scope for daily visits
     public function scopeDaily($query, $date = null)
     {
         $date = $date ?? now()->format('Y-m-d');
         return $query->whereDate('created_at', $date);
     }
 
-    // Static method for total visits
-    public static function getTotalVisits($startDate = null, $endDate = null)
+    // Previous methods (getTotalVisits, getUniqueVisitors, etc.) remain as before
+
+    // Summary of traffic for different periods
+    public static function getTrafficSummary()
     {
-        $query = static::query();
-        if ($startDate) {
-            $query->whereDate('created_at', '>=', $startDate);
-        }
-        if ($endDate) {
-            $query->whereDate('created_at', '<=', $endDate);
-        }
-        return $query->count();
+        $today = now()->startOfDay();
+        $yesterday = now()->subDay()->startOfDay();
+        $thisWeek = now()->startOfWeek();
+        $lastWeek = now()->subWeek()->startOfWeek();
+        $thisMonth = now()->startOfMonth();
+        $lastMonth = now()->subMonth()->startOfMonth();
+
+        return [
+            'today' => static::daily($today)->count(),
+            'yesterday' => static::daily($yesterday)->count(),
+            'this_week' => static::where('created_at', '>=', $thisWeek)->count(),
+            'last_week' => static::whereBetween('created_at', [$lastWeek, $thisWeek])->count(),
+            'this_month' => static::where('created_at', '>=', $thisMonth)->count(),
+            'last_month' => static::whereBetween('created_at', [$lastMonth, $thisMonth])->count(),
+            'last_7_days' => static::where('created_at', '>=', now()->subDays(7))->count(),
+            'last_30_days' => static::where('created_at', '>=', now()->subDays(30))->count(),
+            'last_90_days' => static::where('created_at', '>=', now()->subDays(90))->count(),
+            'last_6_months' => static::where('created_at', '>=', now()->subMonths(6))->count(),
+            'all_time' => static::count(),
+        ];
     }
 
-    // Static method for unique visitors (based on IP)
-    public static function getUniqueVisitors($startDate = null, $endDate = null)
+    // Browser usage (count and percentage)
+    public static function getBrowserUsage($startDate = null, $endDate = null)
     {
-        $query = static::select('ip')->distinct();
-        if ($startDate) {
-            $query->whereDate('created_at', '>=', $startDate);
+        $query = static::select('user_agent');
+        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
+        $visits = $query->get();
+
+        $browsers = [];
+        $total = $visits->count();
+
+        foreach ($visits as $visit) {
+            $dd = new DeviceDetector($visit->user_agent);
+            $dd->parse();
+            $browser = $dd->getClient('name') ?? 'Unknown';
+            $browsers[$browser] = ($browsers[$browser] ?? 0) + 1;
         }
-        if ($endDate) {
-            $query->whereDate('created_at', '<=', $endDate);
-        }
-        return $query->count();
+
+        return collect($browsers)->map(function ($count, $browser) use ($total) {
+            return [
+                'browser' => $browser,
+                'count' => $count,
+                'percentage' => $total ? round(($count / $total) * 100, 2) : 0,
+            ];
+        })->sortByDesc('count')->values();
     }
 
-    // Static method for top pages
-    public static function getTopPages($limit = 10, $startDate = null, $endDate = null)
+    // Operating system usage
+    public static function getOsUsage($startDate = null, $endDate = null)
     {
-        $query = static::select('url', 'title', DB::raw('count(*) as visits'))
-            ->groupBy('url', 'title')
+        $query = static::select('user_agent');
+        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
+        $visits = $query->get();
+
+        $os = [];
+        $total = $visits->count();
+
+        foreach ($visits as $visit) {
+            $dd = new DeviceDetector($visit->user_agent);
+            $dd->parse();
+            $osName = $dd->getOs('name') ?? 'Unknown';
+            $os[$osName] = ($os[$osName] ?? 0) + 1;
+        }
+
+        return collect($os)->map(function ($count, $osName) use ($total) {
+            return [
+                'os' => $osName,
+                'count' => $count,
+                'percentage' => $total ? round(($count / $total) * 100, 2) : 0,
+            ];
+        })->sortByDesc('count')->values();
+    }
+
+    // Device type usage (desktop, mobile, tablet)
+    public static function getDeviceUsage($startDate = null, $endDate = null)
+    {
+        $query = static::select('user_agent');
+        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
+        $visits = $query->get();
+
+        $devices = [];
+        $total = $visits->count();
+
+        foreach ($visits as $visit) {
+            $dd = new DeviceDetector($visit->user_agent);
+            $dd->parse();
+            $device = $dd->isDesktop() ? 'Desktop' : ($dd->isMobile() ? 'Mobile' : ($dd->isTablet() ? 'Tablet' : 'Unknown'));
+            $devices[$device] = ($devices[$device] ?? 0) + 1;
+        }
+
+        return collect($devices)->map(function ($count, $device) use ($total) {
+            return [
+                'device' => $device,
+                'count' => $count,
+                'percentage' => $total ? round(($count / $total) * 100, 2) : 0,
+            ];
+        })->sortByDesc('count')->values();
+    }
+
+    // Top countries
+    public static function getTopCountries($limit = 10, $startDate = null, $endDate = null)
+    {
+        $query = static::select('country_code', DB::raw('count(*) as visits'))
+            ->whereNotNull('country_code')
+            ->groupBy('country_code')
             ->orderBy('visits', 'desc');
-        if ($startDate) {
-            $query->whereDate('created_at', '>=', $startDate);
-        }
-        if ($endDate) {
-            $query->whereDate('created_at', '<=', $endDate);
-        }
+        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
         return $query->limit($limit)->get();
     }
 
-    // Static method for daily visits
-    public static function getDailyVisits($days = 30)
+    // Active authenticated users
+    public static function getActiveUsers($limit = 10, $startDate = null, $endDate = null)
     {
-        return static::selectRaw('DATE(created_at) as date, COUNT(*) as visits')
-            ->where('created_at', '>=', Carbon::now()->subDays($days))
-            ->groupBy('date')
-            ->orderBy('date')
+        $query = static::select('user_id', DB::raw('count(*) as visits'))
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->orderBy('visits', 'desc');
+        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
+        return $query->limit($limit)->with('user')->get();
+    }
+
+    // Recent visitors
+    public static function getRecentVisitors($limit = 10)
+    {
+        return static::select('ip', 'country_code', 'url', 'title', 'user_id', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->with('user')
             ->get();
     }
 
-    // Static method for authenticated visits (logged-in users)
-    public static function getAuthenticatedVisits($startDate = null, $endDate = null)
+    // Search engine referrals
+    public static function getSearchEngineReferrals($startDate = null, $endDate = null)
     {
-        $query = static::whereNotNull('user_id');
-        if ($startDate) {
-            $query->whereDate('created_at', '>=', $startDate);
-        }
-        if ($endDate) {
-            $query->whereDate('created_at', '<=', $endDate);
-        }
-        return $query->count();
-    }
-
-    // Static method for anonymous visits (non-logged-in users)
-    public static function getAnonymousVisits($startDate = null, $endDate = null)
-    {
-        $query = static::whereNull('user_id');
-        if ($startDate) {
-            $query->whereDate('created_at', '>=', $startDate);
-        }
-        if ($endDate) {
-            $query->whereDate('created_at', '<=', $endDate);
-        }
-        return $query->count();
-    }
-
-    // Static method for top referrers
-    public static function getTopReferrers($limit = 10, $startDate = null, $endDate = null)
-    {
+        $searchEngines = ['google.com', 'bing.com', 'yahoo.com', 'duckduckgo.com'];
         $query = static::select('referrer', DB::raw('count(*) as visits'))
             ->whereNotNull('referrer')
+            ->where(function ($q) use ($searchEngines) {
+                foreach ($searchEngines as $engine) {
+                    $q->orWhere('referrer', 'like', "%$engine%");
+                }
+            })
             ->groupBy('referrer')
             ->orderBy('visits', 'desc');
-        if ($startDate) {
-            $query->whereDate('created_at', '>=', $startDate);
-        }
-        if ($endDate) {
-            $query->whereDate('created_at', '<=', $endDate);
-        }
-        return $query->limit($limit)->get();
+        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
+        return $query->get();
     }
 
-    // Static method for visits by user (specific user_id)
-    public static function getVisitsByUser($userId, $startDate = null, $endDate = null)
+    // Online users (last 5 minutes)
+    public static function getOnlineUsers($minutes = 5)
     {
-        $query = static::where('user_id', $userId);
-        if ($startDate) {
-            $query->whereDate('created_at', '>=', $startDate);
-        }
-        if ($endDate) {
-            $query->whereDate('created_at', '<=', $endDate);
-        }
-        return $query->count();
-    }
-
-    // Static method for real-time visits (e.g., last 5 minutes)
-    public static function getRealtimeVisits($minutes = 5)
-    {
-        return static::where('created_at', '>=', Carbon::now()->subMinutes($minutes))
+        return static::select('ip')
+            ->distinct()
+            ->where('created_at', '>=', Carbon::now()->subMinutes($minutes))
             ->count();
     }
 
+    // Global distribution for map
+    public static function getGlobalDistribution($startDate = null, $endDate = null)
+    {
+        $query = static::select('country_code', DB::raw('count(*) as visits'))
+            ->whereNotNull('country_code')
+            ->groupBy('country_code');
+        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
+        return $query->get();
+    }
+
+    // Relationship for user
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
