@@ -52,7 +52,7 @@ class TrackingController extends Controller
             'title' => $validated['title'],
             'user_agent' => $validated['user_agent'] ?? $request->userAgent(),
             'url' => $validated['url'],
-            'referrer' => $validated['referrer'],
+            'referrer' => (isset($validated['referrer']) && $validated['referrer']) ? $validated['referrer'] : null,
             'user_id' => $userId,
         ]);
 
