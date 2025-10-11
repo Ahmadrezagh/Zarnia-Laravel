@@ -184,4 +184,17 @@ class Category extends Model implements HasMedia
         )->wherePivot('target_type', Category::class);
     }
 
+
+    public function relatedProductsDirect(): MorphToMany
+    {
+        return $this->morphToMany(
+            Category::class,
+            'source',
+            'related_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Product::class);
+    }
+
+
 }

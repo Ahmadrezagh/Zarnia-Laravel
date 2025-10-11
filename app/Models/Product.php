@@ -564,15 +564,33 @@ class Product extends Model implements HasMedia
                 ->flatMap(fn ($category) => $category->products)
         );
 
-        // 3️⃣ If still empty → products from same categories as this product
+        // 3️⃣ Products from this product's categories → direct related products
+        $related = $related->concat(
+            $this->categories()
+                ->with('relatedProductsDirect')
+                ->get()
+                ->flatMap(fn ($category) => $category->relatedProductsDirect)
+        );
+
+        // 4️⃣ Products from this product's categories → related categories → products
+        $related = $related->concat(
+            $this->categories()
+                ->with('relatedCategories.products')
+                ->get()
+                ->flatMap(fn ($category) =>
+                $category->relatedCategories->flatMap(fn ($cat) => $cat->products)
+                )
+        );
+
+        // 5️⃣ Fallback: products from same categories as this product
         if ($related->isEmpty()) {
-            $related = $related->concat(
-                $this->categories()
-                    ->with('products')
-                    ->get()
-                    ->flatMap(fn ($category) => $category->products)
-                    ->where('id', '!=', $this->id) // exclude self
-            );
+//            $related = $related->concat(
+//                $this->categories()
+//                    ->with('products')
+//                    ->get()
+//                    ->flatMap(fn ($category) => $category->products)
+//                    ->where('id', '!=', $this->id) // exclude self
+//            );
         }
 
         // Remove duplicates & keep order
