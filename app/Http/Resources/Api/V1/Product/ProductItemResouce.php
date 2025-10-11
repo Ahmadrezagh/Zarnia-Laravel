@@ -67,8 +67,6 @@ class ProductItemResouce extends JsonResource
             'discount_percentage' => $this->discount_percentage,
             'snapp_pay_each_installment' => number_format($this->price/4),
             'children' => new ProductListCollection($this->children, $this->user),
-            'related_products' => ProductListResouce::collection($this->relatedProducts(),$this->user),
-            'complementary_products' => ProductListResouce::collection($this->complementaryProducts(),$this->user),
             'categories' => CategoryResource::collection($this->categories),
             'is_favorite' => $is_favorite,
             'purity' => '18',
