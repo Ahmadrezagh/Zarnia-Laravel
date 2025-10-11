@@ -47,9 +47,20 @@
                     </thead>
                     <tbody>
                     @foreach ($browser_usage as $item)
+                        @php
+                            $browserIcon = match (strtolower($item['browser'])) {
+                                'chrome', 'google chrome' => 'chrome',
+                                'firefox' => 'firefox',
+                                'safari' => 'safari',
+                                'edge', 'microsoft edge' => 'edge',
+                                'opera' => 'opera',
+                                'internet explorer' => 'internet-explorer',
+                                default => 'globe'
+                            };
+                        @endphp
                         <tr>
                             <td>
-                                <i class="fa-brands fa-{{ strtolower($item['browser']) === 'chrome' ? 'chrome' : (strtolower($item['browser']) === 'firefox' ? 'firefox' : (strtolower($item['browser']) === 'safari' ? 'safari' : 'edge')) }}"></i>
+                                <i class="fa-brands fa-{{ $browserIcon }} me-2"></i>
                                 {{ $item['browser'] }}
                             </td>
                             <td>{{ $item['count'] }}</td>
