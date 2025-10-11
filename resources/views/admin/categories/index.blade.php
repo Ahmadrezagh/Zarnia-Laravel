@@ -7,8 +7,56 @@
         .select2-search__field {
             direction: rtl;
         }
+
+
     </style>
-    @endsection
+    <style>
+        .custom-multiselect {
+            position: relative;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+            width: 100%;
+        }
+        .custom-multiselect-display {
+            padding: 8px 10px;
+        }
+        .custom-multiselect-dropdown {
+            display: none;
+            position: absolute;
+            z-index: 9999;
+            background: #fff;
+            border: 1px solid #ddd;
+            width: 100%;
+            max-height: 250px;
+            overflow-y: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .custom-multiselect.open .custom-multiselect-dropdown {
+            display: block;
+        }
+        .custom-multiselect-search {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #eee;
+            padding: 6px 8px;
+        }
+        .custom-multiselect-options label {
+            display: flex;
+            align-items: center;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+        .custom-multiselect-options label:hover {
+            background: #f3f3f3;
+        }
+        .custom-multiselect-options input {
+            margin-left: 8px;
+        }
+    </style>
+
+@endsection
 @section('content')
 
 
@@ -81,95 +129,316 @@
                         @endforeach
                     </x-form.select-option>
                     <div class="mb-3">
-                        <label for="related_products" class="form-label">محصولات مرتبط</label>
-                        <select id="related_products" name="related_products[]" class="form-select select2-ajax" multiple="true" data-ajax-url="{{ route('products.search') }}"
-                                data-preselected='@json($category->relatedProducts->map(function($item) { return ["id" => "Product:{$item->id}", "text" => $item->name]; })->merge($category->relatedCategories->map(function($item) { return ["id" => "Category:{$item->id}", "text" => $item->title]; })))'>
-                        </select>
+                        <label class="form-label">محصولات مرتبط</label>
+                        <div class="custom-multiselect"
+                             data-ajax-url="{{ route('products.search') }}"
+                             data-preselected='@json($category->relatedProducts->map(fn($item) => ["id" => "Product:{$item->id}", "text" => $item->name]))'>
+                            <div class="custom-multiselect-display">انتخاب کنید...</div>
+                            <div class="custom-multiselect-dropdown">
+                                <input type="text" class="custom-multiselect-search" placeholder="جستجو...">
+                                <div class="custom-multiselect-options"></div>
+                            </div>
+                            <input type="hidden" name="related_products">
+                        </div>
                     </div>
+
                     <div class="mb-3">
-                        <label for="complementary_products" class="form-label">محصولات مکمل</label>
-                        <select id="complementary_products" name="complementary_products[]" class="form-select select2-ajax" multiple="true" data-ajax-url="{{ route('products.search') }}"
-                                data-preselected='@json($category->complementaryProducts->map(function($item) { return ["id" => "Product:{$item->id}", "text" => $item->name]; })->merge($category->complementaryCategories->map(function($item) { return ["id" => "Category:{$item->id}", "text" => $item->title]; })))'>
-                        </select>
+                        <label class="form-label">محصولات مکمل</label>
+                        <div class="custom-multiselect"
+                             data-ajax-url="{{ route('products.search') }}"
+                             data-preselected='@json($category->complementaryProducts->map(fn($item) => ["id" => "Product:{$item->id}", "text" => $item->name]))'>
+                            <div class="custom-multiselect-display">انتخاب کنید...</div>
+                            <div class="custom-multiselect-dropdown">
+                                <input type="text" class="custom-multiselect-search" placeholder="جستجو...">
+                                <div class="custom-multiselect-options"></div>
+                            </div>
+                            <input type="hidden" name="complementary_products">
+                        </div>
                     </div>
+
 
                 </x-modal.update>
             @endforeach
         </x-table>
     </x-page>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
     <script>
-        $(document).ready(function() {
+        // document.addEventListener('DOMContentLoaded', () => {
+        //     document.querySelectorAll('.custom-multiselect').forEach((ms) => {
+        //         const display = ms.querySelector('.custom-multiselect-display');
+        //         const dropdown = ms.querySelector('.custom-multiselect-dropdown');
+        //         const optionsContainer = ms.querySelector('.custom-multiselect-options');
+        //         const searchInput = ms.querySelector('.custom-multiselect-search');
+        //         const hiddenInput = ms.querySelector('input[type="hidden"]');
+        //
+        //         const ajaxUrl = ms.dataset.ajaxUrl;
+        //         const preselected = JSON.parse(ms.dataset.preselected || '[]');
+        //         let options = [];
+        //         let selected = new Set(preselected.map((i) => i.id));
+        //
+        //         // ✅ Render dropdown for this instance only
+        //         const renderOptions = () => {
+        //             optionsContainer.innerHTML = '';
+        //             options.forEach((opt) => {
+        //                 const checked = selected.has(opt.id) ? 'checked' : '';
+        //                 const label = document.createElement('label');
+        //                 label.innerHTML = `<input type="checkbox" value="${opt.id}" ${checked}> ${opt.text}`;
+        //                 optionsContainer.appendChild(label);
+        //             });
+        //         };
+        //
+        //         // ✅ Update display text and hidden input for this instance
+        //         const updateDisplay = () => {
+        //             const selectedTexts = options
+        //                 .filter((o) => selected.has(o.id))
+        //                 .map((o) => o.text);
+        //             display.textContent = selectedTexts.length
+        //                 ? selectedTexts.join(', ')
+        //                 : 'انتخاب کنید...';
+        //             hiddenInput.value = JSON.stringify([...selected]);
+        //         };
+        //
+        //         // ✅ Fetch options for this instance
+        //         const fetchOptions = async (query = '') => {
+        //             try {
+        //                 const res = await fetch(`${ajaxUrl}?q=${encodeURIComponent(query)}`);
+        //                 const data = await res.json();
+        //                 options = data;
+        //                 renderOptions();
+        //                 updateDisplay();
+        //             } catch (e) {
+        //                 console.error('Fetch failed:', e);
+        //             }
+        //         };
+        //
+        //         // ✅ Toggle dropdown (only one open at a time)
+        //         display.addEventListener('click', (e) => {
+        //             e.stopPropagation();
+        //             document.querySelectorAll('.custom-multiselect.open')
+        //                 .forEach(el => el !== ms && el.classList.remove('open'));
+        //             ms.classList.toggle('open');
+        //             if (ms.classList.contains('open')) searchInput.focus();
+        //         });
+        //
+        //         // ✅ Close dropdown when clicking outside
+        //         document.addEventListener('click', (e) => {
+        //             if (!ms.contains(e.target)) ms.classList.remove('open');
+        //         });
+        //
+        //         // ✅ Handle search
+        //         searchInput.addEventListener('input', (e) => {
+        //             fetchOptions(e.target.value);
+        //         });
+        //
+        //         // ✅ Handle checkbox change (only within this multiselect)
+        //         optionsContainer.addEventListener('change', (e) => {
+        //             const id = e.target.value;
+        //             if (e.target.checked) selected.add(id);
+        //             else selected.delete(id);
+        //             updateDisplay();
+        //         });
+        //
+        //         // ✅ Initial load
+        //         fetchOptions();
+        //     });
+        // });
+    </script>
+    <script>
+        // document.addEventListener('DOMContentLoaded', () => {
+        //     document.querySelectorAll('.custom-multiselect').forEach((ms) => {
+        //         const display = ms.querySelector('.custom-multiselect-display');
+        //         const dropdown = ms.querySelector('.custom-multiselect-dropdown');
+        //         const optionsContainer = ms.querySelector('.custom-multiselect-options');
+        //         const searchInput = ms.querySelector('.custom-multiselect-search');
+        //         const hiddenInput = ms.querySelector('input[type="hidden"]');
+        //
+        //         const ajaxUrl = ms.dataset.ajaxUrl;
+        //         const preselected = JSON.parse(ms.dataset.preselected || '[]');
+        //         let options = [];
+        //         let selected = new Set(preselected.map((i) => i.id));
+        //
+        //         // ✅ Render options
+        //         const renderOptions = () => {
+        //             optionsContainer.innerHTML = '';
+        //             options.forEach((opt) => {
+        //                 const checked = selected.has(opt.id) ? 'checked' : '';
+        //
+        //                 // 👇 Extract the type from ID (e.g., "Product:1" → "Product")
+        //                 const typeMatch = opt.id.includes(':') ? opt.id.split(':')[0] : '';
+        //                 const label = document.createElement('label');
+        //                 label.innerHTML = `
+        //   <input type="checkbox" value="${opt.id}" ${checked}>
+        //   <span>(${typeMatch}) ${opt.text}</span>
+        // `;
+        //                 optionsContainer.appendChild(label);
+        //             });
+        //         };
+        //
+        //         // ✅ Update selected display
+        //         const updateDisplay = () => {
+        //             const selectedTexts = options
+        //                 .filter((o) => selected.has(o.id))
+        //                 .map((o) => {
+        //                     const type = o.id.includes(':') ? o.id.split(':')[0] : '';
+        //                     return `(${type}) ${o.text}`;
+        //                 });
+        //
+        //             display.textContent = selectedTexts.length
+        //                 ? selectedTexts.join(', ')
+        //                 : 'انتخاب کنید...';
+        //             hiddenInput.value = JSON.stringify([...selected]);
+        //         };
+        //
+        //         // ✅ Fetch options
+        //         const fetchOptions = async (query = '') => {
+        //             try {
+        //                 const res = await fetch(`${ajaxUrl}?q=${encodeURIComponent(query)}`);
+        //                 const data = await res.json();
+        //                 options = data;
+        //                 renderOptions();
+        //                 updateDisplay();
+        //             } catch (e) {
+        //                 console.error('Fetch failed:', e);
+        //             }
+        //         };
+        //
+        //         // ✅ Toggle dropdown (isolated per element)
+        //         display.addEventListener('click', (e) => {
+        //             e.stopPropagation();
+        //             document.querySelectorAll('.custom-multiselect.open')
+        //                 .forEach(el => el !== ms && el.classList.remove('open'));
+        //             ms.classList.toggle('open');
+        //             if (ms.classList.contains('open')) searchInput.focus();
+        //         });
+        //
+        //         // ✅ Close on outside click
+        //         document.addEventListener('click', (e) => {
+        //             if (!ms.contains(e.target)) ms.classList.remove('open');
+        //         });
+        //
+        //         // ✅ Handle search
+        //         searchInput.addEventListener('input', (e) => {
+        //             fetchOptions(e.target.value);
+        //         });
+        //
+        //         // ✅ Handle checkbox change
+        //         optionsContainer.addEventListener('change', (e) => {
+        //             const id = e.target.value;
+        //             if (e.target.checked) selected.add(id);
+        //             else selected.delete(id);
+        //             updateDisplay();
+        //         });
+        //
+        //         // ✅ Initial load
+        //         fetchOptions();
+        //     });
+        // });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.custom-multiselect').forEach((ms) => {
+                const display = ms.querySelector('.custom-multiselect-display');
+                const dropdown = ms.querySelector('.custom-multiselect-dropdown');
+                const optionsContainer = ms.querySelector('.custom-multiselect-options');
+                const searchInput = ms.querySelector('.custom-multiselect-search');
+                const hiddenInput = ms.querySelector('input[type="hidden"]');
 
-            console.log('Modal shown, initializing Select2');
-            $('.select2-ajax').each(function() {
-                if (!$(this).hasClass('select2-hidden-accessible')) {
-                    var $select = $(this);
-                    var preselected = $select.data('preselected') || [];
+                const ajaxUrl = ms.dataset.ajaxUrl;
+                const preselected = JSON.parse(ms.dataset.preselected || '[]');
+                let options = [];
+                let selected = new Set(preselected.map((i) => i.id));
 
-                    // Transform preselected data
-                    var initialOptions = preselected.map(function(item) {
-                        var cleanId = item.id.replace(/^(Product|Category):/, '');
-                        return {
-                            id: cleanId,
-                            text: item.text + (item.id.startsWith('Product:') ? ' (محصول)' : ' (دسته‌بندی)')
-                        };
+                // ✅ English → Persian mapping
+                const typeMap = {
+                    'Product': 'محصول',
+                    'Category': 'دسته‌بندی'
+                };
+
+                // ✅ Render options
+                const renderOptions = () => {
+                    optionsContainer.innerHTML = '';
+                    options.forEach((opt) => {
+                        const checked = selected.has(opt.id) ? 'checked' : '';
+
+                        // 👇 Extract the type from ID (e.g., "Product:1" → "محصول")
+                        const typeKey = opt.id.includes(':') ? opt.id.split(':')[0] : '';
+                        const type = typeMap[typeKey] || typeKey;
+
+                        const label = document.createElement('label');
+                        label.innerHTML = `
+          <input type="checkbox" value="${opt.id}" ${checked}>
+          <span>${opt.text} (${type})</span>
+        `;
+                        optionsContainer.appendChild(label);
                     });
+                };
 
-                    console.log('Preselected for', $select.attr('id'), ':', initialOptions);
+                // ✅ Update selected display
+                const updateDisplay = () => {
+                    const selectedTexts = options
+                        .filter((o) => selected.has(o.id))
+                        .map((o) => {
+                            const typeKey = o.id.includes(':') ? o.id.split(':')[0] : '';
+                            const type = typeMap[typeKey] || typeKey;
+                            return `${o.text} (${type})`;
+                        });
 
-                    $select.select2({
-                        ajax: {
-                            url: $select.data('ajax-url'),
-                            dataType: 'json',
-                            delay: 250,
-                            data: function(params) {
-                                return {
-                                    q: params.term,
-                                    page: params.page || 1
-                                };
-                            },
-                            processResults: function(data) {
-                                console.log('AJAX response:', data);
-                                var results = (data.results || data).map(function(item) {
-                                    var cleanId = item.id
-                                    return {
-                                        id: cleanId,
-                                        text: item.text + (item.id.startsWith('Product:') ? ' (محصول)' : ' (دسته‌بندی)')
-                                    };
-                                });
-                                return {
-                                    results: results,
-                                    pagination: { more: (data.pagination && data.pagination.more) || false }
-                                };
-                            },
-                            cache: true
-                        },
-                        placeholder: 'جستجو کنید...',
-                        minimumInputLength: 1,
-                        allowClear: true,
-                        language: {
-                            searching: function() { return 'در حال جستجو...'; },
-                            noResults: function() { return 'نتیجه‌ای یافت نشد'; }
-                        },
-                        data: initialOptions // Preload selected options
-                    });
+                    display.textContent = selectedTexts.length
+                        ? selectedTexts.join(', ')
+                        : 'انتخاب کنید...';
+                    hiddenInput.value = JSON.stringify([...selected]);
+                };
 
-                    // Set preselected values
-                    if (initialOptions.length) {
-                        $select.val(initialOptions.map(option => option.id)).trigger('change');
+                // ✅ Fetch options
+                const fetchOptions = async (query = '') => {
+                    try {
+                        const res = await fetch(`${ajaxUrl}?q=${encodeURIComponent(query)}`);
+                        const data = await res.json();
+                        options = data;
+                        renderOptions();
+                        updateDisplay();
+                    } catch (e) {
+                        console.error('Fetch failed:', e);
                     }
-                }
+                };
+
+                // ✅ Toggle dropdown (isolated per element)
+                display.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.custom-multiselect.open')
+                        .forEach(el => el !== ms && el.classList.remove('open'));
+                    ms.classList.toggle('open');
+                    if (ms.classList.contains('open')) searchInput.focus();
+                });
+
+                // ✅ Close on outside click
+                document.addEventListener('click', (e) => {
+                    if (!ms.contains(e.target)) ms.classList.remove('open');
+                });
+
+                // ✅ Handle search
+                searchInput.addEventListener('input', (e) => {
+                    fetchOptions(e.target.value);
+                });
+
+                // ✅ Handle checkbox change
+                optionsContainer.addEventListener('change', (e) => {
+                    const id = e.target.value;
+                    if (e.target.checked) selected.add(id);
+                    else selected.delete(id);
+                    updateDisplay();
+                });
+
+                // ✅ Initial load
+                fetchOptions();
             });
         });
     </script>
+
+
+
+
+
 @endsection
 @section('js')
 

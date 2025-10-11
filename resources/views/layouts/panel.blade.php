@@ -51,7 +51,7 @@
 
 
     <!-- CkEditor -->
-    <script src="https://cdn.ckeditor.com/4.15.0/full/ckeditor.js"></script>
+    <script src="{{ asset('dashboard/assets/ckeditor/ckeditor.js') }}"></script>
 
     <style>
         .cke_notification_warning{

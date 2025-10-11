@@ -732,19 +732,36 @@ class ProductController extends Controller
     {
         $query = $request->get('q', '');
 
+        // Search products
         $products = Product::where('name', 'LIKE', "%{$query}%")
             ->limit(20)
             ->get(['id', 'name']);
 
-        $results = $products->map(function($product) {
+        $productResults = $products->map(function ($product) {
             return [
                 'id' => "Product:{$product->id}",
                 'text' => $product->name,
             ];
         });
 
+        // Search categories
+        $categories = Category::where('title', 'LIKE', "%{$query}%")
+            ->limit(20)
+            ->get(['id', 'title']);
+
+        $categoryResults = $categories->map(function ($category) {
+            return [
+                'id' => "Category:{$category->id}",
+                'text' => $category->title,
+            ];
+        });
+
+        // Merge products + categories
+        $results = $productResults->merge($categoryResults);
+
         return response()->json($results);
     }
+
 
 
     public function ajaxSearch(Request $request)

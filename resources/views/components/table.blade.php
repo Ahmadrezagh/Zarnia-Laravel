@@ -143,15 +143,20 @@
             }
         });
 
-        document.getElementById('selectAll').addEventListener('click', function() {
-            const isChecked = this.checked;
-            const checkboxes = document.querySelectorAll('.custom-select-option');
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectAll = document.getElementById('selectAll');
+            if (selectAll) {
+                selectAll.addEventListener('click', function () {
+                    const isChecked = this.checked;
+                    const checkboxes = document.querySelectorAll('.custom-select-option');
 
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = isChecked;
-            });
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
 
-            updateHiddenInput();
+                    updateHiddenInput();
+                });
+            }
         });
 
         document.querySelectorAll('.custom-select-option').forEach(checkbox => {

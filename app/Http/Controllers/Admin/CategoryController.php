@@ -56,8 +56,19 @@ class CategoryController extends Controller
                 ->toMediaCollection('cover_image');
         }
         $category->attributeGroups()->sync($request->attribute_group_ids);
-        $category->syncComplementary($request->input('complementary_products', []));
-        $category->syncRelated($request->input('related_products', []));
+        $complementary = $request->input('complementary_products', []);
+        if (is_string($complementary)) {
+            $complementary = json_decode($complementary, true) ?? [];
+        }
+
+        $related = $request->input('related_products', []);
+        if (is_string($related)) {
+            $related = json_decode($related, true) ?? [];
+        }
+
+        // Then use the arrays as before
+        $category->syncComplementary($complementary);
+        $category->syncRelated($related);
         return response()->json(['message' => 'با موفقیت انجام شد']);
 
     }
@@ -90,8 +101,19 @@ class CategoryController extends Controller
                 ->toMediaCollection('cover_image');
         }
         $category->attributeGroups()->sync($request->attribute_group_ids);
-        $category->syncComplementary($request->input('complementary_products', []));
-        $category->syncRelated($request->input('related_products', []));
+        $complementary = $request->input('complementary_products', []);
+if (is_string($complementary)) {
+    $complementary = json_decode($complementary, true) ?? [];
+}
+
+$related = $request->input('related_products', []);
+if (is_string($related)) {
+    $related = json_decode($related, true) ?? [];
+}
+
+// Then use the arrays as before
+$category->syncComplementary($complementary);
+$category->syncRelated($related);
         return response()->json(['message' => 'با موفقیت انجام شد']);
 
     }
