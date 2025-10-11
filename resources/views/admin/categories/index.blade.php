@@ -86,12 +86,31 @@
                     @endforeach
                 </x-form.select-option>
                 <div class="mb-3">
-                    <label for="related_products" class="form-label">محصولات مرتبط</label>
-                    <select id="related_products" style="width: 100% !important;" name="related_products[]" class="form-select select2-ajax" multiple="true" data-ajax-url="{{ route('products.ajax.search') }}"></select>
+                    <label class="form-label">محصولات مرتبط</label>
+                    <div class="custom-multiselect"
+                         data-ajax-url="{{ route('products.search') }}"
+                    >
+                        <div class="custom-multiselect-display">انتخاب کنید...</div>
+                        <div class="custom-multiselect-dropdown">
+                            <input type="text" class="custom-multiselect-search" placeholder="جستجو...">
+                            <div class="custom-multiselect-options"></div>
+                        </div>
+                        <input type="hidden" name="related_products">
+                    </div>
                 </div>
+
                 <div class="mb-3">
-                    <label for="complementary_products" class="form-label">محصولات مکمل</label>
-                    <select id="complementary_products" style="width: 100% !important;" name="complementary_products[]" class="form-select select2-ajax" multiple="true" data-ajax-url="{{ route('products.ajax.search') }}"></select>
+                    <label class="form-label">محصولات مکمل</label>
+                    <div class="custom-multiselect"
+                         data-ajax-url="{{ route('products.search') }}"
+                    >
+                        <div class="custom-multiselect-display">انتخاب کنید...</div>
+                        <div class="custom-multiselect-dropdown">
+                            <input type="text" class="custom-multiselect-search" placeholder="جستجو...">
+                            <div class="custom-multiselect-options"></div>
+                        </div>
+                        <input type="hidden" name="complementary_products">
+                    </div>
                 </div>
             </x-modal.create>
         </x-slot>
