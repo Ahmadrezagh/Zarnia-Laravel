@@ -423,7 +423,7 @@
                                 <img src="${flagUrl}" alt="flag"
                                     style="width:24px;height:18px;margin-bottom:4px;"><br>
                                 <strong>${countryName}</strong><br>
-                                بازدید: <span style="color:#004d99;font-weight:bold;">${formatted}</span>
+                                بازدید: <span style="color:#fff3f4;font-weight:bold;">${formatted}</span>
                             </div>
                         `);
                         } else {
