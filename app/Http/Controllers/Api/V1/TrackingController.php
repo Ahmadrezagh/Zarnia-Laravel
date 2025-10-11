@@ -34,7 +34,10 @@ class TrackingController extends Controller
         // Get country code from IP
         $countryCode = null;
         try {
-            $reader = new Reader(config('app.geoip_database_path', storage_path('app/GeoLite2-Country.mmdb')));
+
+            $dbPath = base_path('GeoLite2-Country.mmdb');
+
+            $reader = new Reader($dbPath);
             $record = $reader->country($ip);
             $countryCode = $record->country->isoCode;
         } catch (\Exception $e) {
