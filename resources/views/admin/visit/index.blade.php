@@ -386,7 +386,7 @@
                     return;
                 }
 
-                // Convert array to { 'IR': 1, 'NL': 2 }
+                // 🗺 Convert array to { 'IR': 1, 'NL': 2, ... }
                 const visitsByCountry = {};
                 globalDistribution.forEach(item => {
                     if (item.country_code && item.visits > 0) {
@@ -394,12 +394,16 @@
                     }
                 });
 
-                // Assign blue color only to visited countries
+                // 🎨 Dynamically set blue shades based on visit count
+                const maxVisits = Math.max(...Object.values(visitsByCountry));
                 const countryColors = {};
                 Object.entries(visitsByCountry).forEach(([code, visits]) => {
-                    countryColors[code] = '#007bff'; // blue fill
+                    // Opacity between 0.3 (low) to 1.0 (max)
+                    const intensity = 0.3 + 0.7 * (visits / maxVisits);
+                    countryColors[code] = `rgba(0, 123, 255, ${intensity.toFixed(2)})`;
                 });
 
+                // 🗺 Initialize the world map
                 $('#world-map').vectorMap({
                     map: 'world_en',
                     backgroundColor: '#f8f9fa',
@@ -409,8 +413,7 @@
                     hoverOpacity: 0.9,
                     enableZoom: false,
                     showTooltip: true,
-                    colors: countryColors, // 🎯 apply blue only to visited countries
-
+                    colors: countryColors, // 🎯 apply blue shades to visited countries
 
                     onLabelShow: function (event, label, code) {
                         const visits = visitsByCountry[code.toUpperCase()] || 0;
@@ -418,13 +421,14 @@
                         const formatted = visits.toLocaleString('fa-IR');
                         const countryName = label.text();
 
+                        // 🏳️ Tooltip with flag + name + visits
                         if (visits > 0) {
                             label.html(`
                             <div style="text-align:center;direction:rtl;padding:5px;">
                                 <img src="${flagUrl}" alt="flag"
-                                    style="width:24px;height:18px;margin-bottom:4px;"><br>
+                                     style="width:24px;height:18px;margin-bottom:4px;"><br>
                                 <strong>${countryName}</strong><br>
-                                بازدید: <span style="color:#fff3f4;font-weight:bold;">${formatted}</span>
+                                بازدید: <span style="color:#ffffff;font-weight:bold;">${formatted}</span>
                             </div>
                         `);
                         } else {
@@ -438,10 +442,11 @@
                     }
                 });
 
-                console.log('✅ World map initialized successfully — visited countries are blue.');
+                console.log('✅ World map initialized successfully — visited countries highlighted in blue.');
             });
         </script>
     @endpush
+
 
 
 
