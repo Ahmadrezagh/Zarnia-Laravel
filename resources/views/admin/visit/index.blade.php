@@ -400,6 +400,13 @@
                     colors[code] = '#007bff'; // Bootstrap blue
                 });
 
+                // Define color map: only countries with visits > 0 get blue
+                const countryColors = {};
+                Object.entries(visitsByCountry).forEach(([code, visits]) => {
+                    if (visits > 0) {
+                        countryColors[code] = '#007bff'; // blue for visited countries
+                    }
+                });
                 $('#world-map').vectorMap({
                     map: 'world_en',
                     backgroundColor: '#f8f9fa',
@@ -409,7 +416,8 @@
                     hoverOpacity: 0.9,
                     enableZoom: false,
                     showTooltip: true,
-                    colors: colors, // apply blue to visited countries
+                    colors: countryColors, // 🎯 apply blue only to visited countries
+
 
                     onLabelShow: function (event, label, code) {
                         const visits = visitsByCountry[code.toUpperCase()] || 0;
