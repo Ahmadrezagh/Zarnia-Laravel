@@ -369,7 +369,8 @@
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <link rel="stylesheet" href="{{ asset('map/jqvmap.min.css') }}"/>
         <script src="{{ asset('map/jquery.vmap.min.js') }}"></script>
-        <script src="{{ asset('map/jquery.vmap.world.js?v=' . time()) }}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/maps/jquery.vmap.world.js"></script>
+
 
         <script>
             function initWorldMap() {
