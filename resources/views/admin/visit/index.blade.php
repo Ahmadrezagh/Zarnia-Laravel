@@ -365,6 +365,7 @@
     </x-page>
 
     @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <link rel="stylesheet" href="{{ asset('map/jqvmap.min.css') }}"/>
         <script src="{{ asset('map/jquery.vmap.min.js') }}"></script>
@@ -393,30 +394,26 @@
                     }
                 });
 
-                // Determine range for color normalization
-                const visitValues = Object.values(visitsByCountry);
-                const maxVisit = Math.max(...visitValues);
-                const minVisit = Math.min(...visitValues);
-
-                // Initialize the map
                 $('#world-map').vectorMap({
                     map: 'world_en',
                     backgroundColor: '#f8f9fa',
                     borderColor: '#ffffff',
                     borderWidth: 0.5,
-                    color: '#e5e5e5', // countries with no data
+                    color: '#e5e5e5',
                     hoverOpacity: 0.9,
                     enableZoom: false,
                     showTooltip: true,
+                    normalizeFunction: 'polynomial',
+                    scaleColors: ['#C8EEFF', '#004d99'],
                     values: visitsByCountry,
-                    scaleColors: ['#C8EEFF', '#004d99'], // from light → dark blue
-                    normalizeFunction: 'polynomial', // creates smooth intensity differences
 
+                    // Customize the tooltip
                     onLabelShow: function (event, label, code) {
+                        // This callback name works more reliably across jqvmap versions
                         const visits = visitsByCountry[code.toUpperCase()] || 0;
                         const flagUrl = `https://flagcdn.com/24x18/${code.toLowerCase()}.png`;
                         const formatted = visits.toLocaleString('fa-IR');
-                        const countryName = label.text();
+                        const countryName = label.text(); // original name
 
                         if (visits > 0) {
                             label.html(`
@@ -435,26 +432,14 @@
                     </div>
                 `);
                         }
-                    },
-
-                    // Extra visual enhancement: emphasize on hover
-                    onRegionOver: function (e, code) {
-                        const region = $('#world-map').vectorMap('get', 'mapObject').series.regions[0];
-                        if (visitsByCountry[code.toUpperCase()]) {
-                            region.setSelectedRegions(code);
-                        }
-                    },
-                    onRegionOut: function (e, code) {
-                        const region = $('#world-map').vectorMap('get', 'mapObject').series.regions[0];
-                        region.clearSelectedRegions();
                     }
                 });
 
-                console.log('✅ World map initialized with visit-based coloring.');
+                console.log('✅ World map initialized successfully with tooltips and flags.');
             });
         </script>
-    @endpush
 
+    @endpush
 
 
 
