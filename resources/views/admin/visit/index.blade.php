@@ -386,7 +386,7 @@
                     return;
                 }
 
-                // Prepare data for JQVMap
+                // Convert array to { 'IR': 52, 'US': 10, ... }
                 const visitsByCountry = {};
                 globalDistribution.forEach(item => {
                     if (item.country_code) {
@@ -394,43 +394,51 @@
                     }
                 });
 
-                // Initialize the map
                 $('#world-map').vectorMap({
                     map: 'world_en',
                     backgroundColor: '#f8f9fa',
                     borderColor: '#ffffff',
                     borderWidth: 0.5,
-                    color: '#e5e5e5', // default color for no-data countries
-                    hoverOpacity: 0.8,
+                    color: '#e5e5e5',
+                    hoverOpacity: 0.9,
                     enableZoom: false,
                     showTooltip: true,
                     normalizeFunction: 'polynomial',
-                    scaleColors: ['#C8EEFF', '#004d99'], // light → dark blue
+                    scaleColors: ['#C8EEFF', '#004d99'],
                     values: visitsByCountry,
 
-                    onRegionTipShow: function (e, el, code) {
+                    // Customize the tooltip
+                    onLabelShow: function (event, label, code) {
+                        // This callback name works more reliably across jqvmap versions
                         const visits = visitsByCountry[code.toUpperCase()] || 0;
-                        const countryName = el.html();
                         const flagUrl = `https://flagcdn.com/24x18/${code.toLowerCase()}.png`;
+                        const formatted = visits.toLocaleString('fa-IR');
+                        const countryName = label.text(); // original name
 
                         if (visits > 0) {
-                            el.html(`
-                            <div style="text-align:center;direction:rtl;">
-                                <img src="${flagUrl}" alt="flag"
-                                     style="width:24px;height:18px;margin-bottom:3px;"><br>
-                                <strong>${countryName}</strong><br>
-                                بازدید: <span style="color:#004d99;font-weight:bold;">${visits.toLocaleString('fa-IR')}</span>
-                            </div>
-                        `);
+                            label.html(`
+                    <div style="text-align:center;direction:rtl;padding:5px;">
+                        <img src="${flagUrl}" alt="flag"
+                             style="width:24px;height:18px;margin-bottom:4px;"><br>
+                        <strong>${countryName}</strong><br>
+                        بازدید: <span style="color:#004d99;font-weight:bold;">${formatted}</span>
+                    </div>
+                `);
                         } else {
-                            el.html(`<div style="text-align:center;">${countryName}<br><small>بدون بازدید</small></div>`);
+                            label.html(`
+                    <div style="text-align:center;direction:rtl;padding:5px;">
+                        <strong>${countryName}</strong><br>
+                        <small style="color:#999;">بدون بازدید</small>
+                    </div>
+                `);
                         }
                     }
                 });
 
-                console.log('✅ World map initialized with data:', visitsByCountry);
+                console.log('✅ World map initialized successfully with tooltips and flags.');
             });
         </script>
+
     @endpush
 
 
