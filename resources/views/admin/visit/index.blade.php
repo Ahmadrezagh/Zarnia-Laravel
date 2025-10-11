@@ -360,10 +360,12 @@
                 <h4>توزیع جهانی بازدیدکنندگان</h4>
             </div>
             <div class="card-body">
-                <div id="world-map" style="height: 400px;"></div>
+                <div id="world-map" style="width: 100%; height: 400px;"></div>
             </div>
         </div>
     </x-page>
+
+
 
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -372,107 +374,119 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jvectormap/2.0.5/jquery-jvectormap.min.css"/>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jvectormap/2.0.5/maps/jquery-jvectormap-world-mill.js"></script>
         <script>
-            // Traffic Trend Chart (unchanged)
-            const dailyVisits = @json($daily_visits);
-            const trafficTrendChart = new Chart(document.getElementById('traffic-trend-chart'), {
-                type: 'line',
-                data: {
-                    labels: dailyVisits.map(item => item.date),
-                    datasets: [{
-                        label: 'بازدیدها',
-                        data: dailyVisits.map(item => item.visits),
-                        borderColor: '#36a2eb',
-                        fill: false
-                    }]
-                },
-                options: {responsive: true}
-            });
-
-            document.getElementById('traffic-trend-type').addEventListener('change', (e) => {
-                const type = e.target.value;
-                if (type === 'weekly') {
-                    const weeklyData = [];
-                    let weekVisits = 0;
-                    let weekStart = null;
-                    dailyVisits.forEach((item, index) => {
-                        const date = new Date(item.date);
-                        if (!weekStart) weekStart = date;
-                        weekVisits += item.visits;
-                        if (date.getDay() === 0 || index === dailyVisits.length - 1) {
-                            weeklyData.push({date: weekStart.toISOString().split('T')[0], visits: weekVisits});
-                            weekStart = null;
-                            weekVisits = 0;
-                        }
-                    });
-                    trafficTrendChart.data.labels = weeklyData.map(item => item.date);
-                    trafficTrendChart.data.datasets[0].data = weeklyData.map(item => item.visits);
-                    trafficTrendChart.update();
-                } else {
-                    trafficTrendChart.data.labels = dailyVisits.map(item => item.date);
-                    trafficTrendChart.data.datasets[0].data = dailyVisits.map(item => item.visits);
-                    trafficTrendChart.update();
+            // Ensure jVectorMap and jQuery are loaded before running map code
+            document.addEventListener('DOMContentLoaded', function () {
+                if (typeof jQuery === 'undefined') {
+                    console.error('jQuery is not loaded. Please check the jQuery script source.');
+                    return;
                 }
-            });
+                if (typeof jvm === 'undefined') {
+                    console.error('jVectorMap is not loaded. Please check the jVectorMap script source.');
+                    return;
+                }
 
-            // Search Engine Referrals Chart (unchanged)
-            const searchEngineReferrals = @json($search_engine_referrals);
-            new Chart(document.getElementById('search-engine-chart'), {
-                type: 'pie',
-                data: {
-                    labels: searchEngineReferrals.map(item => item.referrer),
-                    datasets: [{
-                        data: searchEngineReferrals.map(item => item.visits),
-                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0'],
-                    }]
-                },
-                options: {responsive: true}
-            });
-
-            // World Map with jVectorMap
-            const globalDistribution = @json($global_distribution);
-
-            // Create a data object for visits by country code
-            const visitsByCountry = {};
-            globalDistribution.forEach(item => {
-                visitsByCountry[item.country_code] = item.visits;
-            });
-
-            // Initialize jVectorMap
-            $('#world-map').vectorMap({
-                map: 'world_mill',
-                backgroundColor: '#f8f9fa',
-                regionStyle: {
-                    initial: {
-                        fill: '#d3d3d3',
-                        "fill-opacity": 1,
-                        stroke: '#ffffff',
-                        "stroke-width": 0.5,
-                        "stroke-opacity": 1
+                // Traffic Trend Chart (unchanged)
+                const dailyVisits = @json($daily_visits);
+                const trafficTrendChart = new Chart(document.getElementById('traffic-trend-chart'), {
+                    type: 'line',
+                    data: {
+                        labels: dailyVisits.map(item => item.date),
+                        datasets: [{
+                            label: 'بازدیدها',
+                            data: dailyVisits.map(item => item.visits),
+                            borderColor: '#36a2eb',
+                            fill: false
+                        }]
                     },
-                    hover: {
-                        "fill-opacity": 0.8,
-                        cursor: 'pointer'
+                    options: {responsive: true}
+                });
+
+                document.getElementById('traffic-trend-type').addEventListener('change', (e) => {
+                    const type = e.target.value;
+                    if (type === 'weekly') {
+                        const weeklyData = [];
+                        let weekVisits = 0;
+                        let weekStart = null;
+                        dailyVisits.forEach((item, index) => {
+                            const date = new Date(item.date);
+                            if (!weekStart) weekStart = date;
+                            weekVisits += item.visits;
+                            if (date.getDay() === 0 || index === dailyVisits.length - 1) {
+                                weeklyData.push({date: weekStart.toISOString().split('T')[0], visits: weekVisits});
+                                weekStart = null;
+                                weekVisits = 0;
+                            }
+                        });
+                        trafficTrendChart.data.labels = weeklyData.map(item => item.date);
+                        trafficTrendChart.data.datasets[0].data = weeklyData.map(item => item.visits);
+                        trafficTrendChart.update();
+                    } else {
+                        trafficTrendChart.data.labels = dailyVisits.map(item => item.date);
+                        trafficTrendChart.data.datasets[0].data = dailyVisits.map(item => item.visits);
+                        trafficTrendChart.update();
                     }
-                },
-                series: {
-                    regions: [{
-                        values: visitsByCountry,
-                        scale: ['#C8EEFF', '#0071A4'],
-                        normalizeFunction: 'polynomial'
-                    }]
-                },
-                onRegionTipShow: function(e, el, code) {
-                    const visits = visitsByCountry[code] || 0;
-                    const countryName = el.html(); // Default country name from jVectorMap
-                    const flagUrl = `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
-                    el.html(`
-                    <div style="text-align: center;">
-                        <img src="${flagUrl}" alt="Flag" style="width: 16px; height: 12px; margin-right: 5px;">
-                        <strong>${countryName}</strong><br>
-                        بازدید: ${visits}
-                    </div>
-                `);
-                }
+                });
+
+                // Search Engine Referrals Chart (unchanged)
+                const searchEngineReferrals = @json($search_engine_referrals);
+                new Chart(document.getElementById('search-engine-chart'), {
+                    type: 'pie',
+                    data: {
+                        labels: searchEngineReferrals.map(item => item.referrer),
+                        datasets: [{
+                            data: searchEngineReferrals.map(item => item.visits),
+                            backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0'],
+                        }]
+                    },
+                    options: {responsive: true}
+                });
+
+                // World Map with jVectorMap
+                const globalDistribution = @json($global_distribution);
+
+                // Create a data object for visits by country code
+                const visitsByCountry = {};
+                globalDistribution.forEach(item => {
+                    visitsByCountry[item.country_code] = item.visits;
+                });
+
+                // Initialize jVectorMap
+                $('#world-map').vectorMap({
+                    map: 'world_mill',
+                    backgroundColor: '#f8f9fa',
+                    regionStyle: {
+                        initial: {
+                            fill: '#d3d3d3',
+                            "fill-opacity": 1,
+                            stroke: '#ffffff',
+                            "stroke-width": 0.5,
+                            "stroke-opacity": 1
+                        },
+                        hover: {
+                            "fill-opacity": 0.8,
+                            cursor: 'pointer'
+                        }
+                    },
+                    series: {
+                        regions: [{
+                            values: visitsByCountry,
+                            scale: ['#C8EEFF', '#0071A4'],
+                            normalizeFunction: 'polynomial'
+                        }]
+                    },
+                    onRegionTipShow: function(e, el, code) {
+                        const visits = visitsByCountry[code] || 0;
+                        const countryName = el.html(); // Default country name from jVectorMap
+                        const flagUrl = `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
+                        el.html(`
+                        <div style="text-align: center;">
+                            <img src="${flagUrl}" alt="Flag" style="width: 16px; height: 12px; margin-right: 5px;">
+                            <strong>${countryName}</strong><br>
+                            بازدید: ${visits}
+                        </div>
+                    `);
+                    }
+                });
             });
         </script>
     @endpush
