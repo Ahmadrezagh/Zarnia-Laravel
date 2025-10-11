@@ -5,7 +5,7 @@
     <x-breadcrumb :title="'آمار'" :items="[
             ['label' => 'خانه', 'url' => route('home')],
             ['label' => 'آمار']
-      ]" />
+      ]"/>
 
     <!-- Row -->
     <x-page>
@@ -51,7 +51,7 @@
                             $browserIcon = match (strtolower($item['browser'])) {
                                 'chrome', 'google chrome' => 'chrome',
                                 'firefox' => 'firefox',
-                                'safari' => 'safari',
+                                'safari' => 'apple',
                                 'edge', 'microsoft edge' => 'edge',
                                 'opera' => 'opera',
                                 'internet explorer' => 'internet-explorer',
@@ -66,7 +66,10 @@
                             <td>{{ $item['count'] }}</td>
                             <td>
                                 <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar" style="width: {{ $item['percentage'] }}%;" aria-valuenow="{{ $item['percentage'] }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar"
+                                         style="width: {{ $item['percentage'] }}%;"
+                                         aria-valuenow="{{ $item['percentage'] }}" aria-valuemin="0"
+                                         aria-valuemax="100">
                                         {{ $item['percentage'] }}%
                                     </div>
                                 </div>
@@ -98,8 +101,7 @@
                             $osIcon = match (strtolower($item['os'])) {
                                 'windows' => 'windows',
                                 'macos', 'apple',
-                                'mac os x' => 'apple',
-                                'ios' => 'apple',
+                                'mac os x','ios' => 'apple',
                                 'android' => 'android',
                                 'linux' => 'linux',
                                 default => 'desktop'
@@ -113,7 +115,10 @@
                             <td>{{ $item['count'] }}</td>
                             <td>
                                 <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar" style="width: {{ $item['percentage'] }}%;" aria-valuenow="{{ $item['percentage'] }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar"
+                                         style="width: {{ $item['percentage'] }}%;"
+                                         aria-valuenow="{{ $item['percentage'] }}" aria-valuemin="0"
+                                         aria-valuemax="100">
                                         {{ $item['percentage'] }}%
                                     </div>
                                 </div>
@@ -149,7 +154,10 @@
                             <td>{{ $item['count'] }}</td>
                             <td>
                                 <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar" style="width: {{ $item['percentage'] }}%;" aria-valuenow="{{ $item['percentage'] }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar"
+                                         style="width: {{ $item['percentage'] }}%;"
+                                         aria-valuenow="{{ $item['percentage'] }}" aria-valuemin="0"
+                                         aria-valuemax="100">
                                         {{ $item['percentage'] }}%
                                     </div>
                                 </div>
@@ -185,13 +193,16 @@
                         @endphp
                         <tr>
                             <td>
-                                <img src="https://flagcdn.com/16x12/{{ strtolower($item->country_code) }}.png" alt="{{ $item->country_code }}" style="margin-left: 5px;">
+                                <img src="https://flagcdn.com/16x12/{{ strtolower($item->country_code) }}.png"
+                                     alt="{{ $item->country_code }}" style="margin-left: 5px;">
                                 {{ $item->country_code }}
                             </td>
                             <td>{{ $item->visits }}</td>
                             <td>
                                 <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar" style="width: {{ $percentage }}%;" aria-valuenow="{{ $percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar"
+                                         style="width: {{ $percentage }}%;" aria-valuenow="{{ $percentage }}"
+                                         aria-valuemin="0" aria-valuemax="100">
                                         {{ $percentage }}%
                                     </div>
                                 </div>
@@ -352,7 +363,7 @@
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
         <script>
             // Traffic Trend Chart
             const dailyVisits = @json($daily_visits);
@@ -367,7 +378,7 @@
                         fill: false
                     }]
                 },
-                options: { responsive: true }
+                options: {responsive: true}
             });
 
             document.getElementById('traffic-trend-type').addEventListener('change', (e) => {
@@ -381,7 +392,7 @@
                         if (!weekStart) weekStart = date;
                         weekVisits += item.visits;
                         if (date.getDay() === 0 || index === dailyVisits.length - 1) {
-                            weeklyData.push({ date: weekStart.toISOString().split('T')[0], visits: weekVisits });
+                            weeklyData.push({date: weekStart.toISOString().split('T')[0], visits: weekVisits});
                             weekStart = null;
                             weekVisits = 0;
                         }
@@ -407,7 +418,7 @@
                         backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0'],
                     }]
                 },
-                options: { responsive: true }
+                options: {responsive: true}
             });
 
             // World Map
