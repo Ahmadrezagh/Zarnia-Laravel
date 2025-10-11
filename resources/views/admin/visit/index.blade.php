@@ -371,42 +371,41 @@
         <script src="{{ asset('map/jquery.vmap.world.js?v=' . time()) }}"></script>
 
         <script>
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function () {
                 if (typeof jQuery.fn.vectorMap === 'undefined') {
-                console.error('❌ JQVMap core not loaded');
-                return;
-            }
+                    console.error('❌ JQVMap core not loaded');
+                    return;
+                }
 
                 const globalDistribution = @json($global_distribution);
 
                 // Convert your data into {country_code: visits}
                 const visitsByCountry = {};
                 globalDistribution.forEach(item => {
-                visitsByCountry[item.country_code.toUpperCase()] = item.visits;
-            });
+                    visitsByCountry[item.country_code.toUpperCase()] = item.visits;
+                });
 
                 // Compute max visits for dynamic color scaling
                 const maxVisits = Math.max(...Object.values(visitsByCountry), 1);
 
                 $('#world-map').vectorMap({
-                map: 'world_en',
-                backgroundColor: '#f8f9fa',
-                borderColor: '#ffffff',
-                borderWidth: 0.5,
-                color: '#e5e5e5', // default gray for countries without visits
-                hoverOpacity: 0.8,
-                enableZoom: false,
-                showTooltip: true,
-                normalizeFunction: 'polynomial',
-                values: visitsByCountry,
-                scaleColors: ['#C8EEFF', '#004d99'], // light → dark blue gradient
-                onRegionTipShow: function(e, el, code) {
-                const visits = visitsByCountry[code.toUpperCase()] || 0;
-                const countryName = el.html();
-                const flagUrl = `https://flagcdn.com/24x18/${code.toLowerCase()}.png`;
-                const formatted = visits.toLocaleString('fa-IR'); // Persian digits format
-                el.html(`
+                    map: 'world_en',
+                    backgroundColor: '#f8f9fa',
+                    borderColor: '#ffffff',
+                    borderWidth: 0.5,
+                    color: '#e5e5e5', // default gray for countries without visits
+                    hoverOpacity: 0.8,
+                    enableZoom: false,
+                    showTooltip: true,
+                    normalizeFunction: 'polynomial',
+                    values: visitsByCountry,
+                    scaleColors: ['#C8EEFF', '#004d99'], // light → dark blue gradient
+                    onRegionTipShow: function(e, el, code) {
+                        const visits = visitsByCountry[code.toUpperCase()] || 0;
+                        const countryName = el.html();
+                        const flagUrl = `https://flagcdn.com/24x18/${code.toLowerCase()}.png`;
+                        const formatted = visits.toLocaleString('fa-IR'); // Persian digits format
+                        el.html(`
                 <div style="text-align:center;direction:rtl;">
                     <img src="${flagUrl}" alt="flag"
                          style="width:24px;height:18px;margin-bottom:3px;"><br>
@@ -414,19 +413,17 @@
                     بازدید: <span style="color:#0071A4;">${formatted}</span>
                 </div>
             `);
-            },
-                onRegionOver: function(e, code, region) {
-                // Optional: highlight with stronger color or tooltip
-            },
-                onRegionOut: function(e, code, region) {
-                // Optional: reset styling if needed
-            }
-            });
+                    },
+                    onRegionOver: function(e, code, region) {
+                        // Optional: highlight with stronger color or tooltip
+                    },
+                    onRegionOut: function(e, code, region) {
+                        // Optional: reset styling if needed
+                    }
+                });
 
                 console.log('✅ JQVMap loaded successfully with visit-based coloring.');
             });
-        </script>
-
         </script>
 
     @endpush
