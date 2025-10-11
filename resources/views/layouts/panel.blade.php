@@ -788,6 +788,7 @@
 
 
 @yield('js')
+@stack('scripts')
 
 <script>
 
