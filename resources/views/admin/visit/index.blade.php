@@ -369,22 +369,22 @@
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <!-- JQVMap CSS (via jsDelivr) -->
-        <link rel="stylesheet" href="{{ asset('map/jqvmap.min.css') }}"/>
-        <!-- JQVMap Core (via jsDelivr) -->
-        <script src="{{ asset('map/jquery.vmap.min.js') }}"></script>
-        <!-- JQVMap World Map Data (via jsDelivr) -->
-        <script src="{{ asset('map/jquery.vmap.world.js') }}"></script>
+        <!-- JQVMap CSS (local) -->
+        <link rel="stylesheet" href="{{ asset('css/jqvmap.min.css') }}"/>
+        <!-- JQVMap Core (local) -->
+        <script src="{{ asset('js/jquery.vmap.min.js') }}"></script>
+        <!-- JQVMap World Map Data (local) -->
+        <script src="{{ asset('js/jquery.vmap.world.js') }}"></script>
         <script>
             // Function to initialize the JQVMap
             function initWorldMap() {
                 if (typeof jQuery.fn.vectorMap === 'undefined') {
-                    console.error('JQVMap core library is not loaded.');
+                    console.error('JQVMap core library is not loaded. Check jquery.vmap.min.js path.');
                     renderFallbackMap();
                     return false;
                 }
-                if (typeof jQuery.fn.vectorMap.maps === 'undefined' || typeof jQuery.fn.vectorMap.maps.world === 'undefined') {
-                    console.error('JQVMap world map data is not loaded.');
+                if (typeof jQuery.fn.vectorMap.maps === 'undefined' || typeof jQuery.fn.vectorMap.maps.world_en === 'undefined') {
+                    console.error('JQVMap world map data is not loaded. Check jquery.vmap.world.js path.');
                     renderFallbackMap();
                     return false;
                 }
@@ -396,7 +396,7 @@
                 });
 
                 $('#world-map').vectorMap({
-                    map: 'world',
+                    map: 'world_en', // JQVMap uses 'world_en' for its world map
                     backgroundColor: '#f8f9fa',
                     borderColor: '#ffffff',
                     borderWidth: 0.5,
@@ -421,7 +421,7 @@
                     `);
                     }
                 });
-                console.log('JQVMap initialized successfully with world map.');
+                console.log('JQVMap initialized successfully with world_en map.');
                 return true;
             }
 
@@ -481,7 +481,7 @@
             // Main initialization
             document.addEventListener('DOMContentLoaded', function () {
                 if (typeof jQuery === 'undefined') {
-                    console.error('jQuery is not loaded.');
+                    console.error('jQuery is not loaded. Check jQuery CDN or use local copy.');
                     renderFallbackMap();
                     return;
                 }
@@ -541,24 +541,8 @@
                     options: {responsive: true}
                 });
 
-                // Try to initialize JQVMap
-                if (initWorldMap()) {
-                    return; // Success
-                }
-
-                // Retry by dynamically loading the map file
-                console.warn('JQVMap world map not found. Attempting dynamic load...');
-                const mapScript = document.createElement('script');
-                mapScript.src = 'https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/maps/jquery.vmap.world.js';
-                mapScript.onload = function() {
-                    console.log('World map script loaded dynamically.');
-                    initWorldMap();
-                };
-                mapScript.onerror = function() {
-                    console.error('Failed to load JQVMap world map script.');
-                    renderFallbackMap();
-                };
-                document.head.appendChild(mapScript);
+                // Initialize JQVMap
+                initWorldMap();
             });
         </script>
     @endpush
