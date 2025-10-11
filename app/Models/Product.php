@@ -659,14 +659,10 @@ class Product extends Model implements HasMedia
         return $query->where('parent_id', $product_id);
     }
 
-    public function visits(): HasMany
-    {
-        return $this->hasMany(Visit::class, 'url', 'slug')
-            ->where('url', 'like', DB::raw("CONCAT('%', products.slug)"));
-    }
-
     public function getViewCountAttribute()
     {
-        return $this->visits()->count();
+        return DB::table('visits')
+            ->where('url', 'like', '%' . $this->slug)
+            ->count();
     }
 }
