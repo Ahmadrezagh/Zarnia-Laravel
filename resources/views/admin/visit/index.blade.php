@@ -365,68 +365,74 @@
     </x-page>
 
     @push('scripts')
-        <link rel="stylesheet" href="{{ asset('map/jqvmap.min.css') }}">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <link rel="stylesheet" href="{{ asset('map/jqvmap.min.css') }}"/>
         <script src="{{ asset('map/jquery.vmap.min.js') }}"></script>
         <script src="{{ asset('map/jquery.vmap.world.js?v=' . time()) }}"></script>
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 if (typeof jQuery.fn.vectorMap === 'undefined') {
-                    console.error('❌ JQVMap core not loaded');
+                    console.error('❌ JQVMap not loaded.');
                     return;
                 }
 
                 const globalDistribution = @json($global_distribution);
 
-                // Convert your data into {country_code: visits}
+                if (!Array.isArray(globalDistribution) || globalDistribution.length === 0) {
+                    document.getElementById('world-map').innerHTML =
+                        '<p style="text-align:center;padding:20px;">داده‌ای برای نمایش وجود ندارد.</p>';
+                    return;
+                }
+
+                // Prepare data for JQVMap
                 const visitsByCountry = {};
                 globalDistribution.forEach(item => {
-                    visitsByCountry[item.country_code.toUpperCase()] = item.visits;
+                    if (item.country_code) {
+                        visitsByCountry[item.country_code.toUpperCase()] = item.visits;
+                    }
                 });
 
-                // Compute max visits for dynamic color scaling
-                const maxVisits = Math.max(...Object.values(visitsByCountry), 1);
-
+                // Initialize the map
                 $('#world-map').vectorMap({
                     map: 'world_en',
                     backgroundColor: '#f8f9fa',
                     borderColor: '#ffffff',
                     borderWidth: 0.5,
-                    color: '#e5e5e5', // default gray for countries without visits
+                    color: '#e5e5e5', // default color for no-data countries
                     hoverOpacity: 0.8,
                     enableZoom: false,
                     showTooltip: true,
                     normalizeFunction: 'polynomial',
+                    scaleColors: ['#C8EEFF', '#004d99'], // light → dark blue
                     values: visitsByCountry,
-                    scaleColors: ['#C8EEFF', '#004d99'], // light → dark blue gradient
-                    onRegionTipShow: function(e, el, code) {
+
+                    onRegionTipShow: function (e, el, code) {
                         const visits = visitsByCountry[code.toUpperCase()] || 0;
                         const countryName = el.html();
                         const flagUrl = `https://flagcdn.com/24x18/${code.toLowerCase()}.png`;
-                        const formatted = visits.toLocaleString('fa-IR'); // Persian digits format
-                        el.html(`
-                <div style="text-align:center;direction:rtl;">
-                    <img src="${flagUrl}" alt="flag"
-                         style="width:24px;height:18px;margin-bottom:3px;"><br>
-                    <strong>${countryName}</strong><br>
-                    بازدید: <span style="color:#0071A4;">${formatted}</span>
-                </div>
-            `);
-                    },
-                    onRegionOver: function(e, code, region) {
-                        // Optional: highlight with stronger color or tooltip
-                    },
-                    onRegionOut: function(e, code, region) {
-                        // Optional: reset styling if needed
+
+                        if (visits > 0) {
+                            el.html(`
+                            <div style="text-align:center;direction:rtl;">
+                                <img src="${flagUrl}" alt="flag"
+                                     style="width:24px;height:18px;margin-bottom:3px;"><br>
+                                <strong>${countryName}</strong><br>
+                                بازدید: <span style="color:#004d99;font-weight:bold;">${visits.toLocaleString('fa-IR')}</span>
+                            </div>
+                        `);
+                        } else {
+                            el.html(`<div style="text-align:center;">${countryName}<br><small>بدون بازدید</small></div>`);
+                        }
                     }
                 });
 
-                console.log('✅ JQVMap loaded successfully with visit-based coloring.');
+                console.log('✅ World map initialized with data:', visitsByCountry);
             });
         </script>
-
     @endpush
+
 
 
 @endsection
