@@ -188,12 +188,38 @@ class Category extends Model implements HasMedia
     public function relatedProductsDirect(): MorphToMany
     {
         return $this->morphToMany(
-            Category::class,
+            Product::class,
             'source',
             'related_products',
             'source_id',
             'target_id'
         )->wherePivot('target_type', Product::class);
+    }
+
+
+    // Related products via direct product → product links
+    public function complementaryProductsDirect(): MorphToMany
+    {
+        return $this->morphToMany(
+            Product::class,
+            'source',
+            'complementary_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Product::class);
+    }
+
+    // Related products via category links
+    public function complementaryProductsViaCategories()
+    {
+        return $this->morphToMany(
+            Category::class,
+            'source',
+            'complementary_products',
+            'source_id',
+            'target_id'
+        )->wherePivot('target_type', Category::class)
+            ->with('products'); // Eager load category → products
     }
 
 
