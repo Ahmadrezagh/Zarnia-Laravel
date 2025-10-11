@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('url')->index();
             $table->string('referrer')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->timestamps();
 
             // Index for queries
             $table->index(['created_at', 'url']);
