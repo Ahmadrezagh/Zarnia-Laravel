@@ -365,36 +365,16 @@
     </x-page>
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <link rel="stylesheet" href="{{ asset('map/jqvmap.min.css') }}">
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <link rel="stylesheet" href="{{ asset('map/jqvmap.min.css') }}"/>
         <script src="{{ asset('map/jquery.vmap.min.js') }}"></script>
-        <script src="https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/maps/jquery.vmap.world.js"></script>
-
+        <script src="{{ asset('map/jquery.vmap.world.js?v=' . time()) }}"></script>
 
         <script>
-            function initWorldMap() {
+            document.addEventListener('DOMContentLoaded', function () {
                 if (typeof jQuery.fn.vectorMap === 'undefined') {
-                    console.error('❌ JQVMap core library not loaded.');
-                    renderFallbackMap();
-                    return false;
-                }
-
-                if (typeof jQuery.fn.vectorMap.maps === 'undefined') {
-                    console.error('❌ No maps found in JQVMap.');
-                    renderFallbackMap();
-                    return false;
-                }
-
-                // Detect map name dynamically
-                const availableMaps = Object.keys(jQuery.fn.vectorMap.maps);
-                const mapName = availableMaps.includes('world_en') ? 'world_en' :
-                    availableMaps.includes('world') ? 'world' : null;
-
-                if (!mapName) {
-                    console.error('❌ World map data not found in JQVMap.');
-                    renderFallbackMap();
-                    return false;
+                    console.error('❌ JQVMap core not loaded');
+                    return;
                 }
 
                 const globalDistribution = @json($global_distribution);
@@ -404,7 +384,7 @@
                 });
 
                 $('#world-map').vectorMap({
-                    map: mapName,
+                    map: 'world_en', // Confirmed for jqvmap@1.5.1
                     backgroundColor: '#f8f9fa',
                     borderColor: '#ffffff',
                     borderWidth: 0.5,
@@ -412,95 +392,24 @@
                     hoverOpacity: 0.8,
                     enableZoom: false,
                     showTooltip: true,
-                    normalizeFunction: 'polynomial',
-                    scaleColors: ['#C8EEFF', '#0071A4'],
                     values: visitsByCountry,
+                    scaleColors: ['#C8EEFF', '#0071A4'],
                     onRegionLabelShow: function(e, el, code) {
                         const visits = visitsByCountry[code] || 0;
                         const countryName = el.html();
                         const flagUrl = `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
                         el.html(`
-                        <div style="text-align:center;">
-                            <img src="${flagUrl}" alt="Flag" style="width:16px;height:12px;margin-right:5px;">
-                            <strong>${countryName}</strong><br>
-                            بازدید: ${visits}
-                        </div>
-                    `);
+                <div style="text-align:center;">
+                    <img src="${flagUrl}" alt="Flag" style="width:16px;height:12px;margin-right:5px;">
+                    <strong>${countryName}</strong><br>
+                    بازدید: ${visits}
+                </div>
+            `);
                     }
                 });
-
-                console.log(`✅ JQVMap initialized successfully with map: ${mapName}`);
-                return true;
-            }
-
-            function renderFallbackMap() {
-                console.warn('⚠️ Using Chart.js fallback for world map.');
-                const globalDistribution = @json($global_distribution);
-
-                if (globalDistribution.length === 0) {
-                    document.getElementById('world-map').innerHTML =
-                        '<p style="text-align:center;padding:20px;">No global data available.</p>';
-                    return;
-                }
-
-                const countryCodes = globalDistribution.map(item => item.country_code);
-                const visits = globalDistribution.map(item => item.visits);
-                const totalVisits = visits.reduce((a, b) => a + b, 0);
-
-                const canvas = document.createElement('canvas');
-                document.getElementById('world-map').innerHTML = '';
-                document.getElementById('world-map').appendChild(canvas);
-
-                new Chart(canvas, {
-                    type: 'doughnut',
-                    data: {
-                        labels: countryCodes,
-                        datasets: [{
-                            data: visits,
-                            backgroundColor: [
-                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-                                '#9966FF', '#FF9F40', '#C9CBCF', '#FFCD56'
-                            ],
-                            borderWidth: 2,
-                            borderColor: '#fff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: { padding: 20 }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const code = countryCodes[context.dataIndex];
-                                        const visits = context.parsed;
-                                        const percentage = ((visits / totalVisits) * 100).toFixed(1);
-                                        const flagUrl = `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
-                                        return [
-                                            `${code} (${percentage}%)`,
-                                            `بازدید: ${visits}`
-                                        ];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            document.addEventListener('DOMContentLoaded', function () {
-                if (typeof jQuery === 'undefined') {
-                    console.error('❌ jQuery is not loaded.');
-                    renderFallbackMap();
-                    return;
-                }
-
-                initWorldMap();
             });
         </script>
+
     @endpush
 
 
