@@ -370,11 +370,11 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <!-- JQVMap CSS (via jsDelivr) -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/jqvmap.min.css"/>
+        <link rel="stylesheet" href="{{ asset('map/jqvmap.min.css') }}"/>
         <!-- JQVMap Core (via jsDelivr) -->
-        <script src="https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/jquery.vmap.min.js"></script>
+        <script src="{{ asset('map/jquery.vmap.min.js') }}"></script>
         <!-- JQVMap World Map Data (via jsDelivr) -->
-        <script src="https://cdn.jsdelivr.net/npm/jqvmap@1.5.1/dist/maps/jquery.vmap.world.js"></script>
+        <script src="{{ asset('map/jquery.vmap.world.js') }}"></script>
         <script>
             // Function to initialize the JQVMap
             function initWorldMap() {
