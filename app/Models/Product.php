@@ -509,19 +509,38 @@ class Product extends Model implements HasMedia
     {
         $related = collect();
 
-        // 1️⃣ Append direct products first
+        // 1️⃣ Direct complementary products
         $related = $related->concat($this->complementaryProductsDirect()->get());
 
-        // 2️⃣ Append products from related categories
+        // 2️⃣ Products from complementary categories
         $related = $related->concat(
             $this->complementaryProductsViaCategories()
                 ->get()
                 ->flatMap(fn ($category) => $category->products)
         );
 
-        // Remove duplicates, keep original order
+        // 3️⃣ Products from this product's categories → direct complementary products
+        $related = $related->concat(
+            $this->categories()
+                ->with('complementaryProductsDirect')
+                ->get()
+                ->flatMap(fn ($category) => $category->complementaryProductsDirect)
+        );
+
+        // 4️⃣ Products from this product's categories → complementary categories → products
+        $related = $related->concat(
+            $this->categories()
+                ->with('complementaryProductsViaCategories.products')
+                ->get()
+                ->flatMap(fn ($category) =>
+                $category->complementaryProductsViaCategories->flatMap(fn ($cat) => $cat->products)
+                )
+        );
+
+        // Remove duplicates & keep order
         return $related->unique('id')->values();
     }
+
 
 
     // Direct product → product relations
