@@ -86,7 +86,8 @@
                         @php
                             $osIcon = match (strtolower($item['os'])) {
                                 'windows' => 'windows',
-                                'macos', 'mac os', 'mac os x' => 'apple',
+                                'macos', 'apple',
+                                'mac os x' => 'apple',
                                 'ios' => 'apple',
                                 'android' => 'android',
                                 'linux' => 'linux',
