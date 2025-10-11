@@ -10,7 +10,7 @@
     <!-- Row -->
     <x-page>
         <!-- Summary Traffic -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>خلاصه ترافیک</h4>
             </div>
@@ -32,7 +32,7 @@
         </div>
 
         <!-- Browser Usage -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>آمار استفاده از مرورگر</h4>
             </div>
@@ -48,9 +48,18 @@
                     <tbody>
                     @foreach ($browser_usage as $item)
                         <tr>
-                            <td>{{ $item['browser'] }}</td>
+                            <td>
+                                <i class="fa-brands fa-{{ strtolower($item['browser']) === 'chrome' ? 'chrome' : (strtolower($item['browser']) === 'firefox' ? 'firefox' : (strtolower($item['browser']) === 'safari' ? 'safari' : 'edge')) }}"></i>
+                                {{ $item['browser'] }}
+                            </td>
                             <td>{{ $item['count'] }}</td>
-                            <td>{{ $item['percentage'] }}%</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar" style="width: {{ $item['percentage'] }}%;" aria-valuenow="{{ $item['percentage'] }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ $item['percentage'] }}%
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
@@ -59,7 +68,7 @@
         </div>
 
         <!-- OS Usage -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>سیستم‌عامل‌های پر کاربرد</h4>
             </div>
@@ -75,9 +84,18 @@
                     <tbody>
                     @foreach ($os_usage as $item)
                         <tr>
-                            <td>{{ $item['os'] }}</td>
+                            <td>
+                                <i class="fa-brands fa-{{ strtolower($item['os']) === 'windows' ? 'windows' : (strtolower($item['os']) === 'mac os' ? 'apple' : (strtolower($item['os']) === 'android' ? 'android' : 'linux')) }}"></i>
+                                {{ $item['os'] }}
+                            </td>
                             <td>{{ $item['count'] }}</td>
-                            <td>{{ $item['percentage'] }}%</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar" style="width: {{ $item['percentage'] }}%;" aria-valuenow="{{ $item['percentage'] }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ $item['percentage'] }}%
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
@@ -86,7 +104,7 @@
         </div>
 
         <!-- Device Usage -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>تفکیک استفاده از دستگاه</h4>
             </div>
@@ -102,9 +120,18 @@
                     <tbody>
                     @foreach ($device_usage as $item)
                         <tr>
-                            <td>{{ $item['device'] }}</td>
+                            <td>
+                                <i class="fas fa-{{ strtolower($item['device']) === 'desktop' ? 'desktop' : (strtolower($item['device']) === 'mobile' ? 'mobile-alt' : 'tablet-alt') }}"></i>
+                                {{ $item['device'] }}
+                            </td>
                             <td>{{ $item['count'] }}</td>
-                            <td>{{ $item['percentage'] }}%</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar" style="width: {{ $item['percentage'] }}%;" aria-valuenow="{{ $item['percentage'] }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ $item['percentage'] }}%
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
@@ -112,8 +139,50 @@
             </div>
         </div>
 
-        <!-- Top Pages -->
-        <div class="card mt-3">
+        <!-- Top Countries -->
+        <div class="card">
+            <div class="card-header">
+                <h4>کشورهای برتر</h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>کشور</th>
+                        <th>بازدید</th>
+                        <th>درصد</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @php
+                        $total_visits = $top_countries->sum('visits');
+                    @endphp
+                    @foreach ($top_countries as $item)
+                        @php
+                            $percentage = $total_visits ? round(($item->visits / $total_visits) * 100, 2) : 0;
+                        @endphp
+                        <tr>
+                            <td>
+                                <img src="https://flagcdn.com/16x12/{{ strtolower($item->country_code) }}.png" alt="{{ $item->country_code }}" style="margin-left: 5px;">
+                                {{ $item->country_code }}
+                            </td>
+                            <td>{{ $item->visits }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-primary bg-opacity-25" role="progressbar" style="width: {{ $percentage }}%;" aria-valuenow="{{ $percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ $percentage }}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Other sections (Top Pages, Active Users, Recent Visitors, etc.) remain unchanged -->
+        <div class="card">
             <div class="card-header">
                 <h4>برترین برگه‌ها</h4>
             </div>
@@ -139,33 +208,7 @@
             </div>
         </div>
 
-        <!-- Top Countries -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h4>کشورهای برتر</h4>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>کشور</th>
-                        <th>بازدید</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach ($top_countries as $item)
-                        <tr>
-                            <td>{{ $item->country_code }}</td>
-                            <td>{{ $item->visits }}</td>
-                        </tr>
-                    @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Active Users -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>فعال‌ترین بازدیدکنندگان</h4>
             </div>
@@ -189,8 +232,7 @@
             </div>
         </div>
 
-        <!-- Recent Visitors -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>بازدیدکنندگان اخیر</h4>
             </div>
@@ -220,8 +262,7 @@
             </div>
         </div>
 
-        <!-- Top Referrers -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>برترین ارجاع‌دهندگان</h4>
             </div>
@@ -245,8 +286,7 @@
             </div>
         </div>
 
-        <!-- Online Users -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>در حال حاضر آنلاین</h4>
             </div>
@@ -255,8 +295,7 @@
             </div>
         </div>
 
-        <!-- Traffic Trend Chart -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>روند ترافیک</h4>
                 <select id="traffic-trend-type">
@@ -269,8 +308,7 @@
             </div>
         </div>
 
-        <!-- Search Engine Referrals Chart -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>ارجاعات از موتورهای جستجو</h4>
             </div>
@@ -279,8 +317,7 @@
             </div>
         </div>
 
-        <!-- Global Distribution Map -->
-        <div class="card mt-3">
+        <div class="card">
             <div class="card-header">
                 <h4>توزیع جهانی بازدیدکنندگان</h4>
             </div>
@@ -290,7 +327,7 @@
         </div>
     </x-page>
 
-    @push('js')
+    @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -314,7 +351,6 @@
             document.getElementById('traffic-trend-type').addEventListener('change', (e) => {
                 const type = e.target.value;
                 if (type === 'weekly') {
-                    // Aggregate daily data into weekly (simplified)
                     const weeklyData = [];
                     let weekVisits = 0;
                     let weekStart = null;
