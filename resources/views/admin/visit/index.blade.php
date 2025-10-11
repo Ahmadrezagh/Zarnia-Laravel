@@ -1,5 +1,11 @@
 @extends('layouts.panel')
-
+@section('head')
+    <style>
+        .progress-bar{
+            height: 100%;
+        }
+    </style>
+@endsection
 @section('content')
     <!-- Page Header -->
     <x-breadcrumb :title="'آمار'" :items="[
