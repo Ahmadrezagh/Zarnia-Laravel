@@ -367,10 +367,12 @@
 
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jvectormap/2.0.5/jquery-jvectormap.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jvectormap/2.0.5/jquery-jvectormap.min.css"/>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jvectormap/2.0.5/maps/jquery-jvectormap-world-mill.js"></script>
         <script>
-            // Traffic Trend Chart
+            // Traffic Trend Chart (unchanged)
             const dailyVisits = @json($daily_visits);
             const trafficTrendChart = new Chart(document.getElementById('traffic-trend-chart'), {
                 type: 'line',
@@ -412,7 +414,7 @@
                 }
             });
 
-            // Search Engine Referrals Chart
+            // Search Engine Referrals Chart (unchanged)
             const searchEngineReferrals = @json($search_engine_referrals);
             new Chart(document.getElementById('search-engine-chart'), {
                 type: 'pie',
@@ -426,35 +428,52 @@
                 options: {responsive: true}
             });
 
-            // World Map
+            // World Map with jVectorMap
             const globalDistribution = @json($global_distribution);
-            const map = L.map('world-map').setView([0, 0], 2);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
 
+            // Create a data object for visits by country code
+            const visitsByCountry = {};
             globalDistribution.forEach(item => {
-                const coordinates = getCountryCoordinates(item.country_code);
-                if (coordinates) {
-                    L.marker(coordinates)
-                        .addTo(map)
-                        .bindPopup(`
-                            <strong>${item.country_code}</strong><br>
-                            بازدید: ${item.visits}<br>
-                            <img src="https://flagcdn.com/16x12/${item.country_code.toLowerCase()}.png" alt="Flag">
-                        `);
-                }
+                visitsByCountry[item.country_code] = item.visits;
             });
 
-            function getCountryCoordinates(countryCode) {
-                const countryMap = {
-                    'US': [37.0902, -95.7129],
-                    'IR': [32.4279, 53.6880],
-                    'GB': [55.3781, -3.4360],
-                    // Add more countries as needed
-                };
-                return countryMap[countryCode] || null;
-            }
+            // Initialize jVectorMap
+            $('#world-map').vectorMap({
+                map: 'world_mill',
+                backgroundColor: '#f8f9fa',
+                regionStyle: {
+                    initial: {
+                        fill: '#d3d3d3',
+                        "fill-opacity": 1,
+                        stroke: '#ffffff',
+                        "stroke-width": 0.5,
+                        "stroke-opacity": 1
+                    },
+                    hover: {
+                        "fill-opacity": 0.8,
+                        cursor: 'pointer'
+                    }
+                },
+                series: {
+                    regions: [{
+                        values: visitsByCountry,
+                        scale: ['#C8EEFF', '#0071A4'],
+                        normalizeFunction: 'polynomial'
+                    }]
+                },
+                onRegionTipShow: function(e, el, code) {
+                    const visits = visitsByCountry[code] || 0;
+                    const countryName = el.html(); // Default country name from jVectorMap
+                    const flagUrl = `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
+                    el.html(`
+                    <div style="text-align: center;">
+                        <img src="${flagUrl}" alt="Flag" style="width: 16px; height: 12px; margin-right: 5px;">
+                        <strong>${countryName}</strong><br>
+                        بازدید: ${visits}
+                    </div>
+                `);
+                }
+            });
         </script>
     @endpush
 @endsection
