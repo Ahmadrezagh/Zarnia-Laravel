@@ -83,9 +83,19 @@
                     </thead>
                     <tbody>
                     @foreach ($os_usage as $item)
+                        @php
+                            $osIcon = match (strtolower($item['os'])) {
+                                'windows' => 'windows',
+                                'macos', 'mac os', 'mac os x' => 'apple',
+                                'ios' => 'apple',
+                                'android' => 'android',
+                                'linux' => 'linux',
+                                default => 'desktop'
+                            };
+                        @endphp
                         <tr>
                             <td>
-                                <i class="fa-brands fa-{{ strtolower($item['os']) === 'windows' ? 'windows' : (strtolower($item['os']) === 'mac os' ? 'apple' : (strtolower($item['os']) === 'android' ? 'android' : 'linux')) }}"></i>
+                                <i class="fa-brands fa-{{ $osIcon }} me-2"></i>
                                 {{ $item['os'] }}
                             </td>
                             <td>{{ $item['count'] }}</td>
