@@ -454,6 +454,92 @@
             });
         </script>
     @endpush
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Sample data from Laravel
+                const dailyVisits = @json($daily_visits); // array of { date: "YYYY-MM-DD", visits: number }
+
+                // Initialize Chart.js line chart
+                const ctx = document.getElementById('traffic-trend-chart').getContext('2d');
+                const trafficTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dailyVisits.map(item => item.date),
+                        datasets: [{
+                            label: 'بازدیدها',
+                            data: dailyVisits.map(item => item.visits),
+                            borderColor: '#36a2eb',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `بازدید: ${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'تاریخ' }
+                            },
+                            y: {
+                                title: { display: true, text: 'تعداد بازدید' },
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Handle daily/weekly toggle
+                document.getElementById('traffic-trend-type').addEventListener('change', (e) => {
+                    const type = e.target.value;
+
+                    if (type === 'weekly') {
+                        const weeklyData = [];
+                        let weekSum = 0;
+                        let weekStart = null;
+
+                        dailyVisits.forEach((item, index) => {
+                            const date = new Date(item.date);
+                            if (!weekStart) weekStart = date;
+
+                            weekSum += item.visits;
+
+                            // Sunday or last item → push weekly data
+                            if (date.getDay() === 0 || index === dailyVisits.length - 1) {
+                                weeklyData.push({
+                                    date: weekStart.toISOString().split('T')[0],
+                                    visits: weekSum
+                                });
+                                weekStart = null;
+                                weekSum = 0;
+                            }
+                        });
+
+                        trafficTrendChart.data.labels = weeklyData.map(item => item.date);
+                        trafficTrendChart.data.datasets[0].data = weeklyData.map(item => item.visits);
+                    } else {
+                        // Daily
+                        trafficTrendChart.data.labels = dailyVisits.map(item => item.date);
+                        trafficTrendChart.data.datasets[0].data = dailyVisits.map(item => item.visits);
+                    }
+
+                    trafficTrendChart.update();
+                });
+            });
+        </script>
+    @endpush
+
 
 
 
