@@ -22,6 +22,7 @@
                             ['label' => 'کد اتیکت', 'key' => 'etiketsCodeAsArray', 'type' => 'ajax','route' =>'product.etikets','ajax_key' => 'slug'],
                             ['label' => 'تصویر محصول', 'key' => 'image', 'type' => 'image'],
                             ['label' => 'نام محصول', 'key' => 'nameUrl', 'type' => 'text'],
+                            ['label' => 'تعداد بازدید محصول', 'key' => 'view_count', 'type' => 'text'],
                             ['label' => 'وزن', 'key' => 'weight', 'type' => 'text'],
                             ['label' => 'قیمت', 'key' => 'price', 'type' => 'text'],
                             ['label' => 'درصد خرید', 'key' => 'darsad_kharid', 'type' => 'text'],
