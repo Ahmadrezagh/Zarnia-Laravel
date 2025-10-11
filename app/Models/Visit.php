@@ -208,4 +208,37 @@ class Visit extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public static function getTopPages($limit = 10, $startDate = null, $endDate = null)
+    {
+        $query = Visit::select('url', DB::raw('count(*) as visits'))
+            ->groupBy('url')
+            ->orderBy('visits', 'desc');
+        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
+        return $query->limit($limit)->get();
+    }
+
+    // Top referrers
+    public static function getTopReferrers($limit = 10, $startDate = null, $endDate = null)
+    {
+        $query = static::select('referrer', DB::raw('count(*) as visits'))
+            ->whereNotNull('referrer')
+            ->groupBy('referrer')
+            ->orderBy('visits', 'desc');
+        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
+        return $query->limit($limit)->get();
+    }
+
+    // Daily visits
+    public static function getDailyVisits($days = 30)
+    {
+        return static::selectRaw('DATE(created_at) as date, COUNT(*) as visits')
+            ->where('created_at', '>=', Carbon::now()->subDays($days))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+    }
+
 }
