@@ -13,8 +13,9 @@ class ProductListResouce extends JsonResource
     public function __construct($resource,$user = null)
     {
         parent::__construct($resource);
-
-        $this->user = $user;
+        if($user){
+            $this->user = $user;
+        }
     }
 
     /**
