@@ -10,6 +10,7 @@ use App\Traits\Scopes\MinPrice;
 use App\Traits\Scopes\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Facades\DB;
 use Pishran\LaravelPersianSlug\HasPersianSlug;
@@ -656,5 +657,16 @@ class Product extends Model implements HasMedia
     public function scopeChildrenOf(Builder $query, $product_id)
     {
         return $query->where('parent_id', $product_id);
+    }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(Visit::class, 'url', 'slug')
+            ->where('url', 'like', DB::raw("CONCAT('%', products.slug)"));
+    }
+
+    public function getViewCountAttribute()
+    {
+        return $this->visits()->count();
     }
 }

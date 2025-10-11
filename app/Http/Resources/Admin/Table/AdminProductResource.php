@@ -27,7 +27,8 @@ class AdminProductResource extends JsonResource
             'discount_percentage' => $this->discount_percentage,
             'count' => $this->count,
             'etiketsCodeAsArray' => [],
-            'parent_id' => $this->parent_id
+            'parent_id' => $this->parent_id,
+            'view_count' => $this->ViewCount
         ];
     }
 }
