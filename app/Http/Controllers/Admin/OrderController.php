@@ -100,6 +100,7 @@ class OrderController extends Controller
         $discountPrice = $order->discount_price ?? 0; // Adjust based on your model
         $order->final_amount = ($totalAmount + $shippingPrice) - $discountPrice;
 
+        $order->final_amount =  $order->final_amount > 0 ?  $order->final_amount : 0;
         // Save the updated order
         $order->save();
 
