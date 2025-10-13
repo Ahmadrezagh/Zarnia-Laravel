@@ -40,7 +40,7 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
         Route::get('shippings', [ShippingController::class, 'index']);
         Route::get('gateways', [GatewayController::class, 'index']);
         Route::get('blogs', [BlogController::class, 'index']);
-        Route::get('blogs/{blog}', [GatewayController::class, 'show']);
+        Route::get('blogs/{blog}', [BlogController::class, 'show']);
 
         Route::get('qa',[QAController::class,'index']);
         Route::get('product_slider',[ProductSliderController::class,'index']);
