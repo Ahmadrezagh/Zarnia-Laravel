@@ -18,7 +18,7 @@ class BlogItemResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'image' => $this->image,
-            'description' => $this->descripion,
+            'description' => $this->description,
         ];
     }
 }
