@@ -216,7 +216,7 @@ class Gateway extends Model implements HasMedia
                     'transaction_id' => $response['transactionId'],
                     'final_amount' => $final_amount,
                 ]);
-
+                Log::info(json_encode($response));
                 return [
                     'response' => $response,
                 ];
