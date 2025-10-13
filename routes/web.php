@@ -4,6 +4,7 @@
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\AttributeGroupController;
+use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\EtiketController;
@@ -41,6 +42,7 @@ Route::middleware(['auth'])->group(function () {
 });
 Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () {
     Route::get('admins', [AdminController::class, 'table'])->name('admins');
+    Route::get('blogs', [BlogController::class, 'table'])->name('blogs');
     Route::get('users', [UserController::class, 'table'])->name('users');
     Route::get('roles', [RoleController::class, 'table'])->name('roles');
     Route::get('qas', [QAController::class, 'table'])->name('qas');
@@ -100,7 +102,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('attribute_groups', AttributeGroupController::class );
     Route::resource('invoice_templates', InvoiceTemplateController::class );
     Route::resource('discounts', DiscountController::class );
-
+    Route::resource('blogs', BlogController::class );
 
     Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
 

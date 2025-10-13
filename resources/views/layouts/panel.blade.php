@@ -52,7 +52,7 @@
 
 
     <!-- CkEditor -->
-    <script src="{{ asset('dashboard/assets/ckeditor/ckeditor.js') }}"></script>
+    <script src="https://cdn.ckeditor.com/4.15.0/full/ckeditor.js"></script>
 
     <style>
         .cke_notification_warning{
@@ -117,7 +117,7 @@
                         </ul>
                     </li>
                 @endif
-                @if ((Auth::user()->isAdmin() && Auth::user()->can('Admin')) || Auth::user()->isSuperAdmin() )
+                @if ((Auth::user()->isAdmin() && Auth::user()->can('Statistics')) || Auth::user()->isSuperAdmin() )
                     <li class="nav-item">
                         <a class="nav-link with-sub" href="#">
                             <span class="shape1"></span>
@@ -126,7 +126,21 @@
                             <span class="sidemenu-label">آمار</span><i class="angle fe fe-chevron-left"></i></a>
                         <ul class="nav-sub">
                             <li class="nav-sub-item">
-                                <a class="nav-sub-link" href="{{route('visit.index')}}">مدیر ها</a>
+                                <a class="nav-sub-link" href="{{route('visit.index')}}">آمار</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
+                @if ((Auth::user()->isAdmin() && Auth::user()->can('Blog')) || Auth::user()->isSuperAdmin() )
+                    <li class="nav-item">
+                        <a class="nav-link with-sub" href="#">
+                            <span class="shape1"></span>
+                            <span class="shape2"></span>
+                            <i class="fas chart-circle-value sidemenu-icon"></i>
+                            <span class="sidemenu-label">وبلاگ</span><i class="angle fe fe-chevron-left"></i></a>
+                        <ul class="nav-sub">
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('blogs.index')}}">وبلاگ</a>
                             </li>
                         </ul>
                     </li>
