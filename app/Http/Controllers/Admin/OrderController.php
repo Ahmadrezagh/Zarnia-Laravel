@@ -136,23 +136,35 @@ class OrderController extends Controller
 
     public function table(Request $request)
     {
+        // Get total records count (before any filters)
+        $totalRecords = Order::count();
+
+        // Build base query with filters
         $query = Order::query()
             ->filterByTransactionId($request->transaction_id)
-            ->latest();
-        $totalRecords = $query->count();
+            ->filterByStatus($request->status);
 
-        // Apply search filter if provided
-        if ($request->has('search') && !empty($request->input('search.value'))) {
-            $search = $request->input('search.value');
-            $query->where('id','LIKE',"%{$search}%")
-                ->orWhereHas('address', function ($query) use ($search) {
-                    $query->where('receiver_name', 'LIKE',"%{$search}%");
-                })
-                ->orWhereHas('orderItems',function ($query) use ($search) {
-                    $query->where('name', 'LIKE',"%{$search}%");
-                });
+        // Apply search filter - handle both DataTables search and direct search parameter
+        $searchValue = null;
+        if ($request->has('search')) {
+            // Check if search is an array (DataTables format)
+            if (is_array($request->input('search'))) {
+                $searchValue = $request->input('search.value');
+            } else {
+                // Direct search parameter
+                $searchValue = $request->input('search');
+            }
         }
+        
+        if (!empty($searchValue)) {
+            $query->search($searchValue);
+        }
+        
+        // Apply custom ordering by status priority
+        $query->orderByStatusPriority();
 
+        // Get filtered count (after applying filters but before pagination)
+        $filteredRecords = $query->count();
 
         // Handle pagination
         $start = $request->input('start', 0);
@@ -160,7 +172,6 @@ class OrderController extends Controller
         if ($length <= 0) {
             $length = 10; // Ensure length is positive to avoid SQL error
         }
-
 
         // Fetch paginated data
         $data = $query
@@ -170,8 +181,6 @@ class OrderController extends Controller
             ->map(function ($item) {
                 return OrderItemResource::make($item); // Ensure all necessary fields are included
             });
-        // Initialize slot content
-        $filteredRecords = $data->count();
 
         return response()->json([
             'draw' => (int) $request->input('draw', 1),

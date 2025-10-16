@@ -216,6 +216,19 @@
                 }
             });
         });
+        // Store current status filter
+        let currentStatusFilter = "{{ request('status') ?? '' }}";
+        
+        // Add Enter key support for input fields
+        $(document).ready(function() {
+            $('#transaction_id, #search_input').on('keypress', function(e) {
+                if(e.which === 13) { // Enter key
+                    e.preventDefault();
+                    applyFilters();
+                }
+            });
+        });
+        
         function filterTransaction(){
             let transaction_id = $("#transaction_id").val()
             window.loadDataWithNewUrl("{{route('table.orders')}}?transaction_id="+transaction_id);
@@ -224,18 +237,24 @@
         function applyFilters(){
             let transaction_id = $("#transaction_id").val();
             let search = $("#search_input").val();
-            let status = new URLSearchParams(window.location.search).get('status') || '';
             
             let params = [];
             if(transaction_id) params.push("transaction_id=" + encodeURIComponent(transaction_id));
             if(search) params.push("search=" + encodeURIComponent(search));
-            if(status) params.push("status=" + encodeURIComponent(status));
+            if(currentStatusFilter) params.push("status=" + encodeURIComponent(currentStatusFilter));
             
             let url = "{{route('table.orders')}}" + (params.length ? "?" + params.join("&") : "");
             window.loadDataWithNewUrl(url);
         }
         
         function filterByStatus(status){
+            // Update current status filter
+            currentStatusFilter = status;
+            
+            // Update button active states
+            $('.btn-group button').removeClass('active');
+            event.target.classList.add('active');
+            
             let transaction_id = $("#transaction_id").val();
             let search = $("#search_input").val();
             
@@ -244,18 +263,22 @@
             if(search) params.push("search=" + encodeURIComponent(search));
             if(status) params.push("status=" + encodeURIComponent(status));
             
-            // Update URL to preserve filters on page reload
-            let newUrl = window.location.pathname + (params.length ? "?" + params.join("&") : "");
-            window.history.pushState({}, '', newUrl);
-            
             let tableUrl = "{{route('table.orders')}}" + (params.length ? "?" + params.join("&") : "");
             window.loadDataWithNewUrl(tableUrl);
         }
         
         function clearFilters(){
+            // Clear input fields
             $("#transaction_id").val('');
             $("#search_input").val('');
-            window.history.pushState({}, '', window.location.pathname);
+            
+            // Reset status filter
+            currentStatusFilter = '';
+            
+            // Reset button active states
+            $('.btn-group button').removeClass('active');
+            $('.btn-group button:first').addClass('active');
+            
             window.loadDataWithNewUrl("{{route('table.orders')}}");
         }
     </script>
