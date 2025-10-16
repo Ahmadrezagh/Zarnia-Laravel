@@ -174,7 +174,7 @@ class Order extends Model
     }
     public function getWeightColAttribute()
     {
-        $result = "وزن : ".$this->weight ." گرم ". "<br/> خرید: " . $this->Percentage." % "."<br/> خرید: ".$this->DarsadKharid." % "."<br/> تخفیف : ".$this->discount_percentage." % ";
+        $result = "وزن : ".$this->weight ." گرم ". "<br/> خرید: " . $this->Percentage." % "."<br/> فروش: ".$this->DarsadKharid." % "."<br/> تخفیف : ".$this->discount_percentage." % ";
         return request()->expectsJson() ?
             $result :
             new HtmlString($result);
