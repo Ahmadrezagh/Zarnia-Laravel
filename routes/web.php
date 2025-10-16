@@ -81,6 +81,8 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::get('admin_order/cancel/{order}', [OrderController::class, 'cancel'])->name('admin_order.cancel');
     Route::post('admin_order/update/{order}', [OrderController::class, 'updateOrder'])->name('admin_order.update');
     Route::post('update_order_status', [OrderController::class,'updateOrderStatus'] )->name('update_order_status');
+    Route::get('admin_order/users/search', [OrderController::class, 'getUsersList'])->name('admin_order.users.search');
+    Route::get('admin_order/users/{user}/addresses', [OrderController::class, 'getUserAddresses'])->name('admin_order.users.addresses');
     Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
     Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
     Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');

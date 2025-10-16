@@ -63,7 +63,20 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $user = \App\Models\User::with('addresses')->findOrFail($id);
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'phone' => $user->phone,
+            'addresses' => $user->addresses->map(function($address) {
+                return [
+                    'id' => $address->id,
+                    'receiver_name' => $address->receiver_name,
+                    'address' => $address->address,
+                    'phone' => $address->phone ?? $address->receiver_phone,
+                ];
+            })
+        ]);
     }
 
     /**

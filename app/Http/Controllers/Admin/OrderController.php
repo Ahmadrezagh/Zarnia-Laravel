@@ -51,7 +51,120 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Debug logging
+        \Log::info('Order creation request received', [
+            'user_id' => $request->user_id,
+            'address_id' => $request->address_id,
+            'gateway_id' => $request->gateway_id,
+            'shipping_id' => $request->shipping_id,
+            'products' => $request->products,
+            'all_data' => $request->all()
+        ]);
+
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'address_id' => 'required|exists:addresses,id',
+            'gateway_id' => 'required|exists:gateways,id',
+            'shipping_id' => 'required|exists:shippings,id',
+            'products' => 'required|string',
+            'status' => 'required|in:' . implode(',', Order::$STATUSES),
+        ]);
+
+        try {
+            // Parse products JSON
+            $products = json_decode($request->products, true);
+            
+            // Validate that products is valid JSON and is an array
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($products)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['products' => ['فرمت محصولات نامعتبر است']]
+                ], 422);
+            }
+            
+            if (empty($products)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['products' => ['حداقل یک محصول را انتخاب کنید']]
+                ], 422);
+            }
+
+            // Calculate totals
+            $totalAmount = 0;
+            foreach ($products as $product) {
+                $totalAmount += $product['price'] * $product['quantity'];
+            }
+
+            // Get shipping price
+            $shipping = \App\Models\Shipping::find($request->shipping_id);
+            $shippingPrice = $shipping->price ?? 0;
+
+            // Handle discount if provided
+            $discountPrice = 0;
+            $discountPercentage = 0;
+            if ($request->discount_code) {
+                $discount = \App\Models\Discount::where('code', $request->discount_code)->first();
+                if ($discount) {
+                    if ($discount->amount) {
+                        $discountPrice = $discount->amount;
+                    } elseif ($discount->percentage) {
+                        $discountPrice = ($discount->percentage / 100) * $totalAmount;
+                        $discountPercentage = $discount->percentage;
+                    }
+                }
+            }
+
+            // Calculate final amount
+            $finalAmount = $totalAmount + $shippingPrice - $discountPrice;
+            $finalAmount = max(0, $finalAmount); // Ensure non-negative
+
+            // Generate unique transaction ID
+            $transactionId = Order::generateUniqueTransactionId();
+
+            // Create order
+            $order = Order::create([
+                'user_id' => $request->user_id,
+                'address_id' => $request->address_id,
+                'shipping_id' => $request->shipping_id,
+                'gateway_id' => $request->gateway_id,
+                'status' => $request->status,
+                'discount_code' => $request->discount_code,
+                'discount_price' => $discountPrice,
+                'discount_percentage' => $discountPercentage,
+                'total_amount' => $totalAmount,
+                'final_amount' => $finalAmount,
+                'shipping_price' => $shippingPrice,
+                'transaction_id' => $transactionId,
+                'note' => $request->note,
+                'paid_at' => in_array($request->status, ['paid', 'boxing', 'sent', 'post', 'completed']) ? now() : null,
+            ]);
+
+            // Create order items
+            foreach ($products as $productData) {
+                $product = \App\Models\Product::find($productData['product_id']);
+                
+                \App\Models\OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $productData['product_id'],
+                    'name' => $product->name,
+                    'count' => $productData['quantity'],
+                    'price' => $productData['price'],
+                    'etiket' => $product->etikets()->first()->code ?? null,
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'سفارش با موفقیت ایجاد شد',
+                'order' => $order
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در ایجاد سفارش: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -249,5 +362,63 @@ class OrderController extends Controller
         return [
             'error' => 'این قابلیت صرفا جهت سفارشات با درگاه اسنپ می باشد'
         ];
+    }
+
+    /**
+     * Get users list for order creation
+     */
+    public function getUsersList(Request $request)
+    {
+        $search = $request->input('search', '');
+        
+        $users = \App\Models\User::query()
+            ->when($search, function($query) use ($search) {
+                $query->where('name', 'LIKE', "%{$search}%")
+                      ->orWhere('phone', 'LIKE', "%{$search}%")
+                      ->orWhere('email', 'LIKE', "%{$search}%");
+            })
+            ->select('id', 'name', 'phone', 'email')
+            ->limit(20)
+            ->get();
+        
+        return response()->json([
+            'results' => $users->map(function($user) {
+                return [
+                    'id' => $user->id,
+                    'text' => $user->name . ' (' . $user->phone . ')',
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'email' => $user->email,
+                ];
+            })
+        ]);
+    }
+
+    /**
+     * Get user addresses for order creation
+     */
+    public function getUserAddresses($userId)
+    {
+        $user = \App\Models\User::with('addresses')->findOrFail($userId);
+        
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'phone' => $user->phone,
+            ],
+            'addresses' => $user->addresses->map(function($address) {
+                return [
+                    'id' => $address->id,
+                    'receiver_name' => $address->receiver_name,
+                    'receiver_phone' => $address->receiver_phone ?? $address->phone,
+                    'address' => $address->address,
+                    'postal_code' => $address->postal_code ?? '',
+                    'province' => $address->province ?? '',
+                    'city' => $address->city ?? '',
+                ];
+            })
+        ]);
     }
 }

@@ -44,12 +44,8 @@
                     @endforeach
                 </div>
             </div>
-{{--            <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن سفارش</button>--}}
-{{--            <x-modal.create id="modal-create" title="ساخت سفارش" action="{{route('admin_orders.store')}}" >--}}
-{{--                <x-form.input title="نام"  name="name" />--}}
-{{--                <x-form.input title="جمله پیشوند"  name="prefix_sentence" />--}}
-{{--                <x-form.input title="جمله پسوند"  name="postfix_sentence" />--}}
-{{--            </x-modal.create>--}}
+            <hr>
+            <button class="btn btn-primary mb-3" type="button" onclick="openCreateOrderModal()">ایجاد سفارش جدید</button>
         </x-slot>
 
         <x-dataTable
@@ -135,6 +131,127 @@
         </x-dataTable>
     </x-page>
 
+    <!-- Create Order Modal -->
+    <div class="modal fade" id="modal-create-order" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">ایجاد سفارش جدید</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form id="create-order-form">
+                    <div class="modal-body">
+                        @csrf
+                        
+                        <!-- User Selection -->
+                        <div class="form-group">
+                            <label for="order-user">کاربر <span class="text-danger">*</span></label>
+                            <select id="order-user" name="user_id" class="form-control" style="width: 100%"></select>
+                        </div>
+
+                        <!-- Address Selection (loaded based on user) -->
+                        <div class="form-group">
+                            <label for="order-address">آدرس <span class="text-danger">*</span></label>
+                            <select id="order-address" name="address_id" class="form-control" disabled>
+                                <option value="">ابتدا کاربر را انتخاب کنید</option>
+                            </select>
+                        </div>
+
+                        <!-- Gateway Selection -->
+                        <div class="form-group">
+                            <label for="order-gateway">درگاه پرداخت <span class="text-danger">*</span></label>
+                            <select id="order-gateway" name="gateway_id" class="form-control">
+                                <option value="">انتخاب درگاه</option>
+                                @foreach(\App\Models\Gateway::all() as $gateway)
+                                    <option value="{{ $gateway->id }}">{{ $gateway->title }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Shipping Selection -->
+                        <div class="form-group">
+                            <label for="order-shipping">روش ارسال <span class="text-danger">*</span></label>
+                            <select id="order-shipping" name="shipping_id" class="form-control">
+                                <option value="">انتخاب روش ارسال</option>
+                                @foreach(\App\Models\Shipping::all() as $shipping)
+                                    <option value="{{ $shipping->id }}" data-price="{{ $shipping->price ?? 0 }}">
+                                        {{ $shipping->title }} ({{ number_format($shipping->price ?? 0) }} تومان)
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Products Section -->
+                        <div class="form-group">
+                            <label>محصولات <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-sm btn-success mb-2" onclick="addProductRow()">
+                                <i class="fas fa-plus"></i> افزودن محصول
+                            </button>
+                            <div id="products-container">
+                                <!-- Product rows will be added here -->
+                            </div>
+                        </div>
+
+                        <!-- Discount Code -->
+                        <div class="form-group">
+                            <label for="order-discount-code">کد تخفیف</label>
+                            <input type="text" id="order-discount-code" name="discount_code" class="form-control" placeholder="کد تخفیف (اختیاری)">
+                        </div>
+
+                        <!-- Status -->
+                        <div class="form-group">
+                            <label for="order-status">وضعیت</label>
+                            <select id="order-status" name="status" class="form-control">
+                                @foreach(\App\Models\Order::$STATUSES as $status)
+                                    <option value="{{ $status }}" {{ $status == 'paid' ? 'selected' : '' }}>
+                                        {{ \App\Models\Order::$PERSIAN_STATUSES[$status] ?? $status }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Note -->
+                        <div class="form-group">
+                            <label for="order-note">یادداشت</label>
+                            <textarea id="order-note" name="note" class="form-control" rows="3" placeholder="یادداشت (اختیاری)"></textarea>
+                        </div>
+
+                        <!-- Order Summary -->
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>خلاصه سفارش</h6>
+                                <div class="row">
+                                    <div class="col-6">مجموع محصولات:</div>
+                                    <div class="col-6 text-right" id="summary-subtotal">0 تومان</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">هزینه ارسال:</div>
+                                    <div class="col-6 text-right" id="summary-shipping">0 تومان</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">تخفیف:</div>
+                                    <div class="col-6 text-right" id="summary-discount">0 تومان</div>
+                                </div>
+                                <hr>
+                                <div class="row font-weight-bold">
+                                    <div class="col-6">مبلغ نهایی:</div>
+                                    <div class="col-6 text-right" id="summary-total">0 تومان</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                        <button type="button" class="btn btn-primary" onclick="submitCreateOrder()">ایجاد سفارش</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         function changeStatus(element) {
             let rowId = element.getAttribute('data-id');
@@ -189,6 +306,11 @@
             $('body').on('submit', 'form', function(e) {
                 let form = $(this);
                 let modal = form.closest('.modal');
+
+                // Skip if this is the create order form (it has its own handler)
+                if (form.attr('id') === 'create-order-form') {
+                    return; // Let the custom handler handle it
+                }
 
                 // Only intercept if inside modal with id starting with "modal-"
                 if (modal.length && modal.attr('id').startsWith('modal-')) {
@@ -343,6 +465,343 @@
         });
     </script>
 
-
+    <script>
+        let productRowCounter = 0;
+        
+        /**
+         * Open create order modal
+         */
+        function openCreateOrderModal() {
+            $('#modal-create-order').modal('show');
+            
+            // Debug: Check if button exists
+            console.log('Modal opened');
+            console.log('Submit button exists:', $('#submit-create-order').length > 0);
+            
+            initializeUserSelect();
+            addProductRow(); // Add first product row
+        }
+        
+        /**
+         * Initialize user selection with Select2
+         */
+        function initializeUserSelect() {
+            $('#order-user').select2({
+                placeholder: 'جستجوی کاربر...',
+                allowClear: true,
+                ajax: {
+                    url: '{{ route("admin_order.users.search") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            search: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results || []
+                        };
+                    }
+                }
+            });
+            
+            // Load addresses when user is selected
+            $('#order-user').on('change', function() {
+                loadUserAddresses($(this).val());
+            });
+        }
+        
+        /**
+         * Load user addresses
+         */
+        function loadUserAddresses(userId) {
+            if (!userId) {
+                $('#order-address').html('<option value="">ابتدا کاربر را انتخاب کنید</option>').prop('disabled', true);
+                return;
+            }
+            
+            $.ajax({
+                url: '{{ route("admin_order.users.addresses", ":userId") }}'.replace(':userId', userId),
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        let addresses = response.addresses || [];
+                        let options = '<option value="">انتخاب آدرس</option>';
+                        
+                        if (addresses.length === 0) {
+                            options = '<option value="">این کاربر آدرسی ندارد</option>';
+                            $('#order-address').html(options).prop('disabled', true);
+                            toastr.warning('این کاربر آدرسی ثبت نکرده است');
+                        } else {
+                            addresses.forEach(address => {
+                                let addressText = address.receiver_name + ' - ' + 
+                                                (address.city ? address.city + ' - ' : '') +
+                                                address.address.substring(0, 50) + '...';
+                                options += `<option value="${address.id}">${addressText}</option>`;
+                            });
+                            $('#order-address').html(options).prop('disabled', false);
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error loading addresses:', xhr);
+                    toastr.error('خطا در بارگذاری آدرس‌ها');
+                    $('#order-address').html('<option value="">خطا در بارگذاری آدرس‌ها</option>').prop('disabled', true);
+                }
+            });
+        }
+        
+        /**
+         * Add product row
+         */
+        function addProductRow() {
+            productRowCounter++;
+            const rowHtml = `
+                <div class="product-row card mb-2 p-3" data-row="${productRowCounter}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>محصول</label>
+                            <select class="form-control product-select" data-row="${productRowCounter}" style="width: 100%"></select>
+                        </div>
+                        <div class="col-md-3">
+                            <label>تعداد</label>
+                            <input type="number" class="form-control product-quantity" min="1" value="1" data-row="${productRowCounter}">
+                        </div>
+                        <div class="col-md-2">
+                            <label>قیمت</label>
+                            <input type="text" class="form-control product-price" readonly data-row="${productRowCounter}">
+                        </div>
+                        <div class="col-md-1">
+                            <label>&nbsp;</label>
+                            <button type="button" class="btn btn-danger btn-block" onclick="removeProductRow(${productRowCounter})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('#products-container').append(rowHtml);
+            
+            // Initialize Select2 for the new product select
+            $(`.product-select[data-row="${productRowCounter}"]`).select2({
+                placeholder: 'جستجوی محصول...',
+                allowClear: true,
+                ajax: {
+                    url: '{{ route("products.ajax.search") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results.map(item => {
+                                // Extract product ID from "Product:123" format
+                                let id = item.id.replace('Product:', '');
+                                return {
+                                    id: id,
+                                    text: item.text
+                                };
+                            }).filter(item => item.id.match(/^\d+$/)) // Only numeric IDs
+                        };
+                    }
+                }
+            });
+            
+            // Update price when product is selected
+            $(`.product-select[data-row="${productRowCounter}"]`).on('change', function() {
+                loadProductPrice($(this).val(), productRowCounter);
+            });
+            
+            // Update total when quantity changes
+            $(`.product-quantity[data-row="${productRowCounter}"]`).on('input', updateOrderSummary);
+            
+            // Update shipping cost when shipping method changes
+            $('#order-shipping').on('change', updateOrderSummary);
+        }
+        
+        /**
+         * Remove product row
+         */
+        function removeProductRow(rowId) {
+            $(`.product-row[data-row="${rowId}"]`).remove();
+            updateOrderSummary();
+        }
+        
+        /**
+         * Load product price
+         */
+        function loadProductPrice(productId, rowId) {
+            if (!productId) return;
+            
+            $.ajax({
+                url: '/admin/products/' + productId,
+                method: 'GET',
+                success: function(response) {
+                    const price = response.data.price || 0;
+                    $(`.product-price[data-row="${rowId}"]`).val(number_format(price) + ' تومان');
+                    $(`.product-price[data-row="${rowId}"]`).data('price', price);
+                    updateOrderSummary();
+                },
+                error: function() {
+                    toastr.error('خطا در بارگذاری قیمت محصول');
+                }
+            });
+        }
+        
+        /**
+         * Update order summary
+         */
+        function updateOrderSummary() {
+            let subtotal = 0;
+            
+            // Calculate subtotal from all products
+            $('.product-row').each(function() {
+                const row = $(this).data('row');
+                const price = $(`.product-price[data-row="${row}"]`).data('price') || 0;
+                const quantity = parseInt($(`.product-quantity[data-row="${row}"]`).val()) || 0;
+                subtotal += price * quantity;
+            });
+            
+            // Get shipping cost
+            const shippingPrice = parseInt($('#order-shipping option:selected').data('price')) || 0;
+            
+            // Calculate discount (you can add discount logic here)
+            const discount = 0;
+            
+            // Calculate final total
+            const total = subtotal + shippingPrice - discount;
+            
+            // Update UI
+            $('#summary-subtotal').text(number_format(subtotal) + ' تومان');
+            $('#summary-shipping').text(number_format(shippingPrice) + ' تومان');
+            $('#summary-discount').text(number_format(discount) + ' تومان');
+            $('#summary-total').text(number_format(total) + ' تومان');
+        }
+        
+        /**
+         * Number format helper
+         */
+        function number_format(number) {
+            return new Intl.NumberFormat('fa-IR').format(number);
+        }
+        
+        /**
+         * Submit create order form via AJAX
+         */
+        function submitCreateOrder() {
+            console.log('submitCreateOrder function called');
+            alert('Function is working! Check console for details.');
+                
+            // Collect products first
+            const products = [];
+            $('.product-row').each(function() {
+                const row = $(this).data('row');
+                const productId = $(`.product-select[data-row="${row}"]`).val();
+                const quantity = $(`.product-quantity[data-row="${row}"]`).val();
+                const price = $(`.product-price[data-row="${row}"]`).data('price');
+                
+                if (productId && quantity && price) {
+                    products.push({
+                        product_id: productId,
+                        quantity: quantity,
+                        price: price
+                    });
+                }
+            });
+            
+            console.log('Collected products:', products);
+            
+            // Validate products before sending
+            if (products.length === 0) {
+                toastr.error('لطفا حداقل یک محصول اضافه کنید');
+                return;
+            }
+            
+            console.log('Products to send:', products);
+            console.log('Products JSON:', JSON.stringify(products));
+            
+            // Validate required fields first
+            if (!$('#order-user').val()) {
+                toastr.error('لطفا کاربر را انتخاب کنید');
+                return;
+            }
+            if (!$('#order-address').val()) {
+                toastr.error('لطفا آدرس را انتخاب کنید');
+                return;
+            }
+            if (!$('#order-gateway').val()) {
+                toastr.error('لطفا درگاه پرداخت را انتخاب کنید');
+                return;
+            }
+            if (!$('#order-shipping').val()) {
+                toastr.error('لطفا روش ارسال را انتخاب کنید');
+                return;
+            }
+            
+            // Prepare data object (NOT FormData)
+            const requestData = {
+                _token: '{{ csrf_token() }}',
+                user_id: $('#order-user').val(),
+                address_id: $('#order-address').val(),
+                gateway_id: $('#order-gateway').val(),
+                shipping_id: $('#order-shipping').val(),
+                discount_code: $('#order-discount-code').val() || '',
+                status: $('#order-status').val(),
+                note: $('#order-note').val() || '',
+                products: JSON.stringify(products)
+            };
+            
+            // Debug: Log data being sent
+            console.log('Request data being sent:', requestData);
+            console.log('Products array:', products);
+            console.log('Products JSON string:', requestData.products);
+            
+            // Submit via AJAX
+            $.ajax({
+                url: '{{ route("admin_orders.store") }}',
+                method: 'POST',
+                data: requestData,
+                dataType: 'json',
+                success: function(response) {
+                    console.log('Order created successfully:', response);
+                    toastr.success('سفارش با موفقیت ایجاد شد');
+                    $('#modal-create-order').modal('hide');
+                    $('#create-order-form')[0].reset();
+                    $('#products-container').empty();
+                    productRowCounter = 0;
+                    
+                    // Refresh the table
+                    if (typeof window.refreshTable === 'function') {
+                        window.refreshTable();
+                    } else {
+                        location.reload();
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error response:', xhr);
+                    console.error('Response JSON:', xhr.responseJSON);
+                    console.error('Response Text:', xhr.responseText);
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        let errors = xhr.responseJSON.errors;
+                        let errorMessage = Object.values(errors).flat().join('<br>');
+                        toastr.error(errorMessage);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        toastr.error(xhr.responseJSON.message);
+                    } else {
+                        toastr.error('خطا در ایجاد سفارش');
+                    }
+                }
+            });
+        }
+    </script>
 
 @endsection
