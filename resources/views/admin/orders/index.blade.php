@@ -698,7 +698,6 @@
          */
         function submitCreateOrder() {
             console.log('submitCreateOrder function called');
-            alert('Function is working! Check console for details.');
                 
             // Collect products first
             const products = [];

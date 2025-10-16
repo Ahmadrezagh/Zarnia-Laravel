@@ -68,9 +68,15 @@ class OrderController extends Controller
             'shipping_id' => 'required|exists:shippings,id',
             'products' => 'required|string',
             'status' => 'required|in:' . implode(',', Order::$STATUSES),
+            'discount_code' => 'nullable|string',
+            'note' => 'nullable|string',
         ]);
 
         try {
+            // Replace null with empty string for optional fields
+            $discountCode = $request->discount_code ?? '';
+            $note = $request->note ?? '';
+            
             // Parse products JSON
             $products = json_decode($request->products, true);
             
@@ -102,8 +108,8 @@ class OrderController extends Controller
             // Handle discount if provided
             $discountPrice = 0;
             $discountPercentage = 0;
-            if ($request->discount_code) {
-                $discount = \App\Models\Discount::where('code', $request->discount_code)->first();
+            if (!empty($discountCode)) {
+                $discount = \App\Models\Discount::where('code', $discountCode)->first();
                 if ($discount) {
                     if ($discount->amount) {
                         $discountPrice = $discount->amount;
@@ -128,14 +134,14 @@ class OrderController extends Controller
                 'shipping_id' => $request->shipping_id,
                 'gateway_id' => $request->gateway_id,
                 'status' => $request->status,
-                'discount_code' => $request->discount_code,
+                'discount_code' => $discountCode,
                 'discount_price' => $discountPrice,
                 'discount_percentage' => $discountPercentage,
                 'total_amount' => $totalAmount,
                 'final_amount' => $finalAmount,
                 'shipping_price' => $shippingPrice,
                 'transaction_id' => $transactionId,
-                'note' => $request->note,
+                'note' => $note,
                 'paid_at' => in_array($request->status, ['paid', 'boxing', 'sent', 'post', 'completed']) ? now() : null,
             ]);
 
