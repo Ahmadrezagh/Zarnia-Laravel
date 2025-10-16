@@ -18,8 +18,8 @@ class GoldSummaryController extends Controller
         // Get paginated orders with their items
         $orders = Order::with(['orderItems.product'])
             ->whereIn('status', ['paid', 'boxing', 'sent', 'post', 'completed'])
-            ->orderBy('created_at', 'asc')
-            ->paginate(25);
+            ->latest()
+            ->paginate();
 
         // Calculate summary data for current page only
         $pageWeight = 0;
