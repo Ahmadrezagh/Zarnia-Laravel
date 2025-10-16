@@ -103,8 +103,16 @@
                     @endforeach
                 </tbody>
                 <tfoot>
-                    <tr class="font-weight-bold bg-light">
-                        <td colspan="3">جمع کل</td>
+                    <tr class="font-weight-bold bg-info text-white">
+                        <td colspan="3">جمع کل صفحه جاری</td>
+                        <td>{{ $summary['page_weight'] }}</td>
+                        <td>{{ $summary['page_amount'] }}</td>
+                        <td>-</td>
+                        <td>{{ $summary['page_purchase_commission'] }}</td>
+                        <td>{{ $summary['page_sale_commission'] }}</td>
+                    </tr>
+                    <tr class="font-weight-bold bg-primary text-white">
+                        <td colspan="3">جمع کل همه سفارشات</td>
                         <td>{{ $summary['total_weight'] }}</td>
                         <td>{{ $summary['total_amount'] }}</td>
                         <td>{{ $summary['total_amount'] }}</td>
@@ -116,8 +124,20 @@
         </div>
 
         @if(method_exists($orders, 'links'))
-            <div class="d-flex justify-content-center mt-3">
-                {{ $orders->links() }}
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted">
+                            نمایش {{ $orders->firstItem() ?? 0 }} تا {{ $orders->lastItem() ?? 0 }} 
+                            از {{ $orders->total() }} سفارش
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-end">
+                        {{ $orders->appends(request()->query())->links() }}
+                    </div>
+                </div>
             </div>
         @endif
     </x-page>

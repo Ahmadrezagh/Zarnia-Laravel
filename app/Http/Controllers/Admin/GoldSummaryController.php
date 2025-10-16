@@ -15,24 +15,20 @@ class GoldSummaryController extends Controller
      */
     public function index(Request $request)
     {
-        // Get successful orders with their items
+        // Get paginated orders with their items
         $orders = Order::with(['orderItems.product'])
             ->whereIn('status', ['paid', 'boxing', 'sent', 'post', 'completed'])
             ->orderBy('created_at', 'asc')
             ->paginate(25);
 
-        // Calculate summary data
-        $allOrders = Order::with(['orderItems.product'])
-            ->whereIn('status', ['paid', 'boxing', 'sent', 'post', 'completed'])
-            ->get();
+        // Calculate summary data for current page only
+        $pageWeight = 0;
+        $pageAmount = 0;
+        $pagePurchasePercentageWeight = 0;
+        $pageSalePercentageWeight = 0;
 
-        $totalWeight = 0;
-        $totalAmount = 0;
-        $totalPurchasePercentageWeight = 0;
-        $totalSalePercentageWeight = 0;
-
-        // Calculate totals from ALL orders
-        foreach ($allOrders as $order) {
+        // Calculate totals from current page orders
+        foreach ($orders as $order) {
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
                     $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
@@ -43,13 +39,31 @@ class GoldSummaryController extends Controller
                     
                     $ojrat = floatval($item->product->ojrat ?? 0);
                     
-                    $totalWeight += $itemWeight;
-                    $totalAmount += $itemAmount;
-                    $totalPurchasePercentageWeight += $purchaseCommissionGrams;
-                    $totalSalePercentageWeight += ($itemWeight * $ojrat) / 100;
+                    $pageWeight += $itemWeight;
+                    $pageAmount += $itemAmount;
+                    $pagePurchasePercentageWeight += $purchaseCommissionGrams;
+                    $pageSalePercentageWeight += ($itemWeight * $ojrat) / 100;
                 }
             }
         }
+
+        // Calculate overall summary using database aggregation for efficiency
+        $overallStats = DB::table('orders')
+            ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->whereIn('orders.status', ['paid', 'boxing', 'sent', 'post', 'completed'])
+            ->selectRaw('
+                SUM(products.weight * order_items.count) as total_weight,
+                SUM(order_items.price * order_items.count) as total_amount,
+                SUM((products.weight * order_items.count * products.darsad_kharid) / 100) as total_purchase_commission,
+                SUM((products.weight * order_items.count * products.ojrat) / 100) as total_sale_commission
+            ')
+            ->first();
+
+        $totalWeight = floatval($overallStats->total_weight ?? 0);
+        $totalAmount = floatval($overallStats->total_amount ?? 0);
+        $totalPurchasePercentageWeight = floatval($overallStats->total_purchase_commission ?? 0);
+        $totalSalePercentageWeight = floatval($overallStats->total_sale_commission ?? 0);
 
         // Calculate overall averages
         $avgPurchasePercentage = $totalWeight > 0 ? ($totalPurchasePercentageWeight / $totalWeight) * 100 : 0;
@@ -64,6 +78,11 @@ class GoldSummaryController extends Controller
             'percentage_difference' => number_format($percentageDifference, 2),
             'total_purchase_commission' => number_format($totalPurchasePercentageWeight, 3),
             'total_sale_commission' => number_format($totalSalePercentageWeight, 3),
+            // Page-specific data
+            'page_weight' => number_format($pageWeight, 3),
+            'page_amount' => number_format($pageAmount),
+            'page_purchase_commission' => number_format($pagePurchasePercentageWeight, 3),
+            'page_sale_commission' => number_format($pageSalePercentageWeight, 3),
         ];
 
         return view('admin.gold_summary.index', compact('orders', 'summary'));
