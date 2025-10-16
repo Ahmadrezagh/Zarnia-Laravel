@@ -83,6 +83,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::post('update_order_status', [OrderController::class,'updateOrderStatus'] )->name('update_order_status');
     Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
     Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
+    Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');
     Route::get('products_not_available', [ProductController::class,'notAvailable' ])->name('products.products_not_available');
     Route::get('products_without_category', [ProductController::class,'withoutCategory' ])->name('products.product_without_category');
     Route::get('products_comprehensive', [ProductController::class,'productsComprehensive' ])->name('products.products_comprehensive');

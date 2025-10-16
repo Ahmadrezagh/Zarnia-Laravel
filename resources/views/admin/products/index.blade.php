@@ -172,8 +172,13 @@
                     <div class="custom-file mt-5 mb-5">
                         <label for="product-cover-image" class="custom-file-label">تصویر کاور</label>
                         <input type="file" class="custom-file-input" id="product-cover-image" name="cover_image" accept="image/*" onchange="showImagePreview('product-cover-image', 'image-preview', '${product.image || ''}')">
-                        <div id="image-preview" class="d-flex justify-content-center mt-2">
-                            ${product.image ? `<img src="${product.image}" alt="Current Cover Image" class="img-thumbnail" style="max-width: 150px;" onclick="changeSize(this)">` : ''}
+                        <div id="image-preview" class="d-flex justify-content-center align-items-center flex-column mt-2">
+                            ${product.image && !product.image.includes('no_image.jpg') ? `
+                                <img src="${product.image}" alt="Current Cover Image" class="img-thumbnail" style="max-width: 150px;" onclick="changeSize(this)">
+                                <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removeCoverImage(${product.id})">
+                                    <i class="fas fa-trash"></i> حذف تصویر کاور
+                                </button>
+                            ` : '<p class="text-muted">تصویری وجود ندارد</p>'}
                         </div>
                     </div>
                     <div class="form-group mt-5">
@@ -748,7 +753,42 @@
                 }
             });
         });
-
+        
+        /**
+         * Remove cover image from product
+         */
+        function removeCoverImage(productId) {
+            if (!confirm('آیا از حذف تصویر کاور مطمئن هستید؟')) {
+                return;
+            }
+            
+            $.ajax({
+                url: `/admin/products/remove-cover/${productId}`,
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        
+                        // Update the image preview to show "no image" state
+                        $('#image-preview').html('<p class="text-muted">تصویری وجود ندارد</p>');
+                        
+                        // Refresh the table
+                        if (typeof window.refreshTable === 'function') {
+                            window.refreshTable();
+                        }
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error removing cover image:', xhr);
+                    toastr.error('خطا در حذف تصویر کاور');
+                }
+            });
+        }
 
     </script>
 @endsection

@@ -798,4 +798,26 @@ class ProductController extends Controller
             'pagination' => ['more' => false]
         ]);
     }
+
+    /**
+     * Remove cover image from product
+     */
+    public function removeCoverImage($product_id)
+    {
+        try {
+            $product = Product::find($product_id);
+            // Clear all media in 'cover_image' collection
+            $product->clearMediaCollection('cover_image');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'تصویر کاور با موفقیت حذف شد'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در حذف تصویر کاور'
+            ], 500);
+        }
+    }
 }
