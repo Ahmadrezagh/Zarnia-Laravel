@@ -23,11 +23,19 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
+        // Get status counts for all statuses
+        $statusCounts = [];
+        foreach (Order::$STATUSES as $status) {
+            $statusCounts[$status] = Order::where('status', $status)->count();
+        }
+        
         $orders = Order::query()
             ->filterByTransactionId($request->transaction_id)
-            ->latest()
+            ->filterByStatus($request->status)
+            ->search($request->search)
+            ->orderByStatusPriority()
             ->paginate();
-        return view('admin.orders.index', compact('orders'));
+        return view('admin.orders.index', compact('orders', 'statusCounts'));
     }
 
     /**

@@ -42,6 +42,44 @@ class Order extends Model
         }
         return $query;
     }
+
+    public function scopeSearch(Builder $query, string $search = null)
+    {
+        if($search){
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'LIKE', "%{$search}%")
+                    ->orWhereHas('user', function ($q) use ($search) {
+                        $q->where('name', 'LIKE', "%{$search}%");
+                    })
+                    ->orWhereHas('address', function ($q) use ($search) {
+                        $q->where('receiver_name', 'LIKE', "%{$search}%");
+                    })
+                    ->orWhereHas('orderItems', function ($q) use ($search) {
+                        $q->where('name', 'LIKE', "%{$search}%");
+                    });
+            });
+        }
+        return $query;
+    }
+
+    public function scopeFilterByStatus(Builder $query, string $status = null)
+    {
+        if($status){
+            $query->where('status', $status);
+        }
+        return $query;
+    }
+
+    public function scopeOrderByStatusPriority(Builder $query)
+    {
+        return $query->orderByRaw("
+            CASE 
+                WHEN status = 'paid' THEN 1
+                WHEN status = 'boxing' THEN 2
+                ELSE 3
+            END
+        ")->latest();
+    }
     public function user(){
         return $this->belongsTo(User::class);
     }

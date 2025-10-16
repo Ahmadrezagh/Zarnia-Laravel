@@ -10,9 +10,40 @@
             <h5>سفارشات</h5>
             <hr>
             <form  method="GET">
-                <x-form.input title="کد پیگیری" name="transaction_id" id="transaction_id" />
-                <button class="btn btn-success" type="button" onclick="filterTransaction()" >فیلتر</button>
+                <div class="row">
+                    <div class="col-md-6">
+                        <x-form.input title="کد پیگیری" name="transaction_id" id="transaction_id" :value="request('transaction_id')" />
+                    </div>
+                    <div class="col-md-6">
+                        <x-form.input title="جستجو (شناسه / نام محصول / نام کاربر)" name="search" id="search_input" :value="request('search')" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <button class="btn btn-success" type="button" onclick="applyFilters()" >اعمال فیلتر</button>
+                        <button class="btn btn-secondary" type="button" onclick="clearFilters()" >پاک کردن فیلتر</button>
+                    </div>
+                </div>
             </form>
+            <hr>
+            <!-- Status Filter Buttons -->
+            <div class="mb-3">
+                <h6>فیلتر بر اساس وضعیت:</h6>
+                <div class="btn-group flex-wrap" role="group">
+                    <button type="button" class="btn btn-outline-primary {{ !request('status') ? 'active' : '' }}" onclick="filterByStatus('')">
+                        همه ({{ array_sum($statusCounts) }})
+                    </button>
+                    @foreach(\App\Models\Order::$STATUSES as $status)
+                        <button type="button" 
+                                class="btn btn-outline-primary {{ request('status') == $status ? 'active' : '' }} " 
+                                onclick="filterByStatus('{{ $status }}')"
+                                
+                                >
+                            {{ \App\Models\Order::$PERSIAN_STATUSES[$status] ?? $status }} ({{ $statusCounts[$status] ?? 0 }})
+                        </button>
+                    @endforeach
+                </div>
+            </div>
 {{--            <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن سفارش</button>--}}
 {{--            <x-modal.create id="modal-create" title="ساخت سفارش" action="{{route('admin_orders.store')}}" >--}}
 {{--                <x-form.input title="نام"  name="name" />--}}
@@ -188,6 +219,44 @@
         function filterTransaction(){
             let transaction_id = $("#transaction_id").val()
             window.loadDataWithNewUrl("{{route('table.orders')}}?transaction_id="+transaction_id);
+        }
+        
+        function applyFilters(){
+            let transaction_id = $("#transaction_id").val();
+            let search = $("#search_input").val();
+            let status = new URLSearchParams(window.location.search).get('status') || '';
+            
+            let params = [];
+            if(transaction_id) params.push("transaction_id=" + encodeURIComponent(transaction_id));
+            if(search) params.push("search=" + encodeURIComponent(search));
+            if(status) params.push("status=" + encodeURIComponent(status));
+            
+            let url = "{{route('table.orders')}}" + (params.length ? "?" + params.join("&") : "");
+            window.loadDataWithNewUrl(url);
+        }
+        
+        function filterByStatus(status){
+            let transaction_id = $("#transaction_id").val();
+            let search = $("#search_input").val();
+            
+            let params = [];
+            if(transaction_id) params.push("transaction_id=" + encodeURIComponent(transaction_id));
+            if(search) params.push("search=" + encodeURIComponent(search));
+            if(status) params.push("status=" + encodeURIComponent(status));
+            
+            // Update URL to preserve filters on page reload
+            let newUrl = window.location.pathname + (params.length ? "?" + params.join("&") : "");
+            window.history.pushState({}, '', newUrl);
+            
+            let tableUrl = "{{route('table.orders')}}" + (params.length ? "?" + params.join("&") : "");
+            window.loadDataWithNewUrl(tableUrl);
+        }
+        
+        function clearFilters(){
+            $("#transaction_id").val('');
+            $("#search_input").val('');
+            window.history.pushState({}, '', window.location.pathname);
+            window.loadDataWithNewUrl("{{route('table.orders')}}");
         }
     </script>
 
