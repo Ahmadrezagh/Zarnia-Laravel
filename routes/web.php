@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\EtiketController;
 use App\Http\Controllers\Admin\FooterTitleController;
 use App\Http\Controllers\Admin\FooterTitleLinkController;
+use App\Http\Controllers\Admin\GoldSummaryController;
 use App\Http\Controllers\Admin\HeaderLinkController;
 use App\Http\Controllers\Admin\IndexBannerController;
 use App\Http\Controllers\Admin\InvoiceTemplateController;
@@ -64,6 +65,7 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::any('attribute_groups', [AttributeController::class, 'table'])->name('attribute_groups');
     Route::any('templates', [InvoiceTemplateController::class, 'table'])->name('templates');
     Route::any('discounts', [DiscountController::class, 'table'])->name('discounts');
+    Route::any('gold_summary', [GoldSummaryController::class, 'table'])->name('gold_summary');
 });
 Route::middleware(['auth'])->prefix('product')->name('product.')->group(function () {
     Route::get('etikets/{product}', [EtiketController::class, 'getEtiketsOfProduct'])->name('etikets');
@@ -110,6 +112,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
 
     Route::get('visit',[VisitController::class,'index'])->name('visit.index');
+    Route::get('gold_summary',[GoldSummaryController::class,'index'])->name('gold_summary.index');
 
 });
 

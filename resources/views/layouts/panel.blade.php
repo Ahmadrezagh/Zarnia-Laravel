@@ -239,6 +239,11 @@
                             <li class="nav-sub-item">
                                 <a class="nav-sub-link" href="{{route('admin_orders.index')}}">سفارشات</a>
                             </li>
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('gold_summary.index')}}">
+                                    <i class="fas fa-coins"></i> خلاصه گردش طلا
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 @endif
