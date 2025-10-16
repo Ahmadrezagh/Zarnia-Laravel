@@ -384,16 +384,47 @@ class Order extends Model
     {
         $accounting_app = new Tahesab();
         $final_amount = $this->final_amount;
+        $allSuccessful = true;
+        
+        // Collect responses from each order item
         foreach ($this->orderItems as $orderItem) {
-            $accounting_app->DoNewSanadBuySaleEtiket($this->transaction_id,$orderItem->etiket,$orderItem->product->mazaneh,$orderItem->price,$this->address->receiver_name);
+            $response = $accounting_app->DoNewSanadBuySaleEtiket(
+                $this->transaction_id,
+                $orderItem->etiket,
+                $orderItem->product->mazaneh,
+                $orderItem->price,
+                $this->address->receiver_name
+            );
+            
+            // Check if response has error
+            // API returns ['error' => true, 'status' => ..., 'message' => ...] on failure
+            if (isset($response['error']) && $response['error'] === true) {
+                $allSuccessful = false;
+                \Log::warning('Accounting API call failed for order item', [
+                    'order_id' => $this->id,
+                    'order_item_id' => $orderItem->id,
+                    'etiket' => $orderItem->etiket,
+                    'response' => $response
+                ]);
+            }
         }
-        if($this->shipping->key == 'post'){
-            $final_amount = $final_amount + 150000;
-            $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,0,150000,0,1);
+        
+        // Only proceed with shipping and gateway if all order items were successful
+        if ($allSuccessful) {
+            if($this->shipping->key == 'post'){
+                $final_amount = $final_amount + 150000;
+                $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,0,150000,0,1);
+            }
+            if($this->gateway->key == 'snapp'){
+                 $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$final_amount,210,1);
+            }
+        } else {
+            \Log::error('Skipping shipping and gateway accounting entries due to failed order item entries', [
+                'order_id' => $this->id
+            ]);
         }
-        if($this->gateway->key == 'snapp'){
-             $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$final_amount,210,1);
-        }
+        
+        return $allSuccessful;
     }
 
     public function cancelOrder()
