@@ -67,7 +67,7 @@
                             ['label' => 'کد اتیکت', 'key' => 'etiketsCodeAsArray', 'type' => 'ajax','route' =>'product.etikets','ajax_key' => 'slug'],
                             ['label' => 'تصویر محصول', 'key' => 'image', 'type' => 'image'],
                             ['label' => 'نام محصول', 'key' => 'nameUrl', 'type' => 'text'],
-                            ['label' => 'وزن', 'key' => 'weight', 'type' => 'text'],
+                            ['label' => 'وزن', 'key' => 'weight', 'type' => 'text', 'url' => '{frontend_url}'],
                             ['label' => 'قیمت', 'key' => 'price', 'type' => 'text'],
                             ['label' => 'درصد خرید', 'key' => 'darsad_kharid', 'type' => 'text'],
                             ['label' => 'درصد اجرت', 'key' => 'ojrat', 'type' => 'text'],
