@@ -79,6 +79,7 @@
             :items="$products"
             :actions="[
                             ['label' => 'ویرایش', 'type' => 'modalEdit'],
+                            ['label' => 'مشاهده در سایت', 'url' => '{frontend_url}'],
                         ]"
         >
         </x-dataTable>

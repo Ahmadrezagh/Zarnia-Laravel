@@ -97,6 +97,13 @@ class Product extends Model implements HasMedia
         $image = $this->getFirstMediaUrl('cover_image');
         return $image != "" ? $image : asset('img/no_image.jpg');
     }
+    
+    public function getFrontendUrlAttribute()
+    {
+        $frontendUrl = setting('url');
+        return $frontendUrl . '/products/' . $this->slug;
+    }
+    
     public function getGalleryAttribute()
     {
         return [
