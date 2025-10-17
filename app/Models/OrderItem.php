@@ -32,6 +32,11 @@ class OrderItem extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    } 
+
     private static function generateUniqueNumber()
     {
         do {
