@@ -55,6 +55,20 @@ class UserController extends Controller
         }
         $user = User::create($validated);
         $user ->update(['type' => User::$TYPES[2]]);
+        
+        // Return user object for AJAX requests (e.g., from order creation modal)
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'message' => 'با موفقیت انجام شد',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'email' => $user->email,
+                ]
+            ]);
+        }
+        
         return response()->json(['message' => 'با موفقیت انجام شد']);
     }
 

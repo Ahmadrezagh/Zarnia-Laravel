@@ -148,7 +148,83 @@
                         <!-- User Selection -->
                         <div class="form-group">
                             <label for="order-user">کاربر <span class="text-danger">*</span></label>
-                            <select id="order-user" name="user_id" class="form-control" style="width: 100%"></select>
+                            <div class="d-flex">
+                                <select id="order-user" name="user_id" class="form-control" style="width: 100%"></select>
+                                <button type="button" class="btn btn-info mr-2" onclick="toggleCreateUserForm()" title="ایجاد کاربر جدید">
+                                    <i class="fas fa-user-plus"></i> کاربر جدید
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Inline Create User Form (Hidden by default) -->
+                        <div id="inline-create-user-form" class="card border-info mb-3" style="display: none; position: relative; z-index: 1;">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-user-plus"></i> ایجاد کاربر جدید
+                                    <button type="button" class="close text-white" onclick="toggleCreateUserForm()" style="position: relative; z-index: 2;">
+                                        <span>&times;</span>
+                                    </button>
+                                </h6>
+                            </div>
+                            <div class="card-body" style="position: relative; z-index: 1;">
+                                <form id="create-user-inline-form">
+                                    @csrf
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="new-user-name" style="pointer-events: auto;">نام <span class="text-danger">*</span></label>
+                                                <input type="text" id="new-user-name" name="name" class="form-control" required 
+                                                       style="pointer-events: auto; position: relative; z-index: 10;">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="new-user-phone" style="pointer-events: auto;">شماره تلفن <span class="text-danger">*</span></label>
+                                                <input type="text" id="new-user-phone" name="phone" class="form-control" required 
+                                                       placeholder="09xxxxxxxxx" pattern="09[0-9]{9}"
+                                                       style="pointer-events: auto; position: relative; z-index: 10;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="new-user-email" style="pointer-events: auto;">ایمیل</label>
+                                                <input type="email" id="new-user-email" name="email" class="form-control"
+                                                       style="pointer-events: auto; position: relative; z-index: 10;">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="new-user-password" style="pointer-events: auto;">رمز عبور <span class="text-danger">*</span></label>
+                                                <input type="password" id="new-user-password" name="password" class="form-control" required minlength="6"
+                                                       style="pointer-events: auto; position: relative; z-index: 10;">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="new-user-password-confirmation" style="pointer-events: auto;">تکرار رمز <span class="text-danger">*</span></label>
+                                                <input type="password" id="new-user-password-confirmation" name="password_confirmation" class="form-control" required minlength="6"
+                                                       style="pointer-events: auto; position: relative; z-index: 10;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-right">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleCreateUserForm()">
+                                            <i class="fas fa-times"></i> انصراف
+                                        </button>
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="fas fa-save"></i> ذخیره کاربر
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
 
                         <!-- Address Selection (loaded based on user) -->
@@ -251,6 +327,24 @@
             </div>
         </div>
     </div>
+
+    <style>
+        /* Ensure inline create user form is always interactive */
+        #inline-create-user-form {
+            position: relative !important;
+            z-index: 1050 !important;
+        }
+        #inline-create-user-form input,
+        #inline-create-user-form label,
+        #inline-create-user-form button {
+            pointer-events: auto !important;
+            position: relative !important;
+            z-index: 1051 !important;
+        }
+        #inline-create-user-form .card-body {
+            background: white;
+        }
+    </style>
 
     <script>
         function changeStatus(element) {
@@ -801,6 +895,98 @@
                 }
             });
         }
+        
+        /**
+         * Toggle inline create user form
+         */
+        function toggleCreateUserForm() {
+            const formContainer = $('#inline-create-user-form');
+            
+            if (formContainer.is(':visible')) {
+                formContainer.slideUp();
+                // Reset form when hiding
+                $('#create-user-inline-form')[0].reset();
+            } else {
+                formContainer.slideDown();
+                
+                // Explicitly enable all input fields
+                $('#inline-create-user-form input').each(function() {
+                    $(this).prop('disabled', false);
+                    $(this).prop('readonly', false);
+                });
+                
+                // Focus on first input
+                setTimeout(() => {
+                    $('#new-user-name').focus();
+                    console.log('Form opened, focus set to name field');
+                    console.log('Name field disabled:', $('#new-user-name').prop('disabled'));
+                    console.log('Name field readonly:', $('#new-user-name').prop('readonly'));
+                }, 300);
+            }
+        }
+        
+        /**
+         * Handle create user form submission
+         */
+        $(document).ready(function() {
+            $('#create-user-inline-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    _token: '{{ csrf_token() }}',
+                    name: $('#new-user-name').val(),
+                    phone: $('#new-user-phone').val(),
+                    email: $('#new-user-email').val(),
+                    password: $('#new-user-password').val(),
+                    password_confirmation: $('#new-user-password-confirmation').val()
+                };
+                
+                console.log('Creating new user:', formData);
+                
+                $.ajax({
+                    url: '{{ route("users.store") }}',
+                    method: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        console.log('User created:', response);
+                        toastr.success('کاربر با موفقیت ایجاد شد');
+                        
+                        // Hide the inline form
+                        $('#inline-create-user-form').slideUp();
+                        
+                        // Add new user to Select2 and select it
+                        if (response.user) {
+                            const newOption = new Option(
+                                response.user.name + ' - ' + response.user.phone, 
+                                response.user.id, 
+                                true, 
+                                true
+                            );
+                            $('#order-user').append(newOption).trigger('change');
+                            
+                            // Show info about adding address
+                            toastr.info('اکنون می‌توانید آدرس برای این کاربر اضافه کنید', '', {timeOut: 5000});
+                        }
+                        
+                        // Reset form
+                        $('#create-user-inline-form')[0].reset();
+                    },
+                    error: function(xhr) {
+                        console.error('Error creating user:', xhr);
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            let errors = xhr.responseJSON.errors;
+                            let errorMessage = Object.values(errors).flat().join('<br>');
+                            toastr.error(errorMessage);
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            toastr.error(xhr.responseJSON.message);
+                        } else {
+                            toastr.error('خطا در ایجاد کاربر');
+                        }
+                    }
+                });
+            });
+        });
     </script>
 
 @endsection
