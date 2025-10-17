@@ -412,7 +412,7 @@ class Order extends Model
         $accounting_app = new Tahesab();
         $final_amount = $this->final_amount;
         $allSuccessful = true;
-        $transaction_id = "Order-0000000000".$this->transaction_id;
+        $transaction_id = "0000000000".$this->transaction_id;
 
         // Get receiver name (use user's name if address is null for in-store orders)
         $receiverName = $this->address ? $this->address->receiver_name : $this->user->name;
@@ -470,7 +470,7 @@ class Order extends Model
     public function cancelOrder()
     {
         $accounting_app = new Tahesab();
-        $transaction_id = "Order-0000000000".$this->transaction_id;
+        $transaction_id = "0000000000".$this->transaction_id;
         return $accounting_app->DoDeleteSanad(transaction_id);
     }
 }
