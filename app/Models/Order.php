@@ -471,6 +471,6 @@ class Order extends Model
     {
         $accounting_app = new Tahesab();
         $transaction_id = "0000000000".$this->transaction_id;
-        return $accounting_app->DoDeleteSanad(transaction_id);
+        return $accounting_app->DoDeleteSanad($transaction_id);
     }
 }
