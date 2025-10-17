@@ -769,16 +769,22 @@ class ProductController extends Controller
 
         $query = $request->input('q');
 
-        // Search products
+        // Search products - only show products with count >= 1
         $products = Product::where('name', 'LIKE', "%{$query}%")
-            ->select('id', 'name as text')
+            ->select('id', 'name', 'price')
             ->get()
+            ->filter(function ($product) {
+                // Filter products that have count >= 1
+                return $product->count >= 1;
+            })
             ->map(function ($product) {
                 return [
                     'id' => "Product:{$product->id}",
-                    'text' => $product->text
+                    'text' => $product->name . ' (موجودی: ' . $product->count . ')',
+                    'price' => $product->price,
+                    'available_count' => $product->count
                 ];
-            });
+            })->values();
 
         // Search categories
         $categories = Category::where('title', 'LIKE', "%{$query}%")

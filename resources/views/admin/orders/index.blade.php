@@ -706,6 +706,7 @@
                         <div class="col-md-3">
                             <label>تعداد</label>
                             <input type="number" class="form-control product-quantity" min="1" value="1" data-row="${productRowCounter}">
+                            <small class="form-text text-muted product-stock-info" data-row="${productRowCounter}">موجودی محصول نمایش داده می‌شود</small>
                         </div>
                         <div class="col-md-2">
                             <label>قیمت</label>
@@ -743,7 +744,9 @@
                                 let id = item.id.replace('Product:', '');
                                 return {
                                     id: id,
-                                    text: item.text
+                                    text: item.text,
+                                    price: item.price,
+                                    available_count: item.available_count
                                 };
                             }).filter(item => item.id.match(/^\d+$/)) // Only numeric IDs
                         };
@@ -751,13 +754,49 @@
                 }
             });
             
-            // Update price when product is selected
+            // Update price and available count when product is selected
             $(`.product-select[data-row="${productRowCounter}"]`).on('change', function() {
-                loadProductPrice($(this).val(), productRowCounter);
+                const selectedData = $(this).select2('data')[0];
+                const rowId = $(this).data('row');
+                
+                if (selectedData) {
+                    // Set price
+                    const price = selectedData.price || 0;
+                    $(`.product-price[data-row="${rowId}"]`).val(number_format(price) + ' تومان');
+                    $(`.product-price[data-row="${rowId}"]`).data('price', price);
+                    
+                    // Set available count as max for quantity input
+                    const availableCount = selectedData.available_count || 999;
+                    $(`.product-quantity[data-row="${rowId}"]`).attr('max', availableCount);
+                    $(`.product-quantity[data-row="${rowId}"]`).data('available-count', availableCount);
+                    
+                    // Update stock info text
+                    $(`.product-stock-info[data-row="${rowId}"]`).text('موجودی: ' + availableCount + ' عدد');
+                    
+                    // Reset quantity to 1
+                    $(`.product-quantity[data-row="${rowId}"]`).val(1);
+                    
+                    updateOrderSummary();
+                }
             });
             
-            // Update total when quantity changes
-            $(`.product-quantity[data-row="${productRowCounter}"]`).on('input', updateOrderSummary);
+            // Validate quantity when it changes
+            $(`.product-quantity[data-row="${productRowCounter}"]`).on('input', function() {
+                const rowId = $(this).data('row');
+                const availableCount = parseInt($(this).data('available-count')) || 999;
+                const enteredQty = parseInt($(this).val()) || 0;
+                
+                if (enteredQty > availableCount) {
+                    toastr.error('تعداد درخواستی بیشتر از موجودی است! موجودی: ' + availableCount);
+                    $(this).val(availableCount);
+                }
+                
+                if (enteredQty < 1) {
+                    $(this).val(1);
+                }
+                
+                updateOrderSummary();
+            });
             
             // Update shipping cost when shipping method changes
             $('#order-shipping').on('change', updateOrderSummary);
