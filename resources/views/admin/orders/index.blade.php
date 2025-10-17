@@ -352,6 +352,24 @@
         #modal-create-order .select2-container {
             display: block !important;
         }
+        
+        /* Ensure all Select2 elements in modal are interactive */
+        #modal-create-order .product-select,
+        #modal-create-order .select2-selection,
+        #modal-create-order .select2-selection__rendered,
+        #modal-create-order .select2-selection__arrow {
+            pointer-events: auto !important;
+        }
+        
+        /* Product Select2 specific rules */
+        .product-select {
+            pointer-events: auto !important;
+        }
+        
+        #modal-create-order .product-select + .select2-container {
+            z-index: 99999 !important;
+            pointer-events: auto !important;
+        }
     </style>
 
     <script>
@@ -701,7 +719,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <label>محصول</label>
-                            <select class="form-control product-select" data-row="${productRowCounter}" style="width: 100%"></select>
+                            <select class="form-control product-select" data-row="${productRowCounter}" style="width: 100%; pointer-events: auto;"></select>
                         </div>
                         <div class="col-md-3">
                             <label>تعداد</label>
@@ -724,20 +742,29 @@
             
             $('#products-container').append(rowHtml);
             
+            console.log('Product row added:', productRowCounter);
+            
             // Initialize Select2 for the new product select
-            $(`.product-select[data-row="${productRowCounter}"]`).select2({
+            const $productSelect = $(`.product-select[data-row="${productRowCounter}"]`);
+            console.log('Initializing product Select2 for row:', productRowCounter);
+            
+            $productSelect.select2({
                 placeholder: 'جستجوی محصول...',
                 allowClear: true,
+                dropdownParent: $('#modal-create-order'),
+                width: '100%',
+                minimumInputLength: 0,
                 ajax: {
                     url: '{{ route("products.ajax.search") }}',
                     dataType: 'json',
                     delay: 250,
                     data: function (params) {
                         return {
-                            q: params.term
+                            q: params.term || ''
                         };
                     },
                     processResults: function (data) {
+                        console.log('Product search results:', data);
                         return {
                             results: data.results.map(item => {
                                 // Extract product ID from "Product:123" format
@@ -750,12 +777,25 @@
                                 };
                             }).filter(item => item.id.match(/^\d+$/)) // Only numeric IDs
                         };
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Product search error:', error);
                     }
                 }
             });
             
+            console.log('Product Select2 initialized for row:', productRowCounter);
+            
+            // Focus search field when dropdown opens
+            $productSelect.on('select2:open', function() {
+                console.log('Product dropdown opened for row:', productRowCounter);
+                setTimeout(function() {
+                    $('.select2-search__field').focus();
+                }, 100);
+            });
+            
             // Update price and available count when product is selected
-            $(`.product-select[data-row="${productRowCounter}"]`).on('change', function() {
+            $productSelect.on('change', function() {
                 const selectedData = $(this).select2('data')[0];
                 const rowId = $(this).data('row');
                 
