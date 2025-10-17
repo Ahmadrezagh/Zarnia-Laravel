@@ -769,14 +769,14 @@ class ProductController extends Controller
 
         $query = $request->input('q');
 
-        // Search products - only show products with count >= 1
+        // Search products - only show products with count >= 1 (optimized with database query)
         $products = Product::where('name', 'LIKE', "%{$query}%")
-            ->select('id', 'name', 'price')
-            ->get()
-            ->filter(function ($product) {
-                // Filter products that have count >= 1
-                return $product->count >= 1;
+            ->whereHas('etikets', function($q) {
+                $q->where('is_mojood', 1); // Only products with available etikets
             })
+            ->select('id', 'name', 'price')
+            ->limit(50) // Limit results for performance
+            ->get()
             ->map(function ($product) {
                 return [
                     'id' => "Product:{$product->id}",
@@ -784,7 +784,7 @@ class ProductController extends Controller
                     'price' => $product->price,
                     'available_count' => $product->count
                 ];
-            })->values();
+            });
 
         // Search categories
         $categories = Category::where('title', 'LIKE', "%{$query}%")
