@@ -7,6 +7,7 @@ use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Morilog\Jalali\Jalalian;
 
@@ -417,6 +418,7 @@ class Order extends Model
         
         // Collect responses from each order item
         foreach ($this->orderItems as $orderItem) {
+            Log::info('transaction id : '.$orderItem->order->transaction_id);
             $response = $accounting_app->DoNewSanadBuySaleEtiket(
                 $orderItem->order->transaction_id,
                 $orderItem->etiket,
