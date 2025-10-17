@@ -418,7 +418,7 @@ class Order extends Model
         // Collect responses from each order item
         foreach ($this->orderItems as $orderItem) {
             $response = $accounting_app->DoNewSanadBuySaleEtiket(
-                $this->transaction_id,
+                $orderItem->order->transaction_id,
                 $orderItem->etiket,
                 $orderItem->product->mazaneh,
                 $orderItem->price,
@@ -443,12 +443,12 @@ class Order extends Model
             // Check shipping if exists (null for in-store orders)
             if($this->shipping && $this->shipping->key == 'post'){
                 $final_amount = $final_amount + 150000;
-                $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,0,150000,0,1);
+                $accounting_app->DoNewSanadTalabBedehi($orderItem->order->transaction_id,0,150000,0,1);
             }
             
             // Check gateway if exists (null for in-store orders)
             if($this->gateway && $this->gateway->key == 'snapp'){
-                 $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$final_amount,210,1);
+                 $accounting_app->DoNewSanadTalabBedehi($orderItem->order->transaction_id,1,$final_amount,210,1);
             }
         } else {
             \Log::error('Skipping shipping and gateway accounting entries due to failed order item entries', [
