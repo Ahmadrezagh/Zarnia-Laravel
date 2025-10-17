@@ -141,7 +141,7 @@ class Order extends Model
 
     public function getUserNameAttribute()
     {
-        return $this->address ? $this->address->receiver_name : $th0s->user->name;
+        return $this->address ? $this->address->receiver_name : $this->user->name;
     }
     public function getShippingNameAttribute()
     {
