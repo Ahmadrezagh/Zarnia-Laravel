@@ -58,7 +58,7 @@
                             ['label' => 'تصویر اولین محصول', 'key' => 'firstImageOfOrderItem', 'type' => 'image'],
                             ['label' => 'اسم محصول', 'key' => 'productNameCol', 'type' => 'text'],
                             ['label' => 'وزن و درصد', 'key' => 'WeightCol', 'type' => 'text'],
-                            ['label' => 'آدرس و درگاه', 'key' => 'AddressCol', 'type' => 'text'],
+                            ['label' => 'آدرس و درگاه', 'key' => 'AddressCol', 'type' => 'text', 'style' => 'max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'],
                             ['label' => 'تعداد و مقدار سفارش قبلی', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
                             ['label' => 'تخفیف', 'key' => 'discountCol', 'type' => 'text'],
                             ['label' => 'فاکتور', 'key' => 'factorCol', 'type' => 'text'],
@@ -297,6 +297,14 @@
     </div>
 
     <style>
+        /* Limit address column width in orders table */
+        #orders-table td:nth-child(7) {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
         /* Ensure inline create user form is always interactive */
         #inline-create-user-form {
             position: relative !important;
