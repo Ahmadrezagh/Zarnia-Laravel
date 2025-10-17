@@ -162,6 +162,14 @@ class OrderController extends Controller
                 ]);
             }
 
+            // Submit to accounting app
+            $accountingResult = $order->submitInAccountingApp();
+            
+            \Log::info('Order created and submitted to accounting app', [
+                'order_id' => $order->id,
+                'accounting_result' => $accountingResult
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'سفارش با موفقیت ایجاد شد',
