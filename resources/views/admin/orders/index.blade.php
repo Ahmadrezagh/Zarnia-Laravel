@@ -149,7 +149,7 @@
                         <div class="form-group">
                             <label for="order-user">کاربر <span class="text-danger">*</span></label>
                             <div class="d-flex">
-                                <select id="order-user" name="user_id" class="form-control" style="width: 100%"></select>
+                                <select id="order-user" name="user_id" class="form-control" style="width: 100%;"></select>
                                 <button type="button" class="btn btn-info mr-2" onclick="toggleCreateUserForm()" title="ایجاد کاربر جدید">
                                     <i class="fas fa-user-plus"></i> کاربر جدید
                                 </button>
@@ -300,17 +300,57 @@
         /* Ensure inline create user form is always interactive */
         #inline-create-user-form {
             position: relative !important;
-            z-index: 1050 !important;
+            z-index: 1 !important;
         }
         #inline-create-user-form input,
         #inline-create-user-form label,
         #inline-create-user-form button {
             pointer-events: auto !important;
             position: relative !important;
-            z-index: 1051 !important;
+            z-index: 2 !important;
         }
         #inline-create-user-form .card-body {
             background: white;
+        }
+        
+        /* Ensure Select2 and user selection are always interactive */
+        #order-user {
+            pointer-events: auto !important;
+        }
+        
+        .select2-container,
+        .select2-container--default {
+            pointer-events: auto !important;
+            z-index: 99999 !important;
+        }
+        
+        .select2-dropdown {
+            pointer-events: auto !important;
+            z-index: 99999 !important;
+        }
+        
+        .select2-search__field {
+            pointer-events: auto !important;
+            z-index: 100000 !important;
+            position: relative !important;
+        }
+        
+        .select2-container--open {
+            z-index: 99999 !important;
+        }
+        
+        .select2-results {
+            pointer-events: auto !important;
+        }
+        
+        /* Ensure modal body allows interaction with Select2 */
+        #modal-create-order .modal-body {
+            overflow: visible !important;
+        }
+        
+        /* Make sure Select2 container within modal is clickable */
+        #modal-create-order .select2-container {
+            display: block !important;
         }
     </style>
 
@@ -540,7 +580,12 @@
             console.log('Modal opened');
             console.log('Submit button exists:', $('#submit-create-order').length > 0);
             
-            initializeUserSelect();
+            // Wait for modal to be fully shown before initializing Select2
+            $('#modal-create-order').one('shown.bs.modal', function() {
+                console.log('Modal fully shown, initializing Select2...');
+                initializeUserSelect();
+            });
+            
             addProductRow(); // Add first product row
         }
         
@@ -548,28 +593,57 @@
          * Initialize user selection with Select2
          */
         function initializeUserSelect() {
+            console.log('Initializing user select...');
+            
+            // Destroy existing Select2 if any
+            if ($('#order-user').hasClass('select2-hidden-accessible')) {
+                $('#order-user').select2('destroy');
+            }
+            
             $('#order-user').select2({
-                placeholder: 'جستجوی کاربر...',
+                placeholder: 'جستجوی کاربر یا کلیک برای مشاهده لیست...',
                 allowClear: true,
+                dropdownParent: $('#modal-create-order'),
+                width: '100%',
+                minimumInputLength: 0, // ✅ Show results even without typing
                 ajax: {
                     url: '{{ route("admin_order.users.search") }}',
                     dataType: 'json',
                     delay: 250,
                     data: function (params) {
+                        console.log('Select2 AJAX - Search term:', params.term);
                         return {
-                            search: params.term
+                            search: params.term || ''
                         };
                     },
                     processResults: function (data) {
+                        console.log('Select2 AJAX - Results:', data);
                         return {
                             results: data.results || []
                         };
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Select2 AJAX Error:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
                     }
                 }
             });
             
+            console.log('User select initialized');
+            
+            // Open dropdown and trigger search when clicked
+            $('#order-user').on('select2:open', function() {
+                console.log('Select2 opened');
+                // Focus on search field when dropdown opens
+                setTimeout(function() {
+                    $('.select2-search__field').focus();
+                }, 100);
+            });
+            
             // Load addresses when user is selected
             $('#order-user').on('change', function() {
+                console.log('User selected:', $(this).val());
                 loadUserAddresses($(this).val());
             });
         }
