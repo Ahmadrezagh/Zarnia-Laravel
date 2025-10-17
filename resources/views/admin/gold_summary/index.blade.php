@@ -8,7 +8,52 @@
     <x-page>
         <x-slot name="header">
             <h5>خلاصه گردش طلا</h5>
-            <p class="text-muted">محاسبه فروش طلا به صورت وزنی - همه سفارشات موفق</p>
+            <p class="text-muted">
+                محاسبه فروش طلا به صورت وزنی - همه سفارشات موفق
+                @if(request('from_date') || request('to_date'))
+                    <br>
+                    <span class="badge badge-info mt-2">
+                        <i class="fas fa-filter"></i> فیلتر فعال
+                        @if(request('from_date'))
+                            از: {{ \Carbon\Carbon::parse(request('from_date'))->format('Y/m/d H:i') }}
+                        @endif
+                        @if(request('to_date'))
+                            تا: {{ \Carbon\Carbon::parse(request('to_date'))->format('Y/m/d H:i') }}
+                        @endif
+                    </span>
+                @endif
+            </p>
+            <hr>
+
+            <!-- Date Filters -->
+            <form method="GET" action="{{ route('gold_summary.index') }}" class="mb-3">
+                <div class="row">
+                    <div class="col-md-4">
+                        <x-form.input 
+                            title="از تاریخ" 
+                            name="from_date" 
+                            type="datetime-local" 
+                            :value="request('from_date')" />
+                    </div>
+                    <div class="col-md-4">
+                        <x-form.input 
+                            title="تا تاریخ" 
+                            name="to_date" 
+                            type="datetime-local" 
+                            :value="request('to_date')" />
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary ml-2">
+                            <i class="fas fa-filter"></i> اعمال فیلتر
+                        </button>
+                        @if(request('from_date') || request('to_date'))
+                            <a href="{{ route('gold_summary.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> حذف فیلتر
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
             <hr>
 
             <!-- Summary Cards -->

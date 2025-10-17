@@ -15,11 +15,21 @@ class GoldSummaryController extends Controller
      */
     public function index(Request $request)
     {
-        // Get paginated orders with their items
-        $orders = Order::with(['orderItems.product'])
-            ->whereIn('status', ['paid', 'boxing', 'sent', 'post', 'completed'])
-            ->latest()
-            ->paginate();
+        // Build base query with date filters
+        $query = Order::with(['orderItems.product'])
+            ->whereIn('status', ['paid', 'boxing', 'sent', 'post', 'completed']);
+
+        // Apply date filters if provided
+        if ($request->filled('from_date')) {
+            $query->where('created_at', '>=', $request->from_date);
+        }
+        
+        if ($request->filled('to_date')) {
+            $query->where('created_at', '<=', $request->to_date);
+        }
+
+        // Get paginated orders
+        $orders = $query->latest()->paginate();
 
         // Calculate summary data for current page only
         $pageWeight = 0;
@@ -48,10 +58,21 @@ class GoldSummaryController extends Controller
         }
 
         // Calculate overall summary using database aggregation for efficiency
-        $overallStats = DB::table('orders')
+        $overallStatsQuery = DB::table('orders')
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->whereIn('orders.status', ['paid', 'boxing', 'sent', 'post', 'completed'])
+            ->whereIn('orders.status', ['paid', 'boxing', 'sent', 'post', 'completed']);
+
+        // Apply date filters to overall stats query
+        if ($request->filled('from_date')) {
+            $overallStatsQuery->where('orders.created_at', '>=', $request->from_date);
+        }
+        
+        if ($request->filled('to_date')) {
+            $overallStatsQuery->where('orders.created_at', '<=', $request->to_date);
+        }
+
+        $overallStats = $overallStatsQuery
             ->selectRaw('
                 SUM(products.weight * order_items.count) as total_weight,
                 SUM(order_items.price * order_items.count) as total_amount,
