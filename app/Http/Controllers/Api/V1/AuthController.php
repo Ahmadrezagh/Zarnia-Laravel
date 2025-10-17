@@ -56,8 +56,8 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid or expired OTP'], 400);
         }
 
-        // Generate token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Generate token with 1 year expiration
+        $token = $user->createToken('auth_token', ['*'], now()->addYear())->plainTextToken;
 
         // Clear OTP after successful verification
         $user->update([
