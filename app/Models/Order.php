@@ -104,11 +104,11 @@ class Order extends Model
         'paid',
         'failed',
         'canceled',
+        'rejected',
         'boxing',
         'sent',
         'post',
         'completed',
-        'rejected',
     ];
 
     public static $PERSIAN_STATUSES = [

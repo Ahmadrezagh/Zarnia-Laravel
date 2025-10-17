@@ -329,8 +329,8 @@ class OrderController extends Controller
         if($request->orderStatus == Order::$STATUSES[1]){
             $order->submitInAccountingApp();
         }
-        if($request->orderStatus == Order::$STATUSES[8]){
-            $order->cancelOrder();
+        if($request->orderStatus == Order::$STATUSES[3] || $request->orderStatus == Order::$STATUSES[4]){
+            return $order->cancelOrder();
         }
         return response()->json();
     }
