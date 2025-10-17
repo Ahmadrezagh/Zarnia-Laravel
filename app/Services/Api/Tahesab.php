@@ -2,6 +2,7 @@
 namespace App\Services\Api;
 use App\Models\Etiket;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Morilog\Jalali\Jalalian;
 
 class Tahesab{
@@ -233,6 +234,37 @@ class Tahesab{
         $year = Jalalian::now()->format('Y');
         $month = Jalalian::now()->format('m');
         $day = Jalalian::now()->format('d');
+        Log::info('DoNewSanadBuySaleEtiket:\n'.json_encode( [
+            1,
+            3037,
+            $order_number,
+            1,
+            intval($year),
+            intval($month),
+            intval($day),
+            0,
+            0,
+            0,
+            "",
+            1,
+            intval($mazaneh),
+            0,
+            intval($price),
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            0,
+            intval($etiket_code),
+            $full_name,
+            intval($order_number),
+            0,
+            1
+        ]));
         $params = [
             'DoNewSanadBuySaleEtiket' => [
                 1,
