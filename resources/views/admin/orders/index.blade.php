@@ -185,32 +185,9 @@
                                                 <input type="text" id="new-user-phone" name="phone" class="form-control" required 
                                                        placeholder="09xxxxxxxxx" pattern="09[0-9]{9}"
                                                        style="pointer-events: auto; position: relative; z-index: 10;">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="new-user-email" style="pointer-events: auto;">ایمیل</label>
-                                                <input type="email" id="new-user-email" name="email" class="form-control"
-                                                       style="pointer-events: auto; position: relative; z-index: 10;">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label for="new-user-password" style="pointer-events: auto;">رمز عبور <span class="text-danger">*</span></label>
-                                                <input type="password" id="new-user-password" name="password" class="form-control" required minlength="6"
-                                                       style="pointer-events: auto; position: relative; z-index: 10;">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label for="new-user-password-confirmation" style="pointer-events: auto;">تکرار رمز <span class="text-danger">*</span></label>
-                                                <input type="password" id="new-user-password-confirmation" name="password_confirmation" class="form-control" required minlength="6"
-                                                       style="pointer-events: auto; position: relative; z-index: 10;">
+                                                <small class="form-text text-muted">
+                                                    <i class="fas fa-info-circle"></i> رمز عبور به صورت خودکار برابر شماره تلفن تنظیم می‌شود
+                                                </small>
                                             </div>
                                         </div>
                                     </div>
@@ -219,7 +196,7 @@
                                         <button type="button" class="btn btn-secondary btn-sm" onclick="toggleCreateUserForm()">
                                             <i class="fas fa-times"></i> انصراف
                                         </button>
-                                        <button type="submit" class="btn btn-success btn-sm">
+                                        <button type="button" class="btn btn-success btn-sm" onclick="submitCreateUser()">
                                             <i class="fas fa-save"></i> ذخیره کاربر
                                         </button>
                                     </div>
@@ -227,30 +204,21 @@
                             </div>
                         </div>
 
-                        <!-- Address Selection (loaded based on user) -->
+                        <!-- Address Selection (loaded based on user) - Optional for in-store orders -->
                         <div class="form-group">
-                            <label for="order-address">آدرس <span class="text-danger">*</span></label>
+                            <label for="order-address">آدرس</label>
+                            <small class="text-muted">(اختیاری - برای سفارشات حضوری نیازی نیست)</small>
                             <select id="order-address" name="address_id" class="form-control" disabled>
                                 <option value="">ابتدا کاربر را انتخاب کنید</option>
                             </select>
                         </div>
 
-                        <!-- Gateway Selection -->
+                        <!-- Shipping Selection - Optional for in-store orders -->
                         <div class="form-group">
-                            <label for="order-gateway">درگاه پرداخت <span class="text-danger">*</span></label>
-                            <select id="order-gateway" name="gateway_id" class="form-control">
-                                <option value="">انتخاب درگاه</option>
-                                @foreach(\App\Models\Gateway::all() as $gateway)
-                                    <option value="{{ $gateway->id }}">{{ $gateway->title }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Shipping Selection -->
-                        <div class="form-group">
-                            <label for="order-shipping">روش ارسال <span class="text-danger">*</span></label>
+                            <label for="order-shipping">روش ارسال</label>
+                            <small class="text-muted">(اختیاری - برای سفارشات حضوری نیازی نیست)</small>
                             <select id="order-shipping" name="shipping_id" class="form-control">
-                                <option value="">انتخاب روش ارسال</option>
+                                <option value="">بدون ارسال (خرید حضوری)</option>
                                 @foreach(\App\Models\Shipping::all() as $shipping)
                                     <option value="{{ $shipping->id }}" data-price="{{ $shipping->price ?? 0 }}">
                                         {{ $shipping->title }} ({{ number_format($shipping->price ?? 0) }} تومان)
@@ -826,26 +794,15 @@
                 toastr.error('لطفا کاربر را انتخاب کنید');
                 return;
             }
-            if (!$('#order-address').val()) {
-                toastr.error('لطفا آدرس را انتخاب کنید');
-                return;
-            }
-            if (!$('#order-gateway').val()) {
-                toastr.error('لطفا درگاه پرداخت را انتخاب کنید');
-                return;
-            }
-            if (!$('#order-shipping').val()) {
-                toastr.error('لطفا روش ارسال را انتخاب کنید');
-                return;
-            }
+            // Address, gateway, and shipping are now optional for in-store orders
             
             // Prepare data object (NOT FormData)
             const requestData = {
                 _token: '{{ csrf_token() }}',
                 user_id: $('#order-user').val(),
-                address_id: $('#order-address').val(),
-                gateway_id: $('#order-gateway').val(),
-                shipping_id: $('#order-shipping').val(),
+                address_id: $('#order-address').val() || null,
+                gateway_id: null, // Gateway removed - not needed for in-store orders
+                shipping_id: $('#order-shipping').val() || null,
                 discount_code: $('#order-discount-code').val() || '',
                 status: $('#order-status').val(),
                 note: $('#order-note').val() || '',
@@ -926,67 +883,121 @@
         }
         
         /**
-         * Handle create user form submission
+         * Submit create user form via AJAX
          */
-        $(document).ready(function() {
-            $('#create-user-inline-form').on('submit', function(e) {
-                e.preventDefault();
-                
-                const formData = {
-                    _token: '{{ csrf_token() }}',
-                    name: $('#new-user-name').val(),
-                    phone: $('#new-user-phone').val(),
-                    email: $('#new-user-email').val(),
-                    password: $('#new-user-password').val(),
-                    password_confirmation: $('#new-user-password-confirmation').val()
-                };
-                
-                console.log('Creating new user:', formData);
-                
-                $.ajax({
-                    url: '{{ route("users.store") }}',
-                    method: 'POST',
-                    data: formData,
-                    success: function(response) {
-                        console.log('User created:', response);
-                        toastr.success('کاربر با موفقیت ایجاد شد');
+        function submitCreateUser() {
+            console.log('submitCreateUser function called');
+            
+            // Validate required fields
+            const name = $('#new-user-name').val();
+            const phone = $('#new-user-phone').val();
+            
+            if (!name || !phone) {
+                toastr.error('لطفا نام و شماره تلفن را وارد کنید');
+                return;
+            }
+            
+            // Validate phone format
+            const phonePattern = /^09[0-9]{9}$/;
+            if (!phonePattern.test(phone)) {
+                toastr.error('فرمت شماره تلفن صحیح نیست (09xxxxxxxxx)');
+                return;
+            }
+            
+            const defaultPassword = phone; // Use phone as default password
+            
+            const formData = {
+                _token: '{{ csrf_token() }}',
+                name: name,
+                phone: phone,
+                email: null,
+                password: defaultPassword,
+                password_confirmation: defaultPassword
+            };
+            
+            console.log('Creating new user via AJAX:', formData);
+            
+            $.ajax({
+                url: '{{ route("users.store") }}',
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                beforeSend: function() {
+                    // Disable submit button to prevent double submission
+                    $('#inline-create-user-form button').prop('disabled', true);
+                    console.log('AJAX request sent...');
+                },
+                success: function(response) {
+                    console.log('User created successfully:', response);
+                    toastr.success('کاربر با موفقیت ایجاد شد');
+                    
+                    // Hide the inline form
+                    $('#inline-create-user-form').slideUp();
+                    
+                    // Reset form
+                    $('#create-user-inline-form')[0].reset();
+                    
+                    if (response.user) {
+                        // Destroy existing Select2
+                        $('#order-user').select2('destroy');
                         
-                        // Hide the inline form
-                        $('#inline-create-user-form').slideUp();
+                        // Clear the select
+                        $('#order-user').empty();
                         
-                        // Add new user to Select2 and select it
-                        if (response.user) {
-                            const newOption = new Option(
-                                response.user.name + ' - ' + response.user.phone, 
-                                response.user.id, 
-                                true, 
-                                true
-                            );
-                            $('#order-user').append(newOption).trigger('change');
-                            
-                            // Show info about adding address
-                            toastr.info('اکنون می‌توانید آدرس برای این کاربر اضافه کنید', '', {timeOut: 5000});
-                        }
+                        // Add the new user as an option
+                        const newOption = new Option(
+                            response.user.name + ' - ' + response.user.phone, 
+                            response.user.id, 
+                            true, 
+                            true
+                        );
+                        $('#order-user').append(newOption);
                         
-                        // Reset form
-                        $('#create-user-inline-form')[0].reset();
-                    },
-                    error: function(xhr) {
-                        console.error('Error creating user:', xhr);
+                        // Reinitialize Select2 with AJAX search
+                        initializeUserSelect();
                         
-                        if (xhr.responseJSON && xhr.responseJSON.errors) {
-                            let errors = xhr.responseJSON.errors;
-                            let errorMessage = Object.values(errors).flat().join('<br>');
-                            toastr.error(errorMessage);
-                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                            toastr.error(xhr.responseJSON.message);
-                        } else {
-                            toastr.error('خطا در ایجاد کاربر');
-                        }
+                        // Set the newly created user as selected
+                        $('#order-user').val(response.user.id).trigger('change');
+                        
+                        // Load addresses for the new user
+                        loadUserAddresses(response.user.id);
+                        
+                        // Show info about adding address
+                        toastr.info('اکنون می‌توانید آدرس برای این کاربر اضافه کنید', '', {timeOut: 5000});
+                        
+                        console.log('User list reloaded and new user selected:', response.user.id);
                     }
-                });
+                    
+                    // Re-enable buttons
+                    $('#inline-create-user-form button').prop('disabled', false);
+                },
+                error: function(xhr) {
+                    console.error('AJAX Error creating user:', xhr);
+                    console.error('Status:', xhr.status);
+                    console.error('Response:', xhr.responseText);
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        let errors = xhr.responseJSON.errors;
+                        let errorMessage = Object.values(errors).flat().join('<br>');
+                        toastr.error(errorMessage);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        toastr.error(xhr.responseJSON.message);
+                    } else {
+                        toastr.error('خطا در ایجاد کاربر: ' + (xhr.statusText || 'خطای ناشناخته'));
+                    }
+                    
+                    // Re-enable buttons
+                    $('#inline-create-user-form button').prop('disabled', false);
+                },
+                complete: function() {
+                    console.log('AJAX request completed');
+                }
             });
-        });
+        }
     </script>
 
 @endsection

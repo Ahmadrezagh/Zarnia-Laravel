@@ -63,9 +63,9 @@ class OrderController extends Controller
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'address_id' => 'required|exists:addresses,id',
-            'gateway_id' => 'required|exists:gateways,id',
-            'shipping_id' => 'required|exists:shippings,id',
+            'address_id' => 'nullable|exists:addresses,id',
+            'gateway_id' => 'nullable|exists:gateways,id',
+            'shipping_id' => 'nullable|exists:shippings,id',
             'products' => 'required|string',
             'status' => 'required|in:' . implode(',', Order::$STATUSES),
             'discount_code' => 'nullable|string',
@@ -101,9 +101,12 @@ class OrderController extends Controller
                 $totalAmount += $product['price'] * $product['quantity'];
             }
 
-            // Get shipping price
-            $shipping = \App\Models\Shipping::find($request->shipping_id);
-            $shippingPrice = $shipping->price ?? 0;
+            // Get shipping price (0 for in-store orders)
+            $shippingPrice = 0;
+            if ($request->shipping_id) {
+                $shipping = \App\Models\Shipping::find($request->shipping_id);
+                $shippingPrice = $shipping->price ?? 0;
+            }
 
             // Handle discount if provided
             $discountPrice = 0;

@@ -223,7 +223,9 @@ class Order extends Model
         $gateway = '<span style="background-color:' . e($this->gatewayColor) . ';border-radius:2.5rem;padding:4px">'
             . e($this->gatewayName) . '</span>';
 
-        $result = $this->address->address . "<br/> نوع پرداخت : " . $gateway;
+        // Handle in-store orders without address
+        $addressText = $this->address ? $this->address->address : 'خرید حضوری';
+        $result = $addressText . "<br/> نوع پرداخت : " . $gateway;
 
         return request()->expectsJson()
             ? ($result) // return plain text for JSON
@@ -267,6 +269,11 @@ class Order extends Model
 
     public function verify()
     {
+        // No verification needed for in-store orders without gateway
+        if(!$this->gateway) {
+            return false;
+        }
+        
         if($this->gateway->key == 'snapp'){
             return $this->verifySnapp();
         }
@@ -342,10 +349,14 @@ class Order extends Model
             'status' => 'paid'
         ]);
 
+        // Get receiver phone and name (use user's info if address is null for in-store orders)
+        $receiverPhone = $this->address ? $this->address->receiver_phone : $this->user->phone;
+        $receiverName = $this->address ? $this->address->receiver_name : $this->user->name;
+
         $sms = new Kavehnegar();
         $sms->send_with_two_token(
-            $this->address->receiver_phone,
-            $this->address->receiver_name,
+            $receiverPhone,
+            $receiverName,
             $this->id,
             $this->status
         );
@@ -355,18 +366,33 @@ class Order extends Model
 
     public function status()
     {
+        if(!$this->gateway) {
+            return null;
+        }
         return $this->gateway->status($this->payment_token);
     }
+    
     public function cancel()
     {
+        if(!$this->gateway) {
+            return false;
+        }
         return $this->gateway->cancel($this->payment_token);
     }
+    
     public function settle()
     {
+        if(!$this->gateway) {
+            return false;
+        }
         return $this->gateway->settle($this->payment_token);
     }
+    
     public function updateSnappTransaction()
     {
+        if(!$this->gateway) {
+            return false;
+        }
         return $this->gateway->updateSnappTransaction(Order::find($this->id));
     }
 
@@ -386,6 +412,9 @@ class Order extends Model
         $final_amount = $this->final_amount;
         $allSuccessful = true;
         
+        // Get receiver name (use user's name if address is null for in-store orders)
+        $receiverName = $this->address ? $this->address->receiver_name : $this->user->name;
+        
         // Collect responses from each order item
         foreach ($this->orderItems as $orderItem) {
             $response = $accounting_app->DoNewSanadBuySaleEtiket(
@@ -393,7 +422,7 @@ class Order extends Model
                 $orderItem->etiket,
                 $orderItem->product->mazaneh,
                 $orderItem->price,
-                $this->address->receiver_name
+                $receiverName
             );
             
             // Check if response has error
@@ -411,11 +440,14 @@ class Order extends Model
         
         // Only proceed with shipping and gateway if all order items were successful
         if ($allSuccessful) {
-            if($this->shipping->key == 'post'){
+            // Check shipping if exists (null for in-store orders)
+            if($this->shipping && $this->shipping->key == 'post'){
                 $final_amount = $final_amount + 150000;
                 $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,0,150000,0,1);
             }
-            if($this->gateway->key == 'snapp'){
+            
+            // Check gateway if exists (null for in-store orders)
+            if($this->gateway && $this->gateway->key == 'snapp'){
                  $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$final_amount,210,1);
             }
         } else {
