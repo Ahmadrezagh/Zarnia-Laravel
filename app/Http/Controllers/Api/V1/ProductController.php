@@ -16,20 +16,30 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $user = $request->user('sanctum');
+        
+        // Determine sort type
+        $sortType = null;
+        if ($request->has('random')) {
+            $sortType = 'random';
+        } elseif ($request->price_dir) {
+            // Legacy support: map price_dir to new sort types
+            $sortType = $request->price_dir === 'asc' ? 'price_asc' : 'price_desc';
+        } elseif ($request->sort_by) {
+            // New parameter: sort_by can be: latest, oldest, price_asc, price_desc, name_asc, name_desc, random
+            $sortType = $request->sort_by;
+        }
+        
         $products = Product::query()
             ->main()
-            ->OrderByEffectivePrice($request->price_dir)
             ->categories($request->category_ids)
             ->search($request->search)
             ->minPrice($request->minPrice)
             ->maxPrice($request->maxPrice)
             ->HasDiscount($request->hasDiscount)
-            ->hasCountAndImage();
-        if($request->has('random')){
-            $products->inRandomOrder();
-        }
-        $products = $products
+            ->hasCountAndImage()
+            ->applyDefaultSort($sortType) // Apply sorting based on request or setting
             ->paginate($request->get('per_page') ?? 12);
+            
         return new ProductListCollection($products, $user);
     }
 

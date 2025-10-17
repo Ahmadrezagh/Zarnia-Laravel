@@ -486,6 +486,42 @@ class Product extends Model implements HasMedia
         return $query->where('is_comprehensive','=',1);
     }
 
+    public function scopeApplyDefaultSort(Builder $query, $sortType = null)
+    {
+        // If no sort type provided, get it from settings
+        if (!$sortType) {
+            $sortType = setting('default_shop_display') ?? 'latest';
+        }
+
+        switch ($sortType) {
+            case 'latest':
+                return $query->orderBy('created_at', 'desc');
+            case 'oldest':
+                return $query->orderBy('created_at', 'asc');
+            case 'price_asc':
+                return $query->orderByRaw("
+                    CASE
+                        WHEN discounted_price > 0 THEN discounted_price
+                        ELSE price
+                    END asc
+                ");
+            case 'price_desc':
+                return $query->orderByRaw("
+                    CASE
+                        WHEN discounted_price > 0 THEN discounted_price
+                        ELSE price
+                    END desc
+                ");
+            case 'name_asc':
+                return $query->orderBy('name', 'asc');
+            case 'name_desc':
+                return $query->orderBy('name', 'desc');
+            case 'random':
+                return $query->inRandomOrder();
+            default:
+                return $query->orderBy('created_at', 'desc');
+        }
+    }
 
     // Related products via direct product → product links
     public function complementaryProductsDirect(): MorphToMany

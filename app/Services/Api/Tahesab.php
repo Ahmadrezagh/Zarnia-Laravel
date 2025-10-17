@@ -261,7 +261,7 @@ class Tahesab{
             0,
             intval($etiket_code),
             $full_name,
-            intval($order_number),
+            "Order-".$order_number,
             0,
             1
         ]));
