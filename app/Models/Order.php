@@ -412,7 +412,8 @@ class Order extends Model
         $accounting_app = new Tahesab();
         $final_amount = $this->final_amount;
         $allSuccessful = true;
-        
+        $transaction_id = "Order-".$this->transaction_id;
+
         // Get receiver name (use user's name if address is null for in-store orders)
         $receiverName = $this->address ? $this->address->receiver_name : $this->user->name;
         
@@ -420,12 +421,12 @@ class Order extends Model
         foreach ($this->orderItems as $orderItem) {
             Log::info('Submitting order item to accounting', [
                 'order_id' => $this->id,
-                'transaction_id' => $this->transaction_id,
+                'transaction_id' => $transaction_id,
                 'etiket' => $orderItem->etiket
             ]);
             
             $response = $accounting_app->DoNewSanadBuySaleEtiket(
-                $this->transaction_id,
+                $transaction_id,
                 $orderItem->etiket,
                 $orderItem->product->mazaneh,
                 $orderItem->price,
@@ -450,12 +451,12 @@ class Order extends Model
             // Check shipping if exists (null for in-store orders)
             if($this->shipping && $this->shipping->key == 'post'){
                 $final_amount = $final_amount + 150000;
-                $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,0,150000,0,1);
+                $accounting_app->DoNewSanadTalabBedehi($transaction_id,0,150000,0,1);
             }
             
             // Check gateway if exists (null for in-store orders)
             if($this->gateway && $this->gateway->key == 'snapp'){
-                 $accounting_app->DoNewSanadTalabBedehi($this->transaction_id,1,$final_amount,210,1);
+                 $accounting_app->DoNewSanadTalabBedehi($transaction_id,1,$final_amount,210,1);
             }
         } else {
             \Log::error('Skipping shipping and gateway accounting entries due to failed order item entries', [

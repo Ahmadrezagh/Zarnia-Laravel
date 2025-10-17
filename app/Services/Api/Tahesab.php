@@ -261,7 +261,7 @@ class Tahesab{
             0,
             intval($etiket_code),
             $full_name,
-            "Order-".$order_number,
+            $order_number,
             0,
             1
         ]));
@@ -293,7 +293,7 @@ class Tahesab{
                 0,
                 intval($etiket_code),
                 $full_name,
-                intval($order_number),
+                $order_number,
                 0,
                 1
             ]
@@ -338,7 +338,7 @@ class Tahesab{
                 "Sharh",
                 "Baabat",
                 0,
-                intval($order_number),
+                $order_number,
                 intval($HavalehBe_Mcode),
                 intval($MultiRadif)
             ]
