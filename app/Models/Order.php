@@ -470,6 +470,7 @@ class Order extends Model
     public function cancelOrder()
     {
         $accounting_app = new Tahesab();
-        return $accounting_app->DoDeleteSanad("3625682897");
+        $transaction_id = "Order-0000000000".$this->transaction_id;
+        return $accounting_app->DoDeleteSanad(transaction_id);
     }
 }
