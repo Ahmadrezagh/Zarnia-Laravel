@@ -362,7 +362,50 @@ class Order extends Model
             $this->status
         );
 
-         $this->submitInAccountingApp(); // Uncomment if needed
+        $this->submitInAccountingApp(); // Uncomment if needed
+        
+        // Check and generate gift discount code
+        $this->checkAndGenerateGift();
+    }
+
+    /**
+     * Check and generate gift discount code if applicable
+     */
+    private function checkAndGenerateGift()
+    {
+        try {
+            // Check and generate gift using static method
+            $discount = GiftStructure::checkAndGenerateGift($this);
+            
+            if ($discount) {
+                // Get receiver phone and name
+                $receiverPhone = $this->address ? $this->address->receiver_phone : $this->user->phone;
+                $receiverName = $this->address ? $this->address->receiver_name : $this->user->name;
+                
+                // Determine discount type for logging
+                $discountType = $discount->percentage 
+                    ? "percentage ({$discount->percentage}%)" 
+                    : "amount (" . number_format($discount->amount) . " تومان)";
+                
+                // Log the gift code generation
+                Log::info('Gift code generated', [
+                    'order_id' => $this->id,
+                    'user_id' => $this->user_id,
+                    'discount_code' => $discount->code,
+                    'discount_type' => $discountType,
+                    'expires_at' => $discount->expires_at,
+                ]);
+                
+                // Optional: Send SMS with gift code
+                // $sms = new Kavehnegar();
+                // $sms->send_with_pattern($receiverPhone, $discount->code, 'gift_code_template');
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to generate gift code', [
+                'order_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     public function status()

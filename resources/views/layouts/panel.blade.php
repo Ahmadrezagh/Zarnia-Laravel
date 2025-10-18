@@ -258,6 +258,11 @@
                             <li class="nav-sub-item">
                                 <a class="nav-sub-link" href="{{route('discounts.index')}}">کد های تخفیف</a>
                             </li>
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('gift_structures.index')}}">
+                                    <i class="fas fa-gift"></i> ساختار هدایا
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 @endif

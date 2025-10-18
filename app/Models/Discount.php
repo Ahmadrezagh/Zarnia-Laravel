@@ -100,11 +100,11 @@ class Discount extends Model
         }
 
         // بررسی کاربران مجاز
-        if ($discount->users()->count() > 0) {
-            if (!$userId || !$discount->users()->where('users.id', $userId)->exists()) {
-                return ['valid' => false, 'message' => 'این کد تخفیف برای شما مجاز نیست.'];
-            }
-        }
+        // if ($discount->users()->count() > 0) {
+        //     if (!$userId || !$discount->users()->where('users.id', $userId)->exists()) {
+        //         return ['valid' => false, 'message' => 'این کد تخفیف برای شما مجاز نیست.'];
+        //     }
+        // }
 
         // بررسی محصولات مجاز
         if ($discount->products()->count() > 0) {

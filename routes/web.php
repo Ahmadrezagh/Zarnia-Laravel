@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\EtiketController;
 use App\Http\Controllers\Admin\FooterTitleController;
 use App\Http\Controllers\Admin\FooterTitleLinkController;
+use App\Http\Controllers\Admin\GiftStructureController;
 use App\Http\Controllers\Admin\GoldSummaryController;
 use App\Http\Controllers\Admin\HeaderLinkController;
 use App\Http\Controllers\Admin\IndexBannerController;
@@ -65,6 +66,7 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::any('attribute_groups', [AttributeController::class, 'table'])->name('attribute_groups');
     Route::any('templates', [InvoiceTemplateController::class, 'table'])->name('templates');
     Route::any('discounts', [DiscountController::class, 'table'])->name('discounts');
+    Route::any('gift_structures', [GiftStructureController::class, 'table'])->name('gift_structures');
     Route::any('gold_summary', [GoldSummaryController::class, 'table'])->name('gold_summary');
 });
 Route::middleware(['auth'])->prefix('product')->name('product.')->group(function () {
@@ -111,6 +113,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('attribute_groups', AttributeGroupController::class );
     Route::resource('invoice_templates', InvoiceTemplateController::class );
     Route::resource('discounts', DiscountController::class );
+    Route::resource('gift_structures', GiftStructureController::class );
     Route::resource('blogs', BlogController::class );
 
     Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
