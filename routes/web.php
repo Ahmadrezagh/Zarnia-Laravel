@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\ProductSliderController;
 use App\Http\Controllers\Admin\QAController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VisitController;
 use App\Http\Controllers\Api\V1\GatewayController;
@@ -67,6 +68,8 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::any('templates', [InvoiceTemplateController::class, 'table'])->name('templates');
     Route::any('discounts', [DiscountController::class, 'table'])->name('discounts');
     Route::any('gift_structures', [GiftStructureController::class, 'table'])->name('gift_structures');
+    Route::any('shippings', [ShippingController::class, 'table'])->name('shippings');
+    Route::any('shipping_times/{shipping}', [ShippingController::class, 'timesTable'])->name('shipping_times');
     Route::any('gold_summary', [GoldSummaryController::class, 'table'])->name('gold_summary');
 });
 Route::middleware(['auth'])->prefix('product')->name('product.')->group(function () {
@@ -114,7 +117,14 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('invoice_templates', InvoiceTemplateController::class );
     Route::resource('discounts', DiscountController::class );
     Route::resource('gift_structures', GiftStructureController::class );
+    Route::resource('shippings', ShippingController::class );
     Route::resource('blogs', BlogController::class );
+    
+    // Shipping times nested routes
+    Route::get('shippings/{shipping}/times', [ShippingController::class, 'times'])->name('shippings.times');
+    Route::post('shippings/{shipping}/times', [ShippingController::class, 'storeTime'])->name('shippings.times.store');
+    Route::put('shippings/{shipping}/times/{time}', [ShippingController::class, 'updateTime'])->name('shippings.times.update');
+    Route::delete('shippings/{shipping}/times/{time}', [ShippingController::class, 'destroyTime'])->name('shippings.times.destroy');
 
     Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
 

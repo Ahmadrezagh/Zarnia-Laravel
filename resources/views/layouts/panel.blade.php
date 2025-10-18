@@ -266,6 +266,22 @@
                         </ul>
                     </li>
                 @endif
+            @if ((Auth::user()->isAdmin() && Auth::user()->can('Order')) || Auth::user()->isSuperAdmin() )
+                    <li class="nav-item">
+                        <a class="nav-link with-sub" href="#">
+                            <span class="shape1"></span>
+                            <span class="shape2"></span>
+                            <i class="fas fa-shipping-fast sidemenu-icon"></i>
+                            <span class="sidemenu-label">روش‌های ارسال</span><i class="angle fe fe-chevron-left"></i></a>
+                        <ul class="nav-sub">
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('shippings.index')}}">
+                                    <i class="fas fa-truck"></i> روش‌های ارسال
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
             @if ((Auth::user()->isAdmin() && Auth::user()->can('Attribute')) || Auth::user()->isSuperAdmin() )
                     <li class="nav-item">
                         <a class="nav-link with-sub" href="#">

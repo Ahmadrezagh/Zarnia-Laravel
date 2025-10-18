@@ -12,6 +12,7 @@ class Shipping extends Model implements HasMedia
     use InteractsWithMedia;
     protected $fillable = [
         'title',
+        'key',
         'price',
         'passive_price'
     ];
