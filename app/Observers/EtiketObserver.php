@@ -90,6 +90,9 @@ class EtiketObserver
                 ]);
             }
         }
+
+        // Final validation: Disconnect if names don't match
+        $this->validateEtiketProductConnection($etiket);
     }
 
     /**
@@ -196,6 +199,9 @@ class EtiketObserver
                 }
             }
         }
+
+        // Final validation: Disconnect if names don't match
+        $this->validateEtiketProductConnection($etiket);
     }
 
 // ✅ Helper to enforce parent-child consistency (same as ProductObserver)
@@ -215,6 +221,59 @@ class EtiketObserver
         }
     }
 
+    /**
+     * Disconnect etikets from products with mismatched names
+     * If etiket name doesn't match product name, set product_id to null
+     */
+    protected function validateEtiketProductConnection(Etiket $etiket): void
+    {
+        // If etiket has a product assigned
+        if ($etiket->product_id) {
+            $product = Product::find($etiket->product_id);
+            
+            if ($product) {
+                // Normalize both names for comparison (handle Arabic/Persian characters)
+                $etiketName = $this->normalizeName($etiket->name);
+                $productName = $this->normalizeName($product->name);
+                
+                // If names don't match, disconnect
+                if ($etiketName !== $productName) {
+                    Log::warning('Etiket disconnected from product with different name', [
+                        'etiket_id' => $etiket->id,
+                        'etiket_name' => $etiket->name,
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                    ]);
+                    
+                    $etiket->updateQuietly([
+                        'product_id' => null,
+                    ]);
+                }
+            } else {
+                // Product doesn't exist anymore, set to null
+                $etiket->updateQuietly([
+                    'product_id' => null,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Normalize name for comparison (handle Arabic/Persian character differences)
+     */
+    protected function normalizeName($name): string
+    {
+        // Arabic Ye → Persian Ye
+        $name = str_replace(['ي', 'ی'], 'ی', $name);
+        
+        // Arabic Kaf → Persian Kaf
+        $name = str_replace('ك', 'ک', $name);
+        
+        // Trim whitespace
+        $name = trim($name);
+        
+        return $name;
+    }
 
     /**
      * Handle the Etiket "deleted" event.
@@ -238,5 +297,46 @@ class EtiketObserver
     public function forceDeleted(Etiket $etiket): void
     {
         //
+    }
+
+    /**
+     * Clean up all etikets with mismatched product names
+     * This can be run manually to fix data integrity issues
+     * 
+     * Usage: app(EtiketObserver::class)->cleanupMismatchedEtikets();
+     */
+    public function cleanupMismatchedEtikets(): array
+    {
+        $disconnected = [];
+        
+        // Get all etikets that have a product_id
+        $etikets = Etiket::whereNotNull('product_id')->with('product')->get();
+        
+        foreach ($etikets as $etiket) {
+            if ($etiket->product) {
+                $etiketName = $this->normalizeName($etiket->name);
+                $productName = $this->normalizeName($etiket->product->name);
+                
+                if ($etiketName !== $productName) {
+                    $disconnected[] = [
+                        'etiket_id' => $etiket->id,
+                        'etiket_name' => $etiket->name,
+                        'product_id' => $etiket->product_id,
+                        'product_name' => $etiket->product->name,
+                    ];
+                    
+                    $etiket->updateQuietly(['product_id' => null]);
+                }
+            }
+        }
+        
+        if (count($disconnected) > 0) {
+            Log::warning('Bulk cleanup: Disconnected etikets from mismatched products', [
+                'count' => count($disconnected),
+                'items' => $disconnected,
+            ]);
+        }
+        
+        return $disconnected;
     }
 }
