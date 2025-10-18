@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreDiscountCodeRequest;
 use App\Http\Requests\Admin\UpdateDiscountCodeRequest;
+use App\Models\Category;
 use App\Models\Discount;
+use App\Models\Product;
 use App\Models\QA;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Str;
@@ -18,8 +21,15 @@ class DiscountController extends Controller
      */
     public function index()
     {
-        $discounts = Discount::query()->latest()->paginate();
-        return view('admin.discounts.index', compact('discounts'));
+        $discounts = Discount::query()
+            ->with(['users', 'products', 'categories'])
+            ->latest()
+            ->paginate();
+        $users = User::all();
+        $products = Product::main()->get();
+        $categories = Category::all();
+        
+        return view('admin.discounts.index', compact('discounts', 'users', 'products', 'categories'));
     }
 
     /**
@@ -39,7 +49,12 @@ class DiscountController extends Controller
         if (empty($validated['code'])) {
             $validated['code'] = Discount::generateUniqueCode();
         }
+        
         $discount = Discount::query()->create($validated);
+        
+        // Attach users, products, and categories
+        $this->syncDiscountables($discount, $request);
+        
         return response()->json($discount);
     }
 
@@ -65,6 +80,10 @@ class DiscountController extends Controller
     public function update(UpdateDiscountCodeRequest $request, Discount $discount)
     {
         $discount->update($request->validated());
+        
+        // Sync users, products, and categories
+        $this->syncDiscountables($discount, $request);
+        
         return response()->json();
     }
 
@@ -111,5 +130,26 @@ class DiscountController extends Controller
             ],
             'slot' => $slotContent
         ]);
+    }
+
+    /**
+     * Sync discountable relationships (users, products, categories)
+     */
+    private function syncDiscountables(Discount $discount, Request $request)
+    {
+        // Sync users
+        if ($request->has('user_ids')) {
+            $discount->users()->sync($request->user_ids ?? []);
+        }
+        
+        // Sync products
+        if ($request->has('product_ids')) {
+            $discount->products()->sync($request->product_ids ?? []);
+        }
+        
+        // Sync categories
+        if ($request->has('category_ids')) {
+            $discount->categories()->sync($request->category_ids ?? []);
+        }
     }
 }

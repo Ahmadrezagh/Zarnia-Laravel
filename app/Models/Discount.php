@@ -45,13 +45,45 @@ class Discount extends Model
         return $this->hasMany(Order::class,'discount_code','code')->whereIn('status',[ Order::$STATUSES[1], Order::$STATUSES[4], Order::$STATUSES[5],Order::$STATUSES[6],Order::$STATUSES[7] ]);
     }
 
-    public static function verify($code, $totalPrice, $userId = null)
+    /**
+     * Get all discountables for this discount.
+     */
+    public function discountables()
+    {
+        return $this->hasMany(Discountable::class);
+    }
+
+    /**
+     * Get all users who can use this discount.
+     */
+    public function users()
+    {
+        return $this->morphedByMany(User::class, 'discountable');
+    }
+
+    /**
+     * Get all products this discount applies to.
+     */
+    public function products()
+    {
+        return $this->morphedByMany(Product::class, 'discountable');
+    }
+
+    /**
+     * Get all categories this discount applies to.
+     */
+    public function categories()
+    {
+        return $this->morphedByMany(Category::class, 'discountable');
+    }
+
+    public static function verify($code, $totalPrice, $userId = null, $productIds = [], $categoryIds = [])
     {
         $userId = $userId ?? Auth::id();
         $now = Carbon::now();
 
         // پیدا کردن کد تخفیف
-        $discount = self::where('code', $code)->first();
+        $discount = self::where('code', $code)->with(['users', 'products', 'categories'])->first();
 
         if (!$discount) {
             return ['valid' => false, 'message' => 'کد تخفیف یافت نشد.'];
@@ -65,6 +97,45 @@ class Discount extends Model
         // بررسی تاریخ شروع
         if ($discount->start_at && $now->lt($discount->start_at)) {
             return ['valid' => false, 'message' => 'کد تخفیف هنوز فعال نشده است.'];
+        }
+
+        // بررسی کاربران مجاز
+        if ($discount->users()->count() > 0) {
+            if (!$userId || !$discount->users()->where('users.id', $userId)->exists()) {
+                return ['valid' => false, 'message' => 'این کد تخفیف برای شما مجاز نیست.'];
+            }
+        }
+
+        // بررسی محصولات مجاز
+        if ($discount->products()->count() > 0) {
+            $productIds = is_array($productIds) ? $productIds : [$productIds];
+            
+            if (empty($productIds)) {
+                return ['valid' => false, 'message' => 'این کد تخفیف فقط برای محصولات خاصی معتبر است.'];
+            }
+            
+            $allowedProductIds = $discount->products()->pluck('products.id')->toArray();
+            $hasValidProduct = count(array_intersect($productIds, $allowedProductIds)) > 0;
+            
+            if (!$hasValidProduct) {
+                return ['valid' => false, 'message' => 'این کد تخفیف برای محصولات موجود در سبد خرید شما معتبر نیست.'];
+            }
+        }
+
+        // بررسی دسته‌بندی‌های مجاز
+        if ($discount->categories()->count() > 0) {
+            $categoryIds = is_array($categoryIds) ? $categoryIds : [$categoryIds];
+            
+            if (empty($categoryIds)) {
+                return ['valid' => false, 'message' => 'این کد تخفیف فقط برای دسته‌بندی‌های خاصی معتبر است.'];
+            }
+            
+            $allowedCategoryIds = $discount->categories()->pluck('categories.id')->toArray();
+            $hasValidCategory = count(array_intersect($categoryIds, $allowedCategoryIds)) > 0;
+            
+            if (!$hasValidCategory) {
+                return ['valid' => false, 'message' => 'این کد تخفیف برای دسته‌بندی محصولات موجود در سبد خرید شما معتبر نیست.'];
+            }
         }
 
         // بررسی تعداد کل مجاز
