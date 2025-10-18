@@ -62,7 +62,6 @@
                             ['label' => 'تعداد و مقدار سفارش قبلی', 'key' => 'SumCountAndAmountCol', 'type' => 'text'],
                             ['label' => 'تخفیف', 'key' => 'discountCol', 'type' => 'text'],
                             ['label' => 'فاکتور', 'key' => 'factorCol', 'type' => 'text'],
-                            ['label' => 'منبع ورود یوزر', 'key' => '', 'type' => 'text'],
                         ]"
             :items="$orders"
             :actions="[

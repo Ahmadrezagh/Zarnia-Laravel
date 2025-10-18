@@ -17,6 +17,8 @@ use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use App\Exports\ProductsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
@@ -834,5 +836,23 @@ class ProductController extends Controller
                 'message' => 'خطا در حذف تصویر کاور'
             ], 500);
         }
+    }
+
+    /**
+     * Export products to Excel
+     */
+    public function export(Request $request)
+    {
+        $filters = [
+            'filter' => $request->get('filter'),
+            'category_ids' => $request->get('category_ids'),
+            'searchKey' => $request->get('searchKey'),
+            'searchVal' => $request->get('searchVal'),
+        ];
+
+        return Excel::download(
+            new ProductsExport($filters), 
+            'products_' . date('Y-m-d_H-i-s') . '.xlsx'
+        );
     }
 }

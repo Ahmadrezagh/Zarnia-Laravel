@@ -225,7 +225,7 @@ class Order extends Model
             . e($this->gatewayName) . '</span>';
 
         // Handle in-store orders without address
-        $addressText = $this->address ? $this->address->address : 'خرید حضوری';
+        $addressText = $this->address ? $this->address->province->name : 'خرید حضوری';
         $result = $addressText . "<br/> نوع پرداخت : " . $gateway;
 
         return request()->expectsJson()

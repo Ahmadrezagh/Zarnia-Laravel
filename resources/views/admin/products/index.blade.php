@@ -54,6 +54,11 @@
                 <div class="col-3">
                     <button type="button" class="btn btn-primary" onclick="showAssignCategoryModal()">ویرایش دسته بندی </button>
                 </div>
+                <div class="col-3">
+                    <button type="button" class="btn btn-success" onclick="exportProducts()">
+                        <i class="fas fa-file-excel"></i> خروجی اکسل
+                    </button>
+                </div>
             </div>
         </x-slot>
         <x-dataTable
@@ -789,6 +794,35 @@
                     toastr.error('خطا در حذف تصویر کاور');
                 }
             });
+        }
+
+        /**
+         * Export products to Excel with current filters
+         */
+        function exportProducts() {
+            // Get current filter values
+            const filter = $('select[name="filter"]').val();
+            const categoryIds = $('select[name="category_ids[]"]').val();
+            const searchKey = $('select[name="searchKey"]').val();
+            const searchVal = $('input[name="searchVal"]').val();
+
+            // Build query string
+            let params = new URLSearchParams();
+            
+            if (filter) params.append('filter', filter);
+            if (categoryIds && categoryIds.length > 0) {
+                categoryIds.forEach(id => params.append('category_ids[]', id));
+            }
+            if (searchKey) params.append('searchKey', searchKey);
+            if (searchVal) params.append('searchVal', searchVal);
+
+            // Construct export URL
+            const exportUrl = '{{ route('products.export') }}' + (params.toString() ? '?' + params.toString() : '');
+            
+            // Download the file
+            window.location.href = exportUrl;
+            
+            toastr.success('در حال تهیه فایل اکسل...');
         }
 
     </script>
