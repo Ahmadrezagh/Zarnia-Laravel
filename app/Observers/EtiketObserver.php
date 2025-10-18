@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Etiket;
 use App\Models\Product;
+use Illuminate\Support\Facades\Log;
 
 class EtiketObserver
 {
@@ -12,52 +13,83 @@ class EtiketObserver
      */
     public function created(Etiket $etiket): void
     {
-//        echo "Creating etiket $etiket->id";
+        // Step 1: Look for a product with SAME name AND SAME weight
         $product = Product::query()
-            ->where('name','=',$etiket->name)
-            ->where('weight','=',$etiket->weight)
+            ->where('name', '=', $etiket->name)
+            ->where('weight', '=', $etiket->weight)
             ->first();
+
         if ($product) {
+            // Product exists with same name and weight - just update its attributes
             $product->update([
                 'ojrat' => $etiket->ojrat,
                 'darsad_kharid' => $etiket->darsad_kharid,
-                     'mazaneh' => $etiket->mazaneh,
+                'mazaneh' => $etiket->mazaneh,
             ]);
-            $etiket->update([
+            
+            $etiket->updateQuietly([
                 'product_id' => $product->id,
             ]);
-        }else{
+
+            Log::info('Etiket assigned to existing product', [
+                'etiket_id' => $etiket->id,
+                'etiket_name' => $etiket->name,
+                'etiket_weight' => $etiket->weight,
+                'product_id' => $product->id,
+            ]);
+
+        } else {
+            // Step 2: No exact match - check if there's a product with same name but different weight
             $sameNameProduct = Product::query()
                 ->where('name', '=', $etiket->name)
                 ->whereNull('parent_id')
                 ->first();
 
             if ($sameNameProduct) {
+                // Create a variant (child product) with different weight
                 $product = $sameNameProduct->replicate();
                 $product->parent_id = $sameNameProduct->id;
                 $product->weight = $etiket->weight;
                 $product->ojrat = $etiket->ojrat;
+                $product->darsad_kharid = $etiket->darsad_kharid;
+                $product->mazaneh = $etiket->mazaneh;
                 $product->save();
-                $etiket->update([
+
+                $etiket->updateQuietly([
                     'product_id' => $product->id,
-                    'darsad_kharid' => $etiket->darsad_kharid,
-                     'mazaneh' => $etiket->mazaneh,
                 ]);
-            }else{
+
+                Log::info('Etiket assigned to new variant product', [
+                    'etiket_id' => $etiket->id,
+                    'etiket_name' => $etiket->name,
+                    'etiket_weight' => $etiket->weight,
+                    'product_id' => $product->id,
+                    'parent_id' => $sameNameProduct->id,
+                ]);
+
+            } else {
+                // Step 3: No product with this name exists - create a new parent product
                 $product = Product::create([
                     'name' => $etiket->name,
                     'weight' => $etiket->weight,
                     'price' => $etiket->price,
                     'ojrat' => $etiket->ojrat,
                     'darsad_kharid' => $etiket->darsad_kharid,
-                     'mazaneh' => $etiket->mazaneh,
+                    'mazaneh' => $etiket->mazaneh,
                 ]);
-                $etiket->update([
+
+                $etiket->updateQuietly([
+                    'product_id' => $product->id,
+                ]);
+
+                Log::info('Etiket assigned to new parent product', [
+                    'etiket_id' => $etiket->id,
+                    'etiket_name' => $etiket->name,
+                    'etiket_weight' => $etiket->weight,
                     'product_id' => $product->id,
                 ]);
             }
         }
-
     }
 
     /**
@@ -69,40 +101,88 @@ class EtiketObserver
         // Keep track of old product before update
         $oldProductId = $etiket->getOriginal('product_id');
 
-        // Look for another product with the same name
-        $sameNameProduct = Product::query()
-            ->where('name', $etiket->name)
+        // Step 1: Look for a product with SAME name AND SAME weight
+        $product = Product::query()
+            ->where('name', '=', $etiket->name)
+            ->where('weight', '=', $etiket->weight)
             ->first();
 
-        if ($sameNameProduct) {
-            $sameNameProduct->update([
-                'weight' => $etiket->weight,
-                'price' => $etiket->price,
+        if ($product) {
+            // Product exists with same name and weight - just update its attributes
+            $product->update([
                 'ojrat' => $etiket->ojrat,
                 'darsad_kharid' => $etiket->darsad_kharid,
-                     'mazaneh' => $etiket->mazaneh,
+                'mazaneh' => $etiket->mazaneh,
             ]);
 
             $etiket->updateQuietly([
-                'product_id' => $sameNameProduct->id,
+                'product_id' => $product->id,
+            ]);
+
+            Log::info('Etiket updated - assigned to existing product', [
+                'etiket_id' => $etiket->id,
+                'etiket_name' => $etiket->name,
+                'etiket_weight' => $etiket->weight,
+                'product_id' => $product->id,
+                'old_product_id' => $oldProductId,
             ]);
 
         } else {
-            $newProduct = Product::create([
-                'name' => $etiket->name,
-                'weight' => $etiket->weight,
-                'price' => $etiket->price,
-                'ojrat' => $etiket->ojrat,
-                'darsad_kharid' => $etiket->darsad_kharid,
-                     'mazaneh' => $etiket->mazaneh,
-            ]);
+            // No product with same name AND weight - check if there's a product with same name but different weight
+            $sameNameProduct = Product::query()
+                ->where('name', '=', $etiket->name)
+                ->whereNull('parent_id')
+                ->first();
 
-            $etiket->updateQuietly([
-                'product_id' => $newProduct->id,
-            ]);
+            if ($sameNameProduct) {
+                // Create a variant (child product) with different weight
+                $product = $sameNameProduct->replicate();
+                $product->parent_id = $sameNameProduct->id;
+                $product->weight = $etiket->weight;
+                $product->ojrat = $etiket->ojrat;
+                $product->darsad_kharid = $etiket->darsad_kharid;
+                $product->mazaneh = $etiket->mazaneh;
+                $product->save();
+
+                $etiket->updateQuietly([
+                    'product_id' => $product->id,
+                ]);
+
+                Log::info('Etiket updated - assigned to new variant product', [
+                    'etiket_id' => $etiket->id,
+                    'etiket_name' => $etiket->name,
+                    'etiket_weight' => $etiket->weight,
+                    'product_id' => $product->id,
+                    'parent_id' => $sameNameProduct->id,
+                    'old_product_id' => $oldProductId,
+                ]);
+
+            } else {
+                // No product with this name exists - create a new parent product
+                $newProduct = Product::create([
+                    'name' => $etiket->name,
+                    'weight' => $etiket->weight,
+                    'price' => $etiket->price,
+                    'ojrat' => $etiket->ojrat,
+                    'darsad_kharid' => $etiket->darsad_kharid,
+                    'mazaneh' => $etiket->mazaneh,
+                ]);
+
+                $etiket->updateQuietly([
+                    'product_id' => $newProduct->id,
+                ]);
+
+                Log::info('Etiket updated - assigned to new parent product', [
+                    'etiket_id' => $etiket->id,
+                    'etiket_name' => $etiket->name,
+                    'etiket_weight' => $etiket->weight,
+                    'product_id' => $newProduct->id,
+                    'old_product_id' => $oldProductId,
+                ]);
+            }
         }
 
-        // ✅ Step 2: Handle old product (cleanup/repair)
+        // Step 2: Handle old product (cleanup/repair)
         if ($oldProductId && $oldProductId !== $etiket->product_id) {
             $oldProduct = Product::find($oldProductId);
 
