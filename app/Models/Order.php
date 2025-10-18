@@ -397,8 +397,8 @@ class Order extends Model
                 ]);
                 
                 // Optional: Send SMS with gift code
-                // $sms = new Kavehnegar();
-                // $sms->send_with_pattern($receiverPhone, $discount->code, 'gift_code_template');
+                $sms = new Kavehnegar();
+                $sms->send_with_pattern($receiverPhone, $$this->user->name, 'gift');
             }
         } catch (\Exception $e) {
             Log::error('Failed to generate gift code', [
