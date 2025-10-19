@@ -49,6 +49,18 @@ class EditProductResource extends JsonResource
                     'src' => $url
                 ];
             })->toArray(),
+            'is_comprehensive' => $this->is_comprehensive,
+            'comprehensive_products' => $this->is_comprehensive ? 
+                $this->products->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'price' => $product->price,
+                        'weight' => $product->weight,
+                        'count' => $product->count,
+                        'image' => $product->image,
+                    ];
+                })->toArray() : [],
         ];
     }
 }

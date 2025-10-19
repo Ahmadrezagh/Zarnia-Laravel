@@ -198,6 +198,45 @@
                         </div>
                     </div>
                     <div id="attributeInputs" class="mt-3"></div>
+                    
+                    ${product.is_comprehensive ? `
+                    <div class="form-group mt-4">
+                        <label class="font-weight-bold">محصولات تشکیل‌دهنده (جامع)</label>
+                        <div class="alert alert-info">
+                            <small>این محصول یک محصول جامع است و از محصولات زیر تشکیل شده است:</small>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>تصویر</th>
+                                        <th>نام محصول</th>
+                                        <th>وزن</th>
+                                        <th>قیمت</th>
+                                        <th>موجودی</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${product.comprehensive_products.map(p => `
+                                        <tr>
+                                            <td>
+                                                ${p.image ? `<img src="${p.image}" alt="${p.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` : '<span class="text-muted">بدون تصویر</span>'}
+                                            </td>
+                                            <td>${p.name}</td>
+                                            <td>${p.weight} گرم</td>
+                                            <td>${Number(p.price).toLocaleString('fa-IR')} تومان</td>
+                                            <td>
+                                                <span class="badge badge-${p.count > 0 ? 'success' : 'danger'}">
+                                                    ${p.count}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    ` : ''}
 
                     <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
                 </form>
