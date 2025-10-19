@@ -172,9 +172,33 @@ class Product extends Model implements HasMedia
     {
         $codes = "";
 
+        // Normalize current product name for comparison
+        $currentProductName = $this->normalizeName($this->name);
+        $currentProductWeight = $this->weight;
+
         foreach ($this->AllEtikets as $etiket) {
+            // Normalize etiket name for comparison
+            $etiketName = $this->normalizeName($etiket->name);
+            
+            // Check if etiket matches this product (same name AND same weight)
+            $matchesThisProduct = ($etiketName === $currentProductName) && 
+                                  ($etiket->weight == $currentProductWeight);
+            
+            // Build the style for this etiket code
+            $style = '';
+            
+            if ($matchesThisProduct) {
+                // Light blue background for matching etikets
+                $style = 'background-color: lightblue; padding: 2px 5px; border-radius: 3px;';
+            }
+            
             if ($etiket->is_mojood == 0) {
-                $codes .= '<span style="color:red;">' . e($etiket->code) . '</span>, ';
+                // Red color for unavailable etikets (can combine with blue background)
+                $style .= ' color: red;';
+            }
+            
+            if ($style) {
+                $codes .= '<span style="' . $style . '">' . e($etiket->code) . '</span>, ';
             } else {
                 $codes .= e($etiket->code) . ', ';
             }
@@ -182,6 +206,23 @@ class Product extends Model implements HasMedia
 
         // Remove trailing comma and space
         return rtrim($codes, ', ');
+    }
+
+    /**
+     * Normalize name for comparison (handle Arabic/Persian character differences)
+     */
+    private function normalizeName($name): string
+    {
+        // Arabic Ye → Persian Ye
+        $name = str_replace(['ي', 'ی'], 'ی', $name);
+        
+        // Arabic Kaf → Persian Kaf
+        $name = str_replace('ك', 'ک', $name);
+        
+        // Trim whitespace
+        $name = trim($name);
+        
+        return $name;
     }
     public function getSingleCountAttribute()
     {
