@@ -84,6 +84,7 @@ class ProductItemResouce extends JsonResource
                     'id' => $product->id,
                     'weight' => $product->weight,
                     'name' => $product->name,
+                    'slug' => $product->slug,
                 ])
                 ->values(),
         ];

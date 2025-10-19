@@ -17,6 +17,7 @@ class SimpleProductResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'price' => number_format($this->price),
             'slug' => $this->slug,
             'weight' => $this->weight,
             'description' => $this->description,
