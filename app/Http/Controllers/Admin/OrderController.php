@@ -238,7 +238,14 @@ class OrderController extends Controller
         $discountPrice = $order->discount_price ?? 0; // Adjust based on your model
         $order->final_amount = ($totalAmount + $shippingPrice) - $discountPrice;
 
-        $order->final_amount =  $order->final_amount > 0 ?  $order->final_amount : 0;
+        // Check if final_amount is less than or equal to 0
+        if ($order->final_amount <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'بدلیل صفر شدن مجموع فاکتور سفارش قابل ویرایش نیست درصورت تمایل سفارش را لغو یا مسترد کنید'
+            ], 422);
+        }
+
         // Save the updated order
         $order->save();
 
