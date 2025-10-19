@@ -197,10 +197,22 @@ class Product extends Model implements HasMedia
                 $style .= ' color: red;';
             }
             
+            // Create tooltip content
+            $tooltipContent = e($etiket->name) . ' - ' . e($etiket->weight) . 'g';
+            if ($etiket->is_mojood == 0) {
+                $tooltipContent .= ' (ناموجود)';
+            }
+            
+            // Add cursor pointer for better UX
+            $style .= ' cursor: help;';
+            
+            // Add Bootstrap tooltip attributes
+            $tooltip = 'data-toggle="tooltip" data-placement="top" data-html="true" title="' . $tooltipContent . '"';
+            
             if ($style) {
-                $codes .= '<span style="' . $style . '">' . e($etiket->code) . '</span>, ';
+                $codes .= '<span class="etiket-code-item" style="' . $style . '" ' . $tooltip . '>' . e($etiket->code) . '</span>, ';
             } else {
-                $codes .= e($etiket->code) . ', ';
+                $codes .= '<span class="etiket-code-item" ' . $tooltip . '>' . e($etiket->code) . '</span>, ';
             }
         }
 

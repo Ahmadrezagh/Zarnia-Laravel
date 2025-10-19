@@ -65,6 +65,44 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css" integrity="sha512-3pIirOrwegjM6erE5gPSwkUzO+3cTjpnV9lexlNZqvupR64iZBnOOTiiLPb9M36zpMScbmUNIcHUqKD47M719g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="{{ asset('image-uploader/dist/image-uploader.min.css') }}" rel="stylesheet" />
+    
+    <!-- Custom tooltip styles for etiket codes -->
+    <style>
+        /* Enhanced etiket code styling */
+        .etiket-code-item {
+            position: relative;
+            display: inline-block;
+            transition: opacity 0.2s;
+        }
+        
+        .etiket-code-item:hover {
+            opacity: 0.8;
+        }
+        
+        /* Customize Bootstrap tooltip for etiket codes */
+        .tooltip {
+            font-family: inherit;
+        }
+        
+        .tooltip-inner {
+            max-width: 300px;
+            padding: 8px 12px;
+            font-size: 13px;
+            text-align: center;
+            background-color: #2c3e50;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .tooltip.bs-tooltip-top .arrow::before {
+            border-top-color: #2c3e50;
+        }
+        
+        .tooltip.bs-tooltip-bottom .arrow::before {
+            border-bottom-color: #2c3e50;
+        }
+    </style>
+    
     @yield('css')
     @yield('head')
 </head>
@@ -1202,6 +1240,40 @@
         return confirm(text);
         // ✅ if user presses OK → returns true → form submits
         // ❌ if user presses Cancel → returns false → form won't submit
+    }
+</script>
+
+<script>
+    // Initialize Bootstrap tooltips for etiket codes
+    $(document).ready(function() {
+        // Initialize tooltips on page load
+        initializeEtiketTooltips();
+        
+        // Re-initialize tooltips after AJAX updates (for DataTables)
+        if (typeof window.refreshTable !== 'undefined') {
+            var originalRefreshTable = window.refreshTable;
+            window.refreshTable = function() {
+                originalRefreshTable();
+                setTimeout(initializeEtiketTooltips, 500);
+            };
+        }
+        
+        // Re-initialize after any DataTable draw event
+        $(document).on('draw.dt', function() {
+            setTimeout(initializeEtiketTooltips, 100);
+        });
+    });
+    
+    function initializeEtiketTooltips() {
+        // Destroy existing tooltips to avoid duplicates
+        $('[data-toggle="tooltip"]').tooltip('dispose');
+        
+        // Initialize new tooltips
+        $('[data-toggle="tooltip"]').tooltip({
+            container: 'body',
+            trigger: 'hover',
+            boundary: 'window'
+        });
     }
 </script>
 
