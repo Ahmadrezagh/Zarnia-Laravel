@@ -530,6 +530,6 @@ class Order extends Model
 
     public function getFinalPriceAttribute()
     {
-        return ( $this->total_amount + $this->shippingPrice ) - $this->discountPrice ;
+        return ( $this->total_amount + $this->shippingPrice ) - $this->discount_price ;
     }
 }
