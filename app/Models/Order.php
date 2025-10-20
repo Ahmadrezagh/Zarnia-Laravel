@@ -488,7 +488,7 @@ class Order extends Model
                 ]);
             }
         }
-        
+
         // Only proceed with shipping and gateway if all order items were successful
         if ($allSuccessful) {
             // Check shipping if exists (null for in-store orders)
@@ -515,5 +515,21 @@ class Order extends Model
         $accounting_app = new Tahesab();
         $transaction_id = "0000000000".$this->transaction_id;
         return $accounting_app->DoDeleteSanad($transaction_id);
+    }
+
+    public function getShippingPriceAttribute()
+    {
+        $shippingPrice = 0;
+        if($this->shipping){
+            if($this->shipping->price){
+                $shippingPrice = $this->shipping->price;
+            }
+        }
+        return $shippingPrice;
+    }
+
+    public function getFinalPriceAttribute()
+    {
+        return ( $this->total_price + $this->shippingPrice ) - $this->discountPrice ;
     }
 }
