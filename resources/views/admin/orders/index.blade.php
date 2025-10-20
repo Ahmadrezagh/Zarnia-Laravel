@@ -91,7 +91,7 @@
                         <x-form.input col="col-6" title="مبلغ تخفیف" :value="$order->discount_price" name="none" />
                         <x-form.input col="col-6" title="مبلغ" :value="$order->total_amount" name="none" />
                         <x-form.input col="col-6" title="هزینه ارسال" :value="$order->shippingPrice" name="none" />
-                        <x-form.input col="col-6" title="مبلغ قابل پرداخت" :value="$order->final_amount" name="none" />
+                        <x-form.input col="col-6" title="مبلغ قابل پرداخت" :value="$order->finalPrice" name="none" />
                         {{-- hidden input برای هر سفارش --}}
                         <input type="hidden" name="updated_items" id="updated-items-{{$order->id}}">
 
