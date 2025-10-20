@@ -380,7 +380,7 @@ class OrderController extends Controller
         if($order->gateway->key == 'snapp'){
             $snapp = new SnappPayGateway();
             $result = $snapp->cancel($order->payment_token);
-            $order->update(['status' => Order::$STATUSES[8]]);
+            $order->update(['status' => Order::$STATUSES[4]]);
             return $result;
         }
         return [
