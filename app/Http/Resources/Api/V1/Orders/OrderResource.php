@@ -38,7 +38,7 @@ class OrderResource extends JsonResource
             'discount_percentage' => $this->discount_percentage,
             'discount_price' => $this->discount_price,
             'total_amount' => $this->total_amount,
-            'final_amount' => $this->final_amount,
+            'final_amount' => $this->final_price,
             'paid_at' => $this->paid_at,
             'note' => $this->notem,
             'payment_url' => $this->payment_urll,
