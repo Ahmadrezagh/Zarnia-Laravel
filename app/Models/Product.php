@@ -511,6 +511,42 @@ class Product extends Model implements HasMedia
         return $this->getRawOriginal('price') /10;
     }
 
+    public function getPriceRangeTitleAttribute()
+    {
+        // Load children if not already loaded (to avoid N+1 queries)
+        if (!$this->relationLoaded('children')) {
+            $this->load('children');
+        }
+        
+        // Check if this product has children
+        $children = $this->children;
+        
+        if ($children->isEmpty()) {
+            // Single price product - return just the price
+            $price = $this->price; // This uses the accessor which handles discounted_price
+            return number_format($price) . ' تومان';
+        }
+        
+        // Product with children - calculate min and max prices
+        $prices = collect([$this->price]); // Start with parent price
+        
+        // Add children prices
+        $children->each(function ($child) use ($prices) {
+            $prices->push($child->price); // Uses the price accessor
+        });
+        
+        $minPrice = $prices->min();
+        $maxPrice = $prices->max();
+        
+        // If all prices are the same, return single price format
+        if ($minPrice == $maxPrice) {
+            return number_format($minPrice) . ' تومان';
+        }
+        
+        // Return range format
+        return 'از ' . number_format($minPrice) . ' تومان تا ' . number_format($maxPrice) . ' تومان';
+    }
+
     public function scopeHasCountAndImage(Builder $query): Builder
     {
         return $query

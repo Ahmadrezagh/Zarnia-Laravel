@@ -5,7 +5,8 @@ use Illuminate\Database\Eloquent\Builder;
 trait PriceRange
 {
     /**
-     * Scope to filter parent products (parent_id == null) and their children by price range.
+     * Scope to filter parent products by their own price or their children's prices.
+     * This works well when combined with ->main() scope.
      * 
      * @param Builder $query
      * @param float|null $fromPrice Minimum price (can be null)
@@ -23,17 +24,15 @@ trait PriceRange
         $fromPrice = !is_null($fromPrice) ? $fromPrice * 10 : null;
         $toPrice = !is_null($toPrice) ? $toPrice * 10 : null;
 
-        // Filter only parent products and their children
+        // Filter products based on their own price OR any of their children's prices
         return $query->where(function ($q) use ($fromPrice, $toPrice) {
-            // Get parent products that match the price range
-            $q->where(function ($parentQuery) use ($fromPrice, $toPrice) {
-                $parentQuery->whereNull('parent_id');
-                $this->applyPriceFilter($parentQuery, $fromPrice, $toPrice);
+            // Check if the product itself matches the price range
+            $q->where(function ($ownPriceQuery) use ($fromPrice, $toPrice) {
+                $this->applyPriceFilter($ownPriceQuery, $fromPrice, $toPrice);
             })
-            // OR get children whose price matches
-            ->orWhere(function ($childQuery) use ($fromPrice, $toPrice) {
-                $childQuery->whereNotNull('parent_id');
-                $this->applyPriceFilter($childQuery, $fromPrice, $toPrice);
+            // OR check if any of its children match the price range
+            ->orWhereHas('children', function ($childrenQuery) use ($fromPrice, $toPrice) {
+                $this->applyPriceFilter($childrenQuery, $fromPrice, $toPrice);
             });
         });
     }

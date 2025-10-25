@@ -30,17 +30,40 @@ class ProductController extends Controller
         }
         
         // Get price range parameters (support both minPrice/maxPrice and from_price/to_price)
-        $fromPrice = $request->from_price ?? $request->minPrice ?? null;
-        $toPrice = $request->to_price ?? $request->maxPrice ?? null;
+        // Handle empty strings as null
+        $fromPrice = $request->filled('from_price') ? $request->from_price : ($request->filled('minPrice') ? $request->minPrice : null);
+        $toPrice = $request->filled('to_price') ? $request->to_price : ($request->filled('maxPrice') ? $request->maxPrice : null);
+        
+        // Debug: Step-by-step count to identify which filter is reducing results
+        $baseQuery = Product::query()->main();
+        \Log::info('After main(): ' . $baseQuery->count());
+        
+        $baseQuery->categories($request->category_ids);
+        \Log::info('After categories: ' . $baseQuery->count());
+        
+        $baseQuery->search($request->search);
+        \Log::info('After search: ' . $baseQuery->count());
+        
+        $baseQuery->priceRange($fromPrice, $toPrice);
+        \Log::info('After priceRange: ' . $baseQuery->count() . ' (from=' . ($fromPrice ?? 'null') . ', to=' . ($toPrice ?? 'null') . ')');
+        
+        $baseQuery->HasDiscount($request->hasDiscount);
+        \Log::info('After HasDiscount: ' . $baseQuery->count());
+        
+        $baseQuery->hasCountAndImage();
+        \Log::info('After hasCountAndImage: ' . $baseQuery->count());
+        
+        \Log::info('Request params:', $request->all());
         
         $products = Product::query()
+            ->with('children') // Eager load children for price_range_title
             ->main()
             ->categories($request->category_ids)
             ->search($request->search)
             ->priceRange($fromPrice, $toPrice)
             ->HasDiscount($request->hasDiscount)
             ->hasCountAndImage()
-            ->applyDefaultSort($sortType) // Apply sorting based on request or setting
+            ->applyDefaultSort($sortType)
             ->paginate($request->get('per_page') ?? 12);
             
         return new ProductListCollection($products, $user);
@@ -49,6 +72,10 @@ class ProductController extends Controller
     public function show(Request $request, Product $product)
     {
         $user = $request->user('sanctum');
+        
+        // Eager load children for price_range_title
+        $product->load('children');
+        
         return ProductItemResouce::make($product,$user);
     }
 
