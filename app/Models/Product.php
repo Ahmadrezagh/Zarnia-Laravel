@@ -547,6 +547,41 @@ class Product extends Model implements HasMedia
         return 'از ' . number_format($minPrice) . ' تومان تا ' . number_format($maxPrice) . ' تومان';
     }
 
+    public function getMinimumAvailablePriceAttribute()
+    {
+        // Load children if not already loaded (to avoid N+1 queries)
+        if (!$this->relationLoaded('children')) {
+            $this->load('children');
+        }
+        
+        // Collect available products (this product + children with single_count >= 1)
+        $availableProducts = collect();
+        
+        // Check if this product is available
+        if ($this->single_count >= 1) {
+            $availableProducts->push($this);
+        }
+        
+        // Add available children
+        $this->children->each(function ($child) use ($availableProducts) {
+            if ($child->single_count >= 1) {
+                $availableProducts->push($child);
+            }
+        });
+        
+        // If no available products, return null
+        if ($availableProducts->isEmpty()) {
+            return null;
+        }
+        
+        // Get the minimum price among available products
+        $minPrice = $availableProducts->map(function ($product) {
+            return $product->price; // Uses the price accessor which handles discounted_price
+        })->min();
+        
+        return $minPrice;
+    }
+
     public function scopeHasCountAndImage(Builder $query): Builder
     {
         return $query

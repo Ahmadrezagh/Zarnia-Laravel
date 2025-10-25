@@ -64,6 +64,7 @@ class ProductItemResouce extends JsonResource
             'price' => number_format($this->price),
             'price_without_discount' => number_format($this->price_without_discount),
             'price_range_title' => $this->price_range_title,
+            'minimum_available_price' => $this->minimum_available_price,
             'discount_percentage' => $this->discount_percentage,
             'snapp_pay_each_installment' => number_format($this->price/4),
             'children' => new ProductListCollection($this->children, $this->user),
