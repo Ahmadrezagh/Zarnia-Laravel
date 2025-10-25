@@ -7,6 +7,7 @@ use App\Traits\HasRelatedProducts;
 use App\Traits\Scopes\HasDiscount;
 use App\Traits\Scopes\MaxPrice;
 use App\Traits\Scopes\MinPrice;
+use App\Traits\Scopes\PriceRange;
 use App\Traits\Scopes\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -23,7 +24,7 @@ class Product extends Model implements HasMedia
 {
     use InteractsWithMedia;
     use HasPersianSlug;
-    use Search,HasDiscount,MaxPrice,MinPrice;
+    use Search,HasDiscount,MaxPrice,MinPrice,PriceRange;
     use HasComplementaryProducts,HasRelatedProducts;
     protected $fillable = [
         'name',

@@ -10,10 +10,20 @@ trait MinPrice{
         }
         $minPrice = $minPrice * 10;
         return $query->where(function ($q) use ($minPrice) {
-            $q->whereNotNull('discounted_price')
-                ->where('discounted_price', '>=', $minPrice)
-                ->orWhereNull('discounted_price')
+            // Case 1: Product has discounted_price
+            $q->where(function ($discountedQuery) use ($minPrice) {
+                $discountedQuery->whereNotNull('discounted_price')
+                    ->where('discounted_price', '>', 0)
+                    ->where('discounted_price', '>=', $minPrice);
+            })
+            // Case 2: Product doesn't have discounted_price, use regular price
+            ->orWhere(function ($regularQuery) use ($minPrice) {
+                $regularQuery->where(function ($nullOrZero) {
+                    $nullOrZero->whereNull('discounted_price')
+                        ->orWhere('discounted_price', '=', 0);
+                })
                 ->where('price', '>=', $minPrice);
+            });
         });
     }
 }

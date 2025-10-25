@@ -29,12 +29,15 @@ class ProductController extends Controller
             $sortType = $request->sort_by;
         }
         
+        // Get price range parameters (support both minPrice/maxPrice and from_price/to_price)
+        $fromPrice = $request->from_price ?? $request->minPrice ?? null;
+        $toPrice = $request->to_price ?? $request->maxPrice ?? null;
+        
         $products = Product::query()
             ->main()
             ->categories($request->category_ids)
             ->search($request->search)
-            ->minPrice($request->minPrice)
-            ->maxPrice($request->maxPrice)
+            ->priceRange($fromPrice, $toPrice)
             ->HasDiscount($request->hasDiscount)
             ->hasCountAndImage()
             ->applyDefaultSort($sortType) // Apply sorting based on request or setting
