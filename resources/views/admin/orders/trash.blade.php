@@ -203,58 +203,66 @@
 
         function restoreOrder(id){
             $.ajax({
-                url: "{{ url('admin_orders') }}/" + id + "/restore",
+                url: "{{ route('admin_orders.restore', ':id') }}".replace(':id', id),
                 type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}"
+                },
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 success: function(response) {
                     toastr.success(response.message || 'سفارش با موفقیت بازیابی شد');
                     $("#modal-restore-"+id).modal("hide");
                     
-                    // Refresh the table
-                    if (typeof window.refreshTable === 'function') {
-                        window.refreshTable();
-                    } else {
+                    // Reload page after short delay
+                    setTimeout(function() {
                         location.reload();
-                    }
+                    }, 500);
                 },
                 error: function(xhr) {
+                    console.error('Restore error:', xhr);
                     if (xhr.status === 419) {
                         toastr.error('نشست شما منقضی شده است. لطفا صفحه را رفرش کنید.');
                         setTimeout(function() {
                             location.reload();
                         }, 2000);
                     } else {
-                        toastr.error(xhr.responseJSON?.message || 'خطا در بازیابی سفارش');
+                        toastr.error(xhr.responseJSON?.message || 'خطا در بازیابی سفارش: ' + (xhr.statusText || 'خطای ناشناخته'));
                     }
-                    console.error(xhr);
                 }
             });
         }
 
         function forceDeleteOrder(id){
             $.ajax({
-                url: "{{ url('admin_orders') }}/" + id + "/force-delete",
+                url: "{{ route('admin_orders.force_delete', ':id') }}".replace(':id', id),
                 type: "DELETE",
+                data: {
+                    _token: "{{ csrf_token() }}"
+                },
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 success: function(response) {
                     toastr.success(response.message || 'سفارش به طور کامل حذف شد');
                     $("#modal-force-delete-"+id).modal("hide");
                     
-                    // Refresh the table
-                    if (typeof window.refreshTable === 'function') {
-                        window.refreshTable();
-                    } else {
+                    // Reload page after short delay
+                    setTimeout(function() {
                         location.reload();
-                    }
+                    }, 500);
                 },
                 error: function(xhr) {
+                    console.error('Force delete error:', xhr);
                     if (xhr.status === 419) {
                         toastr.error('نشست شما منقضی شده است. لطفا صفحه را رفرش کنید.');
                         setTimeout(function() {
                             location.reload();
                         }, 2000);
                     } else {
-                        toastr.error(xhr.responseJSON?.message || 'خطا در حذف دائم سفارش');
+                        toastr.error(xhr.responseJSON?.message || 'خطا در حذف دائم سفارش: ' + (xhr.statusText || 'خطای ناشناخته'));
                     }
-                    console.error(xhr);
                 }
             });
         }
