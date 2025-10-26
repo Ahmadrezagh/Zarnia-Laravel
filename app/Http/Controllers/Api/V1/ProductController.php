@@ -61,9 +61,9 @@ class ProductController extends Controller
             ->categories($request->category_ids)
             ->search($request->search)
             ->priceRange($fromPrice, $toPrice)
-            ->HasDiscount($request->hasDiscount)
             ->hasCountAndImage()
             ->applyDefaultSort($sortType)
+            ->HasDiscount($request->hasDiscount)
             ->paginate($request->get('per_page') ?? 12);
             
         return new ProductListCollection($products, $user);
