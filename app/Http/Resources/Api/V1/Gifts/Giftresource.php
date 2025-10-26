@@ -18,6 +18,8 @@ class Giftresource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
+            'percentage' => $this->percentage ,
+            'amount' => $this->amount,
             'expires_at' => $this->expires_at,
             'expire_at_jalali' => Jalalian::forge($this->expires_at)->format('Y-m-d'),
         ];
