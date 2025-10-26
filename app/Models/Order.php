@@ -305,7 +305,7 @@ class Order extends Model
 
         // Step 2: Always check status after verify
         $response = $gateway->getStatus($this->payment_token);
-        $paymentStatus = strtolower($response['status']);
+        $paymentStatus = (isset($response['status']) && $response['status'] ) ? strtolower($response['status']) : 'pending' ;
         if ( !isset($response['status']) ) {
             // Optional: Retry verify once more
             $verify = $gateway->verify($this->payment_token);
