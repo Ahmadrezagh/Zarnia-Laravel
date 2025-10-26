@@ -262,12 +262,65 @@ class OrderController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Display trashed orders (زباله دان).
      */
-    public function destroy(Order $order)
+    public function trash(Request $request)
     {
+        // Get status counts for all statuses in trash
+        $statusCounts = [];
+        foreach (Order::$STATUSES as $status) {
+            $statusCounts[$status] = Order::onlyTrashed()->where('status', $status)->count();
+        }
+        
+        $orders = Order::onlyTrashed()
+            ->filterByTransactionId($request->transaction_id)
+            ->filterByStatus($request->status)
+            ->search($request->search)
+            ->orderByStatusPriority()
+            ->paginate();
+            
+        return view('admin.orders.trash', compact('orders', 'statusCounts'));
+    }
+
+    /**
+     * Restore a trashed order.
+     */
+    public function restore($id)
+    {
+        $order = Order::onlyTrashed()->findOrFail($id);
+        $order->restore();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'سفارش با موفقیت بازیابی شد'
+        ]);
+    }
+
+    /**
+     * Permanently delete an order.
+     */
+    public function forceDelete($id)
+    {
+        $order = Order::onlyTrashed()->findOrFail($id);
+        $order->forceDelete();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'سفارش به طور کامل حذف شد'
+        ]);
+    }
+
+    /**
+     * Remove the specified resource from storage (soft delete).
+     */
+    public function destroy( $order_id)
+    {
+         $order = Order::query()->findOrFail($order_id);
         $order->delete();
-        return response()->json();
+        return response()->json([
+            'success' => true,
+            'message' => 'سفارش به زباله دان منتقل شد'
+        ]);
     }
 
 
@@ -278,6 +331,62 @@ class OrderController extends Controller
 
         // Build base query with filters
         $query = Order::query()
+            ->filterByTransactionId($request->transaction_id)
+            ->filterByStatus($request->status);
+
+        // Apply search filter - handle both DataTables search and direct search parameter
+        $searchValue = null;
+        if ($request->has('search')) {
+            // Check if search is an array (DataTables format)
+            if (is_array($request->input('search'))) {
+                $searchValue = $request->input('search.value');
+            } else {
+                // Direct search parameter
+                $searchValue = $request->input('search');
+            }
+        }
+        
+        if (!empty($searchValue)) {
+            $query->search($searchValue);
+        }
+        
+        // Apply custom ordering by status priority
+        $query->orderByStatusPriority();
+
+        // Get filtered count (after applying filters but before pagination)
+        $filteredRecords = $query->count();
+
+        // Handle pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10); // Default to 10 if length is missing or invalid
+        if ($length <= 0) {
+            $length = 10; // Ensure length is positive to avoid SQL error
+        }
+
+        // Fetch paginated data
+        $data = $query
+            ->skip($start)
+            ->take($length)
+            ->get()
+            ->map(function ($item) {
+                return OrderItemResource::make($item); // Ensure all necessary fields are included
+            });
+
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data
+        ]);
+    }
+
+    public function trashTable(Request $request)
+    {
+        // Get total records count (before any filters) - only trashed
+        $totalRecords = Order::onlyTrashed()->count();
+
+        // Build base query with filters - only trashed orders
+        $query = Order::onlyTrashed()
             ->filterByTransactionId($request->transaction_id)
             ->filterByStatus($request->status);
 

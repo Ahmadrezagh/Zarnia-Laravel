@@ -7,7 +7,12 @@
 
     <x-page>
         <x-slot name="header">
-            <h5>سفارشات</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>سفارشات</h5>
+                <a href="{{ route('admin_orders.trash') }}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> زباله دان ({{ \App\Models\Order::onlyTrashed()->count() }})
+                </a>
+            </div>
             <hr>
             <form  method="GET">
                 <div class="row">
@@ -444,6 +449,13 @@
 
     </script>
     <script>
+        // Setup AJAX to include CSRF token in all requests
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        
         document.addEventListener("DOMContentLoaded", function() {
             $('body').on('submit', 'form', function(e) {
                 let form = $(this);
@@ -459,8 +471,10 @@
                     e.preventDefault();
 
                     let action = form.attr('action');
-                    let method = form.attr('method') || 'POST';
                     let data = new FormData(this);
+                    
+                    // Check for _method field (Laravel's method spoofing)
+                    let method = form.find('input[name="_method"]').val() || form.attr('method') || 'POST';
 
                     $.ajax({
                         url: action,
@@ -468,12 +482,33 @@
                         data: data,
                         processData: false,
                         contentType: false,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
                         success: function(response) {
+                            if (response.message) {
+                                toastr.success(response.message);
+                            }
                             modal.modal('hide');
-                            location.reload();
+                            
+                            // Refresh the table
+                            if (typeof window.refreshTable === 'function') {
+                                window.refreshTable();
+                            } else {
+                                location.reload();
+                            }
                         },
                         error: function(xhr) {
-                            alert('خطایی رخ داد ❌');
+                            if (xhr.status === 419) {
+                                toastr.error('نشست شما منقضی شده است. لطفا صفحه را رفرش کنید.');
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 2000);
+                            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                                toastr.error(xhr.responseJSON.message);
+                            } else {
+                                toastr.error('خطایی رخ داد ❌');
+                            }
                             console.log(xhr.responseText);
                         }
                     });

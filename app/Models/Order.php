@@ -7,12 +7,15 @@ use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Morilog\Jalali\Jalalian;
 
 class Order extends Model
 {
+    use SoftDeletes;
+    
     protected $fillable = [
         'user_id',
         'address_id',
@@ -34,7 +37,10 @@ class Order extends Model
         'shipping_price'
     ];
 
-    protected $dates = ['paid_at'];
+    protected $casts = [
+        'paid_at' => 'datetime',
+        'deleted_at' => 'datetime',
+    ];
 
     public function scopeFilterByTransactionId(Builder $query, string $transactionId = null)
     {

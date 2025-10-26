@@ -96,6 +96,12 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::post('admin_order/update/{order}', [OrderController::class, 'updateOrder'])->name('admin_order.update');
     Route::post('update_order_status', [OrderController::class,'updateOrderStatus'] )->name('update_order_status');
     Route::get('admin_order/users/search', [OrderController::class, 'getUsersList'])->name('admin_order.users.search');
+    
+    // Trash routes
+    Route::get('admin_orders_trash', [OrderController::class, 'trash'])->name('admin_orders.trash');
+    Route::post('table/orders/trash', [OrderController::class, 'trashTable'])->name('table.orders.trash');
+    Route::post('admin_orders/{id}/restore', [OrderController::class, 'restore'])->name('admin_orders.restore');
+    Route::delete('admin_orders/{id}/force-delete', [OrderController::class, 'forceDelete'])->name('admin_orders.force_delete');
     Route::get('admin_order/users/{user}/addresses', [OrderController::class, 'getUserAddresses'])->name('admin_order.users.addresses');
     Route::get('products_not_available', [ProductController::class,'notAvailable' ])->name('products.products_not_available');
     Route::get('products_without_category', [ProductController::class,'withoutCategory' ])->name('products.product_without_category');
