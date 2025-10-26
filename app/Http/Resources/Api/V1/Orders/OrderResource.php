@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\ShippingTimeResource;
 use App\Http\Resources\Api\V1\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Morilog\Jalali\Jalalian;
 
 class OrderResource extends JsonResource
 {
@@ -44,7 +45,8 @@ class OrderResource extends JsonResource
             'payment_url' => $this->payment_urll,
             'items' => OrderItemResource::collection($this->orderItems),
             'transaction_id' => $this->transaction_id,
-            'print_url' => route('order.print',$this->id)
+            'print_url' => route('order.print',$this->id),
+            'created_at' => Jalalian::forge($this->created_at)->format('Y-m-d'),
         ];
     }
 }
