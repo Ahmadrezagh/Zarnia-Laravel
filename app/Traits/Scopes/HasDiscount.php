@@ -8,7 +8,8 @@ trait HasDiscount{
         if($hasDiscount){
             return $query
                 ->where('discounted_price','!=','0')
-                ->whereNotNull('discounted_price');
+                ->whereNotNull('discounted_price')
+                ->orWhereNotNull('discount_percentage');
         }
         return $query;
     }
