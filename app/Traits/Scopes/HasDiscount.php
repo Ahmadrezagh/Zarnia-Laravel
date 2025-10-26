@@ -9,7 +9,7 @@ trait HasDiscount{
             return $query
                 ->where('discounted_price','!=','0')
                 ->whereNotNull('discounted_price')
-                ->orWhereNotNull('discount_percentage');
+                ->orWhere('discount_percentage','!=','0');
         }
         return $query;
     }
