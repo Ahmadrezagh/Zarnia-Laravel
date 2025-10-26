@@ -34,27 +34,6 @@ class ProductController extends Controller
         $fromPrice = $request->filled('from_price') ? $request->from_price : ($request->filled('minPrice') ? $request->minPrice : null);
         $toPrice = $request->filled('to_price') ? $request->to_price : ($request->filled('maxPrice') ? $request->maxPrice : null);
         
-        // Debug: Step-by-step count to identify which filter is reducing results
-        $baseQuery = Product::query()->main();
-        \Log::info('After main(): ' . $baseQuery->count());
-        
-        $baseQuery->categories($request->category_ids);
-        \Log::info('After categories: ' . $baseQuery->count());
-        
-        $baseQuery->search($request->search);
-        \Log::info('After search: ' . $baseQuery->count());
-        
-        $baseQuery->priceRange($fromPrice, $toPrice);
-        \Log::info('After priceRange: ' . $baseQuery->count() . ' (from=' . ($fromPrice ?? 'null') . ', to=' . ($toPrice ?? 'null') . ')');
-        
-        $baseQuery->HasDiscount($request->hasDiscount);
-        \Log::info('After HasDiscount: ' . $baseQuery->count());
-        
-        $baseQuery->hasCountAndImage();
-        \Log::info('After hasCountAndImage: ' . $baseQuery->count());
-        
-        \Log::info('Request params:', $request->all());
-        
         $products = Product::query()
             ->with('children') // Eager load children for price_range_title
             ->main()

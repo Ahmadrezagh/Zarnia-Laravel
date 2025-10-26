@@ -12,13 +12,17 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Gateway extends Model implements HasMedia
 {
     use InteractsWithMedia;
-
-    use InteractsWithMedia;
+    
     protected $fillable = [
         'title',
         'sub_title',
         'color',
-        'key'
+        'key',
+        'admin_only'
+    ];
+
+    protected $casts = [
+        'admin_only' => 'boolean',
     ];
 
     public function getImageAttribute()

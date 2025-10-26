@@ -227,6 +227,20 @@
                             </select>
                         </div>
 
+                        <!-- Gateway Selection -->
+                        <div class="form-group">
+                            <label for="order-gateway">درگاه پرداخت</label>
+                            <small class="text-muted">(اختیاری - برای سفارشات حضوری نیازی نیست)</small>
+                            <select id="order-gateway" name="gateway_id" class="form-control">
+                                <option value="">بدون درگاه (پرداخت نقدی)</option>
+                                @foreach(\App\Models\Gateway::all() as $gateway)
+                                    <option value="{{ $gateway->id }}">
+                                        {{ $gateway->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <!-- Products Section -->
                         <div class="form-group">
                             <label>محصولات <span class="text-danger">*</span></label>
@@ -962,7 +976,7 @@
                 _token: '{{ csrf_token() }}',
                 user_id: $('#order-user').val(),
                 address_id: $('#order-address').val() || null,
-                gateway_id: null, // Gateway removed - not needed for in-store orders
+                gateway_id: $('#order-gateway').val() || null,
                 shipping_id: $('#order-shipping').val() || null,
                 discount_code: $('#order-discount-code').val() || '',
                 status: $('#order-status').val(),
