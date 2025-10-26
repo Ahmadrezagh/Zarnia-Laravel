@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\DiscountController;
 use App\Http\Controllers\Api\V1\FavoriteProductController;
 use App\Http\Controllers\Api\V1\GatewayController;
+use App\Http\Controllers\Api\V1\GiftController;
 use App\Http\Controllers\Api\V1\IndexBannerController;
 use App\Http\Controllers\Api\V1\IndexButtonController;
 use App\Http\Controllers\Api\V1\InitController;
@@ -72,6 +73,8 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
             Route::get('order/{order}/settle', [OrderController::class, 'settle']);
             Route::get('order/eligible/{price}', [OrderController::class, 'eligible']);
             Route::post('discount/verify', [DiscountController::class,'verify']);
+
+            Route::get('gifts', [GiftController::class,'index']);
         });
     });
 });
