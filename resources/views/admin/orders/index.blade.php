@@ -491,12 +491,10 @@
                             }
                             modal.modal('hide');
                             
-                            // Refresh the table
-                            if (typeof window.refreshTable === 'function') {
-                                window.refreshTable();
-                            } else {
+                            // Reload the page after successful action
+                            setTimeout(function() {
                                 location.reload();
-                            }
+                            }, 500);
                         },
                         error: function(xhr) {
                             if (xhr.status === 419) {
