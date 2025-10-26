@@ -43,7 +43,8 @@ class OrderResource extends JsonResource
             'note' => $this->notem,
             'payment_url' => $this->payment_urll,
             'items' => OrderItemResource::collection($this->orderItems),
-            'transaction_id' => $this->transaction_id
+            'transaction_id' => $this->transaction_id,
+            'print_url' => route('order.print',$this->id)
         ];
     }
 }

@@ -22,6 +22,7 @@ class Giftresource extends JsonResource
             'amount' => $this->amount,
             'expires_at' => $this->expires_at,
             'expire_at_jalali' => Jalalian::forge($this->expires_at)->format('Y-m-d'),
+
         ];
     }
 }
