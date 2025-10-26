@@ -150,10 +150,14 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function discounts()
+    {
+        return $this->morphToMany(Discount::class, 'discountable', 'discountables');
+    }
 
     public function gifts()
     {
-        return $this->morphMany(Discount::class, 'discountable')
+        return $this->discounts()
             ->where(function ($query) {
                 $query->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());

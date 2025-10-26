@@ -52,12 +52,6 @@ class Discount extends Model
     {
         return $this->hasMany(Discountable::class);
     }
-
-    public function discountable()
-    {
-        return $this->morphTo();
-    }
-
     /**
      * Get all users who can use this discount.
      */
