@@ -158,6 +158,7 @@ class UserController extends Controller
             'columns' => [
                 ['label' => 'تصویر پروفایل', 'key' => 'profile_image', 'type' => 'image'],
                 ['label' => 'نام', 'key' => 'name', 'type' => 'text'],
+                ['label' => 'شماره تماس', 'key' => 'phone', 'type' => 'text'],
             ],
             'url' => route('table.users'),
             'items' => $users,
