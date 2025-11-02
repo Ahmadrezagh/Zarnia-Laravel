@@ -319,7 +319,7 @@ class Tahesab{
             'message' => $response->body()
         ];
     }
-    public function DoNewSanadTalabBedehi( $order_number , $IsBedehiOrTalab_0_1, $Mablagh, $HavalehBe_Mcode, $MultiRadif  )
+    public function DoNewSanadTalabBedehi( $order_number , $IsBedehiOrTalab_0_1, $Mablagh, $HavalehBe_Mcode, $MultiRadif,$sharh = "sharh"  )
     {
         $year = Jalalian::now()->format('Y');
         $month = Jalalian::now()->format('m');
@@ -335,7 +335,7 @@ class Tahesab{
                 intval($day),
                 $IsBedehiOrTalab_0_1,
                 $Mablagh,
-                "Sharh",
+                $sharh,
                 "Baabat",
                 0,
                 $order_number,
