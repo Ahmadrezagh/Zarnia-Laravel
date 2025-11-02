@@ -508,7 +508,7 @@ class Order extends Model
                  $accounting_app->DoNewSanadTalabBedehi($transaction_id,0,$final_amount,210,1,"Snapp");
             }
             elseif($this->gateway && $this->gateway->key == 'digipay'){
-                 $accounting_app->DoNewSanadTalabBedehi($transaction_id,0,$final_amount,1330,1,"Digipay");
+                 $accounting_app->DoNewSanadTalabBedehi($transaction_id,0,$final_amount,3330,1,"Digipay");
             }
         } else {
             \Log::error('Skipping shipping and gateway accounting entries due to failed order item entries', [
