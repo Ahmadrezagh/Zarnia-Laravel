@@ -85,7 +85,7 @@ class User extends Authenticatable
 
     public function scopeUsers(Builder $query)
     {
-        return $query->where('type' , '=', User::$TYPES[2]);
+        return $query->where('type' , '=', User::$TYPES[2])->orWehreNull('type');
     }
 
     public function hasRole(Role $role)
