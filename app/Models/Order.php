@@ -499,7 +499,7 @@ class Order extends Model
         if ($allSuccessful) {
             // Check shipping if exists (null for in-store orders)
             if($this->shipping && $this->shipping->key == 'post'){
-                $final_amount = $final_amount + 150000;
+//                $final_amount = $final_amount + 150000;
                 $accounting_app->DoNewSanadTalabBedehi($transaction_id,1,150000,0,1);
             }
             
