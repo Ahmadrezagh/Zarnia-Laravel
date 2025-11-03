@@ -121,9 +121,12 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::resource('footer_title.footer_title_links', FooterTitleLinkController::class );
     Route::get('etiket_search', [EtiketController::class, 'search'])->name('etiket_search');
     Route::post('store_comprehensive_product', [ProductController::class, 'storeComprehensiveProduct'])->name('comprehensive_product.store');
+    Route::post('comprehensive_product/add', [ProductController::class, 'addProductToComprehensive'])->name('comprehensive_product.add');
+    Route::post('comprehensive_product/remove', [ProductController::class, 'removeProductFromComprehensive'])->name('comprehensive_product.remove');
 
     Route::resource('attributes', AttributeController::class );
     Route::resource('attribute_groups', AttributeGroupController::class );
+    Route::get('attribute_groups/api/list', [AttributeGroupController::class, 'apiList'])->name('attribute_groups.api_list');
     Route::resource('invoice_templates', InvoiceTemplateController::class );
     Route::resource('discounts', DiscountController::class );
     Route::resource('gift_structures', GiftStructureController::class );

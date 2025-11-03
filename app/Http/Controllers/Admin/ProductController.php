@@ -78,7 +78,8 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        $product = Product::query()->findOrFail($id);
+        // Eager load products relationship for comprehensive products
+        $product = Product::query()->with('products')->findOrFail($id);
         if($product){
             return EditProductResource::make($product);
         }
@@ -104,7 +105,12 @@ class ProductController extends Controller
         $validated['discount_percentage'] = $request->input('discount_percentage') ?? 0;
         $product->update($validated);
 
-        // Handle cover image
+        // Handle cover image deletion
+        if ($request->has('delete_cover_image') && $request->delete_cover_image == '1') {
+            $product->clearMediaCollection('cover_image');
+        }
+        
+        // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             $product->clearMediaCollection('cover_image');
             $product->addMedia($request->file('cover_image'))
@@ -490,7 +496,9 @@ class ProductController extends Controller
     }
     public function products_comprehensive_table(Request $request)
     {
-        $query = Product::query()->comprehensive()->main()->select('*'); // Assuming your model is Product
+        // Comprehensive products don't need etikets themselves, so we don't filter by available()
+        // They are containers for other products
+        $query = Product::query()->comprehensive()->main()->select('*');
 
         // Get total records before applying filters
         $totalRecords = $query->count();
@@ -679,19 +687,26 @@ class ProductController extends Controller
 
     public function storeComprehensiveProduct(storeComprehensiveProductRequest $request)
     {
-        $validated = $request->validated();
-        $validated['is_comprehensive'] = 1;
-        $validated['weight'] = 0;
+        try {
+            $validated = $request->validated();
+            $validated['is_comprehensive'] = 1;
+            $validated['weight'] = 0;
+            $validated['price'] = 0;
 
-        $validated['price'] = 0;
-        foreach ($request->product_ids as $productId) {
-            $pr = Product::find($productId);
-            if($pr){
-                $validated['price'] = $validated['price'] + ( $pr->price * 10 );
-                $validated['weight'] = $validated['weight'] + $pr->weight;
+            // Ensure product_ids is an array
+            if (!is_array($request->product_ids) || empty($request->product_ids)) {
+                return back()->withErrors(['product_ids' => 'حداقل یک محصول باید انتخاب شود']);
             }
-        }
-        $product = Product::create($validated);
+
+            foreach ($request->product_ids as $productId) {
+                $pr = Product::find($productId);
+                if($pr){
+                    $validated['price'] = $validated['price'] + ( $pr->price * 10 );
+                    $validated['weight'] = $validated['weight'] + $pr->weight;
+                }
+            }
+            
+            $product = Product::create($validated);
         // Handle cover image
         if ($request->hasFile('cover_image')) {
             $product->clearMediaCollection('cover_image');
@@ -716,20 +731,177 @@ class ProductController extends Controller
             }
         }
 
-        // Handle categories
-        $product->categories()->sync($request->category_ids);
-
-        foreach ($request->product_ids as $productId) {
-            ComprehensiveProduct::create([
-                'comprehensive_product_id' => $product->id,
-                'product_id' => $productId,
-            ]);
+        // Handle categories - support both 'categories[]' and 'category_ids' field names
+        $categoryIds = [];
+        if ($request->has('category_ids')) {
+            $categoryIds = $request->category_ids;
+        } elseif ($request->has('categories')) {
+            // Handle both array and single value
+            $categoryIds = is_array($request->categories) ? $request->categories : [$request->categories];
         }
-        return back();
+        
+            if (!empty($categoryIds)) {
+                $product->categories()->sync($categoryIds);
+            }
+
+            foreach ($request->product_ids as $productId) {
+                ComprehensiveProduct::create([
+                    'comprehensive_product_id' => $product->id,
+                    'product_id' => $productId,
+                ]);
+            }
+            
+            return back()->with('success', 'محصول جامع با موفقیت ایجاد شد');
+        } catch (\Exception $e) {
+            \Log::error('Error creating comprehensive product: ' . $e->getMessage());
+            \Log::error('Request data: ' . json_encode($request->all()));
+            return back()->withErrors(['error' => 'خطا در ایجاد محصول جامع: ' . $e->getMessage()])->withInput();
+        }
     }
     public function updateComprehensiveProduct(updateComprehensiveProductRequest $request)
     {
 
+    }
+
+    /**
+     * Add a product to comprehensive product
+     */
+    public function addProductToComprehensive(Request $request)
+    {
+        \Log::info('addProductToComprehensive called', $request->all());
+        
+        // Ensure product_id is an integer
+        $productId = $request->input('product_id');
+        if (is_string($productId) && strpos($productId, 'Product:') !== false) {
+            $productId = str_replace('Product:', '', $productId);
+        }
+        $productId = (int) $productId;
+        $request->merge(['product_id' => $productId]);
+        
+        // Ensure comprehensive_product_id is an integer
+        $comprehensiveProductId = (int) $request->input('comprehensive_product_id');
+        $request->merge(['comprehensive_product_id' => $comprehensiveProductId]);
+        
+        $request->validate([
+            'comprehensive_product_id' => 'required|integer|exists:products,id',
+            'product_id' => 'required|integer|exists:products,id',
+        ]);
+
+        $comprehensiveProduct = Product::findOrFail($comprehensiveProductId);
+        if (!$comprehensiveProduct->is_comprehensive) {
+            \Log::warning('Product is not comprehensive', ['id' => $comprehensiveProductId]);
+            return response()->json([
+                'success' => false,
+                'message' => 'محصول انتخاب شده یک محصول جامع نیست'
+            ], 422);
+        }
+
+        // Check if product is already added
+        $exists = ComprehensiveProduct::where('comprehensive_product_id', $comprehensiveProductId)
+            ->where('product_id', $productId)
+            ->exists();
+
+        if ($exists) {
+            \Log::info('Product already exists in comprehensive', [
+                'comprehensive_product_id' => $comprehensiveProductId,
+                'product_id' => $productId
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'این محصول قبلا به محصول جامع اضافه شده است'
+            ], 422);
+        }
+
+        try {
+            ComprehensiveProduct::create([
+                'comprehensive_product_id' => $comprehensiveProductId,
+                'product_id' => $productId,
+            ]);
+
+            // Recalculate comprehensive product price and weight
+            $comprehensiveProduct = Product::findOrFail($comprehensiveProductId);
+            $this->recalculateComprehensiveProductTotals($comprehensiveProduct);
+
+            \Log::info('Product added to comprehensive', [
+                'comprehensive_product_id' => $comprehensiveProductId,
+                'product_id' => $productId,
+                'verification' => ComprehensiveProduct::where('comprehensive_product_id', $comprehensiveProductId)
+                    ->where('product_id', $productId)
+                    ->exists()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'محصول با موفقیت به محصول جامع اضافه شد'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error adding product to comprehensive: ' . $e->getMessage(), [
+                'comprehensive_product_id' => $comprehensiveProductId,
+                'product_id' => $productId,
+                'original_request' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در افزودن محصول: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove a product from comprehensive product
+     */
+    public function removeProductFromComprehensive(Request $request)
+    {
+        $request->validate([
+            'comprehensive_product_id' => 'required|exists:products,id',
+            'product_id' => 'required|exists:products,id',
+        ]);
+
+        $deleted = ComprehensiveProduct::where('comprehensive_product_id', $request->comprehensive_product_id)
+            ->where('product_id', $request->product_id)
+            ->delete();
+
+        if (!$deleted) {
+            return response()->json([
+                'success' => false,
+                'message' => 'محصول در محصول جامع یافت نشد'
+            ], 404);
+        }
+
+        // Recalculate comprehensive product price and weight
+        $comprehensiveProduct = Product::findOrFail($request->comprehensive_product_id);
+        $this->recalculateComprehensiveProductTotals($comprehensiveProduct);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'محصول با موفقیت از محصول جامع حذف شد'
+        ]);
+    }
+
+    /**
+     * Recalculate comprehensive product totals (price and weight)
+     */
+    private function recalculateComprehensiveProductTotals(Product $comprehensiveProduct)
+    {
+        $totalPrice = 0;
+        $totalWeight = 0;
+        
+        // Get all products in this comprehensive product
+        $productIds = \App\Models\ComprehensiveProduct::where('comprehensive_product_id', $comprehensiveProduct->id)
+            ->pluck('product_id');
+        
+        $products = Product::whereIn('id', $productIds)->get();
+        
+        foreach ($products as $pr) {
+            $totalPrice += $pr->price * 10;
+            $totalWeight += $pr->weight;
+        }
+        
+        $comprehensiveProduct->update([
+            'price' => $totalPrice,
+            'weight' => $totalWeight
+        ]);
     }
 
     public function search(Request $request)
@@ -770,11 +942,11 @@ class ProductController extends Controller
 
     public function ajaxSearch(Request $request)
     {
-
         $query = $request->input('q');
+        $availableOnly = $request->has('available_only') && $request->available_only == '1';
 
         // Search products by name OR exact etiket code - only show products with count >= 1
-        $products = Product::where(function($q) use ($query) {
+        $productsQuery = Product::where(function($q) use ($query) {
                 // Search by product name
                 $q->where('name', 'LIKE', "%{$query}%")
                   // OR search by exact etiket code
@@ -785,17 +957,25 @@ class ProductController extends Controller
             })
             ->whereHas('etikets', function($q) {
                 $q->where('is_mojood', 1); // Only products with available etikets
-            })
-            ->select('id', 'name', 'price', 'weight')
+            });
+
+        // Filter unavailable products if requested - use available() scope instead of single_count
+        if ($availableOnly) {
+            $productsQuery->available();
+        }
+
+        $products = $productsQuery->select('id', 'name', 'price', 'weight')
             ->distinct() // Prevent duplicates
             ->limit(50) // Limit results for performance
             ->get()
             ->map(function ($product) {
+                // Calculate single_count using the accessor after loading the product
+                $singleCount = $product->single_count;
                 return [
                     'id' => "Product:{$product->id}",
-                    'text' => $product->name . (($product->weight) ? ' (' . $product->weight . 'g)' : '') . ' (موجودی: ' . $product->single_count . ')',
+                    'text' => $product->name . (($product->weight) ? ' (' . $product->weight . 'g)' : '') . ' (موجودی: ' . $singleCount . ')',
                     'price' => $product->price,
-                    'single_count' => $product->single_count,
+                    'single_count' => $singleCount,
                     'weight' => $product->weight
                 ];
             });

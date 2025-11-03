@@ -29,6 +29,7 @@ class EditProductResource extends JsonResource
             'id' => $this->id,
             'urlOfProduct' => url($this->slug) ,
             'name' => $this->name,
+            'attribute_group_id' => $attribute_group_id,
             'attribute_group_str' => $attribute_group_str ,
             'slug' => $this->slug,
             'image' => $this->image,
@@ -51,7 +52,7 @@ class EditProductResource extends JsonResource
             })->toArray(),
             'is_comprehensive' => $this->is_comprehensive,
             'comprehensive_products' => $this->is_comprehensive ? 
-                $this->products->map(function ($product) {
+                $this->products()->get()->map(function ($product) {
                     return [
                         'id' => $product->id,
                         'name' => $product->name,

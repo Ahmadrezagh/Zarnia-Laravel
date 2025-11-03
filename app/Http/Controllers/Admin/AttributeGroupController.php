@@ -73,4 +73,18 @@ class AttributeGroupController extends Controller
         $attribute_group->delete();
         return response()->json();
     }
+
+    /**
+     * API endpoint to get list of attribute groups for dropdowns
+     */
+    public function apiList()
+    {
+        $attributeGroups = AttributeGroup::query()
+            ->latest()
+            ->get(['id', 'name']);
+        
+        return response()->json([
+            'data' => $attributeGroups
+        ]);
+    }
 }
