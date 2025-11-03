@@ -120,6 +120,7 @@ class EtiketObserver
                 'darsad_kharid' => $etiket->darsad_kharid,
                 'mazaneh' => $etiket->mazaneh,
                 'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
+                'price' => $etiket->price
             ]);
 
             $etiket->updateQuietly([
@@ -150,6 +151,7 @@ class EtiketObserver
                 $product->darsad_kharid = $etiket->darsad_kharid;
                 $product->mazaneh = $etiket->mazaneh;
                 $product->darsad_vazn_foroosh = $etiket->darsad_vazn_foroosh;
+                $product->price = $etiket->price;
                 $product->save();
 
                 $etiket->updateQuietly([
