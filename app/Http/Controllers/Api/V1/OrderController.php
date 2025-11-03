@@ -110,7 +110,7 @@ class OrderController extends Controller
         $response = $order->cancel();
         $order->update(['status' => Order::$STATUSES[3]]);
         $sms = new Kavehnegar();
-        $sms->send_with_two_token($order->address->receiver_phone,$order->address->receiver_name,$order->id,$order->status);
+        $sms->send_with_two_token($order->user->phone, $order->user->name, $order->id, $order->status);
         return $response;
     }
     public function settle(Order $order)

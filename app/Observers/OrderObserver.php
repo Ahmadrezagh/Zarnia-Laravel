@@ -16,12 +16,9 @@ class OrderObserver
         $gateway = Gateway::find($order->gateway_id);
 //        $gateway->createTransaction($order);
         
-        // Use user's phone and name if address is null (for in-store orders)
-        $receiverPhone = $order->address ? $order->address->receiver_phone : $order->user->phone;
-        $receiverName = $order->address ? $order->address->receiver_name : $order->user->name;
-        
+        // Use user's phone and name for SMS
         $sms = new Kavehnegar();
-        $sms->send_with_two_token($receiverPhone, $receiverName, $order->id, $order->status);
+        $sms->send_with_two_token($order->user->phone, $order->user->name, $order->id, $order->status);
     }
 
     /**

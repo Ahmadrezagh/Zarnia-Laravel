@@ -366,14 +366,11 @@ class Order extends Model
             'status' => 'paid'
         ]);
 
-        // Get receiver phone and name (use user's info if address is null for in-store orders)
-        $receiverPhone = $this->address ? $this->address->receiver_phone : $this->user->phone;
-        $receiverName = $this->address ? $this->address->receiver_name : $this->user->name;
-
+        // Use user's phone and name for SMS
         $sms = new Kavehnegar();
         $sms->send_with_two_token(
-            $receiverPhone,
-            $receiverName,
+            $this->user->phone,
+            $this->user->name,
             $this->id,
             $this->status
         );
@@ -394,10 +391,6 @@ class Order extends Model
             $discount = GiftStructure::checkAndGenerateGift($this);
             
             if ($discount) {
-                // Get receiver phone and name
-                $receiverPhone = $this->address ? $this->address->receiver_phone : $this->user->phone;
-                $receiverName = $this->address ? $this->address->receiver_name : $this->user->name;
-                
                 // Determine discount type for logging
                 $discountType = $discount->percentage 
                     ? "percentage ({$discount->percentage}%)" 
@@ -412,9 +405,9 @@ class Order extends Model
                     'expires_at' => $discount->expires_at,
                 ]);
                 
-                // Optional: Send SMS with gift code
+                // Optional: Send SMS with gift code using user's phone and name
                 $sms = new Kavehnegar();
-                $sms->send_with_pattern($receiverPhone, $this->user->name, 'gift');
+                $sms->send_with_pattern($this->user->phone, $this->user->name, 'gift');
             }
         } catch (\Exception $e) {
             Log::error('Failed to generate gift code', [
