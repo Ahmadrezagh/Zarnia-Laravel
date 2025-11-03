@@ -107,15 +107,17 @@ class GiftStructureController extends Controller
     {
         $info = [];
         
-        if ($gift->amount) {
+        // Check if amount exists and is greater than 0
+        if (!is_null($gift->amount) && $gift->amount > 0) {
             $info[] = number_format($gift->amount) . ' تومان';
         }
         
-        if ($gift->percentage) {
+        // Check if percentage exists and is greater than 0
+        if (!is_null($gift->percentage) && $gift->percentage > 0) {
             $info[] = $gift->percentage . '%';
         }
         
-        return implode(' + ', $info) ?: '-';
+        return !empty($info) ? implode(' + ', $info) : '-';
     }
 }
 
