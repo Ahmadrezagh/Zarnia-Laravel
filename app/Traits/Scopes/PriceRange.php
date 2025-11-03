@@ -6,6 +6,7 @@ trait PriceRange
 {
     /**
      * Scope to filter parent products by their own price or their children's prices.
+     * Only includes products that are available (single_count >= 1).
      * This works well when combined with ->main() scope.
      * 
      * @param Builder $query
@@ -25,14 +26,23 @@ trait PriceRange
         $toPrice = !is_null($toPrice) ? $toPrice * 10 : null;
 
         // Filter products based on their own price OR any of their children's prices
+        // Only include products that are available (have at least one etiket with is_mojood = 1)
         return $query->where(function ($q) use ($fromPrice, $toPrice) {
-            // Check if the product itself matches the price range
+            // Check if the product itself matches the price range AND is available
             $q->where(function ($ownPriceQuery) use ($fromPrice, $toPrice) {
                 $this->applyPriceFilter($ownPriceQuery, $fromPrice, $toPrice);
+                // Add availability check: product must have at least one available etiket
+                $ownPriceQuery->whereHas('etikets', function ($etiketQuery) {
+                    $etiketQuery->where('is_mojood', 1);
+                });
             })
-            // OR check if any of its children match the price range
+            // OR check if any of its children match the price range AND are available
             ->orWhereHas('children', function ($childrenQuery) use ($fromPrice, $toPrice) {
                 $this->applyPriceFilter($childrenQuery, $fromPrice, $toPrice);
+                // Add availability check: child must have at least one available etiket
+                $childrenQuery->whereHas('etikets', function ($etiketQuery) {
+                    $etiketQuery->where('is_mojood', 1);
+                });
             });
         });
     }
