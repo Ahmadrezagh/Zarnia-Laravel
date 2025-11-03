@@ -387,7 +387,7 @@ class Order extends Model
     /**
      * Check and generate gift discount code if applicable
      */
-    private function checkAndGenerateGift()
+    public function checkAndGenerateGift()
     {
         try {
             // Check and generate gift using static method
@@ -414,7 +414,7 @@ class Order extends Model
                 
                 // Optional: Send SMS with gift code
                 $sms = new Kavehnegar();
-                $sms->send_with_pattern($receiverPhone, $$this->user->name, 'gift');
+                $sms->send_with_pattern($receiverPhone, $this->user->name, 'gift');
             }
         } catch (\Exception $e) {
             Log::error('Failed to generate gift code', [

@@ -170,6 +170,11 @@ class OrderController extends Controller
                 'accounting_result' => $accountingResult
             ]);
 
+            // Check and generate gift if order is paid (created by admin with paid status)
+            if ($order->status === 'paid') {
+                $order->checkAndGenerateGift();
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'سفارش با موفقیت ایجاد شد',
