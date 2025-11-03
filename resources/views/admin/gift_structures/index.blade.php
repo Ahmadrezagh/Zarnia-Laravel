@@ -53,8 +53,8 @@
             :url="route('table.gift_structures')"
             id="gift-structures-table"
             :columns="[
-                            ['label' => 'از قیمت', 'key' => 'from_price', 'type' => 'text'],
-                            ['label' => 'تا قیمت', 'key' => 'to_price', 'type' => 'text'],
+                            ['label' => 'از قیمت', 'key' => 'from_price_formatted', 'type' => 'text'],
+                            ['label' => 'تا قیمت', 'key' => 'to_price_formatted', 'type' => 'text'],
                             ['label' => 'اطلاعات تخفیف', 'key' => 'discount_info', 'type' => 'text'],
                             ['label' => 'محدودیت زمانی', 'key' => 'limit_in_days', 'type' => 'text'],
                             ['label' => 'وضعیت', 'key' => 'is_active', 'type' => 'text'],

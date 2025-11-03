@@ -90,8 +90,8 @@ class GiftStructureController extends Controller
             'data' => $giftStructures->map(function ($gift) {
                 return [
                     'id' => $gift->id,
-                    'from_price' => number_format($gift->from_price) . ' تومان',
-                    'to_price' => number_format($gift->to_price) . ' تومان',
+                    'from_price' => $gift->from_price_formatted, // Use model accessor
+                    'to_price' => $gift->to_price_formatted, // Use model accessor
                     'discount_info' => $gift->discount_info, // Use model accessor
                     'limit_in_days' => $gift->limit_in_days . ' روز',
                     'is_active' => $gift->is_active ? 

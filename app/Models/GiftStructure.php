@@ -42,6 +42,22 @@ class GiftStructure extends Model
     }
 
     /**
+     * Get formatted from_price
+     */
+    public function getFromPriceFormattedAttribute()
+    {
+        return number_format($this->from_price) . ' تومان';
+    }
+
+    /**
+     * Get formatted to_price
+     */
+    public function getToPriceFormattedAttribute()
+    {
+        return number_format($this->to_price) . ' تومان';
+    }
+
+    /**
      * Find applicable gift structure for a given price
      */
     public static function findApplicable($totalPrice)
