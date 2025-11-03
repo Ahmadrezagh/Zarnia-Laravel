@@ -105,19 +105,18 @@ class GiftStructureController extends Controller
 
     private function getDiscountInfo($gift)
     {
-        $info = [];
-        
-        // Check if amount exists and is greater than 0
-        if (!is_null($gift->amount) && $gift->amount > 0) {
-            $info[] = number_format($gift->amount) . ' تومان';
-        }
-        
-        // Check if percentage exists and is greater than 0
+        // Percentage takes priority over amount (same logic as generateDiscountForUser)
         if (!is_null($gift->percentage) && $gift->percentage > 0) {
-            $info[] = $gift->percentage . '%';
+            return $gift->percentage . '%';
         }
         
-        return !empty($info) ? implode(' + ', $info) : '-';
+        // Otherwise show amount if available
+        if (!is_null($gift->amount) && $gift->amount > 0) {
+            return number_format($gift->amount) . ' تومان';
+        }
+        
+        // If neither exists, return dash
+        return '-';
     }
 }
 
