@@ -311,6 +311,109 @@ class OrderController extends Controller
     }
 
     /**
+     * Bulk update status for multiple orders.
+     */
+    public function bulkStatus(Request $request)
+    {
+        // Decode order_ids if it's a JSON string
+        $orderIds = $request->order_ids;
+        if (is_string($orderIds)) {
+            $orderIds = json_decode($orderIds, true);
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($orderIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'فرمت داده ارسالی صحیح نیست'
+                ], 422);
+            }
+        }
+
+        // Ensure order_ids is an array
+        if (!is_array($orderIds) || empty($orderIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لطفا حداقل یک سفارش را انتخاب کنید'
+            ], 422);
+        }
+
+        // Convert all order IDs to integers and re-index array
+        $orderIds = array_map('intval', $orderIds);
+        $orderIds = array_filter($orderIds, function($id) {
+            return $id > 0; // Remove any invalid IDs (0 or negative)
+        });
+        $orderIds = array_values($orderIds); // Re-index array
+        
+        if (empty($orderIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'شناسه‌های سفارش معتبر نیستند'
+            ], 422);
+        }
+
+        // Validate status
+        $status = $request->status;
+        if (!$status || !in_array($status, Order::$STATUSES)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'وضعیت انتخاب شده معتبر نیست'
+            ], 422);
+        }
+
+        // Validate order IDs exist (only non-trashed orders)
+        $validOrderIds = Order::whereIn('id', $orderIds)->pluck('id')->toArray();
+        if (empty($validOrderIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'سفارش‌های انتخاب شده یافت نشدند'
+            ], 422);
+        }
+
+        // Update only valid orders
+        $updated = Order::whereIn('id', $validOrderIds)->update([
+            'status' => $status,
+            'paid_at' => in_array($status, ['paid', 'boxing', 'sent', 'post', 'completed']) ? now() : null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "وضعیت {$updated} سفارش با موفقیت تغییر کرد",
+            'updated_count' => $updated
+        ]);
+    }
+
+    /**
+     * Bulk delete (soft delete) multiple orders.
+     */
+    public function bulkDelete(Request $request)
+    {
+        // Decode order_ids if it's a JSON string
+        $orderIds = $request->order_ids;
+        if (is_string($orderIds)) {
+            $orderIds = json_decode($orderIds, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'فرمت داده ارسالی صحیح نیست'
+                ], 422);
+            }
+        }
+
+        $request->merge(['order_ids' => $orderIds]);
+
+        $request->validate([
+            'order_ids' => 'required|array|min:1',
+            'order_ids.*' => 'exists:orders,id',
+        ]);
+
+        $deleted = Order::whereIn('id', $orderIds)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$deleted} سفارش به زباله دان منتقل شد",
+            'deleted_count' => $deleted
+        ]);
+    }
+
+    /**
      * Remove the specified resource from storage (soft delete).
      */
     public function destroy( $order_id)

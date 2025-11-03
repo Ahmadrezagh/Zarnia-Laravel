@@ -102,6 +102,10 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::post('table/orders/trash', [OrderController::class, 'trashTable'])->name('table.orders.trash');
     Route::post('admin_orders/{id}/restore', [OrderController::class, 'restore'])->name('admin_orders.restore');
     Route::delete('admin_orders/{id}/force-delete', [OrderController::class, 'forceDelete'])->name('admin_orders.force_delete');
+    
+    // Bulk actions
+    Route::post('admin_orders/bulk-status', [OrderController::class, 'bulkStatus'])->name('admin_orders.bulk_status');
+    Route::post('admin_orders/bulk-delete', [OrderController::class, 'bulkDelete'])->name('admin_orders.bulk_delete');
     Route::get('admin_order/users/{user}/addresses', [OrderController::class, 'getUserAddresses'])->name('admin_order.users.addresses');
     Route::get('products_not_available', [ProductController::class,'notAvailable' ])->name('products.products_not_available');
     Route::get('products_without_category', [ProductController::class,'withoutCategory' ])->name('products.product_without_category');

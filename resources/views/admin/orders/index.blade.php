@@ -50,8 +50,90 @@
                 </div>
             </div>
             <hr>
-            <button class="btn btn-primary mb-3" type="button" onclick="openCreateOrderModal()">ایجاد سفارش جدید</button>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <button class="btn btn-primary" type="button" onclick="openCreateOrderModal()">ایجاد سفارش جدید</button>
+                <div class="bulk-actions">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-info" id="bulk-status-btn" onclick="openBulkStatusModal()">
+                            <i class="fas fa-edit"></i> تغییر وضعیت دسته‌ای
+                        </button>
+                        <button type="button" class="btn btn-danger" id="bulk-delete-btn" onclick="openBulkDeleteModal()">
+                            <i class="fas fa-trash"></i> حذف دسته‌ای
+                        </button>
+                    </div>
+                </div>
+            </div>
         </x-slot>
+
+        <!-- Bulk Status Change Modal -->
+        <div class="modal fade" id="modal-bulk-status" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-info">
+                        <h5 class="modal-title">
+                            <i class="fas fa-edit"></i> تغییر وضعیت دسته‌ای
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <form id="bulk-status-form">
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>توجه:</strong> سفارش‌های انتخاب شده را انتخاب کنید و وضعیت جدید را تعیین کنید.
+                            </div>
+                            <div class="form-group">
+                                <label for="bulk-status-select">وضعیت جدید:</label>
+                                <select id="bulk-status-select" name="status" class="form-control" required>
+                                    <option value="">انتخاب وضعیت</option>
+                                    @foreach(\App\Models\Order::$STATUSES as $status)
+                                        <option value="{{ $status }}">
+                                            {{ \App\Models\Order::$PERSIAN_STATUSES[$status] ?? $status }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                            <button type="button" class="btn btn-info" onclick="submitBulkStatusChange()">
+                                <i class="fas fa-save"></i> اعمال تغییرات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Delete Modal -->
+        <div class="modal fade" id="modal-bulk-delete" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning">
+                        <h5 class="modal-title">
+                            <i class="fas fa-trash"></i> حذف دسته‌ای
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>توجه:</strong> سفارش‌های انتخاب شده به زباله دان منتقل می‌شوند و قابل بازیابی هستند.
+                        </div>
+                        <p>آیا از انتقال سفارش‌های انتخاب شده به زباله دان اطمینان دارید؟</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                        <button type="button" class="btn btn-warning" onclick="submitBulkDelete()">
+                            <i class="fas fa-trash"></i> انتقال به زباله دان
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <x-dataTable
             :url="route('table.orders')"
@@ -463,6 +545,11 @@
 
                 // Skip if this is the create order form (it has its own handler)
                 if (form.attr('id') === 'create-order-form') {
+                    return; // Let the custom handler handle it
+                }
+
+                // Skip if this is the bulk status form (it has its own AJAX handler)
+                if (form.attr('id') === 'bulk-status-form') {
                     return; // Let the custom handler handle it
                 }
 
@@ -1219,6 +1306,142 @@
                 }
             });
         }
+
+        function openBulkStatusModal() {
+            // Get selected items from DataTable component's selectedValues hidden input
+            const selectedValuesInput = document.getElementById('selectedValues');
+            if (!selectedValuesInput || !selectedValuesInput.value || selectedValuesInput.value === '[]') {
+                toastr.warning('لطفا حداقل یک سفارش را انتخاب کنید');
+                return;
+            }
+            $('#modal-bulk-status').modal('show');
+        }
+
+        function openBulkDeleteModal() {
+            // Get selected items from DataTable component's selectedValues hidden input
+            const selectedValuesInput = document.getElementById('selectedValues');
+            if (!selectedValuesInput || !selectedValuesInput.value || selectedValuesInput.value === '[]') {
+                toastr.warning('لطفا حداقل یک سفارش را انتخاب کنید');
+                return;
+            }
+            $('#modal-bulk-delete').modal('show');
+        }
+
+        function submitBulkStatusChange() {
+            // Get selected items from DataTable component's selectedValues hidden input
+            const selectedValuesInput = document.getElementById('selectedValues');
+            if (!selectedValuesInput || !selectedValuesInput.value || selectedValuesInput.value === '[]') {
+                toastr.error('لطفا حداقل یک سفارش را انتخاب کنید');
+                return;
+            }
+            
+            const status = $('#bulk-status-select').val();
+            if (!status) {
+                toastr.error('لطفا وضعیت جدید را انتخاب کنید');
+                return;
+            }
+            
+            // Show confirmation
+            if (!confirm('آیا از عملیات مطمئن هستید؟')) {
+                return;
+            }
+            
+            // Debug: log the data being sent
+            console.log('Sending bulk status update:', {
+                order_ids: selectedValuesInput.value,
+                status: status
+            });
+            
+            $.ajax({
+                url: '{{ route("admin_orders.bulk_status") }}',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    order_ids: selectedValuesInput.value, // Send as string (JSON)
+                    status: status
+                },
+                success: function(response) {
+                    console.log('Bulk status update success:', response);
+                    toastr.success(response.message || 'وضعیت سفارش‌ها با موفقیت تغییر کرد');
+                    $('#modal-bulk-status').modal('hide');
+                    $('#bulk-status-select').val('');
+                    
+                    // Refresh the table
+                    if (typeof window.refreshTable === 'function') {
+                        window.refreshTable();
+                    } else {
+                        location.reload();
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Bulk status update error:', xhr);
+                    if (xhr.status === 419) {
+                        toastr.error('نشست شما منقضی شده است. لطفا صفحه را رفرش کنید.');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        toastr.error(xhr.responseJSON.message);
+                    } else {
+                        toastr.error('خطا در تغییر وضعیت سفارش‌ها');
+                        if (xhr.responseText) {
+                            console.error('Error response:', xhr.responseText);
+                        }
+                    }
+                }
+            });
+        }
+
+        function submitBulkDelete() {
+            // Get selected items from DataTable component's selectedValues hidden input
+            const selectedValuesInput = document.getElementById('selectedValues');
+            if (!selectedValuesInput || !selectedValuesInput.value || selectedValuesInput.value === '[]') {
+                toastr.error('لطفا حداقل یک سفارش را انتخاب کنید');
+                return;
+            }
+            
+            // Show confirmation
+            if (!confirm('آیا از عملیات مطمئن هستید؟')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '{{ route("admin_orders.bulk_delete") }}',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    order_ids: selectedValuesInput.value // Send as string (JSON)
+                },
+                success: function(response) {
+                    toastr.success(response.message || 'سفارش‌ها به زباله دان منتقل شدند');
+                    $('#modal-bulk-delete').modal('hide');
+                    
+                    // Refresh the table
+                    if (typeof window.refreshTable === 'function') {
+                        window.refreshTable();
+                    } else {
+                        location.reload();
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 419) {
+                        toastr.error('نشست شما منقضی شده است. لطفا صفحه را رفرش کنید.');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        toastr.error(xhr.responseJSON.message);
+                    } else {
+                        toastr.error('خطا در حذف سفارش‌ها');
+                    }
+                }
+            });
+        }
+
+        // No need for form submission handler since we're using button onclick
     </script>
 
 @endsection
