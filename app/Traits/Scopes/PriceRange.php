@@ -27,7 +27,7 @@ trait PriceRange
 
         // Filter products based on their own price OR any of their children's prices
         // Only include products that are available (have at least one etiket with is_mojood = 1)
-        return $query->where(function ($q) use ($fromPrice, $toPrice) {
+        $query->where(function ($q) use ($fromPrice, $toPrice) {
             // Check if the product itself matches the price range AND is available
             $q->where(function ($ownPriceQuery) use ($fromPrice, $toPrice) {
                 $this->applyPriceFilter($ownPriceQuery, $fromPrice, $toPrice);
@@ -45,6 +45,15 @@ trait PriceRange
                 });
             });
         });
+        
+        // Order by price from low to high (ascending)
+        // Use discounted_price if available, otherwise use regular price
+        return $query->orderByRaw("
+            CASE
+                WHEN discounted_price > 0 THEN discounted_price
+                ELSE price
+            END asc
+        ");
     }
 
     /**
