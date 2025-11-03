@@ -82,6 +82,7 @@ class ProductItemResouce extends JsonResource
                     'name' => $product->name,
                     'slug' => $product->slug,
                 ])
+                ->sortBy('weight') // sort from lowest to highest weight
                 ->values(),
         ];
     }
