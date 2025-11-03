@@ -58,5 +58,5 @@ function getUpdatedEtikets(){
 }
 
 function get_gold_price(){
-    return Product::query()->whereNotNull('mazaneh')->first() ? Product::query()->whereNotNull('mazaneh')->first()->mazaneh : 0;
+    return Product::query()->whereNotNull('mazaneh')->first() ? Product::query()->whereNotNull('mazaneh')->latest('updated_at')->first()->mazaneh : 0;
 }
