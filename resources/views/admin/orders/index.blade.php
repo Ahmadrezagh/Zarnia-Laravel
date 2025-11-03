@@ -772,14 +772,18 @@
             const rowHtml = `
                 <div class="product-row card mb-2 p-3" data-row="${productRowCounter}">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <label>محصول</label>
                             <select class="form-control product-select" data-row="${productRowCounter}" style="width: 100%; pointer-events: auto;"></select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                            <label>وزن (گرم)</label>
+                            <input type="text" class="form-control product-weight" readonly data-row="${productRowCounter}" placeholder="-">
+                        </div>
+                        <div class="col-md-2">
                             <label>تعداد</label>
                             <input type="number" class="form-control product-quantity" min="1" value="1" data-row="${productRowCounter}">
-                            <small class="form-text text-muted product-stock-info" data-row="${productRowCounter}">موجودی محصول نمایش داده می‌شود</small>
+                            <small class="form-text text-muted product-stock-info" data-row="${productRowCounter}">موجودی: -</small>
                         </div>
                         <div class="col-md-2">
                             <label>قیمت</label>
@@ -828,7 +832,8 @@
                                     id: id,
                                     text: item.text,
                                     price: item.price,
-                                    available_count: item.available_count
+                                    single_count: item.single_count || 0,
+                                    weight: item.weight || null
                                 };
                             }).filter(item => item.id.match(/^\d+$/)) // Only numeric IDs
                         };
@@ -849,7 +854,7 @@
                 }, 100);
             });
             
-            // Update price and available count when product is selected
+            // Update price, weight, and single count when product is selected
             $productSelect.on('change', function() {
                 const selectedData = $(this).select2('data')[0];
                 const rowId = $(this).data('row');
@@ -860,13 +865,21 @@
                     $(`.product-price[data-row="${rowId}"]`).val(number_format(price) + ' تومان');
                     $(`.product-price[data-row="${rowId}"]`).data('price', price);
                     
-                    // Set available count as max for quantity input
-                    const availableCount = selectedData.available_count || 999;
-                    $(`.product-quantity[data-row="${rowId}"]`).attr('max', availableCount);
-                    $(`.product-quantity[data-row="${rowId}"]`).data('available-count', availableCount);
+                    // Set weight
+                    const weight = selectedData.weight || null;
+                    if (weight) {
+                        $(`.product-weight[data-row="${rowId}"]`).val(weight + ' گرم');
+                    } else {
+                        $(`.product-weight[data-row="${rowId}"]`).val('-');
+                    }
+                    
+                    // Set single count as max for quantity input
+                    const singleCount = selectedData.single_count || 0;
+                    $(`.product-quantity[data-row="${rowId}"]`).attr('max', singleCount > 0 ? singleCount : 999);
+                    $(`.product-quantity[data-row="${rowId}"]`).data('single-count', singleCount);
                     
                     // Update stock info text
-                    $(`.product-stock-info[data-row="${rowId}"]`).text('موجودی: ' + availableCount + ' عدد');
+                    $(`.product-stock-info[data-row="${rowId}"]`).text('موجودی: ' + singleCount + ' عدد');
                     
                     // Reset quantity to 1
                     $(`.product-quantity[data-row="${rowId}"]`).val(1);
@@ -878,12 +891,12 @@
             // Validate quantity when it changes
             $(`.product-quantity[data-row="${productRowCounter}"]`).on('input', function() {
                 const rowId = $(this).data('row');
-                const availableCount = parseInt($(this).data('available-count')) || 999;
+                const singleCount = parseInt($(this).data('single-count')) || 999;
                 const enteredQty = parseInt($(this).val()) || 0;
                 
-                if (enteredQty > availableCount) {
-                    toastr.error('تعداد درخواستی بیشتر از موجودی است! موجودی: ' + availableCount);
-                    $(this).val(availableCount);
+                if (enteredQty > singleCount && singleCount > 0) {
+                    toastr.error('تعداد درخواستی بیشتر از موجودی است! موجودی: ' + singleCount);
+                    $(this).val(singleCount);
                 }
                 
                 if (enteredQty < 1) {

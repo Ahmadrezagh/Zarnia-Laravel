@@ -784,16 +784,17 @@ class ProductController extends Controller
             ->whereHas('etikets', function($q) {
                 $q->where('is_mojood', 1); // Only products with available etikets
             })
-            ->select('id', 'name', 'price')
+            ->select('id', 'name', 'price', 'weight')
             ->distinct() // Prevent duplicates
             ->limit(50) // Limit results for performance
             ->get()
             ->map(function ($product) {
                 return [
                     'id' => "Product:{$product->id}",
-                    'text' => $product->name . ' (موجودی: ' . $product->count . ')',
+                    'text' => $product->name . (($product->weight) ? ' (' . $product->weight . 'g)' : '') . ' (موجودی: ' . $product->single_count . ')',
                     'price' => $product->price,
-                    'available_count' => $product->count
+                    'single_count' => $product->single_count,
+                    'weight' => $product->weight
                 ];
             });
 
