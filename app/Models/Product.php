@@ -563,21 +563,29 @@ class Product extends Model implements HasMedia
             $this->load('children');
         }
         
-        // Check if this product has children
-        $children = $this->children;
+        // Collect available products (this product + children with single_count >= 1)
+        $availableProducts = collect();
         
-        if ($children->isEmpty()) {
-            // Single price product - return just the price
-            $price = $this->price; // This uses the accessor which handles discounted_price
-            return number_format($price) . ' تومان';
+        // Check if this product is available
+        if ($this->single_count >= 1) {
+            $availableProducts->push($this);
         }
         
-        // Product with children - calculate min and max prices
-        $prices = collect([$this->price]); // Start with parent price
+        // Add available children
+        $this->children->each(function ($child) use ($availableProducts) {
+            if ($child->single_count >= 1) {
+                $availableProducts->push($child);
+            }
+        });
         
-        // Add children prices
-        $children->each(function ($child) use ($prices) {
-            $prices->push($child->price); // Uses the price accessor
+        // If no available products, return null or empty
+        if ($availableProducts->isEmpty()) {
+            return null;
+        }
+        
+        // Collect prices from available products only
+        $prices = $availableProducts->map(function ($product) {
+            return $product->price; // Uses the price accessor which handles discounted_price
         });
         
         $minPrice = $prices->min();
