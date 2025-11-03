@@ -58,4 +58,30 @@ class ProductController extends Controller
         return ProductItemResouce::make($product,$user);
     }
 
+    public function relatedAndComplementary(Request $request, Product $product)
+    {
+        $user = $request->user('sanctum');
+        
+        // Get related products - filter by single_count >= 1 and has image
+        $relatedProducts = $product->relatedProducts()
+            ->filter(function($prod) {
+                // Check if product has cover_image media and is available
+                return $prod->single_count >= 1 && $prod->hasMedia('cover_image');
+            })
+            ->take(15);
+
+        // Get complementary products - filter by single_count >= 1 and has image
+        $complementaryProducts = $product->complementaryProducts()
+            ->filter(function($prod) {
+                // Check if product has cover_image media and is available
+                return $prod->single_count >= 1 && $prod->hasMedia('cover_image');
+            })
+            ->take(15);
+
+        return response()->json([
+            'related_products' => \App\Http\Resources\Api\V1\Product\SimpleProductResource::collection($relatedProducts),
+            'complementary_products' => \App\Http\Resources\Api\V1\Product\SimpleProductResource::collection($complementaryProducts),
+        ]);
+    }
+
 }
