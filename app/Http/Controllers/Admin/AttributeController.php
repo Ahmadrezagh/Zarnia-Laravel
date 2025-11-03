@@ -91,25 +91,45 @@ class AttributeController extends Controller
     public function loadAttributeGroup(Request $request)
     {
         if($request->category_ids){
-            $categories = Category::query()->whereIn('id',$request->category_ids)->get();
+            $categories = Category::query()->whereIn('id',$request->category_ids)->with('attributeGroups')->get();
             if ($categories) {
                 $attribute_ids = [];
+                $attribute_group_ids = [];
+                $attribute_groups = [];
+                
                 foreach ($categories as $category) {
                     foreach ($category->attributeGroups as $attribute_group) {
+                        // Collect unique attribute group IDs
+                        if (!in_array($attribute_group->id, $attribute_group_ids)) {
+                            $attribute_group_ids[] = $attribute_group->id;
+                            $attribute_groups[] = [
+                                'id' => $attribute_group->id,
+                                'name' => $attribute_group->name
+                            ];
+                        }
+                        
                         foreach ($attribute_group->attributes as $attribute) {
                             array_push($attribute_ids, $attribute->id);
                         }
                     }
                 }
+                
                 $attributeValues = AttributeValue::where('product_id', $request->product_id)
                     ->whereIn('attribute_id', $attribute_ids)
                     ->get();
 
-                return response()->json([
+                $response = [
                     'attributeGroup' => '',
                     'attributes' => Attribute::query()->whereIn('id',$attribute_ids)->get(),
                     'attributeValues' => $attributeValues
-                ]);
+                ];
+                
+                // Include attribute groups if requested
+                if ($request->get_attribute_groups || $request->has('get_attribute_groups')) {
+                    $response['attributeGroups'] = $attribute_groups;
+                }
+                
+                return response()->json($response);
             }
         }
 

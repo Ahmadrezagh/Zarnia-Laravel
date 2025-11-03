@@ -319,15 +319,26 @@
                     
                     // No initialization needed for custom dropdown - it works on input events
 
-                    // Load attribute groups from database
-                    loadAttributeGroups(product.attribute_group_id);
-
                     // Initialize Select2 for categories dropdown
                     $('#product-categories').select2({
                         placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
                         allowClear: true,
                         width: '100%'
                     });
+
+                    // Load attribute groups based on selected categories (if any)
+                    const selectedCategoryIds = $('#product-categories').val();
+                    if (selectedCategoryIds && selectedCategoryIds.length > 0) {
+                        loadAttributeGroupsByCategories(selectedCategoryIds, product.id);
+                    } else {
+                        // If no categories selected, load all attribute groups
+                        loadAttributeGroups(product.attribute_group_id);
+                    }
+                    
+                    // Set current attribute group if exists
+                    if (product.attribute_group_id) {
+                        $('#attributeGroup').data('product-attribute-group-id', product.attribute_group_id);
+                    }
 
                     $('#product-categories').change();
                     // Check if imageUploader is available
@@ -826,6 +837,10 @@
         function categoryChanged(element,productId) {
             // Convert selected options to an array of values
             const category_ids = Array.from(element.selectedOptions).map(option => option.value);
+            
+            // Show loading
+            showLoading();
+            
             $.ajax({
                 url: '{{ route('load_attribute_group') }}',
                 method: 'POST',
@@ -838,6 +853,18 @@
                     hideLoading();
                     $('#attributeInputs').empty();
                     addAddButton();
+                    
+                    // Load attribute groups based on categories
+                    if (category_ids && category_ids.length > 0) {
+                        loadAttributeGroupsByCategories(category_ids, productId);
+                    } else {
+                        // If no categories selected, clear attribute group dropdown
+                        const $select = $('#attributeGroup');
+                        $select.empty();
+                        $select.append('<option value="">انتخاب گروه ویژگی</option>');
+                    }
+                    
+                    // Load attributes if available
                     if (response.attributes) {
                         loadAttributes(response.attributes, response.attributeValues || []);
                     }
@@ -845,6 +872,40 @@
                 error: () => {
                     hideLoading();
                     alert('خطا در بررسی گروه ویژگی');
+                }
+            });
+        }
+        
+        function loadAttributeGroupsByCategories(categoryIds, productId) {
+            // Get attribute groups directly from categories via backend
+            $.ajax({
+                url: '{{ route('load_attribute_group') }}',
+                method: 'POST',
+                data: {
+                    category_ids: categoryIds,
+                    product_id: productId,
+                    _token: '{{ csrf_token() }}',
+                    get_attribute_groups: true // Flag to get groups
+                },
+                success: function(response) {
+                    const $select = $('#attributeGroup');
+                    $select.empty();
+                    $select.append('<option value="">انتخاب گروه ویژگی</option>');
+                    
+                    // If response includes attribute groups, use them
+                    if (response.attributeGroups && response.attributeGroups.length > 0) {
+                        response.attributeGroups.forEach(function(group) {
+                            $select.append(`<option value="${group.id}" data-name="${group.name}">${group.name}</option>`);
+                        });
+                    } else {
+                        // Fallback: Load from API endpoint if groups not in response
+                        loadAttributeGroupsFromApi(null);
+                    }
+                },
+                error: function() {
+                    console.error('Failed to load attribute groups by categories');
+                    // Fallback to loading all groups
+                    loadAttributeGroupsFromApi(null);
                 }
             });
         }
