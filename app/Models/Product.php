@@ -836,4 +836,9 @@ class Product extends Model implements HasMedia
             ->where('url', 'like', "%$encodedSlug")
             ->count();
     }
+
+    public function options()
+    {
+        return $this->belongsToMany(Attribute::class,'attribute_values')->withPivot('value');
+    }
 }
