@@ -23,6 +23,25 @@ class GiftStructure extends Model
     ];
 
     /**
+     * Get discount information (amount or percentage)
+     */
+    public function getDiscountInfoAttribute()
+    {
+        // Percentage takes priority over amount (same logic as generateDiscountForUser)
+        if (!is_null($this->percentage) && $this->percentage > 0) {
+            return $this->percentage . '%';
+        }
+        
+        // Otherwise show amount if available
+        if (!is_null($this->amount) && $this->amount > 0) {
+            return number_format($this->amount) . ' تومان';
+        }
+        
+        // If neither exists, return dash
+        return '-';
+    }
+
+    /**
      * Find applicable gift structure for a given price
      */
     public static function findApplicable($totalPrice)

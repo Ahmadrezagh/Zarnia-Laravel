@@ -92,7 +92,7 @@ class GiftStructureController extends Controller
                     'id' => $gift->id,
                     'from_price' => number_format($gift->from_price) . ' تومان',
                     'to_price' => number_format($gift->to_price) . ' تومان',
-                    'discount_info' => $this->getDiscountInfo($gift),
+                    'discount_info' => $gift->discount_info, // Use model accessor
                     'limit_in_days' => $gift->limit_in_days . ' روز',
                     'is_active' => $gift->is_active ? 
                         '<span class="badge badge-success">فعال</span>' : 
@@ -101,22 +101,6 @@ class GiftStructureController extends Controller
                 ];
             })
         ]);
-    }
-
-    private function getDiscountInfo($gift)
-    {
-        // Percentage takes priority over amount (same logic as generateDiscountForUser)
-        if (!is_null($gift->percentage) && $gift->percentage > 0) {
-            return $gift->percentage . '%';
-        }
-        
-        // Otherwise show amount if available
-        if (!is_null($gift->amount) && $gift->amount > 0) {
-            return number_format($gift->amount) . ' تومان';
-        }
-        
-        // If neither exists, return dash
-        return '-';
     }
 }
 
