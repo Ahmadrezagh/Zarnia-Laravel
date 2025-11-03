@@ -217,9 +217,19 @@ class Order extends Model
     {
         return $this->orderItems()->first() && $this->orderItems()->first()->product ? $this->orderItems()->first()->product->darsad_kharid: 0 ;
     }
+    public function getDarsadForooshAttribute()
+    {
+        $sum = 0;
+        foreach ($this->orderItems as $orderItem) {
+            if($orderItem->product){
+                $sum = $sum + $orderItem->product->darsad_vazn_foroosh;
+            }
+        }
+        return $sum;
+    }
     public function getWeightColAttribute()
     {
-        $result = "وزن : ".$this->weight ." گرم ". "<br/> خرید: " . $this->Percentage." % "."<br/> فروش: ".$this->DarsadKharid." % "."<br/> تخفیف : ".$this->discount_percentage." % ";
+        $result = "وزن : ".$this->weight ." گرم ". "<br/> خرید: " . $this->Percentage." % "."<br/> فروش: ".$this->DarsadForoosh." % "."<br/> تخفیف : ".$this->discount_percentage." % ";
         return request()->expectsJson() ?
             $result :
             new HtmlString($result);

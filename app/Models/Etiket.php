@@ -15,7 +15,8 @@ class Etiket extends Model
         'ojrat',
         'is_mojood',
         'darsad_kharid',
-        'mazaneh'
+        'mazaneh',
+        'darsad_vazn_foroosh'
     ];
 
     public function setNameAttribute($value)

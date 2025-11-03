@@ -211,20 +211,27 @@ class Tahesab{
 
     public function updateOrCreateEtiket($etiket)
     {
+        $data = [
+            'code' => $etiket['Code'],
+            'name' => $etiket['Name'],
+            'weight' => $etiket['Vazn'],
+            'price' => $etiket['OnlinePrice'],
+            'ojrat' => $etiket['DarsadVazn'],
+            'is_mojood' => $etiket['IsMojood'],
+            'darsad_kharid' => $etiket['DarsadVaznMaye'],
+            'mazaneh' => $etiket['Mazaneh'],
+        ];
+
+        // Add DarsadVaznForoosh if it exists in the API response
+        if (isset($etiket['DarsadVaznForoosh'])) {
+            $data['darsad_vazn_foroosh'] = (int) $etiket['DarsadVaznForoosh'];
+        }
+
         $_etiket = Etiket::query()->updateOrCreate(
             [
                 'code' => $etiket['Code']
             ],
-            [
-                'code' => $etiket['Code'],
-                'name' => $etiket['Name'],
-                'weight' => $etiket['Vazn'],
-                'price' => $etiket['OnlinePrice'],
-                'ojrat' => $etiket['DarsadVazn'],
-                'is_mojood' => $etiket['IsMojood'],
-                'darsad_kharid' => $etiket['DarsadVaznMaye'],
-                'mazaneh' => $etiket['Mazaneh'],
-            ]
+            $data
         );
         $_etiket->touch();
     }

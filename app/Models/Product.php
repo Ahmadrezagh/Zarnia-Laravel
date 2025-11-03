@@ -39,7 +39,8 @@ class Product extends Model implements HasMedia
         'ojrat',
         'darsad_kharid',
         'is_comprehensive',
-        'mazaneh'
+        'mazaneh',
+        'darsad_vazn_foroosh'
     ];
 
     public function setNameAttribute($value)

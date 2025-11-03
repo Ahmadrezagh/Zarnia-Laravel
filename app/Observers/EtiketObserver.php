@@ -25,6 +25,7 @@ class EtiketObserver
                 'ojrat' => $etiket->ojrat,
                 'darsad_kharid' => $etiket->darsad_kharid,
                 'mazaneh' => $etiket->mazaneh,
+                'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
             ]);
             
             $etiket->updateQuietly([
@@ -53,6 +54,7 @@ class EtiketObserver
                 $product->ojrat = $etiket->ojrat;
                 $product->darsad_kharid = $etiket->darsad_kharid;
                 $product->mazaneh = $etiket->mazaneh;
+                $product->darsad_vazn_foroosh = $etiket->darsad_vazn_foroosh;
                 $product->save();
 
                 $etiket->updateQuietly([
@@ -76,6 +78,7 @@ class EtiketObserver
                     'ojrat' => $etiket->ojrat,
                     'darsad_kharid' => $etiket->darsad_kharid,
                     'mazaneh' => $etiket->mazaneh,
+                    'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
                 ]);
 
                 $etiket->updateQuietly([
@@ -116,6 +119,7 @@ class EtiketObserver
                 'ojrat' => $etiket->ojrat,
                 'darsad_kharid' => $etiket->darsad_kharid,
                 'mazaneh' => $etiket->mazaneh,
+                'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
             ]);
 
             $etiket->updateQuietly([
@@ -145,6 +149,7 @@ class EtiketObserver
                 $product->ojrat = $etiket->ojrat;
                 $product->darsad_kharid = $etiket->darsad_kharid;
                 $product->mazaneh = $etiket->mazaneh;
+                $product->darsad_vazn_foroosh = $etiket->darsad_vazn_foroosh;
                 $product->save();
 
                 $etiket->updateQuietly([
@@ -169,6 +174,7 @@ class EtiketObserver
                     'ojrat' => $etiket->ojrat,
                     'darsad_kharid' => $etiket->darsad_kharid,
                     'mazaneh' => $etiket->mazaneh,
+                    'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
                 ]);
 
                 $etiket->updateQuietly([
