@@ -611,7 +611,9 @@ class ProductController extends Controller
             }
 
             if ($request->filled('category_ids')) {
-                $product->categories()->sync($request->category_ids);
+                // Add categories without removing existing ones, and prevent duplicates
+                // syncWithoutDetaching adds new categories but keeps existing ones
+                $product->categories()->syncWithoutDetaching($request->category_ids);
             }
 
             if ($tempFilePath) {
