@@ -144,6 +144,12 @@ class Product extends Model implements HasMedia
     {
         return $this->belongsToMany(Product::class,'comprehensive_products','comprehensive_product_id','product_id');
     }
+    
+    public function favorites()
+    {
+        return $this->belongsToMany(\App\Models\User::class, 'favorites', 'product_id', 'user_id');
+    }
+    
     public function etikets()
     {
         return $this->hasMany(Etiket::class);
@@ -650,6 +656,14 @@ class Product extends Model implements HasMedia
         return $query->where('is_comprehensive','=',1);
     }
 
+    public function scopeMostFavorite(Builder $query): Builder
+    {
+        return $query
+            ->withCount('favorites as favorites_count')
+            ->orderBy('favorites_count', 'desc')
+            ->orderBy('created_at', 'desc'); // Secondary sort by creation date
+    }
+
     public function scopeApplyDefaultSort(Builder $query, $sortType = null)
     {
         // If no sort type provided, get it from settings
@@ -682,6 +696,9 @@ class Product extends Model implements HasMedia
                 return $query->orderBy('name', 'desc');
             case 'random':
                 return $query->inRandomOrder();
+            case 'most_favorite':
+            case 'most_favorites':
+                return $query->mostFavorite();
             default:
                 return $query->orderBy('created_at', 'desc');
         }

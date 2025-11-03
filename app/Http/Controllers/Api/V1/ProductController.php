@@ -25,7 +25,7 @@ class ProductController extends Controller
             // Legacy support: map price_dir to new sort types
             $sortType = $request->price_dir === 'asc' ? 'price_asc' : 'price_desc';
         } elseif ($request->sort_by) {
-            // New parameter: sort_by can be: latest, oldest, price_asc, price_desc, name_asc, name_desc, random
+            // New parameter: sort_by can be: latest, oldest, price_asc, price_desc, name_asc, name_desc, random, most_favorite
             $sortType = $request->sort_by;
         }
         
