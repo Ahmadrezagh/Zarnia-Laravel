@@ -240,11 +240,49 @@ class Product extends Model implements HasMedia
     }
     public function getSingleCountAttribute()
     {
+        // If this is a comprehensive product, return minimum single_count of constituent products
+        if ($this->is_comprehensive == 1) {
+            // Load products relationship if not already loaded
+            if (!$this->relationLoaded('products')) {
+                $this->load('products');
+            }
+            
+            // Get all constituent products
+            $constituentProducts = $this->products;
+            
+            // If no constituent products, return 0
+            if ($constituentProducts->isEmpty()) {
+                return 0;
+            }
+            
+            // Get single_count for each constituent product
+            $singleCounts = $constituentProducts->map(function ($product) {
+                return $product->single_count;
+            })->filter(function ($count) {
+                return $count >= 0; // Include zero counts as well
+            });
+            
+            // If no available products (all have count < 0), return 0
+            if ($singleCounts->isEmpty()) {
+                return 0;
+            }
+            
+            // Return minimum single_count
+            return $singleCounts->min();
+        }
+        
+        // For non-comprehensive products, return etiket count
         return $this->etikets()->where('is_mojood', 1)->count();
     }
 
     public function getCountAttribute()
     {
+        // If this is a comprehensive product, return minimum single_count of constituent products
+        if ($this->is_comprehensive == 1) {
+            // For comprehensive products, count = single_count (minimum of constituent products)
+            return $this->single_count;
+        }
+        
         // Count from this product's etikets
         $ownCount = $this->etikets()->where('is_mojood', 1)->count();
 
