@@ -103,6 +103,13 @@ class ProductController extends Controller
         $product = Product::query()->findOrFail($id);
         $validated = $request->validated();
         $validated['discount_percentage'] = $request->input('discount_percentage') ?? 0;
+        
+        // Only allow name change for comprehensive products
+        if (!$product->is_comprehensive && isset($validated['name'])) {
+            // Remove name from validated data if product is not comprehensive
+            unset($validated['name']);
+        }
+        
         $product->update($validated);
 
         // Handle cover image deletion
