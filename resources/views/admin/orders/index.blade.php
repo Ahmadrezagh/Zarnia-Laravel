@@ -531,6 +531,9 @@
 
     </script>
     <script>
+        // Store current status filter - declare at top level to avoid initialization errors
+        var currentStatusFilter = "{{ request('status') ?? '' }}";
+        
         // Setup AJAX to include CSRF token in all requests
         $.ajaxSetup({
             headers: {
@@ -600,8 +603,6 @@
                 }
             });
         });
-        // Store current status filter
-        let currentStatusFilter = "{{ request('status') ?? '' }}";
         
         // Add Enter key support for input fields
         $(document).ready(function() {
@@ -636,8 +637,17 @@
             currentStatusFilter = status;
             
             // Update button active states
-            $('.btn-group button').removeClass('active');
-            event.target.classList.add('active');
+            $('.btn-group[role="group"] button').removeClass('active');
+            
+            // Find and activate the clicked button by checking onclick attribute
+            $('.btn-group[role="group"] button').each(function() {
+                const onclickAttr = $(this).attr('onclick') || '';
+                if (status && onclickAttr.includes("'" + status + "'")) {
+                    $(this).addClass('active');
+                } else if (!status && onclickAttr.includes("filterByStatus('')")) {
+                    $(this).addClass('active');
+                }
+            });
             
             let transaction_id = $("#transaction_id").val();
             let search = $("#search_input").val();
