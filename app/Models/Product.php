@@ -891,6 +891,7 @@ class Product extends Model implements HasMedia
                 }
             } else {
                 // No manual related products - check parent category for manual related products
+                $parentHasManualRelated = false;
                 if ($category->parent_id) {
                     if (!$category->relationLoaded('parent')) {
                         $category->load('parent');
@@ -903,6 +904,7 @@ class Product extends Model implements HasMedia
                         if ($parentManualRelatedProducts->isNotEmpty() || $parentManualRelatedCategories->isNotEmpty()) {
                             // Parent has manual related products - use them
                             $hasManualRelatedProducts = true;
+                            $parentHasManualRelated = true;
                             
                             // Filter parent manual related products
                             $filtered = $filterAvailableProducts($parentManualRelatedProducts);
@@ -922,14 +924,24 @@ class Product extends Model implements HasMedia
                         }
                     }
                 }
+                
+                // If neither category nor parent has manual related products, use products from category itself
+                if (!$parentHasManualRelated) {
+                    if ($category->products && $category->products->isNotEmpty()) {
+                        $filtered = $filterAvailableProducts($category->products);
+                        if ($filtered->isNotEmpty()) {
+                            $related = $related->concat($filtered);
+                        }
+                    }
+                }
             }
         }
 
         // Remove duplicates and exclude current product
         $related = $related->unique('id')->where('id', '!=', $this->id)->values();
         
-        // 4️⃣ Fallback: if no manual related products found in step 3 AND result is empty, get 15 products from same categories
-        if (!$hasManualRelatedProducts && $related->isEmpty()) {
+        // 4️⃣ Fallback: if still empty after all steps, get 15 products from same categories
+        if ($related->isEmpty()) {
             $related = collect();
             
             if ($categories->isNotEmpty()) {
