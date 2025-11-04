@@ -358,6 +358,33 @@ class Order extends Model
     }
 
     /**
+     * Send SMS notification to admins about new order
+     */
+    private function notifyAdminsNewOrder()
+    {
+        $adminNumbers = [
+            '09127127053',
+            '09193106488'
+        ];
+        
+        $sms = new Kavehnegar();
+        $userName = $this->user->name ?? 'کاربر';
+        $orderAmount = number_format($this->final_amount) . ' تومان';
+        
+        foreach ($adminNumbers as $phone) {
+            try {
+                $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
+            } catch (\Exception $e) {
+                \Log::error('Failed to send admin SMS notification', [
+                    'order_id' => $this->id,
+                    'phone' => $phone,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+    }
+
+    /**
      * Mark order as paid and send SMS
      */
     private function markAsPaid()
@@ -382,6 +409,9 @@ class Order extends Model
         
         // Check and generate gift discount code
         $this->checkAndGenerateGift();
+        
+        // Notify admins about new paid order
+        $this->notifyAdminsNewOrder();
     }
 
     /**

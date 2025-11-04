@@ -173,6 +173,28 @@ class OrderController extends Controller
             // Check and generate gift if order is paid (created by admin with paid status)
             if ($order->status === 'paid') {
                 $order->checkAndGenerateGift();
+                
+                // Notify admins about new paid order
+                $adminNumbers = [
+                    '09127127053',
+                    '09193106488'
+                ];
+                
+                $sms = new Kavehnegar();
+                $userName = $order->user->name ?? 'کاربر';
+                $orderAmount = number_format($order->final_amount) . ' تومان';
+                
+                foreach ($adminNumbers as $phone) {
+                    try {
+                        $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send admin SMS notification', [
+                            'order_id' => $order->id,
+                            'phone' => $phone,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
             }
 
             return response()->json([
