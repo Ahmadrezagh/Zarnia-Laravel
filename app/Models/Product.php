@@ -635,6 +635,43 @@ class Product extends Model implements HasMedia
         return $minPrice;
     }
 
+    public function getMinimumAvailableWeightAttribute()
+    {
+        // Load children if not already loaded (to avoid N+1 queries)
+        if (!$this->relationLoaded('children')) {
+            $this->load('children');
+        }
+        
+        // Collect available products (this product + children with single_count >= 1)
+        $availableProducts = collect();
+        
+        // Check if this product is available
+        if ($this->single_count >= 1) {
+            $availableProducts->push($this);
+        }
+        
+        // Add available children
+        $this->children->each(function ($child) use ($availableProducts) {
+            if ($child->single_count >= 1) {
+                $availableProducts->push($child);
+            }
+        });
+        
+        // If no available products, return null
+        if ($availableProducts->isEmpty()) {
+            return null;
+        }
+        
+        // Get the minimum weight among available products
+        $minWeight = $availableProducts->map(function ($product) {
+            return $product->weight ?? 0;
+        })->filter(function ($weight) {
+            return $weight > 0; // Only consider positive weights
+        })->min();
+        
+        return $minWeight ?: null;
+    }
+
     public function scopeHasCountAndImage(Builder $query): Builder
     {
         return $query

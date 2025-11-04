@@ -49,6 +49,7 @@ class ProductListResouce extends JsonResource
             'price_without_discount' => number_format($this->price_without_discount),
             'price_range_title' => $this->price_range_title,
             'minimum_available_price' => $this->minimum_available_price,
+            'minimum_available_weight' => $this->minimum_available_weight,
             'discount_percentage' => $this->discount_percentage,
             'snapp_pay_each_installment' => number_format($this->price/4),
             'is_favorite' => $is_favorite,
