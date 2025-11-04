@@ -19,6 +19,10 @@ class OrderObserver
         // Use user's phone and name for SMS
         $sms = new Kavehnegar();
         $sms->send_with_two_token($order->user->phone, $order->user->name, $order->id, $order->status);
+   
+        if($order->status == 'paid'){
+            $order->notifyAdminsNewOrder();
+        }
     }
 
     /**
