@@ -555,6 +555,13 @@
 
         function createAssembledProduct(){
             eraseModalContent()
+            // Initialize/create products array for create modal
+            if (!window.createComprehensiveProducts) {
+                window.createComprehensiveProducts = [];
+            } else {
+                window.createComprehensiveProducts = []; // Reset array
+            }
+            
             const categoryOptions = '@foreach($categories as $category) <option value="{{$category->id}}" >{{$category->title}}</option> @endforeach'
             appendToModalContent(`
 <form id="create-comprehensive-product-form" action="{{route("comprehensive_product.store")}}" method="POST" enctype="multipart/form-data" >
@@ -582,42 +589,71 @@
                         <div id="product-gallery"></div>
                     </div>
 
-<div class="form-group">
-<label for="">محصولات</label>
-<select id="etiket-select" name="product_ids[]" class="form-control" style="width: 100%" multiple ></select>
-</div>
+                    <div class="form-group mt-4">
+                        <label class="font-weight-bold">محصولات تشکیل‌دهنده (جامع)</label>
+                        <div class="alert alert-info">
+                            <small>محصولات زیر پس از ایجاد محصول جامع به آن اضافه خواهند شد:</small>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped" id="create-comprehensive-products-table">
+                                <thead>
+                                    <tr>
+                                        <th>تصویر</th>
+                                        <th>نام محصول</th>
+                                        <th>وزن</th>
+                                        <th>قیمت</th>
+                                        <th>موجودی</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="create-comprehensive-products-tbody">
+                                    <tr id="create-comprehensive-products-empty">
+                                        <td colspan="6" class="text-center text-muted">هیچ محصولی انتخاب نشده است</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3 p-3 border-top">
+                            <h6>افزودن محصول جدید</h6>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="custom-product-search" style="position: relative;">
+                                        <input 
+                                            type="text" 
+                                            id="product-search-input-create" 
+                                            class="form-control" 
+                                            placeholder="جستجو و انتخاب محصول (با کلیک روی محصول، به لیست اضافه می‌شود)..."
+                                            autocomplete="off"
+                                            oninput="searchProductsForCreateComprehensive(this.value)"
+                                            onfocus="showProductDropdownCreate()"
+                                            onblur="setTimeout(() => hideProductDropdownCreate(), 200)"
+                                        />
+                                        <div 
+                                            id="product-dropdown-create" 
+                                            class="custom-product-dropdown" 
+                                            style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 300px; overflow-y: auto; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-top: 2px;"
+                                        >
+                                            <div class="text-center p-3 text-muted" style="display: none;" id="product-search-loading-create">
+                                                <i class="fas fa-spinner fa-spin"></i> در حال جستجو...
+                                            </div>
+                                            <div class="text-center p-3 text-muted" style="display: none;" id="product-search-empty-create">
+                                                نتیجه‌ای یافت نشد
+                                            </div>
+                                            <div id="product-search-results-create"></div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block">
+                                        <i class="fas fa-info-circle"></i> با کلیک روی محصول از لیست، به صورت خودکار به لیست اضافه می‌شود.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="create-comprehensive-product-ids" name="product_ids[]" value="">
+                    </div>
 <button class="btn btn-success" type="submit">ایجاد</button>
 </form>
 
 `)
-            $('#etiket-select').select2({
-                placeholder: 'Enter exact etiket code',
-                minimumInputLength: 1,
-                ajax: {
-                    url: '{{route('etiket_search')}}',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return { q: params.term };
-                    },
-                    processResults: function (data) {
-                        return { results: data.results };
-                    },
-                    cache: false
-                }
-            });
-            $('#etiket-select').on('select2:select', function (e) {
-                const product = e.params.data.product;
-                if (product) {
-                    $('#product-info').html(`
-            <h5>Product Found</h5>
-            <p><strong>Name:</strong> ${product.name}</p>
-            <p><strong>ID:</strong> ${product.id}</p>
-        `);
-                } else {
-                    $('#product-info').html(`<p>No product found.</p>`);
-                }
-            });
             // Initialize Select2 for categories dropdown
             $('#product-categories').select2({
                 placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
@@ -652,6 +688,9 @@
                 }
             });
             
+            // Store selected products for create modal
+            window.createComprehensiveProducts = [];
+            
             // Handle form submission with AJAX
             $('#create-comprehensive-product-form').off('submit').on('submit', function(e) {
                 e.preventDefault();
@@ -660,11 +699,15 @@
                 const formData = new FormData(form);
                 
                 // Validate that at least one product is selected
-                const productIds = $('#etiket-select').val();
-                if (!productIds || productIds.length === 0) {
+                if (!window.createComprehensiveProducts || window.createComprehensiveProducts.length === 0) {
                     toastr.error('لطفا حداقل یک محصول را انتخاب کنید');
                     return false;
                 }
+                
+                // Add product IDs to form data
+                window.createComprehensiveProducts.forEach(function(productId) {
+                    formData.append('product_ids[]', productId);
+                });
                 
                 $.ajax({
                     url: $(form).attr('action'),
@@ -679,6 +722,8 @@
                         toastr.success('محصول جامع با موفقیت ایجاد شد');
                         $('#dynamic-modal').modal('hide');
                         window.refreshTable();
+                        // Clear selected products
+                        window.createComprehensiveProducts = [];
                     },
                     error: function(xhr) {
                         if (xhr.status === 422) {
@@ -702,6 +747,254 @@
             });
             
             showDynamicModal()
+        }
+
+        // Functions for create comprehensive product modal
+        let searchTimeoutCreate = null;
+        
+        function searchProductsForCreateComprehensive(searchTerm) {
+            const dropdownId = '#product-dropdown-create';
+            const resultsId = '#product-search-results-create';
+            const loadingId = '#product-search-loading-create';
+            const emptyId = '#product-search-empty-create';
+            
+            // Clear previous timeout
+            if (searchTimeoutCreate) {
+                clearTimeout(searchTimeoutCreate);
+            }
+            
+            // Show dropdown
+            showProductDropdownCreate();
+            
+            // If search term is empty or less than 1 character, hide dropdown
+            if (!searchTerm || searchTerm.trim().length < 1) {
+                $(dropdownId).hide();
+                return;
+            }
+            
+            // Show loading
+            $(loadingId).show();
+            $(emptyId).hide();
+            $(resultsId).empty();
+            
+            // Debounce search
+            searchTimeoutCreate = setTimeout(function() {
+                $.ajax({
+                    url: '{{ route("products.ajax.search") }}',
+                    method: 'GET',
+                    data: {
+                        q: searchTerm,
+                        available_only: '1'
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        $(loadingId).hide();
+                        
+                        // Handle different response formats
+                        let data = [];
+                        if (response && response.results && Array.isArray(response.results)) {
+                            data = response.results;
+                        } else if (Array.isArray(response)) {
+                            data = response;
+                        } else if (response && response.data && Array.isArray(response.data)) {
+                            data = response.data;
+                        }
+                        
+                        // Filter only products (items with id starting with "Product:")
+                        const products = data.filter(function(item) {
+                            if (!item || !item.id) return false;
+                            const itemId = item.id.toString();
+                            return itemId.startsWith('Product:');
+                        });
+                        
+                        // Filter out already selected products
+                        const filteredProducts = products.filter(function(item) {
+                            let productId = item.id;
+                            if (typeof productId === 'string' && productId.startsWith('Product:')) {
+                                productId = productId.replace('Product:', '');
+                            }
+                            return !window.createComprehensiveProducts.includes(String(productId));
+                        });
+                        
+                        if (!filteredProducts || filteredProducts.length === 0) {
+                            $(emptyId).show();
+                            $(resultsId).empty();
+                            return;
+                        }
+                        
+                        $(emptyId).hide();
+                        let html = '';
+                        
+                        filteredProducts.forEach(function(item) {
+                            // Extract product ID
+                            let productId = item.id;
+                            if (typeof productId === 'string' && productId.startsWith('Product:')) {
+                                productId = productId.replace('Product:', '');
+                            }
+                            
+                            const productText = item.text || 'نامشخص';
+                            const productWeight = item.weight || '';
+                            const productPrice = item.price || '';
+                            const singleCount = item.single_count || 0;
+                            
+                            // Escape special characters for onclick - use productText as display name
+                            const escapedText = productText
+                                .replace(/\\/g, '\\\\')
+                                .replace(/'/g, "\\'")
+                                .replace(/"/g, '&quot;')
+                                .replace(/\n/g, ' ')
+                                .replace(/\r/g, '');
+                            
+                            html += `
+                                <div 
+                                    class="custom-product-item" 
+                                    style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;"
+                                    onmouseover="this.style.background='#f5f5f5'"
+                                    onmouseout="this.style.background='white'"
+                                    data-product-id="${productId}"
+                                    onclick="selectProductForCreateComprehensive('${productId}', '${escapedText}', '${productWeight}', '${productPrice}', '${singleCount}')"
+                                >
+                                    <strong>${productText}</strong>
+                                </div>
+                            `;
+                        });
+                        
+                        $(resultsId).html(html);
+                    },
+                    error: function(xhr) {
+                        $(loadingId).hide();
+                        $(resultsId).html('<div class="text-center p-3 text-danger">خطا در جستجو</div>');
+                        console.error('Search error:', xhr);
+                    }
+                });
+            }, 300); // 300ms debounce
+        }
+        
+        function showProductDropdownCreate() {
+            $('#product-dropdown-create').show();
+        }
+        
+        function hideProductDropdownCreate() {
+            const dropdownId = '#product-dropdown-create';
+            if (!$(dropdownId).is(':hover') && !$('#product-search-input-create').is(':focus')) {
+                $(dropdownId).hide();
+            }
+        }
+        
+        function selectProductForCreateComprehensive(productId, productText, productWeight, productPrice, singleCount) {
+            // Check if already added
+            if (window.createComprehensiveProducts.includes(String(productId))) {
+                toastr.warning('این محصول قبلا اضافه شده است');
+                return;
+            }
+            
+            // Add to array
+            window.createComprehensiveProducts.push(String(productId));
+            
+            // Clear search input and hide dropdown
+            $('#product-search-input-create').val('');
+            $('#product-dropdown-create').hide();
+            $('#product-search-results-create').empty();
+            
+            // Update table
+            updateCreateComprehensiveProductsTable();
+            
+            toastr.success('محصول به لیست اضافه شد');
+        }
+        
+        function removeProductFromCreateComprehensive(productId) {
+            // Remove from array
+            window.createComprehensiveProducts = window.createComprehensiveProducts.filter(function(id) {
+                return id !== String(productId);
+            });
+            
+            // Update table
+            updateCreateComprehensiveProductsTable();
+            
+            toastr.success('محصول از لیست حذف شد');
+        }
+        
+        function updateCreateComprehensiveProductsTable() {
+            const tbody = $('#create-comprehensive-products-tbody');
+            const emptyRow = $('#create-comprehensive-products-empty');
+            
+            // Clear table
+            tbody.empty();
+            
+            if (!window.createComprehensiveProducts || window.createComprehensiveProducts.length === 0) {
+                tbody.html('<tr id="create-comprehensive-products-empty"><td colspan="6" class="text-center text-muted">هیچ محصولی انتخاب نشده است</td></tr>');
+                return;
+            }
+            
+            // Fetch product details for each selected product
+            const productIds = window.createComprehensiveProducts;
+            let loadedCount = 0;
+            
+            productIds.forEach(function(productId) {
+                $.ajax({
+                    url: `{{route('products.index')}}/${productId}`,
+                    method: 'GET',
+                    cache: false,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        loadedCount++;
+                        const product = response.data || response;
+                        
+                        const row = `
+                            <tr data-product-id="${product.id}">
+                                <td>
+                                    ${product.image ? `<img src="${product.image}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` : '<span class="text-muted">بدون تصویر</span>'}
+                                </td>
+                                <td>${product.name || 'نامشخص'}</td>
+                                <td>${product.weight || 0} گرم</td>
+                                <td>${product.price ? Number(product.price).toLocaleString('fa-IR') : '0'} تومان</td>
+                                <td>
+                                    <span class="badge badge-${(product.single_count || 0) > 0 ? 'success' : 'danger'}">
+                                        ${product.single_count || 0}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProductFromCreateComprehensive(${product.id})">
+                                        <i class="fas fa-trash"></i> حذف
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        
+                        tbody.append(row);
+                        
+                        // If all products loaded, hide empty message
+                        if (loadedCount === productIds.length) {
+                            emptyRow.remove();
+                        }
+                    },
+                    error: function(xhr) {
+                        loadedCount++;
+                        console.error('Error loading product:', productId, xhr);
+                        
+                        // Add row with error message
+                        const row = `
+                            <tr data-product-id="${productId}">
+                                <td colspan="5">خطا در بارگذاری محصول (ID: ${productId})</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProductFromCreateComprehensive(${productId})">
+                                        <i class="fas fa-trash"></i> حذف
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                        
+                        if (loadedCount === productIds.length) {
+                            emptyRow.remove();
+                        }
+                    }
+                });
+            });
         }
 
     </script>
