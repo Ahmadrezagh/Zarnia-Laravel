@@ -848,7 +848,8 @@ class Product extends Model implements HasMedia
         }
 
         // 3️⃣ Products from this product's categories → check for manual related products
-        $categories = $this->categories()->get();
+        $categories = $this->categories()->with('products')->get();
+        $hasManualRelatedProducts = false;
         
         foreach ($categories as $category) {
             // Check if category has manual related products
@@ -857,6 +858,7 @@ class Product extends Model implements HasMedia
             
             if ($manualRelatedProducts->isNotEmpty() || $manualRelatedCategories->isNotEmpty()) {
                 // Category has manual related products - use them
+                $hasManualRelatedProducts = true;
                 $related = $related->concat($manualRelatedProducts);
                 
                 // Add products from manual related categories
@@ -879,6 +881,7 @@ class Product extends Model implements HasMedia
                         
                         if ($parentManualRelatedProducts->isNotEmpty() || $parentManualRelatedCategories->isNotEmpty()) {
                             // Parent has manual related products - use them
+                            $hasManualRelatedProducts = true;
                             $related = $related->concat($parentManualRelatedProducts);
                             
                             foreach ($parentManualRelatedCategories as $parentRelatedCat) {
@@ -896,15 +899,19 @@ class Product extends Model implements HasMedia
         // Remove duplicates and exclude current product
         $related = $related->unique('id')->where('id', '!=', $this->id)->values();
         
-        // 4️⃣ Fallback: if still empty, get 15 products from same categories
-        if ($related->isEmpty()) {
+        // 4️⃣ Fallback: if no manual related products found in step 3 AND result is empty, get 15 products from same categories
+        if (!$hasManualRelatedProducts && $related->isEmpty()) {
             $related = collect();
-            foreach ($categories as $category) {
-                if (!$category->relationLoaded('products')) {
-                    $category->load('products');
+            
+            if ($categories->isNotEmpty()) {
+                foreach ($categories as $category) {
+                    if ($category->products && $category->products->isNotEmpty()) {
+                        $related = $related->concat($category->products);
+                    }
                 }
-                $related = $related->concat($category->products);
             }
+            
+            // Filter out current product and limit to 15
             $related = $related->unique('id')->where('id', '!=', $this->id)->take(15);
         }
 
