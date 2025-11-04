@@ -360,7 +360,7 @@ class Order extends Model
     /**
      * Send SMS notification to admins about new order
      */
-    private function notifyAdminsNewOrder()
+    public function notifyAdminsNewOrder()
     {
         $adminNumbers = [
             '09127127053',
