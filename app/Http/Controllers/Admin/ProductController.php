@@ -186,7 +186,42 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            $product = Product::findOrFail($id);
+            
+            // If it's a comprehensive product, delete related ComprehensiveProduct records
+            if ($product->is_comprehensive) {
+                ComprehensiveProduct::where('comprehensive_product_id', $product->id)->delete();
+            }
+            
+            // Delete related ComprehensiveProduct records where this product is a component
+            ComprehensiveProduct::where('product_id', $product->id)->delete();
+            
+            // Delete media (images)
+            $product->clearMediaCollection('cover_image');
+            $product->clearMediaCollection('gallery');
+            
+            // Delete category relationships
+            $product->categories()->detach();
+            
+            // Delete the product
+            $product->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'محصول با موفقیت حذف شد'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting product: ' . $e->getMessage(), [
+                'product_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در حذف محصول: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function table(Request $request)
