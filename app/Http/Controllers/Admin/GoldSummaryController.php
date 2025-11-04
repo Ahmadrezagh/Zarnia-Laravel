@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class GoldSummaryController extends Controller
 {
+    // Valid order statuses for gold summary calculations
+    private const VALID_STATUSES = ['paid', 'boxing', 'sent', 'post', 'completed'];
+
     /**
      * Display gold sales summary
      */
@@ -17,7 +20,7 @@ class GoldSummaryController extends Controller
     {
         // Build base query with date filters
         $query = Order::with(['orderItems.product'])
-            ->whereIn('status', ['paid', 'boxing', 'sent', 'post', 'completed']);
+            ->whereIn('status', self::VALID_STATUSES);
 
         // Apply date filters if provided
         if ($request->filled('from_date')) {
@@ -61,7 +64,7 @@ class GoldSummaryController extends Controller
         $overallStatsQuery = DB::table('orders')
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->whereIn('orders.status', ['paid', 'boxing', 'sent', 'post', 'completed']);
+            ->whereIn('orders.status', self::VALID_STATUSES);
 
         // Apply date filters to overall stats query
         if ($request->filled('from_date')) {
@@ -115,10 +118,19 @@ class GoldSummaryController extends Controller
      */
     public function table(Request $request)
     {
-        // Get successful orders with their items
+        // Build base query with status filter
         $query = Order::with(['orderItems.product'])
-            ->whereIn('status', ['paid', 'boxing', 'sent', 'post', 'completed'])
+            ->whereIn('status', self::VALID_STATUSES)
             ->orderBy('created_at', 'asc');
+
+        // Apply date filters if provided
+        if ($request->filled('from_date')) {
+            $query->where('created_at', '>=', $request->from_date);
+        }
+        
+        if ($request->filled('to_date')) {
+            $query->where('created_at', '<=', $request->to_date);
+        }
 
         // Get total count before pagination
         $totalRecords = $query->count();
@@ -132,12 +144,21 @@ class GoldSummaryController extends Controller
         $start = $request->input('start', 0);
         $length = $request->input('length', 25);
 
-        $orders = Order::with(['orderItems.product'])
-            ->whereIn('status', ['paid', 'boxing', 'sent', 'post', 'completed'])
-            ->orderBy('created_at', 'asc')
-            ->skip($start)
-            ->take($length)
-            ->get();
+        // Build paginated query with same filters
+        $paginatedQuery = Order::with(['orderItems.product'])
+            ->whereIn('status', self::VALID_STATUSES)
+            ->orderBy('created_at', 'asc');
+            
+        // Apply same date filters to paginated query
+        if ($request->filled('from_date')) {
+            $paginatedQuery->where('created_at', '>=', $request->from_date);
+        }
+        
+        if ($request->filled('to_date')) {
+            $paginatedQuery->where('created_at', '<=', $request->to_date);
+        }
+
+        $orders = $paginatedQuery->skip($start)->take($length)->get();
 
         // Calculate summary data for paginated results
         $data = [];
@@ -262,7 +283,7 @@ class GoldSummaryController extends Controller
     public function show(Order $order)
     {
         // Ensure order has valid status
-        if (!in_array($order->status, ['paid', 'boxing', 'sent', 'post', 'completed'])) {
+        if (!in_array($order->status, self::VALID_STATUSES)) {
             abort(404, 'Order not found or status not valid for gold summary');
         }
 
