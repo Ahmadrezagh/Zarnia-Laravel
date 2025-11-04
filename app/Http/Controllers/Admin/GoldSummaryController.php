@@ -92,14 +92,15 @@ class GoldSummaryController extends Controller
         $percentageDifference = $avgSalePercentage - $avgPurchasePercentage;
 
         $summary = [
-            'total_weight' => number_format($totalWeight, 3),
-            'total_amount' => number_format($totalAmount),
-            'avg_purchase_percentage' => number_format($avgPurchasePercentage, 2),
-            'avg_sale_percentage' => number_format($avgSalePercentage, 2),
-            'percentage_difference' => number_format($percentageDifference, 2),
-            'total_purchase_commission' => number_format($totalPurchasePercentageWeight, 3),
-            'total_sale_commission' => number_format($totalSalePercentageWeight, 3),
-            // Page-specific data
+            // Overall totals from ALL orders (not just current page)
+            'total_weight' => number_format($totalWeight, 3) . ' گرم',
+            'total_amount' => number_format($totalAmount) . ' تومان',
+            'avg_purchase_percentage' => number_format($avgPurchasePercentage, 2) . '%',
+            'avg_sale_percentage' => number_format($avgSalePercentage, 2) . '%',
+            'percentage_difference' => number_format($percentageDifference, 2) . '%',
+            'total_purchase_commission' => number_format($totalPurchasePercentageWeight, 3) . ' گرم',
+            'total_sale_commission' => number_format($totalSalePercentageWeight, 3) . ' گرم',
+            // Page-specific data (for footer comparison)
             'page_weight' => number_format($pageWeight, 3),
             'page_amount' => number_format($pageAmount),
             'page_purchase_commission' => number_format($pagePurchasePercentageWeight, 3),

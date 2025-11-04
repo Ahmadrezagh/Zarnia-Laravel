@@ -62,7 +62,8 @@
                     <div class="card bg-primary text-white">
                         <div class="card-body">
                             <h6>مجموع وزن طلا</h6>
-                            <h4>{{ $summary['total_weight'] }} گرم</h4>
+                            <h4>{{ $summary['total_weight'] }}</h4>
+                            <small>از همه سفارشات</small>
                         </div>
                     </div>
                 </div>
@@ -70,7 +71,8 @@
                     <div class="card bg-success text-white">
                         <div class="card-body">
                             <h6>مجموع ریالی</h6>
-                            <h4>{{ $summary['total_amount'] }} تومان</h4>
+                            <h4>{{ $summary['total_amount'] }}</h4>
+                            <small>از همه سفارشات</small>
                         </div>
                     </div>
                 </div>
@@ -78,7 +80,8 @@
                     <div class="card bg-info text-white">
                         <div class="card-body">
                             <h6>میانگین درصد خرید</h6>
-                            <h4>{{ $summary['avg_purchase_percentage'] }}%</h4>
+                            <h4>{{ $summary['avg_purchase_percentage'] }}</h4>
+                            <small>از همه سفارشات</small>
                         </div>
                     </div>
                 </div>
@@ -86,7 +89,8 @@
                     <div class="card bg-warning text-white">
                         <div class="card-body">
                             <h6>میانگین فروش - خرید</h6>
-                            <h4>{{ $summary['percentage_difference'] }}%</h4>
+                            <h4>{{ $summary['percentage_difference'] }}</h4>
+                            <small>از همه سفارشات</small>
                         </div>
                     </div>
                 </div>
