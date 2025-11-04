@@ -162,17 +162,24 @@ class OrderController extends Controller
                 ]);
             }
 
-            // Submit to accounting app
-            $accountingResult = $order->submitInAccountingApp();
-            
-            \Log::info('Order created and submitted to accounting app', [
+            \Log::info('Order created in admin', [
                 'order_id' => $order->id,
-                'accounting_result' => $accountingResult
+                'status' => $order->status,
+                'is_paid' => ($order->status === 'paid'),
+                'final_amount' => $order->final_amount
             ]);
 
             // Check and generate gift if order is paid (created by admin with paid status)
             if ($order->status === 'paid') {
+                \Log::info('Order status is paid, proceeding with gift and SMS', [
+                    'order_id' => $order->id
+                ]);
+                
                 $order->checkAndGenerateGift();
+                
+                // Refresh order to ensure user relationship is loaded
+                $order->refresh();
+                $order->load('user');
                 
                 // Notify admins about new paid order
                 $adminNumbers = [
@@ -184,17 +191,35 @@ class OrderController extends Controller
                 $userName = $order->user->name ?? 'کاربر';
                 $orderAmount = number_format($order->final_amount) . ' تومان';
                 
+                \Log::info('Sending admin SMS notification', [
+                    'order_id' => $order->id,
+                    'user_name' => $userName,
+                    'order_amount' => $orderAmount,
+                    'admin_numbers' => $adminNumbers
+                ]);
+                
                 foreach ($adminNumbers as $phone) {
                     try {
-                        $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
+                        $result = $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
+                        \Log::info('Admin SMS sent successfully', [
+                            'order_id' => $order->id,
+                            'phone' => $phone,
+                            'sms_result' => $result
+                        ]);
                     } catch (\Exception $e) {
                         \Log::error('Failed to send admin SMS notification', [
                             'order_id' => $order->id,
                             'phone' => $phone,
-                            'error' => $e->getMessage()
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
                         ]);
                     }
                 }
+            } else {
+                \Log::info('Order status is not paid, skipping SMS', [
+                    'order_id' => $order->id,
+                    'status' => $order->status
+                ]);
             }
 
             return response()->json([
