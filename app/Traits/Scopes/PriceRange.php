@@ -48,9 +48,12 @@ trait PriceRange
         
         // Order by price from low to high (ascending)
         // Use discounted_price if available, otherwise use regular price
+        // Note: discounted_price is stored as-is (NOT multiplied by 10)
+        // price is stored multiplied by 10
+        // Multiply discounted_price by 10 to match price format for comparison
         return $query->orderByRaw("
             CASE
-                WHEN discounted_price > 0 THEN discounted_price
+                WHEN discounted_price IS NOT NULL AND discounted_price > 0 THEN discounted_price * 10
                 ELSE price
             END asc
         ");

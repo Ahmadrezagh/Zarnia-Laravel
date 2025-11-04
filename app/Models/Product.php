@@ -130,9 +130,13 @@ class Product extends Model implements HasMedia
     {
         $availableDirections = ['asc', 'desc'];
         if($direction && in_array($direction, $availableDirections)){
-                return $query->orderByRaw("
+            // Note: discounted_price is stored as-is (NOT multiplied by 10)
+            // price is stored multiplied by 10
+            // For sorting, we need to normalize both to the same unit
+            // Multiply discounted_price by 10 to match price format for comparison
+            return $query->orderByRaw("
                 CASE
-                    WHEN discounted_price > 0 THEN discounted_price
+                    WHEN discounted_price IS NOT NULL AND discounted_price > 0 THEN discounted_price * 10
                     ELSE price
                 END {$direction}
             ");
@@ -746,16 +750,22 @@ class Product extends Model implements HasMedia
             case 'oldest':
                 return $query->orderBy('created_at', 'asc');
             case 'price_asc':
+                // Note: discounted_price is stored as-is (NOT multiplied by 10)
+                // price is stored multiplied by 10
+                // Multiply discounted_price by 10 to match price format for comparison
                 return $query->orderByRaw("
                     CASE
-                        WHEN discounted_price > 0 THEN discounted_price
+                        WHEN discounted_price IS NOT NULL AND discounted_price > 0 THEN discounted_price * 10
                         ELSE price
                     END asc
                 ");
             case 'price_desc':
+                // Note: discounted_price is stored as-is (NOT multiplied by 10)
+                // price is stored multiplied by 10
+                // Multiply discounted_price by 10 to match price format for comparison
                 return $query->orderByRaw("
                     CASE
-                        WHEN discounted_price > 0 THEN discounted_price
+                        WHEN discounted_price IS NOT NULL AND discounted_price > 0 THEN discounted_price * 10
                         ELSE price
                     END desc
                 ");
