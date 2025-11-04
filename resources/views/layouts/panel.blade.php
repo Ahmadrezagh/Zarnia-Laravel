@@ -382,6 +382,20 @@
                         </ul>
                     </li>
                 @endif
+            @if ((Auth::user()->isAdmin() && Auth::user()->can('IndexButton')) || Auth::user()->isSuperAdmin() )
+                    <li class="nav-item">
+                        <a class="nav-link with-sub" href="#">
+                            <span class="shape1"></span>
+                            <span class="shape2"></span>
+                            <i class="fas fa-sliders sidemenu-icon"></i>
+                            <span class="sidemenu-label">دکمه های صفحه اصلی</span><i class="angle fe fe-chevron-left"></i></a>
+                        <ul class="nav-sub">
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('index_buttons.index')}}">دکمه ها</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
             @if ((Auth::user()->isAdmin() && Auth::user()->can('Template')) || Auth::user()->isSuperAdmin() )
                     <li class="nav-item">
                         <a class="nav-link with-sub" href="#">
