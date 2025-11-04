@@ -401,4 +401,52 @@ class Tahesab{
             'message' => $response->body()
         ];
     }
+
+    public function DoNewSanadVKHBank($order_number, $IsDayaftOrPardakht_0_1, $Mablagh, $name_bank, $code_rahgiri, $MultiRadif, $sharh = "sharh")
+    {
+        $year = Jalalian::now()->format('Y');
+        $month = Jalalian::now()->format('m');
+        $day = Jalalian::now()->format('d');
+
+        $params = [
+            'DoNewSanadVKHBank' => [
+                1,                     // Sabte_Kol_Or_Movaghat_1_0
+                3037,                  // Moshtari_Code (assuming fixed like previous one)
+                $order_number,         // Factor_Number
+                -1,                    // Radif_Number
+                intval($year),         // Shamsi_Year
+                intval($month),        // Shamsi_Month
+                intval($day),          // Shamsi_Day
+                $IsDayaftOrPardakht_0_1, // IsDayaftAzMoshtariOrPardakhtBeMoshtari_0_1
+                $Mablagh,              // Mablagh
+                $sharh,                // Sharh
+                $name_bank,            // Name_Bank
+                $code_rahgiri,         // Code_Rahgiri
+                $order_number,         // Factor_Code
+                -1,                    // (Fixed value based on your structure)
+                intval($MultiRadif)    // MultiRadif
+            ]
+        ];
+
+        $response = $this->makeRequest('GET', $params);
+
+        if ($response->successful()) {
+            $response = $response->json();
+            if (isset($response['Error'])) {
+                return [
+                    'error' => true,
+                    'status' => 404,
+                    'message' => "یافت نشد"
+                ];
+            }
+            return $response;
+        }
+
+        return [
+            'error' => true,
+            'status' => $response->status(),
+            'message' => $response->body()
+        ];
+    }
+
 }
