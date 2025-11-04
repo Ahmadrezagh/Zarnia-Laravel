@@ -215,8 +215,9 @@ class GoldSummaryController extends Controller
             ]);
 
             // Always add row even if amounts are 0
+            $detailUrl = route('gold_summary.show', $order->id);
             $data[] = [
-                'id' => $order->id,
+                'id' => '<a href="' . $detailUrl . '" target="_blank" style="cursor: pointer; color: #007bff;">' . $order->id . '</a>',
                 'transaction_id' => $order->transaction_id ?? '',
                 'date' => $order->createdAtJalali ?? '',
                 'weight' => number_format($orderWeight, 3) . ' گرم',
@@ -252,6 +253,74 @@ class GoldSummaryController extends Controller
             'data' => $data,
             'summary' => $summary
         ]);
+    }
+
+    /**
+     * Show order calculation details
+     */
+    public function show(Order $order)
+    {
+        // Ensure order has valid status
+        if (!in_array($order->status, ['paid', 'boxing', 'sent', 'post', 'completed'])) {
+            abort(404, 'Order not found or status not valid for gold summary');
+        }
+
+        // Load order with items and products
+        $order->load(['orderItems.product', 'user', 'address']);
+
+        // Calculate details for each order item
+        $items = [];
+        $totalWeight = 0;
+        $totalAmount = 0;
+        $totalPurchaseCommission = 0;
+        $totalSaleCommission = 0;
+
+        foreach ($order->orderItems as $item) {
+            if ($item->product) {
+                $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
+                $itemAmount = floatval($item->price) * intval($item->count);
+                
+                $darsadKharid = floatval($item->product->darsad_kharid ?? 0);
+                $purchaseCommissionGrams = ($itemWeight * $darsadKharid) / 100;
+                
+                $ojrat = floatval($item->product->ojrat ?? 0);
+                $saleCommissionGrams = ($itemWeight * $ojrat) / 100;
+
+                $items[] = [
+                    'product_name' => $item->name,
+                    'product_id' => $item->product_id,
+                    'count' => $item->count,
+                    'unit_weight' => floatval($item->product->weight ?? 0),
+                    'total_weight' => $itemWeight,
+                    'unit_price' => floatval($item->price),
+                    'total_amount' => $itemAmount,
+                    'purchase_percentage' => $darsadKharid,
+                    'purchase_commission_grams' => $purchaseCommissionGrams,
+                    'sale_percentage' => $ojrat,
+                    'sale_commission_grams' => $saleCommissionGrams,
+                ];
+
+                $totalWeight += $itemWeight;
+                $totalAmount += $itemAmount;
+                $totalPurchaseCommission += $purchaseCommissionGrams;
+                $totalSaleCommission += $saleCommissionGrams;
+            }
+        }
+
+        // Calculate averages
+        $avgPurchasePercentage = $totalWeight > 0 ? ($totalPurchaseCommission / $totalWeight) * 100 : 0;
+        $avgSalePercentage = $totalWeight > 0 ? ($totalSaleCommission / $totalWeight) * 100 : 0;
+
+        $summary = [
+            'total_weight' => $totalWeight,
+            'total_amount' => $totalAmount,
+            'total_purchase_commission' => $totalPurchaseCommission,
+            'total_sale_commission' => $totalSaleCommission,
+            'avg_purchase_percentage' => $avgPurchasePercentage,
+            'avg_sale_percentage' => $avgSalePercentage,
+        ];
+
+        return view('admin.gold_summary.show', compact('order', 'items', 'summary'));
     }
 }
 

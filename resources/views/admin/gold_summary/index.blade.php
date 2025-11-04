@@ -107,6 +107,14 @@
                         <th>کارمزد فروش (گرم)</th>
                     </tr>
                 </thead>
+                <style>
+                    #gold-summary-table tbody tr {
+                        cursor: pointer;
+                    }
+                    #gold-summary-table tbody tr:hover {
+                        background-color: #f8f9fa !important;
+                    }
+                </style>
                 <tbody>
                     @php $cumulativeAmount = 0; @endphp
                     @foreach($orders as $order)
@@ -135,7 +143,7 @@
 
                             $cumulativeAmount += $orderAmount;
                         @endphp
-                        <tr>
+                        <tr style="cursor: pointer;" onclick="window.open('{{ route('gold_summary.show', $order->id) }}', '_blank')">
                             <td>{{ $order->id }}</td>
                             <td>{{ $order->transaction_id ?? '-' }}</td>
                             <td>{{ $order->createdAtJalali }}</td>
@@ -198,6 +206,15 @@
                 language: {
                     search: "جستجو:",
                     zeroRecords: "رکوردی یافت نشد",
+                }
+            });
+
+            // Make table rows clickable (for DataTables rows)
+            $('#gold-summary-table tbody').on('click', 'tr', function() {
+                var orderId = $(this).find('td:first-child').text().trim();
+                if (orderId && !isNaN(orderId)) {
+                    var url = '{{ route("gold_summary.show", ":id") }}'.replace(':id', orderId);
+                    window.open(url, '_blank');
                 }
             });
         });

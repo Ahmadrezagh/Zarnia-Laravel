@@ -143,6 +143,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
 
     Route::get('visit',[VisitController::class,'index'])->name('visit.index');
     Route::get('gold_summary',[GoldSummaryController::class,'index'])->name('gold_summary.index');
+    Route::get('gold_summary/{order}',[GoldSummaryController::class,'show'])->name('gold_summary.show');
 
 });
 
