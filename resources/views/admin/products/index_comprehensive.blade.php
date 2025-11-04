@@ -660,7 +660,7 @@
                                 </div>
                             </div>
                         </div>
-                        <input type="hidden" id="create-comprehensive-product-ids" name="product_ids[]" value="">
+                        <!-- Product IDs will be added via JavaScript, not hidden input -->
                     </div>
 <button class="btn btn-success" type="submit">ایجاد</button>
 </form>
@@ -716,9 +716,9 @@
                     return false;
                 }
                 
-                // Add product IDs to form data
+                // Add product IDs to form data (convert to integers for validation)
                 window.createComprehensiveProducts.forEach(function(productId) {
-                    formData.append('product_ids[]', productId);
+                    formData.append('product_ids[]', parseInt(productId, 10));
                 });
                 
                 $.ajax({
