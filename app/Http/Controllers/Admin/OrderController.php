@@ -171,6 +171,8 @@ class OrderController extends Controller
 
             // Check and generate gift if order is paid (created by admin with paid status)
             if ($order->status === 'paid') {
+                $order->submitInAccountingApp();
+
                 \Log::info('Order status is paid, proceeding with gift and SMS', [
                     'order_id' => $order->id
                 ]);
@@ -598,10 +600,10 @@ class OrderController extends Controller
             'status' => $request->orderStatus
         ]);
         if($request->orderStatus == Order::$STATUSES[1]){
-//            $order->submitInAccountingApp();
+            $order->submitInAccountingApp();
         }
         if($request->orderStatus == Order::$STATUSES[3] || $request->orderStatus == Order::$STATUSES[4]){
-//            return $order->cancelOrder();
+            return $order->cancelOrder();
         }
         return response()->json();
     }
