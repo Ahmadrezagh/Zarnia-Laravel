@@ -62,6 +62,7 @@ Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () 
     Route::any('products_not_available', [ProductController::class, 'not_available_table'])->name('products_not_available');
     Route::any('products_without_category', [ProductController::class, 'products_without_category_table'])->name('products_without_category');
     Route::any('products_comprehensive', [ProductController::class, 'products_comprehensive_table'])->name('products_comprehensive');
+    Route::any('products_comprehensive_not_available', [ProductController::class, 'products_comprehensive_not_available_table'])->name('products_comprehensive_not_available');
     Route::any('products_children_of/{product}', [ProductController::class, 'products_children_of_table'])->name('products_children_of');
     Route::any('attributes', [AttributeController::class, 'table'])->name('attributes');
     Route::any('attribute_groups', [AttributeController::class, 'table'])->name('attribute_groups');
@@ -110,6 +111,7 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
     Route::get('products_not_available', [ProductController::class,'notAvailable' ])->name('products.products_not_available');
     Route::get('products_without_category', [ProductController::class,'withoutCategory' ])->name('products.product_without_category');
     Route::get('products_comprehensive', [ProductController::class,'productsComprehensive' ])->name('products.products_comprehensive');
+    Route::get('products_comprehensive_not_available', [ProductController::class,'productsComprehensiveNotAvailable' ])->name('products.products_comprehensive_not_available');
     Route::get('products_children_of/{product}', [ProductController::class,'productsChildrenOf' ])->name('products.products_children_of');
     Route::get('/products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
     Route::resource('index_banners', IndexBannerController::class );

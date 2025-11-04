@@ -49,6 +49,13 @@ class ProductController extends Controller
         $categories = Category::query()->get();
         return view('admin.products.index_comprehensive', compact('products','categories'));
     }
+    
+    public function productsComprehensiveNotAvailable()
+    {
+        $products = Product::query()->paginate();
+        $categories = Category::query()->get();
+        return view('admin.products.index_comprehensive_not_available', compact('products','categories'));
+    }
     public function productsChildrenOf(Product $product)
     {
 
@@ -538,9 +545,23 @@ class ProductController extends Controller
     }
     public function products_comprehensive_table(Request $request)
     {
-        // Comprehensive products don't need etikets themselves, so we don't filter by available()
-        // They are containers for other products
-        $query = Product::query()->comprehensive()->main()->select('*');
+        // Show only available comprehensive products (where ALL constituent products have single_count >= 1)
+        $query = Product::query()
+            ->comprehensive()
+            ->main()
+            ->whereHas('products', function ($productsQuery) {
+                // Check if constituent product has at least one available etiket (single_count >= 1)
+                $productsQuery->whereHas('etikets', function ($etiketQuery) {
+                    $etiketQuery->where('is_mojood', 1);
+                });
+            })
+            // Ensure ALL constituent products have available etikets (not just one)
+            ->whereDoesntHave('products', function ($productsQuery) {
+                $productsQuery->whereDoesntHave('etikets', function ($etiketQuery) {
+                    $etiketQuery->where('is_mojood', 1);
+                });
+            })
+            ->select('*');
 
         // Get total records before applying filters
         $totalRecords = $query->count();
@@ -618,7 +639,95 @@ class ProductController extends Controller
             'data' => $data
         ]);
     }
+    
+    public function products_comprehensive_not_available_table(Request $request)
+    {
+        // Show comprehensive products where at least one constituent product doesn't have available etikets
+        $query = Product::query()
+            ->comprehensive()
+            ->main()
+            ->whereHas('products', function ($productsQuery) {
+                // Must have at least one product without available etikets
+                $productsQuery->whereDoesntHave('etikets', function ($etiketQuery) {
+                    $etiketQuery->where('is_mojood', 1);
+                });
+            })
+            ->select('*');
 
+        // Get total records before applying filters
+        $totalRecords = $query->count();
+
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->input('search.value'))) {
+            $search = $request->input('search.value');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}");
+                    })
+                    ->orWhereHas('children.etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}");
+                    });
+            });
+        }
+
+        // Handle pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        if ($length <= 0) {
+            $length = 10;
+        }
+
+        $is_mojood_dir = 'desc';
+        $image_dir = null;
+        $count_dir = null;
+        // Apply sorting if provided
+        if ($request->has('order') && !empty($request->input('order'))) {
+            $order = $request->input('order')[0];
+            $columnIndex = $order['column'];
+            $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
+            $column = $request->input("columns.{$columnIndex}.data");
+            if($columnIndex == 1){
+                $is_mojood_dir = $direction;
+            }
+            if($columnIndex == 2){
+                $image_dir = $direction;
+            }
+            if($columnIndex == 6){
+                $count_dir = $direction;
+            }
+            if ($column && Schema::hasColumn('products', $column)) {
+                $query->orderBy($column, $direction);
+            }
+        }else{
+            $query = $query->latest('id');
+        }
+
+        // Fetch paginated data
+        $data = $query
+            ->multipleSearch([$request->searchKey,$request->searchVal])
+            ->WithMojoodCount($count_dir)
+            ->WithImageStatus($image_dir)
+            ->SortMojood($is_mojood_dir)
+            ->FilterProduct($request->filter)
+            ->categories($request->category_ids);
+
+        // Get filtered records count after search
+        $filteredRecords = $query->count();
+        $data = $data
+            ->skip($start)
+            ->take($length)
+            ->get()
+            ->map(function ($item) {
+                return AdminProductResource::make($item);
+            });
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data
+        ]);
+    }
 
     public function bulkUpdate(Request $request)
     {
