@@ -60,26 +60,33 @@ trait PriceRange
      * Apply price filter logic considering discounted_price and regular price.
      * 
      * @param Builder $query
-     * @param float|null $fromPrice
-     * @param float|null $toPrice
+     * @param float|null $fromPrice (already multiplied by 10)
+     * @param float|null $toPrice (already multiplied by 10)
      * @return void
      */
     protected function applyPriceFilter($query, $fromPrice, $toPrice)
     {
         $query->where(function ($priceQuery) use ($fromPrice, $toPrice) {
             // Case 1: Product has discounted_price
+            // Note: discounted_price is stored as-is (NOT multiplied by 10)
+            // But fromPrice/toPrice are already multiplied by 10 in scopePriceRange
+            // So we need to divide by 10 for comparison with discounted_price
             $priceQuery->where(function ($discountedQuery) use ($fromPrice, $toPrice) {
                 $discountedQuery->whereNotNull('discounted_price')
                     ->where('discounted_price', '>', 0);
                 
                 if (!is_null($fromPrice)) {
-                    $discountedQuery->where('discounted_price', '>=', $fromPrice);
+                    // discounted_price is stored as-is, so divide by 10 for comparison
+                    $discountedQuery->where('discounted_price', '>=', $fromPrice / 10);
                 }
                 if (!is_null($toPrice)) {
-                    $discountedQuery->where('discounted_price', '<=', $toPrice);
+                    // discounted_price is stored as-is, so divide by 10 for comparison
+                    $discountedQuery->where('discounted_price', '<=', $toPrice / 10);
                 }
             })
             // Case 2: Product doesn't have discounted_price, use regular price
+            // Note: price is stored multiplied by 10 in database
+            // fromPrice/toPrice are already multiplied by 10, so compare directly
             ->orWhere(function ($regularQuery) use ($fromPrice, $toPrice) {
                 $regularQuery->where(function ($nullOrZero) {
                     $nullOrZero->whereNull('discounted_price')
@@ -87,9 +94,11 @@ trait PriceRange
                 });
                 
                 if (!is_null($fromPrice)) {
+                    // price is stored multiplied by 10, so compare directly
                     $regularQuery->where('price', '>=', $fromPrice);
                 }
                 if (!is_null($toPrice)) {
+                    // price is stored multiplied by 10, so compare directly
                     $regularQuery->where('price', '<=', $toPrice);
                 }
             });
