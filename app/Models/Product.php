@@ -830,42 +830,85 @@ class Product extends Model implements HasMedia
     {
         $related = collect();
 
-        // 1️⃣ Direct products
-        $related = $related->concat($this->relatedProductsDirect()->get());
+        // 1️⃣ Direct products (manually assigned to this product)
+        $directRelated = $this->relatedProductsDirect()->get();
+        if ($directRelated->isNotEmpty()) {
+            $related = $related->concat($directRelated);
+        }
 
-        // 2️⃣ Products from related categories
-        $related = $related->concat(
-            $this->relatedCategories()
-                ->get()
-                ->flatMap(fn ($category) => $category->products)
-        );
+        // 2️⃣ Products from related categories (manually assigned categories to this product)
+        $relatedCategories = $this->relatedCategories()->get();
+        if ($relatedCategories->isNotEmpty()) {
+            foreach ($relatedCategories as $category) {
+                if (!$category->relationLoaded('products')) {
+                    $category->load('products');
+                }
+                $related = $related->concat($category->products);
+            }
+        }
 
-        // 3️⃣ Products from this product's categories → direct related products (with parent fallback)
-        $related = $related->concat(
-            $this->categories()
-                ->get()
-                ->flatMap(function ($category) {
-                    // Use the new method that checks parent category if no manual related products
-                    // If no manual related products, returns products from category itself
-                    return $category->getRelatedProductsWithParentFallback();
-                })
-                ->where('id', '!=', $this->id) // Exclude current product
-        );
+        // 3️⃣ Products from this product's categories → check for manual related products
+        $categories = $this->categories()->get();
+        
+        foreach ($categories as $category) {
+            // Check if category has manual related products
+            $manualRelatedProducts = $category->relatedProductsDirect()->get();
+            $manualRelatedCategories = $category->relatedCategories()->get();
+            
+            if ($manualRelatedProducts->isNotEmpty() || $manualRelatedCategories->isNotEmpty()) {
+                // Category has manual related products - use them
+                $related = $related->concat($manualRelatedProducts);
+                
+                // Add products from manual related categories
+                foreach ($manualRelatedCategories as $relatedCat) {
+                    if (!$relatedCat->relationLoaded('products')) {
+                        $relatedCat->load('products');
+                    }
+                    $related = $related->concat($relatedCat->products);
+                }
+            } else {
+                // No manual related products - check parent category for manual related products
+                if ($category->parent_id) {
+                    if (!$category->relationLoaded('parent')) {
+                        $category->load('parent');
+                    }
+                    
+                    if ($category->parent) {
+                        $parentManualRelatedProducts = $category->parent->relatedProductsDirect()->get();
+                        $parentManualRelatedCategories = $category->parent->relatedCategories()->get();
+                        
+                        if ($parentManualRelatedProducts->isNotEmpty() || $parentManualRelatedCategories->isNotEmpty()) {
+                            // Parent has manual related products - use them
+                            $related = $related->concat($parentManualRelatedProducts);
+                            
+                            foreach ($parentManualRelatedCategories as $parentRelatedCat) {
+                                if (!$parentRelatedCat->relationLoaded('products')) {
+                                    $parentRelatedCat->load('products');
+                                }
+                                $related = $related->concat($parentRelatedCat->products);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-        // Remove duplicates
-        $related = $related->unique('id')->values();
+        // Remove duplicates and exclude current product
+        $related = $related->unique('id')->where('id', '!=', $this->id)->values();
         
         // 4️⃣ Fallback: if still empty, get 15 products from same categories
         if ($related->isEmpty()) {
-            $related = $this->categories()
-                ->with('products')
-                ->get()
-                ->flatMap(fn ($category) => $category->products)
-                ->where('id', '!=', $this->id) // exclude self
-                ->take(15); // Limit to 15 products
+            $related = collect();
+            foreach ($categories as $category) {
+                if (!$category->relationLoaded('products')) {
+                    $category->load('products');
+                }
+                $related = $related->concat($category->products);
+            }
+            $related = $related->unique('id')->where('id', '!=', $this->id)->take(15);
         }
 
-        // Remove duplicates & keep order
+        // Remove duplicates & return
         return $related->unique('id')->values();
     }
 
