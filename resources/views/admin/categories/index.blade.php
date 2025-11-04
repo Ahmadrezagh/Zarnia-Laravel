@@ -118,6 +118,7 @@
             :url="route('table.categories')"
             id="categories-table"
             :columns="[
+                            ['label' => '#', 'key' => 'id', 'type' => 'text'],
                             ['label' => 'تصویر', 'key' => 'image', 'type' => 'image'],
                             ['label' => 'نام', 'key' => 'title', 'type' => 'text'],
                         ]"
