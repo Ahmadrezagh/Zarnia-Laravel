@@ -852,18 +852,17 @@ class Product extends Model implements HasMedia
                 ->where('id', '!=', $this->id) // Exclude current product
         );
 
-        // Note: Step 4 (related categories) is now handled in getRelatedProductsWithParentFallback
-        // So we don't need to check it separately here
-
-        // 5️⃣ Fallback: products from same categories as this product
+        // Remove duplicates
+        $related = $related->unique('id')->values();
+        
+        // 4️⃣ Fallback: if still empty, get 15 products from same categories
         if ($related->isEmpty()) {
-            $related = $related->concat(
-                $this->categories()
-                    ->with('products')
-                    ->get()
-                    ->flatMap(fn ($category) => $category->products)
-                    ->where('id', '!=', $this->id) // exclude self
-            );
+            $related = $this->categories()
+                ->with('products')
+                ->get()
+                ->flatMap(fn ($category) => $category->products)
+                ->where('id', '!=', $this->id) // exclude self
+                ->take(15); // Limit to 15 products
         }
 
         // Remove duplicates & keep order
