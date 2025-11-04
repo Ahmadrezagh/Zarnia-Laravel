@@ -975,6 +975,10 @@ class ProductController extends Controller
             ->distinct() // Prevent duplicates
             ->limit(50) // Limit results for performance
             ->get()
+            ->filter(function ($product) {
+                // Filter by single_count >= 1
+                return $product->single_count >= 1;
+            })
             ->map(function ($product) {
                 // Calculate single_count using the accessor after loading the product
                 $singleCount = $product->single_count;

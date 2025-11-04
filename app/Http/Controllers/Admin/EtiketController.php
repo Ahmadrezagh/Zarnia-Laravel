@@ -29,6 +29,14 @@ class EtiketController extends Controller
             ]);
         }
 
+        // Filter by single_count >= 1
+        if ($etiket->product->single_count < 1) {
+            return response()->json([
+                'results' => [],
+                'message' => 'Product is not available (single_count < 1).'
+            ]);
+        }
+
         return response()->json([
             'results' => [[
                 'id' => $etiket->product->id,
