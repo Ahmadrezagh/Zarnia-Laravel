@@ -830,10 +830,20 @@ class Product extends Model implements HasMedia
     {
         $related = collect();
 
+        // Helper function to filter products: must have count >= 1 and cover image
+        $filterAvailableProducts = function ($products) {
+            return $products->filter(function ($product) {
+                return $product->single_count >= 1 && $product->hasMedia('cover_image');
+            });
+        };
+
         // 1️⃣ Direct products (manually assigned to this product)
         $directRelated = $this->relatedProductsDirect()->get();
         if ($directRelated->isNotEmpty()) {
-            $related = $related->concat($directRelated);
+            $filtered = $filterAvailableProducts($directRelated);
+            if ($filtered->isNotEmpty()) {
+                $related = $related->concat($filtered);
+            }
         }
 
         // 2️⃣ Products from related categories (manually assigned categories to this product)
@@ -843,7 +853,10 @@ class Product extends Model implements HasMedia
                 if (!$category->relationLoaded('products')) {
                     $category->load('products');
                 }
-                $related = $related->concat($category->products);
+                $filtered = $filterAvailableProducts($category->products);
+                if ($filtered->isNotEmpty()) {
+                    $related = $related->concat($filtered);
+                }
             }
         }
 
@@ -859,14 +872,22 @@ class Product extends Model implements HasMedia
             if ($manualRelatedProducts->isNotEmpty() || $manualRelatedCategories->isNotEmpty()) {
                 // Category has manual related products - use them
                 $hasManualRelatedProducts = true;
-                $related = $related->concat($manualRelatedProducts);
+                
+                // Filter manual related products
+                $filtered = $filterAvailableProducts($manualRelatedProducts);
+                if ($filtered->isNotEmpty()) {
+                    $related = $related->concat($filtered);
+                }
                 
                 // Add products from manual related categories
                 foreach ($manualRelatedCategories as $relatedCat) {
                     if (!$relatedCat->relationLoaded('products')) {
                         $relatedCat->load('products');
                     }
-                    $related = $related->concat($relatedCat->products);
+                    $filtered = $filterAvailableProducts($relatedCat->products);
+                    if ($filtered->isNotEmpty()) {
+                        $related = $related->concat($filtered);
+                    }
                 }
             } else {
                 // No manual related products - check parent category for manual related products
@@ -882,13 +903,21 @@ class Product extends Model implements HasMedia
                         if ($parentManualRelatedProducts->isNotEmpty() || $parentManualRelatedCategories->isNotEmpty()) {
                             // Parent has manual related products - use them
                             $hasManualRelatedProducts = true;
-                            $related = $related->concat($parentManualRelatedProducts);
+                            
+                            // Filter parent manual related products
+                            $filtered = $filterAvailableProducts($parentManualRelatedProducts);
+                            if ($filtered->isNotEmpty()) {
+                                $related = $related->concat($filtered);
+                            }
                             
                             foreach ($parentManualRelatedCategories as $parentRelatedCat) {
                                 if (!$parentRelatedCat->relationLoaded('products')) {
                                     $parentRelatedCat->load('products');
                                 }
-                                $related = $related->concat($parentRelatedCat->products);
+                                $filtered = $filterAvailableProducts($parentRelatedCat->products);
+                                if ($filtered->isNotEmpty()) {
+                                    $related = $related->concat($filtered);
+                                }
                             }
                         }
                     }
@@ -906,7 +935,10 @@ class Product extends Model implements HasMedia
             if ($categories->isNotEmpty()) {
                 foreach ($categories as $category) {
                     if ($category->products && $category->products->isNotEmpty()) {
-                        $related = $related->concat($category->products);
+                        $filtered = $filterAvailableProducts($category->products);
+                        if ($filtered->isNotEmpty()) {
+                            $related = $related->concat($filtered);
+                        }
                     }
                 }
             }
