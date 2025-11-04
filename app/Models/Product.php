@@ -840,23 +840,18 @@ class Product extends Model implements HasMedia
                 ->flatMap(fn ($category) => $category->products)
         );
 
-        // 3️⃣ Products from this product's categories → direct related products
+        // 3️⃣ Products from this product's categories → direct related products (with parent fallback)
         $related = $related->concat(
             $this->categories()
-                ->with('relatedProductsDirect')
                 ->get()
-                ->flatMap(fn ($category) => $category->relatedProductsDirect)
+                ->flatMap(function ($category) {
+                    // Use the new method that checks parent category if no manual related products
+                    return $category->getRelatedProductsWithParentFallback();
+                })
         );
 
-        // 4️⃣ Products from this product's categories → related categories → products
-        $related = $related->concat(
-            $this->categories()
-                ->with('relatedCategories.products')
-                ->get()
-                ->flatMap(fn ($category) =>
-                $category->relatedCategories->flatMap(fn ($cat) => $cat->products)
-                )
-        );
+        // Note: Step 4 (related categories) is now handled in getRelatedProductsWithParentFallback
+        // So we don't need to check it separately here
 
         // 5️⃣ Fallback: products from same categories as this product
         if ($related->isEmpty()) {

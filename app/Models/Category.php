@@ -195,7 +195,49 @@ class Category extends Model implements HasMedia
             'target_id'
         )->wherePivot('target_type', Product::class);
     }
-
+    
+    /**
+     * Get related products with fallback to parent category if no manual related products exist
+     */
+    public function getRelatedProductsWithParentFallback()
+    {
+        // Check if this category has manual related products or categories
+        $manualRelatedProducts = $this->relatedProductsDirect()->get();
+        $manualRelatedCategories = $this->relatedCategories()->get();
+        
+        // If category has manual related products or categories, return them
+        if ($manualRelatedProducts->isNotEmpty() || $manualRelatedCategories->isNotEmpty()) {
+            $related = collect();
+            
+            // Add direct related products
+            $related = $related->concat($manualRelatedProducts);
+            
+            // Add products from related categories
+            $related = $related->concat(
+                $manualRelatedCategories->flatMap(function ($category) {
+                    // Load products if not already loaded
+                    if (!$category->relationLoaded('products')) {
+                        $category->load('products');
+                    }
+                    return $category->products;
+                })
+            );
+            
+            return $related->unique('id')->values();
+        }
+        
+        // If no manual related products, check parent category
+        if ($this->parent_id && $this->parent) {
+            // Load parent if not already loaded
+            if (!$this->relationLoaded('parent')) {
+                $this->load('parent');
+            }
+            return $this->parent->getRelatedProductsWithParentFallback();
+        }
+        
+        // If no parent, return empty collection
+        return collect();
+    }
 
     // Related products via direct product → product links
     public function complementaryProductsDirect(): MorphToMany
