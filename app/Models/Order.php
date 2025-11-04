@@ -539,9 +539,9 @@ class Order extends Model
                  $accounting_app->DoNewSanadTalabBedehi($transaction_id,0,$final_amount,3330,1,"Digipay");
             }
             elseif($this->gateway && $this->gateway->key == 'saman'){
-                $accounting_app->DoNewSanadVKHBank($transaction_id,0,$final_amount,"ملي",1,1);
+                $accounting_app->DoNewSanadVKHBank($transaction_id,0,$final_amount,"ملي",1,1,'Saman');
             }else{
-                $accounting_app->DoNewSanadVKHBank($transaction_id,0,$final_amount,"ملي",1,1);
+                $accounting_app->DoNewSanadVKHBank($transaction_id,0,$final_amount,"ملي",1,1,'Hozoori');
             }
         } else {
             \Log::error('Skipping shipping and gateway accounting entries due to failed order item entries', [
