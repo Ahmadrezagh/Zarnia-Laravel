@@ -369,7 +369,7 @@ class Order extends Model
         
         $sms = new Kavehnegar();
         $userName = $this->user->name ?? 'کاربر';
-        $orderAmount = number_format($this->final_amount) . ' تومان';
+        $orderAmount = number_format($this->final_amount);
         
         foreach ($adminNumbers as $phone) {
             $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
