@@ -28,6 +28,7 @@
                             ['label' => 'تصویر پروفایل', 'key' => 'profile_image', 'type' => 'image'],
                             ['label' => 'نام', 'key' => 'name', 'type' => 'text'],
                             ['label' => 'شماره تماس', 'key' => 'phone', 'type' => 'text'],
+                            ['label' => 'آدرس', 'key' => 'first_address', 'type' => 'text'],
                         ]"
             :items="$users"
             :actions="[

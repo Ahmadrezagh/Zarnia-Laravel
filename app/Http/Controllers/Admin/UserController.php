@@ -32,7 +32,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::query()->users()->paginate();
+        $users = User::query()->users()->with('addresses')->paginate();
         return view('admin.users.index',compact('users'));
     }
 
@@ -129,7 +129,7 @@ class UserController extends Controller
 
     public function table()
     {
-        $users = User::query()->users()->paginate();
+        $users = User::query()->users()->with('addresses')->paginate();
         // Initialize slot content
         $slotContent = '';
 
@@ -159,6 +159,7 @@ class UserController extends Controller
                 ['label' => 'تصویر پروفایل', 'key' => 'profile_image', 'type' => 'image'],
                 ['label' => 'نام', 'key' => 'name', 'type' => 'text'],
                 ['label' => 'شماره تماس', 'key' => 'phone', 'type' => 'text'],
+                ['label' => 'آدرس', 'key' => 'first_address', 'type' => 'text'],
             ],
             'url' => route('table.users'),
             'items' => $users,

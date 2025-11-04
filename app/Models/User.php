@@ -140,6 +140,12 @@ class User extends Authenticatable
         return $this->hasMany(Address::class);
     }
 
+    public function getFirstAddressAttribute()
+    {
+        $firstAddress = $this->addresses->first();
+        return $firstAddress ? $firstAddress->address : '-';
+    }
+
     public function getFullNameAttribute()
     {
         return $this->name.' '.$this->last_name;
