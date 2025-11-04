@@ -70,29 +70,35 @@ class GiftStructure extends Model
 
     /**
      * Generate a discount code for a user based on this gift structure
+     * 
+     * @param int $userId The user ID
+     * @param float $orderFinalAmount The order's final amount (required for percentage calculation)
+     * @return \App\Models\Discount
      */
-    public function generateDiscountForUser($userId)
+    public function generateDiscountForUser($userId, $orderFinalAmount = null)
     {
         $code = Discount::generateUniqueCode(8);
         
-        // Determine discount type: percentage takes priority over amount
         $discountData = [
             'code' => $code,
             'quantity' => 1, // One-time use
             'quantity_per_user' => 1, // One use per user
             'start_at' => now(),
             'expires_at' => now()->addDays($this->limit_in_days),
+            'percentage' => null, // Always create fixed amount discount
         ];
 
-        // If percentage is available, create percentage discount
-        if ($this->percentage) {
-            $discountData['percentage'] = $this->percentage;
-            $discountData['amount'] = null;
+        // If percentage is available, calculate fixed amount from order's final amount
+        if (!is_null($this->percentage) && $this->percentage > 0 && $orderFinalAmount) {
+            $discountData['amount'] = ($this->percentage / 100) * $orderFinalAmount;
         }
-        // Otherwise if amount is available, create fixed amount discount
-        elseif ($this->amount) {
+        // Otherwise if fixed amount is available, use it directly
+        elseif (!is_null($this->amount) && $this->amount > 0) {
             $discountData['amount'] = $this->amount;
-            $discountData['percentage'] = null;
+        }
+        else {
+            // No valid discount configuration
+            throw new \Exception('Gift structure must have either amount or percentage set');
         }
         
         $discount = Discount::create($discountData);
@@ -118,18 +124,10 @@ class GiftStructure extends Model
             return null;
         }
 
-        // Check if percentage is available
-        if ($giftStructure->percentage) {
-            // Generate percentage-based discount
-            return $giftStructure->generateDiscountForUser($order->user_id);
-        }
-        // Otherwise check if amount is available
-        elseif ($giftStructure->amount) {
-            // Generate fixed amount discount
-            return $giftStructure->generateDiscountForUser($order->user_id);
-        }
-
-        return null;
+        // Generate discount with order's final amount
+        // If percentage exists, it will be converted to fixed amount based on order's final_amount
+        // If fixed amount exists, it will be used directly
+        return $giftStructure->generateDiscountForUser($order->user_id, $order->final_amount);
     }
 }
 
