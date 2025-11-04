@@ -487,7 +487,7 @@ class Product extends Model implements HasMedia
     public function scopeWithoutGallery(Builder $query): Builder
     {
         return $query->whereDoesntHave('media', function ($q) {
-            $q->where('collection_name', 'cover_image'); // optional: target a specific collection
+            $q->where('collection_name', 'gallery'); // optional: target a specific collection
         });
     }
     public function scopeFilterProduct(Builder $query, $filter = null)
