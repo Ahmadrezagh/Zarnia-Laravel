@@ -846,8 +846,10 @@ class Product extends Model implements HasMedia
                 ->get()
                 ->flatMap(function ($category) {
                     // Use the new method that checks parent category if no manual related products
+                    // If no manual related products, returns products from category itself
                     return $category->getRelatedProductsWithParentFallback();
                 })
+                ->where('id', '!=', $this->id) // Exclude current product
         );
 
         // Note: Step 4 (related categories) is now handled in getRelatedProductsWithParentFallback

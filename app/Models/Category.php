@@ -198,6 +198,7 @@ class Category extends Model implements HasMedia
     
     /**
      * Get related products with fallback to parent category if no manual related products exist
+     * If parent also has no related products, fallback to products from this category itself
      */
     public function getRelatedProductsWithParentFallback()
     {
@@ -232,11 +233,20 @@ class Category extends Model implements HasMedia
             if (!$this->relationLoaded('parent')) {
                 $this->load('parent');
             }
-            return $this->parent->getRelatedProductsWithParentFallback();
+            $parentRelated = $this->parent->getRelatedProductsWithParentFallback();
+            
+            // If parent has related products, return them
+            if ($parentRelated->isNotEmpty()) {
+                return $parentRelated;
+            }
         }
         
-        // If no parent, return empty collection
-        return collect();
+        // If no parent or parent has no related products, fallback to products from this category itself
+        if (!$this->relationLoaded('products')) {
+            $this->load('products');
+        }
+        
+        return $this->products->unique('id')->values();
     }
 
     // Related products via direct product → product links
