@@ -372,15 +372,7 @@ class Order extends Model
         $orderAmount = number_format($this->final_amount) . ' تومان';
         
         foreach ($adminNumbers as $phone) {
-            try {
-                $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
-            } catch (\Exception $e) {
-                \Log::error('Failed to send admin SMS notification', [
-                    'order_id' => $this->id,
-                    'phone' => $phone,
-                    'error' => $e->getMessage()
-                ]);
-            }
+            $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
         }
     }
 
