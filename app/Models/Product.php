@@ -638,15 +638,39 @@ class Product extends Model implements HasMedia
     public function scopeHasCountAndImage(Builder $query): Builder
     {
         return $query
-            ->withCount([
-                'etikets as count' => function ($query) {
-                    $query->where('is_mojood', 1);
-                }
-            ])
             ->whereHas('media', function ($q) {
                 $q->where('collection_name', 'cover_image');
             })
-            ->having('count', '>', 0); // <- this ensures count is not zero
+            ->where(function ($q) {
+                // For comprehensive products: check if ALL constituent products have single_count >= 1
+                // (This ensures comprehensive product's single_count >= 1 since it's the minimum)
+                $q->where(function ($comprehensiveQuery) {
+                    $comprehensiveQuery->where('is_comprehensive', 1)
+                        ->whereHas('products', function ($productsQuery) {
+                            // Check if constituent product has at least one available etiket (single_count >= 1)
+                            $productsQuery->whereHas('etikets', function ($etiketQuery) {
+                                $etiketQuery->where('is_mojood', 1);
+                            });
+                        })
+                        // Ensure ALL constituent products have available etikets (not just one)
+                        // This is done by checking that there are no constituent products without available etikets
+                        ->whereDoesntHave('products', function ($productsQuery) {
+                            $productsQuery->whereDoesntHave('etikets', function ($etiketQuery) {
+                                $etiketQuery->where('is_mojood', 1);
+                            });
+                        });
+                })
+                // For regular products: check etiket count directly (single_count >= 1)
+                ->orWhere(function ($regularQuery) {
+                    $regularQuery->where(function ($subQ) {
+                        $subQ->whereNull('is_comprehensive')
+                            ->orWhere('is_comprehensive', 0);
+                    })
+                    ->whereHas('etikets', function ($etiketQuery) {
+                        $etiketQuery->where('is_mojood', 1);
+                    });
+                });
+            });
     }
 
     public function scopeMain(Builder $query)
