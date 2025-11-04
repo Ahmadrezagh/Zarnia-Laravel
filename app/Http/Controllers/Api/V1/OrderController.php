@@ -95,8 +95,7 @@ class OrderController extends Controller
             ]);
         }
 
-        // Clear the shopping cart
-        $user->shoppingCartItems()->delete();
+        // Note: Shopping cart will be cleared when order is verified/paid
         $order_url = $order->gateway->createSnappTransaction($order);
         return OrderResource::make(Order::find($order->id),$order_url['response']['paymentPageUrl']);
     }

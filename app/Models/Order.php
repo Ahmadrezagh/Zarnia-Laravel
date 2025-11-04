@@ -366,6 +366,9 @@ class Order extends Model
             'status' => 'paid'
         ]);
 
+        // Clear shopping cart items when order is verified/paid
+        $this->user->shoppingCartItems()->delete();
+
         // Use user's phone and name for SMS
         $sms = new Kavehnegar();
         $sms->send_with_two_token(
