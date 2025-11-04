@@ -198,7 +198,7 @@ class Category extends Model implements HasMedia
     
     /**
      * Get related products with fallback to parent category if no manual related products exist
-     * If parent also has no related products, fallback to products from this category itself
+     * If parent also has no manual related products, fallback to products from this category itself
      */
     public function getRelatedProductsWithParentFallback()
     {
@@ -233,19 +233,34 @@ class Category extends Model implements HasMedia
             if (!$this->relationLoaded('parent')) {
                 $this->load('parent');
             }
-            $parentRelated = $this->parent->getRelatedProductsWithParentFallback();
             
-            // If parent has related products, return them
-            if ($parentRelated->isNotEmpty()) {
-                return $parentRelated;
+            // Check if parent has MANUAL related products (not from fallback)
+            $parentManualRelatedProducts = $this->parent->relatedProductsDirect()->get();
+            $parentManualRelatedCategories = $this->parent->relatedCategories()->get();
+            
+            // If parent has manual related products, return them
+            if ($parentManualRelatedProducts->isNotEmpty() || $parentManualRelatedCategories->isNotEmpty()) {
+                $related = collect();
+                $related = $related->concat($parentManualRelatedProducts);
+                $related = $related->concat(
+                    $parentManualRelatedCategories->flatMap(function ($category) {
+                        if (!$category->relationLoaded('products')) {
+                            $category->load('products');
+                        }
+                        return $category->products;
+                    })
+                );
+                return $related->unique('id')->values();
             }
         }
         
-        // If no parent or parent has no related products, fallback to products from this category itself
+        // If no parent or parent has no manual related products, fallback to products from this category itself
+        // Load products relationship if not already loaded
         if (!$this->relationLoaded('products')) {
             $this->load('products');
         }
         
+        // Return all products from this category (filtering will be done in Product model or API controller)
         return $this->products->unique('id')->values();
     }
 
