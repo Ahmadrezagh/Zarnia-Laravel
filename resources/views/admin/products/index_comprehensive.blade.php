@@ -124,6 +124,8 @@
 
         function modalEdit(id){
             eraseModalContent()
+            // Set modal title
+            $('#dynamic-modal-title').text('ویرایش محصول');
             getApiResult(id)
             showDynamicModal()
         }
@@ -555,11 +557,21 @@
 
         function createAssembledProduct(){
             eraseModalContent()
+            // Set modal title
+            $('#dynamic-modal-title').text('ایجاد محصول');
+            
             // Initialize/create products array for create modal
             if (!window.createComprehensiveProducts) {
                 window.createComprehensiveProducts = [];
             } else {
                 window.createComprehensiveProducts = []; // Reset array
+            }
+            
+            // Initialize product data array
+            if (!window.createComprehensiveProductsData) {
+                window.createComprehensiveProductsData = [];
+            } else {
+                window.createComprehensiveProductsData = []; // Reset array
             }
             
             const categoryOptions = '@foreach($categories as $category) <option value="{{$category->id}}" >{{$category->title}}</option> @endforeach'
@@ -722,8 +734,9 @@
                         toastr.success('محصول جامع با موفقیت ایجاد شد');
                         $('#dynamic-modal').modal('hide');
                         window.refreshTable();
-                        // Clear selected products
+                        // Clear selected products and data
                         window.createComprehensiveProducts = [];
+                        window.createComprehensiveProductsData = [];
                     },
                     error: function(xhr) {
                         if (xhr.status === 422) {
@@ -890,7 +903,25 @@
                 return;
             }
             
-            // Add to array
+            // Extract product name from text (remove weight and stock info)
+            const productName = productText.split(' (')[0]; // Get name before first parenthesis
+            
+            // Store product info locally (non-AJAX)
+            const productInfo = {
+                id: String(productId),
+                name: productName,
+                text: productText,
+                weight: productWeight || '0',
+                price: productPrice || '0',
+                single_count: singleCount || 0,
+                image: null // Will be loaded when needed
+            };
+            
+            // Add to array - store full product info, not just ID
+            if (!window.createComprehensiveProductsData) {
+                window.createComprehensiveProductsData = [];
+            }
+            window.createComprehensiveProductsData.push(productInfo);
             window.createComprehensiveProducts.push(String(productId));
             
             // Clear search input and hide dropdown
@@ -898,27 +929,32 @@
             $('#product-dropdown-create').hide();
             $('#product-search-results-create').empty();
             
-            // Update table
-            updateCreateComprehensiveProductsTable();
+            // Update table immediately (non-AJAX)
+            updateCreateComprehensiveProductsTableImmediate();
             
             toastr.success('محصول به لیست اضافه شد');
         }
         
         function removeProductFromCreateComprehensive(productId) {
-            // Remove from array
+            // Remove from arrays
             window.createComprehensiveProducts = window.createComprehensiveProducts.filter(function(id) {
                 return id !== String(productId);
             });
             
-            // Update table
-            updateCreateComprehensiveProductsTable();
+            if (window.createComprehensiveProductsData) {
+                window.createComprehensiveProductsData = window.createComprehensiveProductsData.filter(function(p) {
+                    return p.id !== String(productId);
+                });
+            }
+            
+            // Update table immediately (non-AJAX)
+            updateCreateComprehensiveProductsTableImmediate();
             
             toastr.success('محصول از لیست حذف شد');
         }
         
-        function updateCreateComprehensiveProductsTable() {
+        function updateCreateComprehensiveProductsTableImmediate() {
             const tbody = $('#create-comprehensive-products-tbody');
-            const emptyRow = $('#create-comprehensive-products-empty');
             
             // Clear table
             tbody.empty();
@@ -928,73 +964,32 @@
                 return;
             }
             
-            // Fetch product details for each selected product
-            const productIds = window.createComprehensiveProducts;
-            let loadedCount = 0;
-            
-            productIds.forEach(function(productId) {
-                $.ajax({
-                    url: `{{route('products.index')}}/${productId}`,
-                    method: 'GET',
-                    cache: false,
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(response) {
-                        loadedCount++;
-                        const product = response.data || response;
-                        
-                        const row = `
-                            <tr data-product-id="${product.id}">
-                                <td>
-                                    ${product.image ? `<img src="${product.image}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` : '<span class="text-muted">بدون تصویر</span>'}
-                                </td>
-                                <td>${product.name || 'نامشخص'}</td>
-                                <td>${product.weight || 0} گرم</td>
-                                <td>${product.price ? Number(product.price).toLocaleString('fa-IR') : '0'} تومان</td>
-                                <td>
-                                    <span class="badge badge-${(product.single_count || 0) > 0 ? 'success' : 'danger'}">
-                                        ${product.single_count || 0}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProductFromCreateComprehensive(${product.id})">
-                                        <i class="fas fa-trash"></i> حذف
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                        
-                        tbody.append(row);
-                        
-                        // If all products loaded, hide empty message
-                        if (loadedCount === productIds.length) {
-                            emptyRow.remove();
-                        }
-                    },
-                    error: function(xhr) {
-                        loadedCount++;
-                        console.error('Error loading product:', productId, xhr);
-                        
-                        // Add row with error message
-                        const row = `
-                            <tr data-product-id="${productId}">
-                                <td colspan="5">خطا در بارگذاری محصول (ID: ${productId})</td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProductFromCreateComprehensive(${productId})">
-                                        <i class="fas fa-trash"></i> حذف
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                        tbody.append(row);
-                        
-                        if (loadedCount === productIds.length) {
-                            emptyRow.remove();
-                        }
-                    }
+            // Use stored product data (non-AJAX)
+            if (window.createComprehensiveProductsData && window.createComprehensiveProductsData.length > 0) {
+                window.createComprehensiveProductsData.forEach(function(product) {
+                    const row = `
+                        <tr data-product-id="${product.id}">
+                            <td>
+                                <span class="text-muted">بدون تصویر</span>
+                            </td>
+                            <td>${product.name || 'نامشخص'}</td>
+                            <td>${product.weight || 0} گرم</td>
+                            <td>${product.price ? Number(product.price).toLocaleString('fa-IR') : '0'} تومان</td>
+                            <td>
+                                <span class="badge badge-${(product.single_count || 0) > 0 ? 'success' : 'danger'}">
+                                    ${product.single_count || 0}
+                                </span>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removeProductFromCreateComprehensive(${product.id})">
+                                    <i class="fas fa-trash"></i> حذف
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
                 });
-            });
+            }
         }
 
     </script>
