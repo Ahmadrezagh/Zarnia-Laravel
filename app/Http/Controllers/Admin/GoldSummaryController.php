@@ -31,16 +31,45 @@ class GoldSummaryController extends Controller
             $query->where('created_at', '<=', $request->to_date);
         }
 
-        // Get paginated orders
+        // Get ALL filtered orders (not paginated) for summary calculations
+        $allFilteredOrders = $query->get();
+
+        // Get paginated orders for table display
         $orders = $query->latest()->paginate();
 
-        // Calculate summary data for current page only
+        // Calculate summary data from ALL filtered orders (matching the filters)
+        $totalWeight = 0;
+        $totalAmount = 0;
+        $totalPurchasePercentageWeight = 0;
+        $totalSalePercentageWeight = 0;
+
+        // Calculate totals from ALL filtered orders
+        foreach ($allFilteredOrders as $order) {
+            foreach ($order->orderItems as $item) {
+                if ($item->product) {
+                    $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
+                    $itemAmount = floatval($item->price) * intval($item->count);
+                    
+                    $darsadKharid = floatval($item->product->darsad_kharid ?? 0);
+                    $purchaseCommissionGrams = ($itemWeight * $darsadKharid) / 100;
+                    
+                    $ojrat = floatval($item->product->ojrat ?? 0);
+                    
+                    $totalWeight += $itemWeight;
+                    $totalAmount += $itemAmount;
+                    $totalPurchasePercentageWeight += $purchaseCommissionGrams;
+                    $totalSalePercentageWeight += ($itemWeight * $ojrat) / 100;
+                }
+            }
+        }
+
+        // Calculate page-specific data (for footer comparison)
         $pageWeight = 0;
         $pageAmount = 0;
         $pagePurchasePercentageWeight = 0;
         $pageSalePercentageWeight = 0;
 
-        // Calculate totals from current page orders
+        // Calculate totals from current page orders only
         foreach ($orders as $order) {
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
@@ -60,42 +89,13 @@ class GoldSummaryController extends Controller
             }
         }
 
-        // Calculate overall summary using database aggregation for efficiency
-        $overallStatsQuery = DB::table('orders')
-            ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->whereIn('orders.status', self::VALID_STATUSES);
-
-        // Apply date filters to overall stats query
-        if ($request->filled('from_date')) {
-            $overallStatsQuery->where('orders.created_at', '>=', $request->from_date);
-        }
-        
-        if ($request->filled('to_date')) {
-            $overallStatsQuery->where('orders.created_at', '<=', $request->to_date);
-        }
-
-        $overallStats = $overallStatsQuery
-            ->selectRaw('
-                SUM(products.weight * order_items.count) as total_weight,
-                SUM(order_items.price * order_items.count) as total_amount,
-                SUM((products.weight * order_items.count * products.darsad_kharid) / 100) as total_purchase_commission,
-                SUM((products.weight * order_items.count * products.ojrat) / 100) as total_sale_commission
-            ')
-            ->first();
-
-        $totalWeight = floatval($overallStats->total_weight ?? 0);
-        $totalAmount = floatval($overallStats->total_amount ?? 0);
-        $totalPurchasePercentageWeight = floatval($overallStats->total_purchase_commission ?? 0);
-        $totalSalePercentageWeight = floatval($overallStats->total_sale_commission ?? 0);
-
-        // Calculate overall averages
+        // Calculate overall averages from ALL filtered orders
         $avgPurchasePercentage = $totalWeight > 0 ? ($totalPurchasePercentageWeight / $totalWeight) * 100 : 0;
         $avgSalePercentage = $totalWeight > 0 ? ($totalSalePercentageWeight / $totalWeight) * 100 : 0;
         $percentageDifference = $avgSalePercentage - $avgPurchasePercentage;
 
         $summary = [
-            // Overall totals from ALL orders (not just current page)
+            // Overall totals from ALL filtered orders (matching date/status filters)
             'total_weight' => number_format($totalWeight, 3) . ' گرم',
             'total_amount' => number_format($totalAmount) . ' تومان',
             'avg_purchase_percentage' => number_format($avgPurchasePercentage, 2) . '%',
