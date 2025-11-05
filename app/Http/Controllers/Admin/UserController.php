@@ -32,7 +32,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::query()->users()->with('addresses')->paginate();
+        $users = User::query()->users()->with('addresses')->latest()->paginate();
         return view('admin.users.index',compact('users'));
     }
 
@@ -129,7 +129,7 @@ class UserController extends Controller
 
     public function table()
     {
-        $users = User::query()->users()->with('addresses')->paginate();
+        $users = User::query()->users()->with('addresses')->latest()->paginate();
         // Initialize slot content
         $slotContent = '';
 
