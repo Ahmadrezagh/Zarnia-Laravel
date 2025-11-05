@@ -97,6 +97,22 @@ class Product extends Model implements HasMedia
     public function getImageAttribute()
     {
         $image = $this->getFirstMediaUrl('cover_image');
+        
+        // If product doesn't have image and has parent_id, check parent product image
+        if ($image == "" && $this->parent_id) {
+            // Load parent if not already loaded
+            if (!$this->relationLoaded('parent')) {
+                $this->load('parent');
+            }
+            
+            if ($this->parent) {
+                $parentImage = $this->parent->getFirstMediaUrl('cover_image');
+                if ($parentImage != "") {
+                    return $parentImage;
+                }
+            }
+        }
+        
         return $image != "" ? $image : asset('img/no_image.jpg');
     }
     
@@ -374,6 +390,19 @@ class Product extends Model implements HasMedia
     public function getCoverImageResponsiveAttribute()
     {
         $coverImage = $this->getFirstMedia('cover_image');
+        
+        // If product doesn't have image and has parent_id, check parent product image
+        if (!$coverImage && $this->parent_id) {
+            // Load parent if not already loaded
+            if (!$this->relationLoaded('parent')) {
+                $this->load('parent');
+            }
+            
+            if ($this->parent) {
+                $coverImage = $this->parent->getFirstMedia('cover_image');
+            }
+        }
+        
         if($coverImage){
             return [
                 'xlarge' => $coverImage->getUrl('xlarge') ?? null,
