@@ -131,7 +131,7 @@
 
             @foreach($categories as $category)
                 <!-- Modal -->
-                <x-modal.destroy id="modal-destroy-{{$category->id}}" title="حذف دسته بندی" action="{{route('categories.destroy', $category->id)}}" title="{{$category->title}}" />
+                <x-modal.destroy id="modal-destroy-{{$category->id}}" title="حذف دسته بندی" action="{{route('categories.destroy', $category->slug)}}" title="{{$category->title}}" />
 
                 <x-modal.update id="modal-edit-{{$category->id}}" title="ساخت دسته بندی" action="{{route('categories.update',$category->slug)}}" >
                     <x-form.input title="نام"  name="title" :value="$category->title" />

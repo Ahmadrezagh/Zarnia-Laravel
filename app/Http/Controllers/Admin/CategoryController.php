@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
@@ -123,9 +124,30 @@ $category->syncRelated($related);
      */
     public function destroy(Category $category)
     {
+        // Set children's parent_id to null before deleting
+        $category->children()->update(['parent_id' => null]);
+        
+        // Detach products from this category
+        $category->products()->detach();
+        
+        // Detach attribute groups
+        $category->attributeGroups()->detach();
+        
+        // Delete polymorphic pivot table entries (complementary_products and related_products)
+        DB::table('complementary_products')
+            ->where('source_type', Category::class)
+            ->where('source_id', $category->id)
+            ->delete();
+        
+        DB::table('related_products')
+            ->where('source_type', Category::class)
+            ->where('source_id', $category->id)
+            ->delete();
+        
+        // Delete the category
         $category->delete();
+        
         return response()->json(['message' => 'با موفقیت انجام شد']);
-
     }
 
 
@@ -142,9 +164,9 @@ $category->syncRelated($related);
             $slotContent .= Blade::render(
                 <<<'BLADE'
                  <!-- Modal -->
-                <x-modal.destroy id="modal-destroy-{{$category->id}}" title="حذف دسته بندی" action="{{route('categories.destroy', $category->id)}}" title="{{$category->title}}" />
+                <x-modal.destroy id="modal-destroy-{{$category->id}}" title="حذف دسته بندی" action="{{route('categories.destroy', $category->slug)}}" title="{{$category->title}}" />
 
-                <x-modal.update id="modal-edit-{{$category->id}}" title="ساخت دسته بندی" action="{{route('categories.update',$category->id)}}" >
+                <x-modal.update id="modal-edit-{{$category->id}}" title="ساخت دسته بندی" action="{{route('categories.update',$category->slug)}}" >
                     <x-form.input title="نام"  name="title" :value="$category->title" />
                     <x-form.select-option title="دسته بندی والد" name="parent_id" >
                         @foreach($categories as $parent_category)
