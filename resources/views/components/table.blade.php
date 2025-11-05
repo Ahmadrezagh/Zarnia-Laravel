@@ -60,6 +60,8 @@
                             <img src="{{ $item[$column['key']] }}" style="width: 100px; height: 100px; border-radius: 50%">
                         @elseif($column['type'] === 'copiableText')
                             <x-form.copiable-component :content="$item[$column['key']]" />
+                        @elseif($column['type'] === 'multiline')
+                            <div style="white-space: pre-line;">{{ $item[$column['key']] }}</div>
                         @elseif($column['type'] === 'binaryCondition')
                             @if($item[$column['key']] == '1')
                                 <button class="btn btn-success">{{$column['texts']['true']}}</button>

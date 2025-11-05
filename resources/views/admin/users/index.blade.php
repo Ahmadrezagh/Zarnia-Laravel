@@ -26,9 +26,8 @@
             id="users-table"
             :columns="[
                             ['label' => 'تصویر پروفایل', 'key' => 'profile_image', 'type' => 'image'],
-                            ['label' => 'نام', 'key' => 'name', 'type' => 'text'],
                             ['label' => 'شماره تماس', 'key' => 'phone', 'type' => 'text'],
-                            ['label' => 'آدرس', 'key' => 'first_address', 'type' => 'text'],
+                            ['label' => 'آدرس', 'key' => 'all_addresses', 'type' => 'multiline'],
                         ]"
             :items="$users"
             :actions="[

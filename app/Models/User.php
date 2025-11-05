@@ -146,6 +146,17 @@ class User extends Authenticatable
         return $firstAddress ? $firstAddress->address : '-';
     }
 
+    public function getAllAddressesAttribute()
+    {
+        if ($this->addresses->isEmpty()) {
+            return '-';
+        }
+        
+        return $this->addresses->map(function($address) {
+            return "({$address->receiver_name})- {$address->address}";
+        })->implode("\n");
+    }
+
     public function getFullNameAttribute()
     {
         return $this->name.' '.$this->last_name;
