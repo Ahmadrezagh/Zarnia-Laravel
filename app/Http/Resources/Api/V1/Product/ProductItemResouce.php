@@ -74,6 +74,10 @@ class ProductItemResouce extends JsonResource
             'purity' => '18',
             'gold_price' => get_gold_price()/10,
             'options' => $this->options,
+            'meta_title' => $this->meta_title,
+            'meta_description' => $this->meta_description,
+            'meta_keywords' => $this->meta_keywords,
+            'canonical_url' => $this->canonical_url,
             'weights' => collect([$this]) // start with the current product
             ->merge($this->children) // add all children
             ->filter(fn($product) => $product->single_count >= 1)

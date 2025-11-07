@@ -19,6 +19,10 @@ class BlogItemResource extends JsonResource
             'title' => $this->title,
             'image' => $this->image,
             'description' => $this->description,
+            'meta_title' => $this->meta_title,
+            'meta_description' => $this->meta_description,
+            'meta_keywords' => $this->meta_keywords,
+            'canonical_url' => $this->canonical_url,
         ];
     }
 }
