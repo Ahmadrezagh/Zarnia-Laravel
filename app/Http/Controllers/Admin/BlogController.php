@@ -106,7 +106,7 @@ class BlogController extends Controller
                 <x-modal.update id="modal-edit-{{$blog->id}}" title="ویرایش وبلاگ" action="{{route('blogs.update',$blog->slug)}}" >
                     <x-form.input title="عنوان"  name="title" :value="$blog->title" />
                     <div class="form-group">
-                        <label for="blog-slug-edit-{{$blog->id}}">اسلاگ</label>
+                        <label for="blog-slug-edit-{{$blog->id}}">نامک (Slug)</label>
                         <input type="text" id="blog-slug-edit-{{$blog->id}}" name="slug" class="form-control" dir="ltr" value="{{$blog->slug}}" required>
                     </div>
                     <x-form.textarea title="متن" name="description" :value="$blog->description" />

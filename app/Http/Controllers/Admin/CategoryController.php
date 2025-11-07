@@ -175,7 +175,7 @@ $category->syncRelated($related);
                 <x-modal.update id="modal-edit-{{$category->id}}" title="ساخت دسته بندی" action="{{route('categories.update',$category->slug)}}" >
                     <x-form.input title="نام"  name="title" :value="$category->title" />
                     <div class="form-group">
-                        <label for="category-slug-edit-{{$category->id}}">اسلاگ</label>
+                        <label for="category-slug-edit-{{$category->id}}">نامک (Slug)</label>
                         <input type="text" id="category-slug-edit-{{$category->id}}" name="slug" class="form-control" dir="ltr" value="{{$category->slug}}" required>
                     </div>
                     <x-form.select-option title="دسته بندی والد" name="parent_id" >

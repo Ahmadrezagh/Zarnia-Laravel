@@ -172,7 +172,7 @@
                         ${!product.is_comprehensive ? '<small class="text-muted د-block mt-1"><i class="fas fa-info-circle"></i> فقط محصولات جامع می‌توانند نام خود را تغییر دهند.</small>' : ''}
                     </div>
                     <div class="form-group">
-                        <label for="product-slug">اسلاگ</label>
+                        <label for="product-slug">نامک (Slug)</label>
                         <input type="text" class="form-control" id="product-slug" value="${product.slug || ''}" dir="ltr" required>
                     </div>
                     <div class="form-group">
@@ -377,7 +377,7 @@
                         formData.append('_method', 'PUT');
                         const slugValue = ($('#product-slug').val() || '').trim();
                         if (!slugValue) {
-                            toastr.error('لطفاً اسلاگ محصول را وارد کنید.');
+                            toastr.error('لطفاً نامک (Slug) محصول را وارد کنید.');
                             return;
                         }
                         formData.append('slug', slugValue);
