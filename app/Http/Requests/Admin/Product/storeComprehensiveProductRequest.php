@@ -24,6 +24,7 @@ class storeComprehensiveProductRequest extends FormRequest
         return [
             '_token' => 'required|string',
             'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:products,slug',
             'description' => 'nullable|string|max:255',
             'categories' => 'nullable',
             'product_ids' => 'required|array|min:1',

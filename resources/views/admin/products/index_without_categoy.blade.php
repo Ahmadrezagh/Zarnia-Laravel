@@ -160,9 +160,13 @@
                         <label for="product-name">نام محصول</label>
                         <input type="text" class="form-control" id="product-name" value="${product.name || ''}" disabled>
                     </div>
-<div class="form-group">
-                        <label for="product-name">لینک</label>
-                        <input type="text" dir="ltr" class="form-control" id="product-name" value="${product.urlOfProduct || ''}" >
+                    <div class="form-group">
+                        <label for="product-slug">اسلاگ</label>
+                        <input type="text" class="form-control" id="product-slug" value="${product.slug || ''}" dir="ltr" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-link">لینک</label>
+                        <input type="text" dir="ltr" class="form-control" id="product-link" value="${product.urlOfProduct || ''}" >
                     </div>
                     <div class="form-group">
                         <label for="product-price">قیمت</label>
@@ -268,6 +272,12 @@
                         e.preventDefault();
                         const formData = new FormData();
                         formData.append('_method', 'PUT');
+                        const slugValue = ($('#product-slug').val() || '').trim();
+                        if (!slugValue) {
+                            toastr.error('لطفاً اسلاگ محصول را وارد کنید.');
+                            return;
+                        }
+                        formData.append('slug', slugValue);
                         formData.append('name', $('#product-name').val());
                         formData.append('price', $('#product-price').val());
                         formData.append('weight', $('#product-weight').val());
@@ -448,6 +458,10 @@
 <form action="{{route("comprehensive_product.store")}}" method="POST" enctype="multipart/form-data" >
 {{ csrf_field() }}
 <x-form.input  title="نام محصول  جامع" name="name" />
+<div class="form-group">
+                        <label for="comprehensive-product-slug">اسلاگ (اختیاری)</label>
+                        <input type="text" id="comprehensive-product-slug" name="slug" class="form-control" dir="ltr" placeholder="example-slug">
+                    </div>
 <div class="form-group">
                         <label for="product-description">توضیحات</label>
                         <textarea class="form-control" id="product-description" rows="4"></textarea>

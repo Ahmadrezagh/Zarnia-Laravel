@@ -32,4 +32,9 @@ class Blog extends Model implements HasMedia
         $image = $this->getFirstMediaUrl('cover_image');
         return $image != "" ? $image : asset('img/no_image.jpg');
     }
+
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
 }

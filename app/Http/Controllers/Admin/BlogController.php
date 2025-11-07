@@ -34,7 +34,13 @@ class BlogController extends Controller
      */
     public function store(StoreBlogRequest $request)
     {
-        $blog = Blog::create($request->validated());
+        $validated = $request->validated();
+
+        if (empty($validated['slug'])) {
+            unset($validated['slug']);
+        }
+
+        $blog = Blog::create($validated);
         if ($request->hasFile('cover_image')) {
             $blog->clearMediaCollection('cover_image');
             $blog->addMedia($request->file('cover_image'))
@@ -95,11 +101,16 @@ class BlogController extends Controller
             $slotContent .= Blade::render(
                 <<<'BLADE'
                  <!-- Modal -->
-                <x-modal.destroy id="modal-destroy-{{$blog->id}}" title="حذف دسته بندی" action="{{route('blogs.destroy', $blog->id)}}" title="{{$blog->title}}" />
+                <x-modal.destroy id="modal-destroy-{{$blog->id}}" title="حذف وبلاگ" action="{{route('blogs.destroy', $blog->slug)}}" title="{{$blog->title}}" />
 
-                <x-modal.update id="modal-edit-{{$blog->id}}" title="ساخت دسته بندی" action="{{route('blogs.update',$blog->id)}}" >
-                    <x-form.input title="نام"  name="title" :value="$blog->title" />
-                   
+                <x-modal.update id="modal-edit-{{$blog->id}}" title="ویرایش وبلاگ" action="{{route('blogs.update',$blog->slug)}}" >
+                    <x-form.input title="عنوان"  name="title" :value="$blog->title" />
+                    <div class="form-group">
+                        <label for="blog-slug-edit-{{$blog->id}}">اسلاگ</label>
+                        <input type="text" id="blog-slug-edit-{{$blog->id}}" name="slug" class="form-control" dir="ltr" value="{{$blog->slug}}" required>
+                    </div>
+                    <x-form.textarea title="متن" name="description" :value="$blog->description" />
+                    <x-form.file-input title="تصویر کاور" name="cover_image" />
                 </x-modal.update>
             BLADE,
                 ['blog' => $blog]

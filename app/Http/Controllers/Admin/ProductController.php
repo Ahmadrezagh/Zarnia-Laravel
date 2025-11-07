@@ -840,6 +840,9 @@ class ProductController extends Controller
     {
         try {
             $validated = $request->validated();
+            if (empty($validated['slug'])) {
+                unset($validated['slug']);
+            }
             $validated['is_comprehensive'] = 1;
             $validated['weight'] = 0;
             $validated['price'] = 0;

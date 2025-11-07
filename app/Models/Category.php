@@ -25,6 +25,7 @@ class Category extends Model implements HasMedia
     use HasPersianSlug;
     protected $fillable = [
         'title',
+        'slug',
         'parent_id'
         ];
 

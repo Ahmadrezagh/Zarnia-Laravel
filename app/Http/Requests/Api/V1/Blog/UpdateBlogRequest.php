@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1\Blog;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateBlogRequest extends FormRequest
 {
@@ -21,8 +22,11 @@ class UpdateBlogRequest extends FormRequest
      */
     public function rules(): array
     {
+        $blog = $this->route('blog');
+
         return [
             'title' => 'required|string',
+            'slug' => ['required', 'string', 'max:255', Rule::unique('blogs', 'slug')->ignore($blog?->id)],
             'description' => 'required|string',
             'cover_image' => 'nullable',
         ];

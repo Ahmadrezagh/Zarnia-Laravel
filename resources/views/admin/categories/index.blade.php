@@ -74,6 +74,10 @@
 
             <x-modal.create id="modal-create" title="ساخت دسته بندی" action="{{route('categories.store')}}" >
                 <x-form.input title="نام"  name="title" />
+                <div class="form-group">
+                    <label for="category-slug-create">اسلاگ (اختیاری)</label>
+                    <input type="text" id="category-slug-create" name="slug" class="form-control" dir="ltr" placeholder="example-slug">
+                </div>
                 <x-form.select-option title="دسته بندی والد" name="parent_id" >
                     @foreach($categories as $parent_category)
                         <option value="{{$parent_category->id}}">{{$parent_category->title}}</option>
@@ -135,6 +139,10 @@
 
                 <x-modal.update id="modal-edit-{{$category->id}}" title="ساخت دسته بندی" action="{{route('categories.update',$category->slug)}}" >
                     <x-form.input title="نام"  name="title" :value="$category->title" />
+                    <div class="form-group">
+                        <label for="category-slug-edit-{{$category->id}}">اسلاگ</label>
+                        <input type="text" id="category-slug-edit-{{$category->id}}" name="slug" class="form-control" dir="ltr" value="{{$category->slug}}" required>
+                    </div>
                     <x-form.select-option title="دسته بندی والد" name="parent_id" >
                         @foreach($categories as $parent_category)
                             @if( ($parent_category->id != $category->id) && (!$category->isParentOfCategory($parent_category) ))

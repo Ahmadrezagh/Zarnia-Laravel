@@ -23,6 +23,7 @@ class StoreCategoryRequest extends FormRequest
     {
         return [
             'title' => ['required'],
+            'slug' => ['nullable', 'string', 'max:255', 'unique:categories,slug'],
             'parent_id' => ['nullable'],
             'cover_image' => ['nullable'],
         ];

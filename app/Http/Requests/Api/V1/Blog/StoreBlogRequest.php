@@ -23,6 +23,7 @@ class StoreBlogRequest extends FormRequest
     {
         return [
             'title' => 'required|string',
+            'slug' => 'nullable|string|max:255|unique:blogs,slug',
             'description' => 'required|string',
             'cover_image' => 'required',
         ];
