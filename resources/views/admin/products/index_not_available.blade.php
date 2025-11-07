@@ -167,6 +167,22 @@
                         <input type="text" dir="ltr" class="form-control" id="product-link" value="${product.urlOfProduct || ''}" >
                     </div>
                     <div class="form-group">
+                        <label for="product-meta-title">عنوان متا (Meta Title)</label>
+                        <input type="text" class="form-control" id="product-meta-title" value="${product.meta_title || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-meta-description">توضیحات متا (Meta Description)</label>
+                        <textarea class="form-control no_ck_editor" id="product-meta-description" rows="3" placeholder="Meta description...">${product.meta_description || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-meta-keywords">کلمات کلیدی متا (Meta Keywords)</label>
+                        <textarea class="form-control no_ck_editor" id="product-meta-keywords" rows="2" placeholder="keyword1, keyword2, keyword3">${product.meta_keywords || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-canonical-url">آدرس Canonical</label>
+                        <input type="url" class="form-control" id="product-canonical-url" value="${product.canonical_url || ''}" dir="ltr" placeholder="https://example.com/path">
+                    </div>
+                    <div class="form-group">
                         <label for="product-price">قیمت</label>
                         <input type="number" class="form-control" id="product-price" value="${product.price || ''}" disabled>
                     </div>
@@ -274,6 +290,10 @@
                             return;
                         }
                         formData.append('slug', slugValue);
+                        formData.append('meta_title', $('#product-meta-title').val());
+                        formData.append('meta_description', $('#product-meta-description').val());
+                        formData.append('meta_keywords', $('#product-meta-keywords').val());
+                        formData.append('canonical_url', $('#product-canonical-url').val());
                         formData.append('name', $('#product-name').val());
                         formData.append('price', $('#product-price').val());
                         formData.append('weight', $('#product-weight').val());

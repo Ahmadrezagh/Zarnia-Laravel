@@ -78,6 +78,13 @@
                     <label for="blog-slug-create">نامک (Slug) (اختیاری)</label>
                     <input type="text" id="blog-slug-create" name="slug" class="form-control" dir="ltr" placeholder="example-slug">
                 </div>
+                <x-form.input title="عنوان متا (Meta Title)" name="meta_title" />
+                <x-form.textarea title="توضیحات متا (Meta Description)" name="meta_description" class="no_ck_editor" placeholder="Meta description..." />
+                <x-form.textarea title="کلمات کلیدی متا (Meta Keywords)" name="meta_keywords" class="no_ck_editor" placeholder="keyword1, keyword2, keyword3" />
+                <div class="form-group">
+                    <label for="blog-canonical-create">آدرس Canonical</label>
+                    <input type="url" id="blog-canonical-create" name="canonical_url" class="form-control" dir="ltr" placeholder="https://example.com/path">
+                </div>
                 <x-form.textarea title="متن" name="description" />
                 <x-form.file-input title="تصویر کاور" name="cover_image"/>
             </x-modal.create>
@@ -105,6 +112,13 @@
                     <div class="form-group">
                         <label for="blog-slug-edit-{{$blog->id}}">نامک (Slug)</label>
                         <input type="text" id="blog-slug-edit-{{$blog->id}}" name="slug" class="form-control" dir="ltr" value="{{$blog->slug}}" required>
+                    </div>
+                    <x-form.input title="عنوان متا (Meta Title)" name="meta_title" :value="$blog->meta_title" />
+                    <x-form.textarea title="توضیحات متا (Meta Description)" name="meta_description" :value="$blog->meta_description" class="no_ck_editor" placeholder="Meta description..." />
+                    <x-form.textarea title="کلمات کلیدی متا (Meta Keywords)" name="meta_keywords" :value="$blog->meta_keywords" class="no_ck_editor" placeholder="keyword1, keyword2, keyword3" />
+                    <div class="form-group">
+                        <label for="blog-canonical-edit-{{$blog->id}}">آدرس Canonical</label>
+                        <input type="url" id="blog-canonical-edit-{{$blog->id}}" name="canonical_url" class="form-control" dir="ltr" value="{{$blog->canonical_url}}" placeholder="https://example.com/path">
                     </div>
                     <x-form.textarea title="متن" name="description" :value="$blog->description" />
                     <x-form.file-input title="تصویر کاور" name="cover_image"/>

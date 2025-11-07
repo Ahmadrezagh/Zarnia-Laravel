@@ -109,6 +109,9 @@ class BlogController extends Controller
                         <label for="blog-slug-edit-{{$blog->id}}">نامک (Slug)</label>
                         <input type="text" id="blog-slug-edit-{{$blog->id}}" name="slug" class="form-control" dir="ltr" value="{{$blog->slug}}" required>
                     </div>
+                    <x-form.input title="عنوان متا (Meta Title)" name="meta_title" :value="$blog->meta_title" />
+                    <x-form.textarea title="توضیحات متا (Meta Description)" name="meta_description" :value="$blog->meta_description" />
+                    <x-form.textarea title="کلمات کلیدی متا (Meta Keywords)" name="meta_keywords" :value="$blog->meta_keywords" />
                     <x-form.textarea title="متن" name="description" :value="$blog->description" />
                     <x-form.file-input title="تصویر کاور" name="cover_image" />
                 </x-modal.update>

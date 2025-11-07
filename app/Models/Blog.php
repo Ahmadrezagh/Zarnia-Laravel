@@ -17,7 +17,11 @@ class Blog extends Model implements HasMedia
     protected $fillable = [
         'title',
         'slug',
-        'description'
+        'description',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'canonical_url'
     ];
 
     public function getSlugOptions(): SlugOptions

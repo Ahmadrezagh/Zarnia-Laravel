@@ -5,8 +5,9 @@
 'value' => '',
 'class' => '',
 'col' => '',
+'placeholder' => '',
 ])
 <div class="form-group {{$col}}">
     <label for="">{{$title}}</label>
-    <textarea name="{{$name}}" id="{{$id}}" class="form-control {{$class}} ">{{$value}}</textarea>
+    <textarea name="{{$name}}" id="{{$id}}" class="form-control {{$class}} " placeholder="{{$placeholder}}" >{{$value}}</textarea>
 </div>

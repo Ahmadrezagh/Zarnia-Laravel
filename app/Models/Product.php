@@ -40,7 +40,11 @@ class Product extends Model implements HasMedia
         'darsad_kharid',
         'is_comprehensive',
         'mazaneh',
-        'darsad_vazn_foroosh'
+        'darsad_vazn_foroosh',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'canonical_url'
     ];
 
     public function setNameAttribute($value)
