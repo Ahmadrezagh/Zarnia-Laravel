@@ -91,6 +91,16 @@
     $mmToPx = fn($mm) => $mm * $dpi / 25.4;
     $containerWidth = $mmToPx($a4WidthMm); // 793.7px
     $containerHeight = $mmToPx($a4HeightMm); // 1122.5px
+    $address = '';
+    if($order->address ){
+        if($order->address->province){
+            $address = $address.' - '.$order->address->province->name;
+        }
+        if($order->address->city){
+            $address = $address.' - '.$order->address->city->name;
+        }
+        $address = $address.' - '.$order->address->address;
+    }
     $map = [
         'invoice_id' => $order->id,
         'receiver_name' => $order->address->receiver_name ?? '',
@@ -105,7 +115,7 @@
         'shipping' => $order->shipping->title ?? 'آنلاین',
         'receiver_phone' => $order->address->receiver_phone ?? '',
         'postal_code' => $order->address->postal_code ?? '',
-        'address' => $order->address->address ?? '',
+        'address' => $address,
         'sum_of_prev_purchase' => number_format(\App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->sum('final_amount')),
 
 
