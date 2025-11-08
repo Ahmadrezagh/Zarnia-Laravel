@@ -79,7 +79,8 @@
                     <input type="text" id="category-slug-create" name="slug" class="form-control" dir="ltr" placeholder="example-slug">
                 </div>
                 <x-form.select-option title="دسته بندی والد" name="parent_id" >
-                    @foreach($categories as $parent_category)
+                    <option value="">بدون والد</option>
+                    @foreach($allCategories as $parent_category)
                         <option value="{{$parent_category->id}}">{{$parent_category->title}}</option>
                     @endforeach
                 </x-form.select-option>
@@ -128,64 +129,13 @@
                         ]"
             :items="$categories"
             :actions="[
-                            ['label' => 'ویرایش', 'type' => 'modal-edit'],
+                            ['label' => 'ویرایش', 'route' => ['categories.edit', ['category' => '{slug}']]],
                             ['label' => 'حذف', 'type' => 'modal-destroy']
                         ]"
         >
 
             @foreach($categories as $category)
-                <!-- Modal -->
                 <x-modal.destroy id="modal-destroy-{{$category->id}}" title="حذف دسته بندی" action="{{route('categories.destroy', $category->slug)}}" title="{{$category->title}}" />
-
-                <x-modal.update id="modal-edit-{{$category->id}}" title="ساخت دسته بندی" action="{{route('categories.update',$category->slug)}}" >
-                    <x-form.input title="نام"  name="title" :value="$category->title" />
-                    <div class="form-group">
-                        <label for="category-slug-edit-{{$category->id}}">نامک (Slug)</label>
-                        <input type="text" id="category-slug-edit-{{$category->id}}" name="slug" class="form-control" dir="ltr" value="{{$category->slug}}" required>
-                    </div>
-                    <x-form.select-option title="دسته بندی والد" name="parent_id" >
-                        @foreach($categories as $parent_category)
-                            @if( ($parent_category->id != $category->id) && (!$category->isParentOfCategory($parent_category) ))
-                                <option value="{{$category->id}}" @if($category->parent_id == $parent_category->id) selected @endif >{{$parent_category->title}}</option>
-                            @endif
-                        @endforeach
-                    </x-form.select-option>
-                    <x-form.file-input title="تصویر دسته بندی" name="cover_image" />
-                    <x-form.select-option title="گروه ویژگی" name="attribute_group_ids[]" multiple="true" >
-                        @foreach($attribute_groups as $attribute_group)
-                            <option value="{{ $attribute_group->id }}" @if($category->attributeGroups()->where('attribute_group_id','=',$attribute_group->id)->exists()) selected @endif >{{ $attribute_group->name }}</option>
-                        @endforeach
-                    </x-form.select-option>
-                    <div class="mb-3">
-                        <label class="form-label">محصولات مرتبط</label>
-                        <div class="custom-multiselect"
-                             data-ajax-url="{{ route('products.search') }}"
-                             data-preselected='@json($category->relatedProducts->map(fn($item) => ["id" => "Product:{$item->id}", "text" => $item->name]))'>
-                            <div class="custom-multiselect-display">انتخاب کنید...</div>
-                            <div class="custom-multiselect-dropdown">
-                                <input type="text" class="custom-multiselect-search" placeholder="جستجو...">
-                                <div class="custom-multiselect-options"></div>
-                            </div>
-                            <input type="hidden" name="related_products">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">محصولات مکمل</label>
-                        <div class="custom-multiselect"
-                             data-ajax-url="{{ route('products.search') }}"
-                             data-preselected='@json($category->complementaryProducts->map(fn($item) => ["id" => "Product:{$item->id}", "text" => $item->name]))'>
-                            <div class="custom-multiselect-display">انتخاب کنید...</div>
-                            <div class="custom-multiselect-dropdown">
-                                <input type="text" class="custom-multiselect-search" placeholder="جستجو...">
-                                <div class="custom-multiselect-options"></div>
-                            </div>
-                            <input type="hidden" name="complementary_products">
-                        </div>
-                    </div>
-
-
-                </x-modal.update>
             @endforeach
         </x-table>
     </x-page>

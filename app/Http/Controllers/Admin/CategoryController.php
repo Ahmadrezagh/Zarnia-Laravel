@@ -32,9 +32,18 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $attribute_groups = AttributeGroup::query()->latest()->get();
-        $categories = Category::query()->paginate();
-        return view('admin.categories.index',compact('categories','attribute_groups'));
+        $attribute_groups = AttributeGroup::query()->orderBy('name')->get(['id','name']);
+        $categories = Category::query()
+            ->select('id','title','slug','parent_id')
+            ->latest()
+            ->paginate(15);
+
+        $allCategories = Category::query()
+            ->select('id','title','parent_id')
+            ->orderBy('title')
+            ->get();
+
+        return view('admin.categories.index', compact('categories', 'attribute_groups', 'allCategories'));
     }
 
     /**
@@ -91,9 +100,22 @@ class CategoryController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Category $category)
     {
-        //
+        $attribute_groups = AttributeGroup::query()->orderBy('name')->get(['id','name']);
+        $allCategories = Category::query()
+            ->select('id','title','parent_id')
+            ->orderBy('title')
+            ->get();
+
+        $category->load([
+            'attributeGroups:id',
+            'relatedProducts:id,name',
+            'complementaryProducts:id,name',
+            'parent:id,title'
+        ]);
+
+        return view('admin.categories.edit', compact('category','attribute_groups','allCategories'));
     }
 
     /**
@@ -109,19 +131,23 @@ class CategoryController extends Controller
         }
         $category->attributeGroups()->sync($request->attribute_group_ids);
         $complementary = $request->input('complementary_products', []);
-if (is_string($complementary)) {
-    $complementary = json_decode($complementary, true) ?? [];
-}
+        if (is_string($complementary)) {
+            $complementary = json_decode($complementary, true) ?? [];
+        }
 
-$related = $request->input('related_products', []);
-if (is_string($related)) {
-    $related = json_decode($related, true) ?? [];
-}
+        $related = $request->input('related_products', []);
+        if (is_string($related)) {
+            $related = json_decode($related, true) ?? [];
+        }
 
-// Then use the arrays as before
-$category->syncComplementary($complementary);
-$category->syncRelated($related);
-        return response()->json(['message' => 'با موفقیت انجام شد']);
+        $category->syncComplementary($complementary);
+        $category->syncRelated($related);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['message' => 'با موفقیت انجام شد']);
+        }
+
+        return redirect()->route('categories.index')->with('success', 'دسته بندی با موفقیت به‌روزرسانی شد');
 
     }
 
@@ -159,42 +185,13 @@ $category->syncRelated($related);
 
     public function table()
     {
-        $categories = Category::query()->paginate();
+        $categories = Category::query()
+            ->select('id','title','slug')
+            ->latest()
+            ->paginate(15);
 
-        $attribute_groups = AttributeGroup::query()->latest()->get();
-        // Initialize slot content
-        $slotContent = '';
+        $slotContent = view('admin.categories.partials.destroy-modals', compact('categories'))->render();
 
-        // Loop through users and render the Blade string for each
-        foreach ($categories as $category) {
-            $slotContent .= Blade::render(
-                <<<'BLADE'
-                 <!-- Modal -->
-                <x-modal.destroy id="modal-destroy-{{$category->id}}" title="حذف دسته بندی" action="{{route('categories.destroy', $category->slug)}}" title="{{$category->title}}" />
-
-                <x-modal.update id="modal-edit-{{$category->id}}" title="ساخت دسته بندی" action="{{route('categories.update',$category->slug)}}" >
-                    <x-form.input title="نام"  name="title" :value="$category->title" />
-                    <div class="form-group">
-                        <label for="category-slug-edit-{{$category->id}}">نامک (Slug)</label>
-                        <input type="text" id="category-slug-edit-{{$category->id}}" name="slug" class="form-control" dir="ltr" value="{{$category->slug}}" required>
-                    </div>
-                    <x-form.select-option title="دسته بندی والد" name="parent_id" >
-                        @foreach($categories as $parent_category)
-                            @if( ($parent_category->id != $category->id) && (!$category->isParentOfCategory($parent_category) ))
-                                <option value="{{$category->id}}" @if($category->parent_id == $parent_category->id) selected @endif >{{$parent_category->title}}</option>
-                            @endif
-                        @endforeach
-                    </x-form.select-option>
-                    <x-form.select-option title="گروه ویژگی" name="attribute_group_ids[]" multiple="true" >
-                        @foreach($attribute_groups as $attribute_group)
-                            <option value="{{ $attribute_group->id }}" @if($category->attributeGroups()->where('attribute_group_id','=',$attribute_group->id)->exists()) selected @endif >{{ $attribute_group->name }}</option>
-                        @endforeach
-                    </x-form.select-option>
-                </x-modal.update>
-            BLADE,
-                ['category' => $category, 'categories' => $categories,'attribute_groups' => $attribute_groups]
-            );
-        }
         return view('components.table', [
             'id' => 'categories-table',
             'columns' => [
@@ -203,7 +200,7 @@ $category->syncRelated($related);
             'url' => route('table.categories'),
             'items' => $categories,
             'actions' => [
-                ['label' => 'ویرایش', 'type' => 'modal-edit'],
+                ['label' => 'ویرایش', 'route' => ['categories.edit', ['category' => '{slug}']]],
                 ['label' => 'حذف', 'type' => 'modal-destroy']
             ],
             'slot' => $slotContent
