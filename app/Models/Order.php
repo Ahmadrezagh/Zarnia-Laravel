@@ -53,20 +53,48 @@ class Order extends Model
     public function scopeSearch(Builder $query, string $search = null)
     {
         if($search){
+            $search = self::normalizeSearchValue($search);
+
             $query->where(function($q) use ($search) {
-                $q->where('id', 'LIKE', "%{$search}%")
+                if (is_numeric($search)) {
+                    $q->where('id', intval($search));
+                }
+
+                $q->orWhere('id', 'LIKE', "%{$search}%")
                     ->orWhereHas('user', function ($q) use ($search) {
-                        $q->where('name', 'LIKE', "%{$search}%");
+                        $q->where('name', 'LIKE', "%{$search}%")
+                          ->orWhere('last_name', 'LIKE', "%{$search}%");
                     })
                     ->orWhereHas('address', function ($q) use ($search) {
                         $q->where('receiver_name', 'LIKE', "%{$search}%");
                     })
                     ->orWhereHas('orderItems', function ($q) use ($search) {
-                        $q->where('name', 'LIKE', "%{$search}%");
+                        $q->where('name', 'LIKE', "%{$search}%")
+                          ->orWhereHas('product', function ($p) use ($search) {
+                              $p->where('name', 'LIKE', "%{$search}%");
+                          });
                     });
             });
         }
         return $query;
+    }
+
+    protected static function normalizeSearchValue(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $search = trim($value);
+
+        $persianDigits  = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+        $arabicDigits   = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+        $englishDigits  = ['0','1','2','3','4','5','6','7','8','9'];
+
+        $search = str_replace($persianDigits, $englishDigits, $search);
+        $search = str_replace($arabicDigits, $englishDigits, $search);
+
+        return $search;
     }
 
     public function scopeFilterByStatus(Builder $query, string $status = null)
