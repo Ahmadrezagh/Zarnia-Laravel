@@ -101,6 +101,10 @@
         }
         $address = $address.' - '.$order->address->address;
     }
+    $shipping = $order->shipping->title ?? 'آنلاین';
+    if($order->shipping_time_id){
+        $shipping = $shipping.' - '.$order->shippingTime->title;
+    }
     $map = [
         'invoice_id' => $order->id,
         'receiver_name' => $order->address->receiver_name ?? '',
@@ -112,7 +116,7 @@
         'notes_label' => $order->note ?? '',
         'invoice_number' => $order->id ?? '',
         'previous_purchase_count' => \App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->count(),
-        'shipping' => $order->shipping->title ?? 'آنلاین',
+        'shipping' => $shipping,
         'receiver_phone' => $order->address->receiver_phone ?? '',
         'postal_code' => $order->address->postal_code ?? '',
         'address' => $address,
