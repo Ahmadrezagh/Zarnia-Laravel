@@ -100,6 +100,10 @@
             $address = $address.' - '.$order->address->city->name;
         }
         $address = $address.' - '.$order->address->address;
+        if (mb_strlen($address, 'UTF-8') > 90) {
+            $segments = preg_split('/(?<=\G.{90})/u', $address, -1, PREG_SPLIT_NO_EMPTY);
+            $address = implode('<br>', $segments);
+        }
     }
     $shipping = $order->shipping->title ?? 'آنلاین';
     if($order->shipping_time_id){
