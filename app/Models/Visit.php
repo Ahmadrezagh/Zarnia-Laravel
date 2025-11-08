@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use DeviceDetector\DeviceDetector;
 use GeoIp2\Database\Reader;
@@ -53,82 +54,117 @@ class Visit extends Model
     // Browser usage (count and percentage)
     public static function getBrowserUsage($startDate = null, $endDate = null)
     {
-        $query = static::select('user_agent');
-        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
-        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
-        $visits = $query->get();
+        $cacheKey = 'visit_browser_usage_' . md5($startDate.'|'.$endDate);
 
-        $browsers = [];
-        $total = $visits->count();
+        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($startDate, $endDate) {
+            $query = static::select('user_agent', DB::raw('count(*) as visits'))
+                ->whereNotNull('user_agent')
+                ->groupBy('user_agent')
+                ->orderByDesc('visits');
+            if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+            if ($endDate) $query->whereDate('created_at', '<=', $endDate);
 
-        foreach ($visits as $visit) {
-            $dd = new DeviceDetector($visit->user_agent);
-            $dd->parse();
-            $browser = $dd->getClient('name') ?? 'Unknown';
-            $browsers[$browser] = ($browsers[$browser] ?? 0) + 1;
-        }
+            $userAgents = $query->limit(500)->get();
 
-        return collect($browsers)->map(function ($count, $browser) use ($total) {
-            return [
-                'browser' => $browser,
-                'count' => $count,
-                'percentage' => $total ? round(($count / $total) * 100, 2) : 0,
-            ];
-        })->sortByDesc('count')->values();
+            $browsers = [];
+            $total = 0;
+
+            foreach ($userAgents as $row) {
+                $dd = new DeviceDetector($row->user_agent);
+                $dd->parse();
+                $browser = $dd->getClient('name') ?? 'Unknown';
+                $browsers[$browser] = ($browsers[$browser] ?? 0) + $row->visits;
+                $total += $row->visits;
+            }
+
+            return collect($browsers)->map(function ($count, $browser) use ($total) {
+                return [
+                    'browser' => $browser,
+                    'count' => $count,
+                    'percentage' => $total ? round(($count / $total) * 100, 2) : 0,
+                ];
+            })->sortByDesc('count')->values();
+        });
     }
 
     // Operating system usage
     public static function getOsUsage($startDate = null, $endDate = null)
     {
-        $query = static::select('user_agent');
-        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
-        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
-        $visits = $query->get();
+        $cacheKey = 'visit_os_usage_' . md5($startDate.'|'.$endDate);
 
-        $os = [];
-        $total = $visits->count();
+        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($startDate, $endDate) {
+            $query = static::select('user_agent', DB::raw('count(*) as visits'))
+                ->whereNotNull('user_agent')
+                ->groupBy('user_agent')
+                ->orderByDesc('visits');
+            if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+            if ($endDate) $query->whereDate('created_at', '<=', $endDate);
 
-        foreach ($visits as $visit) {
-            $dd = new DeviceDetector($visit->user_agent);
-            $dd->parse();
-            $osName = $dd->getOs('name') ?? 'Unknown';
-            $os[$osName] = ($os[$osName] ?? 0) + 1;
-        }
+            $userAgents = $query->limit(500)->get();
 
-        return collect($os)->map(function ($count, $osName) use ($total) {
-            return [
-                'os' => $osName,
-                'count' => $count,
-                'percentage' => $total ? round(($count / $total) * 100, 2) : 0,
-            ];
-        })->sortByDesc('count')->values();
+            $os = [];
+            $total = 0;
+
+            foreach ($userAgents as $row) {
+                $dd = new DeviceDetector($row->user_agent);
+                $dd->parse();
+                $osName = $dd->getOs('name') ?? 'Unknown';
+                $os[$osName] = ($os[$osName] ?? 0) + $row->visits;
+                $total += $row->visits;
+            }
+
+            return collect($os)->map(function ($count, $osName) use ($total) {
+                return [
+                    'os' => $osName,
+                    'count' => $count,
+                    'percentage' => $total ? round(($count / $total) * 100, 2) : 0,
+                ];
+            })->sortByDesc('count')->values();
+        });
     }
 
     // Device type usage (desktop, mobile, tablet)
     public static function getDeviceUsage($startDate = null, $endDate = null)
     {
-        $query = static::select('user_agent');
-        if ($startDate) $query->whereDate('created_at', '>=', $startDate);
-        if ($endDate) $query->whereDate('created_at', '<=', $endDate);
-        $visits = $query->get();
+        $cacheKey = 'visit_device_usage_' . md5($startDate.'|'.$endDate);
 
-        $devices = [];
-        $total = $visits->count();
+        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($startDate, $endDate) {
+            $query = static::select('user_agent', DB::raw('count(*) as visits'))
+                ->whereNotNull('user_agent')
+                ->groupBy('user_agent')
+                ->orderByDesc('visits');
+            if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+            if ($endDate) $query->whereDate('created_at', '<=', $endDate);
 
-        foreach ($visits as $visit) {
-            $dd = new DeviceDetector($visit->user_agent);
-            $dd->parse();
-            $device = $dd->isDesktop() ? 'Desktop' : ($dd->isMobile() ? 'Mobile' : ($dd->isTablet() ? 'Tablet' : 'Unknown'));
-            $devices[$device] = ($devices[$device] ?? 0) + 1;
-        }
+            $userAgents = $query->limit(500)->get();
 
-        return collect($devices)->map(function ($count, $device) use ($total) {
-            return [
-                'device' => $device,
-                'count' => $count,
-                'percentage' => $total ? round(($count / $total) * 100, 2) : 0,
-            ];
-        })->sortByDesc('count')->values();
+            $devices = [];
+            $total = 0;
+
+            foreach ($userAgents as $row) {
+                $dd = new DeviceDetector($row->user_agent);
+                $dd->parse();
+                $device = 'Unknown';
+                if ($dd->isDesktop()) {
+                    $device = 'Desktop';
+                } elseif ($dd->isTablet()) {
+                    $device = 'Tablet';
+                } elseif ($dd->isMobile()) {
+                    $device = 'Mobile';
+                }
+
+                $devices[$device] = ($devices[$device] ?? 0) + $row->visits;
+                $total += $row->visits;
+            }
+
+            return collect($devices)->map(function ($count, $device) use ($total) {
+                return [
+                    'device' => $device,
+                    'count' => $count,
+                    'percentage' => $total ? round(($count / $total) * 100, 2) : 0,
+                ];
+            })->sortByDesc('count')->values();
+        });
     }
 
     // Top countries
