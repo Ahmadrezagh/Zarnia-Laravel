@@ -30,10 +30,21 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::query()->users()->with('addresses')->latest()->paginate();
-        return view('admin.users.index',compact('users'));
+        $search = $request->input('search');
+
+        $users = User::query()
+            ->users()
+            ->with('addresses')
+            ->search($search)
+            ->latest()
+            ->paginate();
+
+        if ($search) {
+            $users->appends(['search' => $search]);
+        }
+        return view('admin.users.index', compact('users', 'search'));
     }
 
     /**
@@ -127,9 +138,24 @@ class UserController extends Controller
         return response()->json(['message' => 'با موفقیت انجام شد']);
     }
 
-    public function table()
+    public function table(Request $request)
     {
-        $users = User::query()->users()->with('addresses')->latest()->paginate();
+        $query = User::query()->users()->with('addresses');
+
+        $searchValue = null;
+        if ($request->has('search')) {
+            if (is_array($request->input('search'))) {
+                $searchValue = $request->input('search.value');
+            } else {
+                $searchValue = $request->input('search');
+            }
+        }
+
+        if (!empty($searchValue)) {
+            $query->search($searchValue);
+        }
+
+        $users = $query->latest()->paginate();
         // Initialize slot content
         $slotContent = '';
 

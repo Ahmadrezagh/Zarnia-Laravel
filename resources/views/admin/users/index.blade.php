@@ -10,7 +10,28 @@
 
     <x-page>
         <x-slot name="header">
-            <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن کاربر</button>
+       
+                <button class="btn btn-primary mb-3 mb-lg-0"  data-toggle="modal" data-target="#modal-create">افزودن کاربر</button>
+       <br/>         
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mt-3 mb-3 ">
+                <form method="GET" action="{{ route('users.index') }}" class="w-100 w-lg-auto">
+                    <div class="input-group">
+                        <input type="text"
+                               name="search"
+                               value="{{ $search ?? '' }}"
+                               class="form-control"
+                               placeholder="جستجو بر اساس نام، شماره تماس یا نام گیرنده">
+                        @if(!empty($search))
+                            <div class="input-group-append">
+                                <a class="btn btn-outline-secondary" href="{{ route('users.index') }}">حذف فیلتر</a>
+                            </div>
+                        @endif
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="submit">جستجو</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
 
             <x-modal.create id="modal-create" title="ساخت کاربر" action="{{route('users.store')}}" >
                 <x-form.input title="نام"  name="name" />

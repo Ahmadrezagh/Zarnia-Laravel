@@ -88,6 +88,42 @@ class User extends Authenticatable
         return $query->where('type' , '=', User::$TYPES[2])->orWhereNull('type');
     }
 
+    public function scopeSearch(Builder $query, ?string $search)
+    {
+        if ($search === null || trim($search) === '') {
+            return $query;
+        }
+
+        $normalized = self::normalizeSearchValue($search);
+
+        return $query->where(function ($q) use ($normalized) {
+            $q->where('name', 'LIKE', "%{$normalized}%")
+              ->orWhere('last_name', 'LIKE', "%{$normalized}%")
+              ->orWhere('phone', 'LIKE', "%{$normalized}%")
+              ->orWhereHas('addresses', function ($sub) use ($normalized) {
+                  $sub->where('receiver_name', 'LIKE', "%{$normalized}%");
+              });
+        });
+    }
+
+    protected static function normalizeSearchValue(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $search = trim($value);
+
+        $persianDigits  = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+        $arabicDigits   = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+        $englishDigits  = ['0','1','2','3','4','5','6','7','8','9'];
+
+        $search = str_replace($persianDigits, $englishDigits, $search);
+        $search = str_replace($arabicDigits, $englishDigits, $search);
+
+        return $search;
+    }
+
     public function hasRole(Role $role)
     {
         return $this->roles()->where('role_id', '=', $role->id)->exists();
