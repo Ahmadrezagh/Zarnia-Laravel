@@ -397,7 +397,7 @@ class Order extends Model
             $this->status
         );
 
-//        $this->submitInAccountingApp(); // Uncomment if needed
+        $this->submitInAccountingApp(); // Uncomment if needed
         
         // Check and generate gift discount code
         $this->checkAndGenerateGift();
