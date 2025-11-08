@@ -94,7 +94,7 @@
     $address = '';
     if($order->address ){
         if($order->address->province){
-            $address = $address.' - '.$order->address->province->name;
+            $address = $order->address->province->name;
         }
         if($order->address->city){
             $address = $address.' - '.$order->address->city->name;
