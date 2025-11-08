@@ -25,6 +25,9 @@ class UpdateAddressRequest extends FormRequest
             'receiver_name' => 'string|required',
             'receiver_phone' => 'string|required',
             'address' => 'string|required',
+            'postal_code' => 'numeric|required',
+            'province_id' => 'numeric|required|exists:iran_provinces,id',
+            'city_id' => 'numeric|required|exists:iran_cities,id',
         ];
     }
 }
