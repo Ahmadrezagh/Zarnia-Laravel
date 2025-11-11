@@ -792,6 +792,18 @@ class Product extends Model implements HasMedia
                     ->whereHas('etikets', function ($etiketQuery) {
                         $etiketQuery->where('is_mojood', 1);
                     });
+                })
+                ->orWhere(function ($parentQuery) {
+                    $parentQuery->whereNull('parent_id')
+                        ->where(function ($subQ) {
+                            $subQ->whereNull('is_comprehensive')
+                                ->orWhere('is_comprehensive', 0);
+                        })
+                        ->whereHas('children', function ($childQuery) {
+                            $childQuery->whereHas('etikets', function ($etiketQuery) {
+                                $etiketQuery->where('is_mojood', 1);
+                            });
+                        });
                 });
             });
     }
