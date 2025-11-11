@@ -605,12 +605,36 @@ class Product extends Model implements HasMedia
 
         // Related field in etikets: etiket_code
         if ($key === 'etiket_code') {
-            return $query->whereHas('etikets', function ($q) use ($val) {
-                $q->where('code', '=', $val);
+            $normalized = self::normalizeSearchValue($val);
+
+            return $query->where(function ($q) use ($normalized) {
+                $q->whereHas('etikets', function ($sub) use ($normalized) {
+                    $sub->where('code', $normalized);
+                })->orWhereHas('children.etikets', function ($sub) use ($normalized) {
+                    $sub->where('code', $normalized);
+                });
             });
         }
 
         return $query; // fallback
+    }
+
+    protected static function normalizeSearchValue(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $search = trim($value);
+
+        $persianDigits  = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+        $arabicDigits   = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+        $englishDigits  = ['0','1','2','3','4','5','6','7','8','9'];
+
+        $search = str_replace($persianDigits, $englishDigits, $search);
+        $search = str_replace($arabicDigits, $englishDigits, $search);
+
+        return $search;
     }
 
     public function getOriginalPriceAttribute()
