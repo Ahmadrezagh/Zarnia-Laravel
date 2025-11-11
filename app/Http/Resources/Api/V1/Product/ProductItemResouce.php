@@ -36,7 +36,12 @@ class ProductItemResouce extends JsonResource
                 'product_id' => $this->id
             ])->exists();
         }
-        $product = Product::find($this->id);
+        $product = Product::query()
+            ->with([
+                'etikets' => fn($query) => $query->where('is_mojood', 1),
+                'children.etikets' => fn($query) => $query->where('is_mojood', 1),
+            ])
+            ->find($this->id);
         $coverImage = $product->getFirstMedia('cover_image');
         $galleryImages = $product->getMedia('gallery');
         $galleryUrls = $galleryImages->map(function ($media) {
@@ -78,16 +83,32 @@ class ProductItemResouce extends JsonResource
             'meta_description' => $this->meta_description,
             'meta_keywords' => $this->meta_keywords,
             'canonical_url' => $this->canonical_url,
-            'weights' => collect([$this]) // start with the current product
-            ->merge($this->children) // add all children
-            ->filter(fn($product) => $product->single_count >= 1)
-                ->map(fn($product) => [
-                    'id' => $product->id,
-                    'weight' => $product->weight,
-                    'name' => $product->name,
-                    'slug' => $product->slug,
-                ])
-                ->sortBy('weight') // sort from lowest to highest weight
+            'weights' => collect([$product])
+                ->merge($product?->children ?? collect())
+                ->map(function ($productItem) {
+                    $availableEtikets = $productItem->relationLoaded('etikets')
+                        ? $productItem->etikets
+                        : $productItem->etikets()->where('is_mojood', 1)->get();
+
+                    if ($availableEtikets->isEmpty()) {
+                        return null;
+                    }
+
+                    return [
+                        'id' => $productItem->id,
+                        'weight' => $productItem->weight,
+                        'name' => $productItem->name,
+                        'slug' => $productItem->slug,
+                        'etikets' => $availableEtikets->map(fn($etiket) => [
+                            'id' => $etiket->id,
+                            'code' => $etiket->code,
+                            'weight' => $etiket->weight,
+                            'price' => $etiket->price,
+                        ])->values(),
+                    ];
+                })
+                ->filter()
+                ->sortBy('weight')
                 ->values(),
         ];
     }
