@@ -202,7 +202,7 @@ class Order extends Model
     }
     public function getOrderColumnAttribute()
     {
-        $value = $this->id . "<br/>" . $this->userName . "<br/>" . $this->createdAtJalali;
+        $value = $this->id . "<br/>" . $this->userName.$this->user->phone . "<br/>" . $this->createdAtJalali;
 
         return request()->expectsJson()
             ? $value    // JSON: plain string
