@@ -432,23 +432,48 @@ class Product extends Model implements HasMedia
         }, 'is_mojood');
     }
 
-    public function scopeAvailable($query)
+    public function scopeAvailable(Builder $query): Builder
     {
-        return $query->whereExists(function ($q) {
-            $q->selectRaw(1)
-                ->from('etikets')
-                ->whereColumn('etikets.product_id', 'products.id')
-                ->where('etikets.is_mojood', 1);
+        return $query->where(function (Builder $q) {
+            $q->whereExists(function ($sub) {
+                $sub->selectRaw(1)
+                    ->from('etikets')
+                    ->whereColumn('etikets.product_id', 'products.id')
+                    ->where('etikets.is_mojood', 1);
+            })
+            ->orWhere(function ($sub) {
+                $sub->whereNull('products.parent_id')
+                    ->whereExists(function ($child) {
+                        $child->selectRaw(1)
+                            ->from('products as child_products')
+                            ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
+                            ->whereColumn('child_products.parent_id', 'products.id')
+                            ->where('etikets.is_mojood', 1);
+                    });
+            });
         });
     }
 
-    public function scopeNotAvailable($query)
+    public function scopeNotAvailable(Builder $query): Builder
     {
-        return $query->whereNotExists(function ($q) {
-            $q->selectRaw(1)
-                ->from('etikets')
-                ->whereColumn('etikets.product_id', 'products.id')
-                ->where('etikets.is_mojood', 1);
+        return $query->where(function ($q) {
+            $q->whereDoesntExist(function ($sub) {
+                $sub->selectRaw(1)
+                    ->from('etikets')
+                    ->whereColumn('etikets.product_id', 'products.id')
+                    ->where('etikets.is_mojood', 1);
+            });
+        })->where(function ($q) {
+            $q->where(function ($sub) {
+                $sub->whereNotNull('products.parent_id')
+                    ->orWhereDoesntExist(function ($child) {
+                        $child->selectRaw(1)
+                            ->from('products as child_products')
+                            ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
+                            ->whereColumn('child_products.parent_id', 'products.id')
+                            ->where('etikets.is_mojood', 1);
+                    });
+            });
         });
     }
 
