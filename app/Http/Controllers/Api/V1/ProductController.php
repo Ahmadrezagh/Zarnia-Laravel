@@ -78,7 +78,8 @@ class ProductController extends Controller
             ->categories($categoryIds)
             ->search($request->search)
             ->priceRange($fromPrice, $toPrice)
-            ->hasCountAndImage()
+            ->available()
+            ->hasImage()
             ->applyDefaultSort($sortType)
             ->HasDiscount($request->hasDiscount)
             ->paginate($request->get('per_page') ?? 12);
