@@ -13,6 +13,10 @@ class EtiketObserver
      */
     public function created(Etiket $etiket): void
     {
+        if ((int) $etiket->is_mojood !== 1) {
+            return;
+        }
+
         // Step 1: Look for a product with SAME name AND SAME weight
         $product = Product::query()
             ->where('name', '=', $etiket->name)
@@ -104,6 +108,10 @@ class EtiketObserver
 
     public function updated(Etiket $etiket): void
     {
+        if ((int) $etiket->is_mojood !== 1) {
+            return;
+        }
+
         // Keep track of old product before update
         $oldProductId = $etiket->getOriginal('product_id');
 
