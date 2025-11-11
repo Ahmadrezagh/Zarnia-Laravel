@@ -1118,7 +1118,7 @@ class ProductController extends Controller
             $productsQuery->available();
         }
 
-        $products = $productsQuery->select('id', 'name', 'price', 'weight')
+        $products = $productsQuery->select('id', 'name', 'price', 'discounted_price', 'weight')
             ->distinct() // Prevent duplicates
             ->limit(50) // Limit results for performance
             ->get()
@@ -1129,10 +1129,16 @@ class ProductController extends Controller
             ->map(function ($product) {
                 // Calculate single_count using the accessor after loading the product
                 $singleCount = $product->single_count;
+                $finalPrice = (int) $product->price;
+                $originalPrice = (int) $product->originalPrice;
+                $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
+
                 return [
                     'id' => "Product:{$product->id}",
                     'text' => $product->name . (($product->weight) ? ' (' . $product->weight . 'g)' : '') . ' (موجودی: ' . $singleCount . ')',
-                    'price' => $product->price,
+                    'price' => $finalPrice,
+                    'discounted_price' => $discountedPrice,
+                    'original_price' => $originalPrice,
                     'single_count' => $singleCount,
                     'weight' => $product->weight
                 ];

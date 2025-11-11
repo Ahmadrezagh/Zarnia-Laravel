@@ -95,10 +95,53 @@ class OrderController extends Controller
                 ], 422);
             }
 
-            // Calculate totals
+            $productIds = collect($products)
+                ->pluck('product_id')
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($productIds->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['products' => ['حداقل یک محصول معتبر انتخاب کنید']]
+                ], 422);
+            }
+
+            $productModels = \App\Models\Product::whereIn('id', $productIds)->get()->keyBy('id');
+            $productModels->load('etikets');
+
+            if ($productModels->count() !== $productIds->count()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['products' => ['بعضی از محصولات انتخاب شده در دسترس نیستند']]
+                ], 422);
+            }
+
+            $orderItemsPayload = [];
             $totalAmount = 0;
-            foreach ($products as $product) {
-                $totalAmount += $product['price'] * $product['quantity'];
+
+            foreach ($products as $productData) {
+                $productId = (int) ($productData['product_id'] ?? 0);
+                $quantity = max(1, (int) ($productData['quantity'] ?? 1));
+
+                if (!$productId || !$productModels->has($productId)) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['products' => ['محصول انتخاب شده نامعتبر است']]
+                    ], 422);
+                }
+
+                $productModel = $productModels->get($productId);
+                $unitPrice = (int) $productModel->price;
+
+                $orderItemsPayload[] = [
+                    'model' => $productModel,
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                ];
+
+                $totalAmount += $unitPrice * $quantity;
             }
 
             // Get shipping price (0 for in-store orders)
@@ -149,16 +192,17 @@ class OrderController extends Controller
             ]);
 
             // Create order items
-            foreach ($products as $productData) {
-                $product = \App\Models\Product::find($productData['product_id']);
-                
+            foreach ($orderItemsPayload as $itemPayload) {
+                /** @var \App\Models\Product $product */
+                $product = $itemPayload['model'];
+
                 \App\Models\OrderItem::create([
                     'order_id' => $order->id,
-                    'product_id' => $productData['product_id'],
+                    'product_id' => $product->id,
                     'name' => $product->name,
-                    'count' => $productData['quantity'],
-                    'price' => $productData['price'],
-                    'etiket' => $product->etikets()->first()->code ?? null,
+                    'count' => $itemPayload['quantity'],
+                    'price' => $itemPayload['unit_price'],
+                    'etiket' => $product->etikets->first()->code ?? null,
                 ]);
             }
 

@@ -885,6 +885,7 @@
                         <div class="col-md-2">
                             <label>قیمت</label>
                             <input type="text" class="form-control product-price" readonly data-row="${productRowCounter}">
+                            <small class="form-text text-muted product-original-price" data-row="${productRowCounter}" style="display:none;"></small>
                         </div>
                         <div class="col-md-1">
                             <label>&nbsp;</label>
@@ -957,10 +958,20 @@
                 const rowId = $(this).data('row');
                 
                 if (selectedData) {
-                    // Set price
-                    const price = selectedData.price || 0;
-                    $(`.product-price[data-row="${rowId}"]`).val(number_format(price) + ' تومان');
-                    $(`.product-price[data-row="${rowId}"]`).data('price', price);
+                    const basePrice = parseInt(selectedData.price || 0, 10) || 0;
+                    const discountedPrice = parseInt(selectedData.discounted_price || 0, 10);
+                    const originalPrice = parseInt(selectedData.original_price || 0, 10) || null;
+                    const finalPrice = (discountedPrice && discountedPrice > 0) ? discountedPrice : basePrice;
+
+                    $(`.product-price[data-row="${rowId}"]`).val(number_format(finalPrice) + ' تومان');
+                    $(`.product-price[data-row="${rowId}"]`).data('price', finalPrice);
+
+                    const $originalPriceEl = $(`.product-original-price[data-row="${rowId}"]`);
+                    if (discountedPrice && originalPrice && originalPrice !== finalPrice) {
+                        $originalPriceEl.text('قیمت بدون تخفیف: ' + number_format(originalPrice) + ' تومان').show();
+                    } else {
+                        $originalPriceEl.text('').hide();
+                    }
                     
                     // Set weight
                     const weight = selectedData.weight || null;
