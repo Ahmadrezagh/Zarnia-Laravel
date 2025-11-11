@@ -280,11 +280,17 @@ class Order extends Model
 
     public function getSumCountBeforeAttribute()
     {
-        return $this->user->orders()->where('id','<',$this->id)->count();
+        return $this->user->orders()
+            ->whereIn('status', $this->getSummableStatuses())
+            ->where('id', '<', $this->id)
+            ->count();
     }
     public function getSumFinalPriceBeforeAttribute()
     {
-        return $this->user->orders()->where('id','<',$this->id)->sum('final_amount');
+        return $this->user->orders()
+            ->whereIn('status', $this->getSummableStatuses())
+            ->where('id', '<', $this->id)
+            ->sum('final_amount');
     }
     public function getSumCountAndAmountColAttribute()
     {
@@ -601,5 +607,16 @@ class Order extends Model
     public function getFinalPriceAttribute()
     {
         return ( $this->total_amount + $this->shippingPrice ) - $this->discount_price ;
+    }
+
+    protected function getSummableStatuses(): array
+    {
+        return [
+            self::$STATUSES[1], // paid
+            self::$STATUSES[5], // boxing
+            self::$STATUSES[6], // sent
+            self::$STATUSES[7], // post
+            self::$STATUSES[8], // completed
+        ];
     }
 }
