@@ -104,7 +104,10 @@ class GatewayController extends Controller
             if ($order->status == Order::$STATUSES[0]) {
                  $order->verify();
             }
-            return view('thank-you.index', compact('order'));
+            if ($order->status === 'paid') {
+                return view('thank-you.index', compact('order'));
+            }
+            return redirect(setting('url') . '/cart');
         }
         return abort(404);
     }
