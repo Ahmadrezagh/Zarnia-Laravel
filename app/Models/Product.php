@@ -456,25 +456,27 @@ class Product extends Model implements HasMedia
 
     public function scopeNotAvailable(Builder $query): Builder
     {
-        return $query->where(function ($q) {
-            $q->whereDoesntExist(function ($sub) {
+        return $query
+            ->whereDoesntExist(function ($sub) {
                 $sub->selectRaw(1)
                     ->from('etikets')
                     ->whereColumn('etikets.product_id', 'products.id')
                     ->where('etikets.is_mojood', 1);
-            });
-        })->where(function ($q) {
-            $q->where(function ($sub) {
-                $sub->whereNotNull('products.parent_id')
-                    ->orWhereDoesntExist(function ($child) {
-                        $child->selectRaw(1)
-                            ->from('products as child_products')
-                            ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
-                            ->whereColumn('child_products.parent_id', 'products.id')
-                            ->where('etikets.is_mojood', 1);
+            })
+            ->where(function ($q) {
+                $q->whereNotNull('products.parent_id')
+                    ->orWhere(function ($parentQuery) {
+                        $parentQuery
+                            ->whereNull('products.parent_id')
+                            ->whereDoesntExist(function ($child) {
+                                $child->selectRaw(1)
+                                    ->from('products as child_products')
+                                    ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
+                                    ->whereColumn('child_products.parent_id', 'products.id')
+                                    ->where('etikets.is_mojood', 1);
+                            });
                     });
             });
-        });
     }
 
 
