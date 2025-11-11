@@ -478,6 +478,30 @@ class Product extends Model implements HasMedia
         });
     }
 
+    public function scopeWithoutStock(Builder $query): Builder
+    {
+        return $query
+            ->select('products.*')
+            ->selectSub(function ($sub) {
+                $sub->selectRaw('COUNT(*)')
+                    ->from('etikets')
+                    ->whereColumn('etikets.product_id', 'products.id')
+                    ->where('etikets.is_mojood', 1);
+            }, 'own_stock')
+            ->selectSub(function ($sub) {
+                $sub->selectRaw('COALESCE(SUM(child_stock.child_total), 0)')
+                    ->from(function ($child) {
+                        $child->select('child_products.parent_id', DB::raw('COUNT(*) as child_total'))
+                            ->from('products as child_products')
+                            ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
+                            ->where('etikets.is_mojood', 1)
+                            ->groupBy('child_products.parent_id');
+                    }, 'child_stock')
+                    ->whereColumn('child_stock.parent_id', 'products.id');
+            }, 'children_stock')
+            ->havingRaw('(own_stock + children_stock) = 0');
+    }
+
 
     public function scopeSortMojood(Builder $query, $direction = null)
     {
