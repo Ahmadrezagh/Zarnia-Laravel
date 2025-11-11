@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Morilog\Jalali\Jalalian;
+use App\Models\Etiket;
 
 class Order extends Model
 {
@@ -419,6 +420,8 @@ class Order extends Model
             'status' => 'paid'
         ]);
 
+        $this->markOrderItemsOutOfStock();
+
         // Clear shopping cart items when order is verified/paid
         $this->user->shoppingCartItems()->delete();
 
@@ -607,6 +610,34 @@ class Order extends Model
     public function getFinalPriceAttribute()
     {
         return ( $this->total_amount + $this->shippingPrice ) - $this->discount_price ;
+    }
+
+    public function markOrderItemsOutOfStockIfPaid(): void
+    {
+        if (in_array($this->status, [
+            self::$STATUSES[1], // paid
+            self::$STATUSES[5], // boxing
+            self::$STATUSES[6], // sent
+            self::$STATUSES[7], // post
+            self::$STATUSES[8], // completed
+        ], true)) {
+            $this->markOrderItemsOutOfStock();
+        }
+    }
+
+    public function markOrderItemsOutOfStock(): void
+    {
+        $this->loadMissing('orderItems');
+
+        foreach ($this->orderItems as $item) {
+            if (!$item->etiket) {
+                continue;
+            }
+
+            Etiket::where('product_id', $item->product_id)
+                ->where('code', $item->etiket)
+                ->update(['is_mojood' => 0]);
+        }
     }
 
     protected function getSummableStatuses(): array

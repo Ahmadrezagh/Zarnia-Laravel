@@ -162,6 +162,8 @@ class OrderController extends Controller
                 ]);
             }
 
+            $order->markOrderItemsOutOfStock();
+
             \Log::info('Order created in admin', [
                 'order_id' => $order->id,
                 'status' => $order->status,
@@ -599,6 +601,9 @@ class OrderController extends Controller
         $order->update([
             'status' => $request->orderStatus
         ]);
+
+        $order->markOrderItemsOutOfStockIfPaid();
+
         if($request->orderStatus == Order::$STATUSES[1]){
             $order->submitInAccountingApp();
         }
