@@ -78,7 +78,7 @@
                             ['label' => 'درصد اجرت', 'key' => 'ojrat', 'type' => 'text'],
                             ['label' => 'موجودی', 'key' => 'count', 'type' => 'text'],
                             ['label' => 'درصد تخفیف', 'key' => 'discount_percentage', 'type' => 'text'],
-                            ['label' => 'دسته بندی ها', 'key' => 'categories_title', 'type' => 'text'],
+                            ['label' => 'دسته بندی ها', 'key' => 'categories_title_truncated', 'type' => 'text'],
                             ['label' => 'تعداد بازدید محصول', 'key' => 'view_count', 'type' => 'text'],
                         ]"
             :items="$products"
