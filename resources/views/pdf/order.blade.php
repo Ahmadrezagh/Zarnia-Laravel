@@ -113,8 +113,8 @@
 
     $map = [
         'invoice_id' => $order->id,
-        'receiver_name' => $order->address->receiver_name ?? '',
-        'receiver_name2' => $order->address->receiver_name ?? '',
+        'receiver_name' => $order->address->receiver_name ?? $order->user->name,
+        'receiver_name2' => $order->address->receiver_name ?? $order->user->name,
         'purchase_date' => jdate($order->created_at)->format('Y/m/d'),
         'purchase_date2' => jdate($order->created_at)->format('Y/m/d'),
         'gold_price' => number_format(get_gold_price()/10),
