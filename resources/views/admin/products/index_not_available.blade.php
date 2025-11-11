@@ -65,18 +65,19 @@
                             ['label' => 'کد اتیکت', 'key' => 'etiketsCodeAsArray', 'type' => 'ajax','route' =>'product.etikets','ajax_key' => 'slug'],
                             ['label' => 'تصویر محصول', 'key' => 'image', 'type' => 'image'],
                             ['label' => 'نام محصول', 'key' => 'nameUrl', 'type' => 'text'],
-                            ['label' => 'وزن', 'key' => 'weight', 'type' => 'text'],
+                            ['label' => 'وزن', 'key' => 'weight', 'type' => 'text', 'url' => '{frontend_url}'],
                             ['label' => 'قیمت', 'key' => 'price', 'type' => 'text'],
                             ['label' => 'درصد خرید', 'key' => 'darsad_kharid', 'type' => 'text'],
                             ['label' => 'درصد اجرت', 'key' => 'ojrat', 'type' => 'text'],
                             ['label' => 'موجودی', 'key' => 'count', 'type' => 'text'],
                             ['label' => 'درصد تخفیف', 'key' => 'discount_percentage', 'type' => 'text'],
-                            ['label' => 'دسته بندی ها', 'key' => 'categories_title', 'type' => 'text'],
+                            ['label' => 'دسته بندی ها', 'key' => 'categories_title_truncated', 'type' => 'text'],
                             ['label' => 'تعداد بازدید محصول', 'key' => 'view_count', 'type' => 'text'],
                         ]"
             :items="$products"
             :actions="[
                             ['label' => 'ویرایش', 'type' => 'modalEdit'],
+                            ['label' => 'مشاهده در سایت', 'url' => '{frontend_url}'],
                         ]"
         >
         </x-dataTable>
