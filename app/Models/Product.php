@@ -456,27 +456,26 @@ class Product extends Model implements HasMedia
 
     public function scopeNotAvailable(Builder $query): Builder
     {
-        return $query
-            ->whereNotExists(function ($sub) {
-                $sub->selectRaw(1)
-                    ->from('etikets')
-                    ->whereColumn('etikets.product_id', 'products.id')
-                    ->where('etikets.is_mojood', 1);
-            })
-            ->where(function ($q) {
-                $q->whereNotNull('products.parent_id')
-                    ->orWhere(function ($parentQuery) {
-                        $parentQuery
-                            ->whereNull('products.parent_id')
-                            ->whereNotExists(function ($child) {
-                                $child->selectRaw(1)
-                                    ->from('products as child_products')
-                                    ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
-                                    ->whereColumn('child_products.parent_id', 'products.id')
-                                    ->where('etikets.is_mojood', 1);
-                            });
-                    });
-            });
+        return $query->where(function (Builder $rootQuery) {
+            // Variant product without any available etikets
+            $rootQuery->whereNotNull('products.parent_id')
+                ->whereNotExists(function ($etiketQuery) {
+                    $etiketQuery->selectRaw(1)
+                        ->from('etikets')
+                        ->whereColumn('etikets.product_id', 'products.id')
+                        ->where('etikets.is_mojood', 1);
+                });
+        })->orWhere(function (Builder $parentQuery) {
+            // Parent product with no children having available etikets
+            $parentQuery->whereNull('products.parent_id')
+                ->whereNotExists(function ($childQuery) {
+                    $childQuery->selectRaw(1)
+                        ->from('products as child_products')
+                        ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
+                        ->whereColumn('child_products.parent_id', 'products.id')
+                        ->where('etikets.is_mojood', 1);
+                });
+        });
     }
 
 
