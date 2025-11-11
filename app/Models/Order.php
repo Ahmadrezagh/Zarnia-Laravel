@@ -198,7 +198,7 @@ class Order extends Model
 
     public function getCreatedAtJalaliAttribute()
     {
-        return Jalalian::forge($this->created_at)->format('Y/m/d');
+        return Jalalian::forge($this->created_at)->format('Y/m/d H:i:s');
     }
     public function getOrderColumnAttribute()
     {
