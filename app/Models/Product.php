@@ -457,7 +457,7 @@ class Product extends Model implements HasMedia
     public function scopeNotAvailable(Builder $query): Builder
     {
         return $query
-            ->whereDoesntExist(function ($sub) {
+            ->whereNotExists(function ($sub) {
                 $sub->selectRaw(1)
                     ->from('etikets')
                     ->whereColumn('etikets.product_id', 'products.id')
@@ -468,7 +468,7 @@ class Product extends Model implements HasMedia
                     ->orWhere(function ($parentQuery) {
                         $parentQuery
                             ->whereNull('products.parent_id')
-                            ->whereDoesntExist(function ($child) {
+                            ->whereNotExists(function ($child) {
                                 $child->selectRaw(1)
                                     ->from('products as child_products')
                                     ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
