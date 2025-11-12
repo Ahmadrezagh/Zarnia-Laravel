@@ -6,6 +6,7 @@ use App\Models\Blog;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -140,8 +141,15 @@ class WordPressBlogSyncService
         // Truncate slug to 255 characters (database limit)
         $slug = mb_substr($slug, 0, 255);
 
-        // Find existing blog by WordPress post ID
-        $blog = Blog::where('wp_post_id', $wpPostId)->first();
+        // Find existing blog by WordPress post ID (if column exists)
+        $blog = null;
+        $hasWpPostIdColumn = Schema::hasColumn('blogs', 'wp_post_id');
+        
+        if ($hasWpPostIdColumn) {
+            $blog = Blog::where('wp_post_id', $wpPostId)->first();
+        } else {
+            Log::warning("WordPress API: wp_post_id column not found. Please run migration: php artisan migrate");
+        }
 
         // If not found by wp_post_id, try to find by slug
         if (!$blog && !empty($slug)) {
@@ -151,7 +159,6 @@ class WordPressBlogSyncService
         // Prepare blog data - replace delfigoldgallery.ir with zarniagoldgallery.ir in all fields
         // Also truncate fields to fit database constraints
         $blogData = [
-            'wp_post_id' => $wpPostId,
             'title' => $this->truncateString($this->replaceDomain($postData['title'] ?? ''), 255),
             'slug' => $slug,
             'description' => $this->replaceDomain($postData['description'] ?? ''),
@@ -160,6 +167,11 @@ class WordPressBlogSyncService
             'meta_keywords' => $this->replaceDomain($postData['meta_keywords'] ?? ''),
             'canonical_url' => $this->truncateString($this->replaceDomain($postData['canonical_url'] ?? ''), 255),
         ];
+        
+        // Only add wp_post_id if column exists
+        if ($hasWpPostIdColumn) {
+            $blogData['wp_post_id'] = $wpPostId;
+        }
 
         // Handle created_at and updated_at if provided
         if (isset($postData['created_at'])) {
