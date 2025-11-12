@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Blog;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -135,6 +136,9 @@ class WordPressBlogSyncService
         if (empty($slug) || $slug === $postData['slug']) {
             $slug = Str::slug($postData['title'] ?? '');
         }
+        
+        // Truncate slug to 255 characters (database limit)
+        $slug = mb_substr($slug, 0, 255);
 
         // Find existing blog by WordPress post ID
         $blog = Blog::where('wp_post_id', $wpPostId)->first();
@@ -145,15 +149,16 @@ class WordPressBlogSyncService
         }
 
         // Prepare blog data - replace delfigoldgallery.ir with zarniagoldgallery.ir in all fields
+        // Also truncate fields to fit database constraints
         $blogData = [
             'wp_post_id' => $wpPostId,
-            'title' => $this->replaceDomain($postData['title'] ?? ''),
+            'title' => $this->truncateString($this->replaceDomain($postData['title'] ?? ''), 255),
             'slug' => $slug,
             'description' => $this->replaceDomain($postData['description'] ?? ''),
-            'meta_title' => $this->cleanMetaTitle($this->replaceDomain($postData['meta_title'] ?? '')),
+            'meta_title' => $this->truncateString($this->cleanMetaTitle($this->replaceDomain($postData['meta_title'] ?? '')), 255),
             'meta_description' => $this->replaceDomain($postData['meta_description'] ?? ''),
             'meta_keywords' => $this->replaceDomain($postData['meta_keywords'] ?? ''),
-            'canonical_url' => $this->replaceDomain($postData['canonical_url'] ?? ''),
+            'canonical_url' => $this->truncateString($this->replaceDomain($postData['canonical_url'] ?? ''), 255),
         ];
 
         // Handle created_at and updated_at if provided
@@ -178,11 +183,31 @@ class WordPressBlogSyncService
                 return 'skipped';
             }
             
-            $blog->update($blogData);
-            $result = 'updated';
+            try {
+                $blog->update($blogData);
+                $result = 'updated';
+            } catch (\Illuminate\Database\QueryException $e) {
+                Log::error("WordPress API: SQL error updating blog post ID {$wpPostId}", [
+                    'error' => $e->getMessage(),
+                    'sql' => $e->getSql(),
+                    'bindings' => $e->getBindings(),
+                    'blog_data' => $blogData,
+                ]);
+                throw $e;
+            }
         } else {
-            $blog = Blog::create($blogData);
-            $result = 'created';
+            try {
+                $blog = Blog::create($blogData);
+                $result = 'created';
+            } catch (\Illuminate\Database\QueryException $e) {
+                Log::error("WordPress API: SQL error creating blog post ID {$wpPostId}", [
+                    'error' => $e->getMessage(),
+                    'sql' => $e->getSql(),
+                    'bindings' => $e->getBindings(),
+                    'blog_data' => $blogData,
+                ]);
+                throw $e;
+            }
         }
 
         // Handle cover image - try new domain first, fallback to old domain
@@ -300,6 +325,26 @@ class WordPressBlogSyncService
 
         // Default to jpg
         return 'jpg';
+    }
+
+    /**
+     * Truncate string to specified length (handles multibyte characters)
+     *
+     * @param string $text
+     * @param int $length
+     * @return string
+     */
+    protected function truncateString(string $text, int $length): string
+    {
+        if (empty($text)) {
+            return $text;
+        }
+        
+        if (mb_strlen($text, 'UTF-8') <= $length) {
+            return $text;
+        }
+        
+        return mb_substr($text, 0, $length, 'UTF-8');
     }
 
     /**
