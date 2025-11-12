@@ -95,8 +95,10 @@ class OrderController extends Controller
             ]);
         }
 
-        // Note: Shopping cart will be cleared when order is verified/paid
-        $order_url = $order->gateway->createSnappTransaction($order);
+        if($order->gateway->key == 'snapp'){
+            // Note: Shopping cart will be cleared when order is verified/paid
+            $order_url = $order->gateway->createSnappTransaction($order);
+        }
         return OrderResource::make(Order::find($order->id),$order_url['response']['paymentPageUrl']);
     }
 
