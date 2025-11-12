@@ -97,13 +97,43 @@ class GatewayController extends Controller
 
     public function callback2(Request $request)
     {
-
-        $transaction_id = $request->transactionId;
-        $order = Order::query()->where('transaction_id', $transaction_id)->first();
-        if($order) {
-            if ($order->status == Order::$STATUSES[0]) {
-                 $order->verify();
+        $order = null;
+        
+        // Handle SnappPay callback (uses transactionId)
+        if ($request->has('transactionId')) {
+            $transaction_id = $request->transactionId;
+            $order = Order::query()->where('transaction_id', $transaction_id)->first();
+        }
+        // Handle Saman callback (uses ResNum which is the order ID)
+        elseif ($request->has('ResNum')) {
+            $orderId = $request->ResNum;
+            $order = Order::find($orderId);
+            
+            // If order found and has Saman gateway, process the callback
+            if ($order && $order->gateway && $order->gateway->key == 'saman') {
+                $samanGateway = new SamanGateway();
+                $callbackResult = $samanGateway->callback($request);
+                
+                if ($callbackResult['success']) {
+                    // Update payment_token if provided
+                    if (isset($callbackResult['token'])) {
+                        $order->update(['payment_token' => $callbackResult['token']]);
+                    }
+                    // Verify the payment
+                    if ($order->status == Order::$STATUSES[0]) {
+                        $order->verify();
+                    }
+                } else {
+                    // Payment failed or cancelled
+                    Log::info('Saman: Payment failed or cancelled', [
+                        'order_id' => $order->id,
+                        'message' => $callbackResult['message'] ?? 'Unknown error',
+                    ]);
+                }
             }
+        }
+        
+        if($order) {
             if ($order->status === 'paid') {
                 return view('thank-you.index', compact('order'));
             }

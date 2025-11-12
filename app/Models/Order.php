@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\Api\Tahesab;
+use App\Services\PaymentGateways\SamanGateway;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Database\Eloquent\Builder;
@@ -328,7 +329,11 @@ class Order extends Model
         
         if($this->gateway->key == 'snapp'){
             return $this->verifySnapp();
+        } elseif($this->gateway->key == 'saman'){
+            return $this->verifySaman();
         }
+        
+        return false;
     }
 
 //    public function verifySnapp()
@@ -390,6 +395,41 @@ class Order extends Model
 
         // Any other case → not paid yet
         return false;
+    }
+
+    public function verifySaman()
+    {
+        if (!$this->payment_token) {
+            Log::warning('Saman: No payment token found for order', ['order_id' => $this->id]);
+            return false;
+        }
+
+        $gateway = new SamanGateway();
+        
+        // Amount in Rials (order stores in Tomans, so multiply by 10)
+        $amount = $this->final_amount * 10;
+        
+        try {
+            $verify = $gateway->verifyByToken($this->payment_token, $amount);
+            
+            if ($verify['success']) {
+                $this->markAsPaid();
+                return true;
+            }
+            
+            Log::warning('Saman: Payment verification failed', [
+                'order_id' => $this->id,
+                'verify' => $verify,
+            ]);
+            return false;
+            
+        } catch (\Exception $e) {
+            Log::error('Saman: Error verifying payment', [
+                'order_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     /**

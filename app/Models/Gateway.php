@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PaymentGateways\SamanGateway;
 use App\Services\PaymentGateways\SnappPayGateway;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
@@ -34,10 +35,11 @@ class Gateway extends Model implements HasMedia
     public function createTransaction($order)
     {
         if($this->key == 'snapp'){
-            $this->createSnappTransaction($order);
+            return $this->createSnappTransaction($order);
         }elseif($this->key == 'saman'){
-
+            return $this->createSamanTransaction($order);
         }
+        return null;
     }
 
 
@@ -102,6 +104,54 @@ class Gateway extends Model implements HasMedia
         return back()->withErrors('SnappPay: Failed to initialize payment.');
     }
 
+    public function createSamanTransaction($order)
+    {
+        $gateway = new SamanGateway();
+        $order = Order::find($order->id);
+        
+        // Final amount in Rials (order stores in Tomans, so multiply by 10)
+        $amount = $order->final_amount * 10;
+        $orderId = (string) $order->id;
+        $callbackUrl = route('payment.callback');
+        
+        // Get user phone from address
+        $mobile = $this->normalizeIranPhone($order->address->receiver_phone ?? $order->user->phone);
+        
+        try {
+            $result = $gateway->requestPayment($amount, $orderId, $callbackUrl, [
+                'mobile' => $mobile,
+                'description' => "سفارش شماره {$order->id}",
+            ]);
+            
+            if ($result && isset($result['token']) && isset($result['redirect_url'])) {
+                // Generate unique transaction ID
+                $transactionId = Order::generateUniqueTransactionId();
+                
+                $order->update([
+                    'transaction_id' => $transactionId,
+                    'payment_token' => $result['token'],
+                    'payment_url' => $result['redirect_url'],
+                ]);
+                
+                return [
+                    'response' => [
+                        'paymentPageUrl' => $result['redirect_url'],
+                        'token' => $result['token'],
+                    ],
+                ];
+            }
+            
+            Log::error('Saman: Failed to initialize payment', ['order_id' => $order->id, 'result' => $result]);
+            return null;
+            
+        } catch (\Exception $e) {
+            Log::error('Saman: Error creating transaction', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
 
     public function configs()
     {
