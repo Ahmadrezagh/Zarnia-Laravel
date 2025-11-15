@@ -22,6 +22,7 @@ class OrderController extends Controller
         $user = auth('sanctum')->user();
         return OrderResource::collection($user->orders);
     }
+    
     public function store(createOrderRequest $request)
     {
         $user = auth()->guard('sanctum')->user();
@@ -34,6 +35,42 @@ class OrderController extends Controller
                 'message' => 'Your shopping cart is empty.'
             ], 400);
         }
+
+        // Check all products for availability and remove unavailable items
+        $unavailableProducts = [];
+        $availableCartItems = collect();
+        
+        foreach ($cartItems as $cartItem) {
+            // Check if product is available (has at least one available etiket)
+            if ($cartItem->product->single_count < 1) {
+                // Product is not available, remove from cart and add to error list
+                $unavailableProducts[] = $cartItem->product->name;
+                $cartItem->delete();
+            } else {
+                $availableCartItems->push($cartItem);
+            }
+        }
+
+        // If any products were unavailable, return error
+        if (!empty($unavailableProducts)) {
+            $errorMessages = array_map(function ($productName) {
+                return "محصول {$productName} موجود نمی باشد";
+            }, $unavailableProducts);
+            
+            return response()->json([
+                'message' => implode('. ', $errorMessages)
+            ], 400);
+        }
+
+        // Check if cart is empty after removing unavailable items
+        if ($availableCartItems->isEmpty()) {
+            return response()->json([
+                'message' => 'Your shopping cart is empty.'
+            ], 400);
+        }
+
+        // Update cartItems to only include available items
+        $cartItems = $availableCartItems;
 
         $totalAmount = 0;
         $discountPrice = 0;
