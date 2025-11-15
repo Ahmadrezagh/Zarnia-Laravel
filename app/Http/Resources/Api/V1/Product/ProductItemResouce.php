@@ -55,7 +55,7 @@ class ProductItemResouce extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'weight' => $this->weight,
+            'weight' => $this->minimum_available_weight,
             'description' => $this->description,
             'image' => $this->image,
             'cover_image' => $this->CoverImageResponsive,
@@ -66,7 +66,7 @@ class ProductItemResouce extends JsonResource
                 ;
             })->toArray(),
             'slug' => $this->slug,
-            'price' => number_format($this->price),
+            'price' => number_format($this->minimum_available_price),
             'price_without_discount' => number_format($this->price_without_discount),
             'price_range_title' => $this->price_range_title,
             'minimum_available_price' => $this->minimum_available_price,
@@ -99,6 +99,7 @@ class ProductItemResouce extends JsonResource
                         'weight' => $productItem->weight,
                         'name' => $productItem->name,
                         'slug' => $productItem->slug,
+                        'price' => number_format($productItem->price),
                         'etikets' => $availableEtikets->map(fn($etiket) => [
                             'id' => $etiket->id,
                             'code' => $etiket->code,
