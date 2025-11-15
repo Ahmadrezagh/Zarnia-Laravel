@@ -179,6 +179,8 @@
                         <x-form.input col="col-6" title="مبلغ" :value="$order->total_amount" name="none" />
                         <x-form.input col="col-6" title="هزینه ارسال" :value="$order->shippingPrice" name="none" />
                         <x-form.input col="col-6" title="مبلغ قابل پرداخت" :value="$order->finalPrice" name="none" />
+                        <x-form.input col="col-6" title="Payment Token" :value="$order->payment_token" name="none" />
+                        <x-form.input col="col-6" title="Transaction ID" :value="$order->transaction_id" name="none" />
                         {{-- hidden input برای هر سفارش --}}
                         <input type="hidden" name="updated_items" id="updated-items-{{$order->id}}">
 
