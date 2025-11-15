@@ -103,6 +103,9 @@ class GatewayController extends Controller
         if ($request->has('transactionId')) {
             $transaction_id = $request->transactionId;
             $order = Order::query()->where('transaction_id', $transaction_id)->first();
+            if($order && $order->status == Order::$STATUSES[0]){
+                $order->verify();
+            }
         }
         // Handle Saman callback (uses ResNum which is the order ID)
         elseif ($request->has('ResNum')) {
@@ -110,7 +113,7 @@ class GatewayController extends Controller
             $order = Order::find($orderId);
             
             // If order found and has Saman gateway, process the callback
-            if ($order && $order->gateway && $order->gateway->key == 'saman') {
+            if ($order && $order->gateway && $order->gateway->key == 'saman' && $order->status == Order::$STATUSES[0]) {
                 $samanGateway = new SamanGateway();
                 $callbackResult = $samanGateway->callback($request);
                 
