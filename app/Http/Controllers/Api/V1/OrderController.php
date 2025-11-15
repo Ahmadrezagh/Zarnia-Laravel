@@ -32,7 +32,7 @@ class OrderController extends Controller
 
         if ($cartItems->isEmpty()) {
             return response()->json([
-                'message' => 'Your shopping cart is empty.'
+                'message' => 'سبد خرید خالی می باشد'
             ], 400);
         }
 
