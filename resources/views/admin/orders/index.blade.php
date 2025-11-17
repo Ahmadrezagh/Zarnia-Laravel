@@ -965,7 +965,7 @@
                     const originalPrice = parseInt(selectedData.original_price || 0, 10) || null;
                     const finalPrice = (discountedPrice && discountedPrice > 0) ? discountedPrice : basePrice;
 
-                    $(`.product-price[data-row="${rowId}"]`).val(number_format(finalPrice) + ' تومان');
+                    $(`.product-price[data-row="${rowId}"]`).val(finalPrice);
                     $(`.product-price[data-row="${rowId}"]`).data('price', finalPrice);
 
                     const $originalPriceEl = $(`.product-original-price[data-row="${rowId}"]`);
@@ -1021,12 +1021,12 @@
                 updateOrderSummary();
             });
             
-            // Format price on blur (when user finishes editing)
+            // Clean price on blur (when user finishes editing)
             $(`.product-price[data-row="${productRowCounter}"]`).on('blur', function() {
                 const rowId = $(this).data('row');
                 const rawValue = $(this).val();
                 
-                // Remove Persian digits, commas, spaces, and "تومان" text
+                // Remove Persian digits, Arabic digits, commas, spaces, and "تومان" text
                 let numericValue = rawValue
                     .replace(/[۰-۹]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - '۰'.charCodeAt(0) + '0'.charCodeAt(0)); })
                     .replace(/[٠-٩]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - '٠'.charCodeAt(0) + '0'.charCodeAt(0)); })
@@ -1034,8 +1034,8 @@
                 
                 const price = parseInt(numericValue) || 0;
                 
-                // Format and display the price
-                $(this).val(number_format(price) + ' تومان');
+                // Display plain number without formatting or "تومان"
+                $(this).val(price);
                 // Store the numeric price in data attribute
                 $(this).data('price', price);
                 
@@ -1065,7 +1065,7 @@
                 method: 'GET',
                 success: function(response) {
                     const price = response.data.price || 0;
-                    $(`.product-price[data-row="${rowId}"]`).val(number_format(price) + ' تومان');
+                    $(`.product-price[data-row="${rowId}"]`).val(price);
                     $(`.product-price[data-row="${rowId}"]`).data('price', price);
                     updateOrderSummary();
                 },
