@@ -72,7 +72,7 @@
                     </svg>
                     دانلود فاکتور
                 </button>
-                <button class="complete-btn" onclick="openUrl('https://zarnia2.mclp.ir/profile')">تکمیل خرید</button>
+                <button class="complete-btn" onclick="openUrl('https://zarniagoldgallery.ir/profile')">تکمیل خرید</button>
             </div>
         </div>
     </div>
