@@ -886,7 +886,7 @@
                         </div>
                         <div class="col-md-2">
                             <label>قیمت</label>
-                            <input type="text" class="form-control product-price" readonly data-row="${productRowCounter}">
+                            <input type="text" class="form-control product-price" data-row="${productRowCounter}">
                             <small class="form-text text-muted product-original-price" data-row="${productRowCounter}" style="display:none;"></small>
                         </div>
                         <div class="col-md-1">
@@ -1016,6 +1016,32 @@
                 updateOrderSummary();
             });
             
+            // Handle price editing
+            $(`.product-price[data-row="${productRowCounter}"]`).on('input', function() {
+                updateOrderSummary();
+            });
+            
+            // Format price on blur (when user finishes editing)
+            $(`.product-price[data-row="${productRowCounter}"]`).on('blur', function() {
+                const rowId = $(this).data('row');
+                const rawValue = $(this).val();
+                
+                // Remove Persian digits, commas, spaces, and "تومان" text
+                let numericValue = rawValue
+                    .replace(/[۰-۹]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - '۰'.charCodeAt(0) + '0'.charCodeAt(0)); })
+                    .replace(/[٠-٩]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - '٠'.charCodeAt(0) + '0'.charCodeAt(0)); })
+                    .replace(/[^\d]/g, '');
+                
+                const price = parseInt(numericValue) || 0;
+                
+                // Format and display the price
+                $(this).val(number_format(price) + ' تومان');
+                // Store the numeric price in data attribute
+                $(this).data('price', price);
+                
+                updateOrderSummary();
+            });
+            
             // Update shipping cost when shipping method changes
             $('#order-shipping').on('change', updateOrderSummary);
         }
@@ -1058,7 +1084,23 @@
             // Calculate subtotal from all products
             $('.product-row').each(function() {
                 const row = $(this).data('row');
-                const price = $(`.product-price[data-row="${row}"]`).data('price') || 0;
+                
+                // Get price from input field or data attribute
+                const priceInput = $(`.product-price[data-row="${row}"]`).val();
+                let price = $(`.product-price[data-row="${row}"]`).data('price') || 0;
+                
+                // If price input exists, try to parse it
+                if (priceInput) {
+                    const numericValue = priceInput
+                        .replace(/[۰-۹]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - '۰'.charCodeAt(0) + '0'.charCodeAt(0)); })
+                        .replace(/[٠-٩]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - '٠'.charCodeAt(0) + '0'.charCodeAt(0)); })
+                        .replace(/[^\d]/g, '');
+                    const parsedPrice = parseInt(numericValue);
+                    if (!isNaN(parsedPrice) && parsedPrice > 0) {
+                        price = parsedPrice;
+                    }
+                }
+                
                 const quantity = parseInt($(`.product-quantity[data-row="${row}"]`).val()) || 0;
                 subtotal += price * quantity;
             });
@@ -1098,9 +1140,29 @@
                 const row = $(this).data('row');
                 const productId = $(`.product-select[data-row="${row}"]`).val();
                 const quantity = $(`.product-quantity[data-row="${row}"]`).val();
-                const price = $(`.product-price[data-row="${row}"]`).data('price');
                 
-                if (productId && quantity && price) {
+                // Get price from input field value (parse it)
+                const priceInput = $(`.product-price[data-row="${row}"]`).val();
+                let price = $(`.product-price[data-row="${row}"]`).data('price');
+                
+                // If price input exists, try to parse it
+                if (priceInput) {
+                    const numericValue = priceInput
+                        .replace(/[۰-۹]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - '۰'.charCodeAt(0) + '0'.charCodeAt(0)); })
+                        .replace(/[٠-٩]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - '٠'.charCodeAt(0) + '0'.charCodeAt(0)); })
+                        .replace(/[^\d]/g, '');
+                    const parsedPrice = parseInt(numericValue);
+                    if (!isNaN(parsedPrice) && parsedPrice > 0) {
+                        price = parsedPrice;
+                    }
+                }
+                
+                // Fallback to data attribute if parsing failed
+                if (!price || price <= 0) {
+                    price = $(`.product-price[data-row="${row}"]`).data('price');
+                }
+                
+                if (productId && quantity && price && price > 0) {
                     products.push({
                         product_id: productId,
                         quantity: quantity,

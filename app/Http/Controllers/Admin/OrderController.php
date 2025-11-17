@@ -133,7 +133,10 @@ class OrderController extends Controller
                 }
 
                 $productModel = $productModels->get($productId);
-                $unitPrice = (int) $productModel->price;
+                // Use edited price from request if provided, otherwise use product's default price
+                $unitPrice = isset($productData['price']) && $productData['price'] > 0 
+                    ? (int) $productData['price'] 
+                    : (int) $productModel->price;
 
                 $orderItemsPayload[] = [
                     'model' => $productModel,
