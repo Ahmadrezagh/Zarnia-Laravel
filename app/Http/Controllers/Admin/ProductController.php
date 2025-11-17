@@ -148,8 +148,10 @@ class ProductController extends Controller
             }
         }
 
-        // Handle categories
-        $product->categories()->sync($request->category_ids);
+        // Handle categories - attach without removing existing ones or creating duplicates
+        if ($request->filled('category_ids')) {
+            $product->categories()->syncWithoutDetaching($request->category_ids);
+        }
 
         // Handle attribute group and attributes
         if ($request->has('attributes')) {
