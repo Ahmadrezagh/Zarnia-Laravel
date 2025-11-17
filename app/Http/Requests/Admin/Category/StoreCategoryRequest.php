@@ -26,6 +26,7 @@ class StoreCategoryRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255', 'unique:categories,slug'],
             'parent_id' => ['nullable'],
             'cover_image' => ['nullable'],
+            'show_in_nav' => ['nullable', 'boolean'],
         ];
     }
 }

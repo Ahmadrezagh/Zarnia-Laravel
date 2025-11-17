@@ -84,6 +84,7 @@
                         <option value="{{$parent_category->id}}">{{$parent_category->title}}</option>
                     @endforeach
                 </x-form.select-option>
+                <x-form.check-input title="نمایش در منوی ناوبری" name="show_in_nav" value="1" id="show_in_nav_create" />
                 <x-form.file-input title="تصویر دسته بندی" name="cover_image" />
                 <x-form.select-option title="گروه ویژگی" name="attribute_group_ids[]" multiple="true" >
                     @foreach($attribute_groups as $attribute_group)

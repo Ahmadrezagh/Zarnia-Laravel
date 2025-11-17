@@ -24,6 +24,7 @@ class CategoryResource extends JsonResource
                 'medium' => $this->image,
                 'small' => $this->image,
             ],
+            'show_in_nav' => $this->show_in_nav ?? false,
         ];
     }
 }

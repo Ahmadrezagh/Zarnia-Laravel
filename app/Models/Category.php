@@ -26,8 +26,13 @@ class Category extends Model implements HasMedia
     protected $fillable = [
         'title',
         'slug',
-        'parent_id'
+        'parent_id',
+        'show_in_nav'
         ];
+
+    protected $casts = [
+        'show_in_nav' => 'boolean',
+    ];
 
     public function getSlugOptions(): SlugOptions
     {

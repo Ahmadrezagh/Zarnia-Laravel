@@ -34,7 +34,7 @@ class CategoryController extends Controller
     {
         $attribute_groups = AttributeGroup::query()->orderBy('name')->get(['id','name']);
         $categories = Category::query()
-            ->select('id','title','slug','parent_id')
+            ->select('id','title','slug','parent_id','show_in_nav')
             ->latest()
             ->paginate(15);
 
@@ -64,6 +64,9 @@ class CategoryController extends Controller
         if (empty($validated['slug'])) {
             unset($validated['slug']);
         }
+
+        // Handle checkbox - boolean() returns false if not present
+        $validated['show_in_nav'] = $request->boolean('show_in_nav');
 
         $category = Category::create($validated);
         if ($request->hasFile('cover_image')) {
@@ -123,7 +126,12 @@ class CategoryController extends Controller
      */
     public function update(UpdateCategoryRequest $request, Category $category)
     {
-        $category->update($request->validated());
+        $validated = $request->validated();
+        
+        // Handle checkbox - boolean() returns false if not present
+        $validated['show_in_nav'] = $request->boolean('show_in_nav');
+        
+        $category->update($validated);
         if ($request->hasFile('cover_image')) {
             $category->clearMediaCollection('cover_image');
             $category->addMedia($request->file('cover_image'))

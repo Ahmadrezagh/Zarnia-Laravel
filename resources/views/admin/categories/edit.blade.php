@@ -96,6 +96,11 @@
                 </div>
 
                 <div class="col-md-12">
+                    <x-form.check-input title="نمایش در منوی ناوبری" name="show_in_nav" value="1" id="show_in_nav_edit" 
+                                        :checked="old('show_in_nav', $category->show_in_nav ?? false)" />
+                </div>
+
+                <div class="col-md-12">
                     <x-form.select-option title="گروه ویژگی" name="attribute_group_ids[]" multiple="true">
                         @foreach($attribute_groups as $attribute_group)
                             <option value="{{ $attribute_group->id }}"
