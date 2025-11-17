@@ -30,6 +30,7 @@ class OrderController extends Controller
         }
         
         $orders = Order::query()
+            ->with(['orderItems.product', 'user', 'address'])
             ->filterByTransactionId($request->transaction_id)
             ->filterByStatus($request->status)
             ->search($request->search)
@@ -569,8 +570,9 @@ class OrderController extends Controller
             $length = 10; // Ensure length is positive to avoid SQL error
         }
 
-        // Fetch paginated data
+        // Fetch paginated data with eager loading
         $data = $query
+            ->with(['orderItems.product', 'user', 'address'])
             ->skip($start)
             ->take($length)
             ->get()

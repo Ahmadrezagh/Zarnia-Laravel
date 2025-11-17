@@ -209,10 +209,16 @@ class Order extends Model
         // Check if any order item has a product with discount
         $hasDiscount = false;
         if ($this->relationLoaded('orderItems')) {
+            // Ensure products are loaded if orderItems are loaded
+            if ($this->orderItems->isNotEmpty() && !$this->orderItems->first()->relationLoaded('product')) {
+                $this->load('orderItems.product');
+            }
+            
             $hasDiscount = $this->orderItems->contains(function ($orderItem) {
                 if ($orderItem->product) {
-                    return ($orderItem->product->discounted_price && $orderItem->product->discounted_price != 0) 
-                        || ($orderItem->product->discount_percentage && $orderItem->product->discount_percentage != 0);
+                    $product = $orderItem->product;
+                    return ($product->discounted_price && $product->discounted_price != 0) 
+                        || ($product->discount_percentage && $product->discount_percentage != 0);
                 }
                 return false;
             });

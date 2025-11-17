@@ -118,6 +118,8 @@
                         <input type="hidden" name="complementary_products">
                     </div>
                 </div>
+                
+                <div style="height: 500px;"></div>
             </x-modal.create>
         </x-slot>
         <x-table
