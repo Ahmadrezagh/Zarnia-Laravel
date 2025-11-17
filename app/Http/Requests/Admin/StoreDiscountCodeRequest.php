@@ -24,6 +24,7 @@ class StoreDiscountCodeRequest extends FormRequest
     {
         return [
             'code' => ['nullable',Rule::unique('discounts', 'code')],
+            'description' => ['nullable','string'],
             'percentage' => ['nullable','numeric','between:0,100'],
             'amount' => ['nullable','numeric'],
             'min_price' => ['nullable','numeric'],

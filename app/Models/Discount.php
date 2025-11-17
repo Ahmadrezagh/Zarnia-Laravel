@@ -11,6 +11,7 @@ class Discount extends Model
 {
     protected $fillable = [
         'code',
+        'description',
         'percentage',
         'amount',
         'min_price',
@@ -38,6 +39,78 @@ class Discount extends Model
     public function getExpiresAtYmdAttribute()
     {
         return date('Y-m-d H:i:s',strtotime($this->getRawOriginal('expires_at')));
+    }
+
+    /**
+     * Get summary description of discount details
+     */
+    public function getSummaryDescriptionAttribute()
+    {
+        if ($this->description) {
+            return $this->description;
+        }
+
+        $parts = [];
+
+        // Discount type
+        if ($this->percentage) {
+            $parts[] = "{$this->percentage}% تخفیف";
+        } elseif ($this->amount) {
+            $parts[] = number_format($this->amount) . " تومان تخفیف";
+        }
+
+        // Price range
+        if ($this->min_price || $this->max_price) {
+            $range = [];
+            if ($this->min_price) {
+                $range[] = "حداقل " . number_format($this->min_price) . " تومان";
+            }
+            if ($this->max_price) {
+                $range[] = "حداکثر " . number_format($this->max_price) . " تومان";
+            }
+            if (!empty($range)) {
+                $parts[] = "برای خرید " . implode(" تا ", $range);
+            }
+        }
+
+        // Quantity limits
+        if ($this->quantity) {
+            $parts[] = "{$this->quantity} بار قابل استفاده";
+        }
+        if ($this->quantity_per_user) {
+            $parts[] = "{$this->quantity_per_user} بار برای هر کاربر";
+        }
+
+        // Date range
+        if ($this->start_at || $this->expires_at) {
+            $dates = [];
+            if ($this->start_at) {
+                $dates[] = "از " . \Morilog\Jalali\Jalalian::forge($this->start_at)->format('Y/m/d');
+            }
+            if ($this->expires_at) {
+                $dates[] = "تا " . \Morilog\Jalali\Jalalian::forge($this->expires_at)->format('Y/m/d');
+            }
+            if (!empty($dates)) {
+                $parts[] = implode(" ", $dates);
+            }
+        }
+
+        // Restrictions
+        $restrictions = [];
+        if ($this->users()->count() > 0) {
+            $restrictions[] = "مخصوص {$this->users()->count()} کاربر";
+        }
+        if ($this->products()->count() > 0) {
+            $restrictions[] = "مخصوص {$this->products()->count()} محصول";
+        }
+        if ($this->categories()->count() > 0) {
+            $restrictions[] = "مخصوص {$this->categories()->count()} دسته‌بندی";
+        }
+        if (!empty($restrictions)) {
+            $parts[] = implode("، ", $restrictions);
+        }
+
+        return !empty($parts) ? implode(" | ", $parts) : 'بدون توضیحات';
     }
 
     public function orders()
