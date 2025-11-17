@@ -206,6 +206,32 @@ class Order extends Model
     {
         $value = $this->id . "<br/>" . $this->userName.' - '.$this->user->phone . "<br/>" . $this->createdAtJalali;
 
+        // Check if any order item has a product with discount
+        $hasDiscount = false;
+        if ($this->relationLoaded('orderItems')) {
+            $hasDiscount = $this->orderItems->contains(function ($orderItem) {
+                if ($orderItem->product) {
+                    return ($orderItem->product->discounted_price && $orderItem->product->discounted_price != 0) 
+                        || ($orderItem->product->discount_percentage && $orderItem->product->discount_percentage != 0);
+                }
+                return false;
+            });
+        } else {
+            // If not loaded, check with a query
+            $hasDiscount = $this->orderItems()
+                ->whereHas('product', function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('discounted_price', '!=', 0)
+                          ->whereNotNull('discounted_price');
+                    })->orWhere('discount_percentage', '!=', 0);
+                })
+                ->exists();
+        }
+
+        if ($hasDiscount) {
+            $value .= "<br/><span style='color: green; font-weight: bold;'>سفارش با تخفیف</span>";
+        }
+
         return request()->expectsJson()
             ? $value    // JSON: plain string
             : new HtmlString($value); // Blade: safe HTML
