@@ -11,7 +11,6 @@ class Discount extends Model
 {
     protected $fillable = [
         'code',
-        'description',
         'percentage',
         'amount',
         'min_price',
@@ -42,14 +41,10 @@ class Discount extends Model
     }
 
     /**
-     * Get summary description of discount details
+     * Get description of discount details (auto-generated summary)
      */
-    public function getSummaryDescriptionAttribute()
+    public function getDescriptionAttribute()
     {
-        if ($this->description) {
-            return $this->description;
-        }
-
         $parts = [];
 
         // Discount type
@@ -97,15 +92,33 @@ class Discount extends Model
 
         // Restrictions
         $restrictions = [];
-        if ($this->users()->count() > 0) {
+        if ($this->relationLoaded('users')) {
+            $userCount = $this->users->count();
+            if ($userCount > 0) {
+                $restrictions[] = "مخصوص {$userCount} کاربر";
+            }
+        } elseif ($this->users()->count() > 0) {
             $restrictions[] = "مخصوص {$this->users()->count()} کاربر";
         }
-        if ($this->products()->count() > 0) {
+        
+        if ($this->relationLoaded('products')) {
+            $productCount = $this->products->count();
+            if ($productCount > 0) {
+                $restrictions[] = "مخصوص {$productCount} محصول";
+            }
+        } elseif ($this->products()->count() > 0) {
             $restrictions[] = "مخصوص {$this->products()->count()} محصول";
         }
-        if ($this->categories()->count() > 0) {
+        
+        if ($this->relationLoaded('categories')) {
+            $categoryCount = $this->categories->count();
+            if ($categoryCount > 0) {
+                $restrictions[] = "مخصوص {$categoryCount} دسته‌بندی";
+            }
+        } elseif ($this->categories()->count() > 0) {
             $restrictions[] = "مخصوص {$this->categories()->count()} دسته‌بندی";
         }
+        
         if (!empty($restrictions)) {
             $parts[] = implode("، ", $restrictions);
         }

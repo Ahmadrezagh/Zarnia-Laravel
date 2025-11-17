@@ -14,10 +14,6 @@
             <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن کد تخفیف</button>
             <x-modal.create id="modal-create" title="ساخت کد تخفیف" action="{{route('discounts.store')}}" >
                 <x-form.input title="کد تخفیف"  name="code" />
-                <div class="form-group">
-                    <label for="create-description">توضیح کد تخفیف (اختیاری - در صورت خالی بودن، به صورت خودکار تولید می‌شود)</label>
-                    <textarea name="description" id="create-description" class="form-control" rows="3" placeholder="توضیحات کد تخفیف..."></textarea>
-                </div>
                 <x-form.input title="درصد تخفیف"  name="percentage" />
                 <x-form.input title="مبلغ تخفیف"  name="amount" />
                 <x-form.input title="حداقل مبلغ خرید برای اعمال تخفیف"  name="min_price" />
@@ -61,6 +57,7 @@
             id="discounts-table"
             :columns="[
                             ['label' => 'کد تخفیف', 'key' => 'code', 'type' => 'text'],
+                            ['label' => 'توضیح کد تخفیف', 'key' => 'description', 'type' => 'text'],
                         ]"
             :items="$discounts"
             :actions="[
@@ -74,13 +71,6 @@
 
                 <x-modal.update id="modal-edit-{{$discount->id}}" title="ویرایش کد تخفیف" action="{{route('discounts.update',$discount->id)}}" >
                     <x-form.input title="کد تخفیف"  name="code" :value="$discount->code" />
-                    <div class="form-group">
-                        <label for="edit-description-{{$discount->id}}">توضیح کد تخفیف (اختیاری - در صورت خالی بودن، به صورت خودکار تولید می‌شود)</label>
-                        <textarea name="description" id="edit-description-{{$discount->id}}" class="form-control" rows="3" placeholder="توضیحات کد تخفیف...">{{ old('description', $discount->description) }}</textarea>
-                        @if(!$discount->description)
-                            <small class="form-text text-muted">توضیح خودکار: {{ $discount->summary_description }}</small>
-                        @endif
-                    </div>
                     <x-form.input title="درصد تخفیف"  name="percentage" :value="$discount->percentage" />
                     <x-form.input title="مبلغ تخفیف"  name="amount" :value="$discount->amount"  />
                     <x-form.input title="حداقل مبلغ خرید برای اعمال تخفیف"  name="min_price" :value="$discount->min_price" />

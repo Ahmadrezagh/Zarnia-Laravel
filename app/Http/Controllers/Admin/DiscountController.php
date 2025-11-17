@@ -50,17 +50,11 @@ class DiscountController extends Controller
             $validated['code'] = Discount::generateUniqueCode();
         }
         
-        // Create discount first
+        // Create discount
         $discount = Discount::query()->create($validated);
         
         // Attach users, products, and categories
         $this->syncDiscountables($discount, $request);
-        
-        // Auto-generate description if not provided
-        if (empty($discount->description)) {
-            $discount->load(['users', 'products', 'categories']);
-            $discount->update(['description' => $discount->summary_description]);
-        }
         
         return response()->json($discount);
     }
@@ -93,12 +87,6 @@ class DiscountController extends Controller
         
         // Sync users, products, and categories
         $this->syncDiscountables($discount, $request);
-        
-        // Auto-generate description if not provided
-        if (empty($discount->description)) {
-            $discount->load(['users', 'products', 'categories']);
-            $discount->update(['description' => $discount->summary_description]);
-        }
         
         return response()->json();
     }
