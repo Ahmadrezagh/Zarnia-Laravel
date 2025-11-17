@@ -126,7 +126,7 @@
             :columns="[
                             ['label' => '#', 'key' => 'id', 'type' => 'text'],
                             ['label' => 'تصویر', 'key' => 'image', 'type' => 'image'],
-                            ['label' => 'نام', 'key' => 'title', 'type' => 'text'],
+                            ['label' => 'نام', 'key' => 'title', 'type' => 'text', 'url' => setting('url') . '/product-category/{slug}'],
                         ]"
             :items="$categories"
             :actions="[

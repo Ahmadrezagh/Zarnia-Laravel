@@ -203,7 +203,7 @@ class CategoryController extends Controller
         return view('components.table', [
             'id' => 'categories-table',
             'columns' => [
-                ['label' => 'نام', 'key' => 'title', 'type' => 'text'],
+                ['label' => 'نام', 'key' => 'title', 'type' => 'text', 'url' => setting('url') . '/product-category/{slug}'],
             ],
             'url' => route('table.categories'),
             'items' => $categories,
