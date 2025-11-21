@@ -13,6 +13,12 @@ class ShoppingCartController extends Controller
     public function plus(Request $request, $product_slug)
     {
         $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'کاربر احراز هویت نشده است'
+            ], 401);
+        }
 
         $product = Product::findBySlug($product_slug);
         if (!$product) {
@@ -60,6 +66,12 @@ class ShoppingCartController extends Controller
     public function minus(Product $product)
     {
         $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'کاربر احراز هویت نشده است'
+            ], 401);
+        }
 
         $item = ShoppingCartItem::query()
             ->where('user_id', $user->id)
@@ -79,6 +91,12 @@ class ShoppingCartController extends Controller
     public function remove(Product $product)
     {
         $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'کاربر احراز هویت نشده است'
+            ], 401);
+        }
 
         $item = ShoppingCartItem::query()
             ->where('user_id', $user->id)
@@ -95,6 +113,13 @@ class ShoppingCartController extends Controller
     public function index()
     {
         $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'کاربر احراز هویت نشده است'
+            ], 401);
+        }
+        
         return ShoppingCartResource::make([],$user->shoppingCartItems);
     }
 }
