@@ -44,11 +44,26 @@ class CheckTestUserToken
                 $testUser = User::where('phone', '09920435523')->first();
                 
                 if ($testUser) {
-                    // Authenticate the user for this request
-                    Auth::guard('sanctum')->setUser($testUser);
-                    $request->setUserResolver(function () use ($testUser) {
-                        return $testUser;
-                    });
+                    // Find the token record in database
+                    $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::where('tokenable_type', User::class)
+                        ->where('tokenable_id', $testUser->id)
+                        ->where('name', 'snapp_test_token')
+                        ->first();
+                    
+                    if ($tokenRecord) {
+                        // Set the token on the request so Sanctum can recognize it
+                        // Format: {id}|{token}
+                        $fullToken = $tokenRecord->id . '|' . $staticToken;
+                        $request->headers->set('Authorization', 'Bearer ' . $fullToken);
+                    } else {
+                        // If token record not found, just authenticate the user
+                        // Remove Authorization header so Sanctum doesn't validate it
+                        $request->headers->remove('Authorization');
+                        Auth::guard('sanctum')->setUser($testUser);
+                        $request->setUserResolver(function () use ($testUser) {
+                            return $testUser;
+                        });
+                    }
                     
                     $isTestUser = true;
                 }
