@@ -40,9 +40,17 @@ class OrderController extends Controller
         $unavailableProducts = [];
         $availableCartItems = collect();
         
+        // Test product bypass: skip availability check for test user and test product
+        $isTestUser = ($user->phone === '09920435523');
+        
         foreach ($cartItems as $cartItem) {
+            // Test scenario: unlimited availability for test product
+            $isTestProduct = ($cartItem->product->slug === 'تست-3');
+            $isTestScenario = ($isTestUser && $isTestProduct);
+            
             // Check if product is available (has at least one available etiket)
-            if ($cartItem->product->single_count < 1) {
+            // Skip availability check for test scenario
+            if (!$isTestScenario && $cartItem->product->single_count < 1) {
                 // Product is not available, remove from cart and add to error list
                 $unavailableProducts[] = $cartItem->product->name;
                 $cartItem->delete();

@@ -20,8 +20,12 @@ class ShoppingCartController extends Controller
                 'message' => 'محصول یافت نشد'
             ], 404);
         }
-        // Check if product is out of stock
-        if ($product->SingleCount <= 0) {
+        
+        // Test product bypass: unlimited quantity for test user and test product
+        $isTestScenario = ($user->phone === '09920435523' && $product->slug === 'تست-3');
+        
+        // Check if product is out of stock (skip for test scenario)
+        if (!$isTestScenario && $product->SingleCount <= 0) {
             return response()->json([
                 'message' => 'این محصول قابل فروش نیست'
             ], 400);
@@ -38,8 +42,8 @@ class ShoppingCartController extends Controller
                 ]
             );
 
-        // Check if adding one more exceeds stock
-        if ($item->count + 1 > $product->SingleCount) {
+        // Check if adding one more exceeds stock (skip for test scenario)
+        if (!$isTestScenario && $item->count + 1 > $product->SingleCount) {
             return response()->json([
                 'message' => 'میزان درخواست شما بیشتر از موجودی انبار می باشد'
             ], 400);
