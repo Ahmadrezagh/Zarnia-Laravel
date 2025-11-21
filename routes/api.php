@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\QAController;
 use App\Http\Controllers\Api\V1\ShippingController;
 use App\Http\Controllers\Api\V1\ShoppingCartController;
 use App\Http\Controllers\Api\V1\TrackingController;
+use App\Http\Middleware\CheckTestUserToken;
 use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -51,7 +52,7 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
         Route::get('index_banners',[IndexBannerController::class,'index']);
         Route::post('track-visit', [TrackingController::class, 'trackVisit']);
         // Protected routes
-        Route::middleware('auth:sanctum')->group(function () {
+        Route::middleware([CheckTestUserToken::class, 'auth:sanctum'])->group(function () {
             Route::get('/user', function (Request $request) {
                 return $request->user();
             });
@@ -62,13 +63,14 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
             Route::get('favorite_products', [FavoriteProductController::class, 'list']);
 
             Route::get('shopping_cart/plus/{product}', [ShoppingCartController::class, 'plus']);
+            Route::resource('orders', OrderController::class)->only('store');
             Route::get('shopping_cart/minus/{product}', [ShoppingCartController::class, 'minus']);
             Route::get('shopping_cart/remove/{product}', [ShoppingCartController::class, 'remove']);
             Route::get('shopping_cart', [ShoppingCartController::class, 'index']);
             Route::get('profile', [ProfileController::class, 'index']);
             Route::post('profile', [ProfileController::class, 'update']);
             Route::resource('addresses', AddressController::class);
-            Route::resource('orders', OrderController::class)->only('index','store');
+            Route::resource('orders', OrderController::class)->only('index');
             Route::get('order/{order}/status', [OrderController::class, 'status']);
 //            Route::post('order/{order}/update', [OrderController::class, 'updateSnappTransaction']);
 //            Route::get('order/{order}/cancel', [OrderController::class, 'cancel']);

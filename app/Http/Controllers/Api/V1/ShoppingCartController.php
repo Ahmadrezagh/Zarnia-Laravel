@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class ShoppingCartController extends Controller
 {
-    public function plus($product_slug)
+    public function plus(Request $request, $product_slug)
     {
         $user = auth()->user();
 
@@ -21,8 +21,10 @@ class ShoppingCartController extends Controller
             ], 404);
         }
         
-        // Test product bypass: unlimited quantity for test user and test product
-        $isTestScenario = ($user->phone === '09920435523' && $product->slug === 'تست-3');
+        // Test product bypass: check from middleware attribute
+        $isTestUser = $request->attributes->get('is_test_user', false);
+        $isTestProduct = ($product->slug === 'تست-3');
+        $isTestScenario = ($isTestUser && $isTestProduct);
         
         // Check if product is out of stock (skip for test scenario)
         if (!$isTestScenario && $product->SingleCount <= 0) {

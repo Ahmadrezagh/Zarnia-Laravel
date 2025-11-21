@@ -40,8 +40,8 @@ class OrderController extends Controller
         $unavailableProducts = [];
         $availableCartItems = collect();
         
-        // Test product bypass: skip availability check for test user and test product
-        $isTestUser = ($user->phone === '09920435523');
+        // Test product bypass: check from middleware attribute
+        $isTestUser = $request->attributes->get('is_test_user', false);
         
         foreach ($cartItems as $cartItem) {
             // Test scenario: unlimited availability for test product
