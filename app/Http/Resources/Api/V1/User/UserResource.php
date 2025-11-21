@@ -14,13 +14,18 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Check if resource is null to prevent errors
+        if (!$this->resource) {
+            return [];
+        }
+        
         return [
-            'name' => $this->name,
-            'last_name' => $this->last_name,
-            'phone' => $this->phone,
-            'email' => $this->email,
-            'orders' => $this->orders()->count(),
-            'addresses' => $this->addresses()->count(),
+            'name' => $this->name ?? null,
+            'last_name' => $this->last_name ?? null,
+            'phone' => $this->phone ?? null,
+            'email' => $this->email ?? null,
+            'orders' => $this->when($this->resource, fn() => $this->orders()->count(), 0),
+            'addresses' => $this->when($this->resource, fn() => $this->addresses()->count(), 0),
         ];
     }
 }

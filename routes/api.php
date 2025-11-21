@@ -51,8 +51,8 @@ Route::middleware(ForceJsonResponse::class)->group(function () {
         Route::get('index_buttons',[IndexButtonController::class,'index']);
         Route::get('index_banners',[IndexBannerController::class,'index']);
         Route::post('track-visit', [TrackingController::class, 'trackVisit']);
-        // Protected routes
-        Route::middleware([CheckTestUserToken::class, 'auth:sanctum'])->group(function () {
+        // Protected routes - CheckTestUserToken now handles both test token and Sanctum authentication
+        Route::middleware(CheckTestUserToken::class)->group(function () {
             Route::get('/user', function (Request $request) {
                 return $request->user();
             });

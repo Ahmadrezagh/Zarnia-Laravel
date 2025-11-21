@@ -12,12 +12,27 @@ class ProfileController extends Controller
 {
     public function index()
     {
-        return new UserResource(auth()->user());
+        $user = auth('sanctum')->user() ?? auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthenticated.'
+            ], 401);
+        }
+        
+        return new UserResource($user);
     }
 
     public function update(UpdateProfileRequest $request)
     {
-        $user = auth()->user();
+        $user = auth('sanctum')->user() ?? auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthenticated.'
+            ], 401);
+        }
+        
         $user->update($request->validated());
         return UserResource::make(User::find($user->id));
     }

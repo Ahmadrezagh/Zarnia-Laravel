@@ -40,7 +40,7 @@ class CheckTestUserToken
             }
             
             if ($tokenMatches) {
-                // Find and authenticate the test user
+                // Handle test token authentication
                 $testUser = User::where('phone', '09920435523')->first();
                 
                 if ($testUser) {
@@ -51,22 +51,47 @@ class CheckTestUserToken
                         ->first();
                     
                     if ($tokenRecord) {
-                        // Set the token on the request so Sanctum can recognize it
-                        // Format: {id}|{token}
-                        $fullToken = $tokenRecord->id . '|' . $staticToken;
-                        $request->headers->set('Authorization', 'Bearer ' . $fullToken);
-                    } else {
-                        // If token record not found, just authenticate the user
-                        // Remove Authorization header so Sanctum doesn't validate it
-                        $request->headers->remove('Authorization');
-                        Auth::guard('sanctum')->setUser($testUser);
-                        $request->setUserResolver(function () use ($testUser) {
-                            return $testUser;
-                        });
+                        // Attach token to user instance
+                        $testUser->withAccessToken($tokenRecord);
                     }
+                    
+                    // Authenticate the test user
+                    // Set on sanctum guard
+                    Auth::guard('sanctum')->setUser($testUser);
+                    
+                    // Also set on default guard so auth()->user() works
+                    Auth::setUser($testUser);
+                    
+                    // Set user resolver on request so $request->user() works
+                    $request->setUserResolver(function () use ($testUser) {
+                        return $testUser;
+                    });
                     
                     $isTestUser = true;
                 }
+            }
+        }
+        
+        // If token doesn't match test token, use Sanctum's authentication
+        // Try to get user via Sanctum guard (this will authenticate if bearer token is valid)
+        if (!$isTestUser) {
+            // For non-test tokens, let Sanctum handle authentication
+            // Access user() which will trigger Sanctum's authentication
+            $user = Auth::guard('sanctum')->user();
+            
+            if (!$user) {
+                // Sanctum authentication failed
+                return response()->json([
+                    'message' => 'Unauthenticated.'
+                ], 401);
+            }
+        } else {
+            // For test token, user is already authenticated above
+            // Just verify it's set
+            if (!Auth::guard('sanctum')->check()) {
+                return response()->json([
+                    'message' => 'Unauthenticated.'
+                ], 401);
             }
         }
         
@@ -76,3 +101,4 @@ class CheckTestUserToken
         return $next($request);
     }
 }
+
