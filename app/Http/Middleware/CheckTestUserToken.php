@@ -73,14 +73,71 @@ class CheckTestUserToken
         }
         
         // If token doesn't match test token, use Sanctum's authentication
-        // Try to get user via Sanctum guard (this will authenticate if bearer token is valid)
         if (!$isTestUser) {
-            // For non-test tokens, let Sanctum handle authentication
-            // Access user() which will trigger Sanctum's authentication
-            $user = Auth::guard('sanctum')->user();
-            
-            if (!$user) {
-                // Sanctum authentication failed
+            // For non-test tokens, validate Sanctum bearer token
+            if ($bearerToken) {
+                // Sanctum token format is: {id}|{plainTextToken}
+                $tokenParts = explode('|', $bearerToken);
+                
+                if (count($tokenParts) === 2) {
+                    $tokenId = $tokenParts[0];
+                    $plainTextToken = $tokenParts[1];
+                    
+                    // Find the token record in database by ID
+                    $tokenRecord = \Laravel\Sanctum\PersonalAccessToken::find($tokenId);
+                    
+                    if ($tokenRecord) {
+                        // Validate the token hash matches
+                        $tokenHash = hash('sha256', $plainTextToken);
+                        
+                        if (hash_equals($tokenRecord->token, $tokenHash)) {
+                            // Check if token is expired
+                            if ($tokenRecord->expires_at && $tokenRecord->expires_at->isPast()) {
+                                return response()->json([
+                                    'message' => 'Token expired.'
+                                ], 401);
+                            }
+                            
+                            // Get the user from the token
+                            $user = $tokenRecord->tokenable;
+                            
+                            if ($user) {
+                                // Attach token to user instance
+                                $user->withAccessToken($tokenRecord);
+                                
+                                // Authenticate the user
+                                Auth::guard('sanctum')->setUser($user);
+                                Auth::setUser($user);
+                                
+                                // Set user resolver on request so $request->user() works
+                                $request->setUserResolver(function () use ($user) {
+                                    return $user;
+                                });
+                            } else {
+                                return response()->json([
+                                    'message' => 'Unauthenticated.'
+                                ], 401);
+                            }
+                        } else {
+                            // Token hash doesn't match
+                            return response()->json([
+                                'message' => 'Unauthenticated.'
+                            ], 401);
+                        }
+                    } else {
+                        // Token not found
+                        return response()->json([
+                            'message' => 'Unauthenticated.'
+                        ], 401);
+                    }
+                } else {
+                    // Invalid token format
+                    return response()->json([
+                        'message' => 'Unauthenticated.'
+                    ], 401);
+                }
+            } else {
+                // No bearer token provided
                 return response()->json([
                     'message' => 'Unauthenticated.'
                 ], 401);
