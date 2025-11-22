@@ -36,12 +36,7 @@ class EtiketObserver
                 'product_id' => $product->id,
             ]);
 
-            Log::info('Etiket assigned to existing product', [
-                'etiket_id' => $etiket->id,
-                'etiket_name' => $etiket->name,
-                'etiket_weight' => $etiket->weight,
-                'product_id' => $product->id,
-            ]);
+
 
         } else {
             // Step 2: No exact match - check if there's a product with same name but different weight
@@ -65,13 +60,7 @@ class EtiketObserver
                     'product_id' => $product->id,
                 ]);
 
-                Log::info('Etiket assigned to new variant product', [
-                    'etiket_id' => $etiket->id,
-                    'etiket_name' => $etiket->name,
-                    'etiket_weight' => $etiket->weight,
-                    'product_id' => $product->id,
-                    'parent_id' => $sameNameProduct->id,
-                ]);
+
 
             } else {
                 // Step 3: No product with this name exists - create a new parent product
@@ -89,12 +78,7 @@ class EtiketObserver
                     'product_id' => $product->id,
                 ]);
 
-                Log::info('Etiket assigned to new parent product', [
-                    'etiket_id' => $etiket->id,
-                    'etiket_name' => $etiket->name,
-                    'etiket_weight' => $etiket->weight,
-                    'product_id' => $product->id,
-                ]);
+
             }
         }
 
@@ -135,13 +119,7 @@ class EtiketObserver
                 'product_id' => $product->id,
             ]);
 
-            Log::info('Etiket updated - assigned to existing product', [
-                'etiket_id' => $etiket->id,
-                'etiket_name' => $etiket->name,
-                'etiket_weight' => $etiket->weight,
-                'product_id' => $product->id,
-                'old_product_id' => $oldProductId,
-            ]);
+
 
         } else {
             // No product with same name AND weight - check if there's a product with same name but different weight
@@ -166,14 +144,7 @@ class EtiketObserver
                     'product_id' => $product->id,
                 ]);
 
-                Log::info('Etiket updated - assigned to new variant product', [
-                    'etiket_id' => $etiket->id,
-                    'etiket_name' => $etiket->name,
-                    'etiket_weight' => $etiket->weight,
-                    'product_id' => $product->id,
-                    'parent_id' => $sameNameProduct->id,
-                    'old_product_id' => $oldProductId,
-                ]);
+
 
             } else {
                 // No product with this name exists - create a new parent product
@@ -191,13 +162,7 @@ class EtiketObserver
                     'product_id' => $newProduct->id,
                 ]);
 
-                Log::info('Etiket updated - assigned to new parent product', [
-                    'etiket_id' => $etiket->id,
-                    'etiket_name' => $etiket->name,
-                    'etiket_weight' => $etiket->weight,
-                    'product_id' => $newProduct->id,
-                    'old_product_id' => $oldProductId,
-                ]);
+
             }
         }
 
@@ -254,12 +219,7 @@ class EtiketObserver
                 
                 // If names don't match, disconnect
                 if ($etiketName !== $productName) {
-                    Log::warning('Etiket disconnected from product with different name', [
-                        'etiket_id' => $etiket->id,
-                        'etiket_name' => $etiket->name,
-                        'product_id' => $product->id,
-                        'product_name' => $product->name,
-                    ]);
+
                     
                     $etiket->updateQuietly([
                         'product_id' => null,
