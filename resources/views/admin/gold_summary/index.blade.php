@@ -15,10 +15,10 @@
                     <span class="badge badge-info mt-2">
                         <i class="fas fa-filter"></i> فیلتر فعال
                         @if(request('from_date'))
-                            از: {{ \Carbon\Carbon::parse(request('from_date'))->format('Y/m/d H:i') }}
+                            از: {{ \Morilog\Jalali\Jalalian::forge(request('from_date'))->format('Y/m/d H:i') }}
                         @endif
                         @if(request('to_date'))
-                            تا: {{ \Carbon\Carbon::parse(request('to_date'))->format('Y/m/d H:i') }}
+                            تا: {{ \Morilog\Jalali\Jalalian::forge(request('to_date'))->format('Y/m/d H:i') }}
                         @endif
                     </span>
                 @endif
