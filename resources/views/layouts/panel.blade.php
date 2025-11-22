@@ -1040,6 +1040,11 @@
                 format: 'YYYY/MM/DD',
                 altField: "#" + observer_id, // Use the hidden input as altField
                 initialValueType: 'gregorian', // Initialize the picker with Gregorian date
+                calendar:{
+                    persian: {
+                        leapYearMode: 'astronomical'
+                    }
+                },
                 onSelect: function() {
                     persianDateToUnix(`#${observer_id}`); // Convert selected Persian date to Unix timestamp
                 }
@@ -1079,6 +1084,11 @@
                     enabled: true,
                     meridiem: {
                         enabled: true
+                    }
+                },
+                calendar:{
+                    persian: {
+                        leapYearMode: 'astronomical'
                     }
                 },
                 onSelect: function() {
