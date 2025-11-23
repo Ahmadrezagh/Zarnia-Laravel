@@ -120,7 +120,7 @@ class OrderController extends Controller
 
         // Create order items from cart
         foreach ($cartItems as $cartItem) {
-            $etiketCode = Etiket::where('product_id', $cartItem->product_id)->value('code');
+            $etiketCode = Etiket::where('product_id', $cartItem->product_id)->where('is_mojood','=','1')->value('code');
 
             OrderItem::create([
                 'order_id' => $order->id,
