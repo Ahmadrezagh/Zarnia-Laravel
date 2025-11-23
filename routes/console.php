@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::call(function () {
     getEtikets();
-})->everyFifteenMinutes();
+})->everyThirtyMinutes();
 Schedule::call(function () {
     getUpdatedEtikets();
-})->everyTwoMinutes();
+})->everyFiveSeconds();
 
 Schedule::command('orders:mark-pending-as-failed')->everyTenMinutes();
