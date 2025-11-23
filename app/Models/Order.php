@@ -623,6 +623,8 @@ class Order extends Model
             // API returns ['error' => true, 'status' => ..., 'message' => ...] on failure
             if (isset($response['error']) && $response['error'] === true) {
                 $allSuccessful = false;
+                $sms = new Kavehnegar();
+                $sms->send_with_two_token('09127127053',$orderItem->etiket,$this->id,'notifyAdminEtiketFailedOnTahesabAct');
                 \Log::warning('Accounting API call failed for order item', [
                     'order_id' => $this->id,
                     'order_item_id' => $orderItem->id,
