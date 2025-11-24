@@ -109,30 +109,40 @@ class GatewayController extends Controller
         }
         // Handle Saman callback (uses ResNum which is the order ID)
         elseif ($request->has('ResNum')) {
-            $orderId = $request->ResNum;
-            $order = Order::find($orderId);
-            
-            // If order found and has Saman gateway, process the callback
-            if ($order && $order->gateway && $order->gateway->key == 'saman' && $order->status == Order::$STATUSES[0]) {
-                $samanGateway = new SamanGateway();
-                $callbackResult = $samanGateway->callback($request);
+            try {
+                $orderId = $request->ResNum;
+                $order = Order::find($orderId);
                 
-                if ($callbackResult['success']) {
-                    // Update payment_token if provided
-                    if (isset($callbackResult['token'])) {
-                        $order->update(['payment_token' => $callbackResult['token']]);
+                // If order found and has Saman gateway, process the callback
+                if ($order && $order->gateway && $order->gateway->key == 'saman' && $order->status == Order::$STATUSES[0]) {
+                    $samanGateway = new SamanGateway();
+                    $callbackResult = $samanGateway->callback($request);
+                    
+                    if ($callbackResult['success']) {
+                        // Update payment_token if provided
+                        if (isset($callbackResult['token'])) {
+                            $order->update(['payment_token' => $callbackResult['token']]);
+                        }
+                        // Verify the payment
+                        if ($order->status == Order::$STATUSES[0]) {
+                            $order->verify();
+                        }
+                    } else {
+                        // Payment failed or cancelled
+                        Log::info('Saman: Payment failed or cancelled', [
+                            'order_id' => $order->id,
+                            'message' => $callbackResult['message'] ?? 'Unknown error',
+                        ]);
                     }
-                    // Verify the payment
-                    if ($order->status == Order::$STATUSES[0]) {
-                        $order->verify();
-                    }
-                } else {
-                    // Payment failed or cancelled
-                    Log::info('Saman: Payment failed or cancelled', [
-                        'order_id' => $order->id,
-                        'message' => $callbackResult['message'] ?? 'Unknown error',
-                    ]);
                 }
+            } catch (\Exception $e) {
+                Log::error('Saman Gateway Error : ' . $e->getMessage(), [
+                    'exception' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'order_id' => $orderId ?? null,
+                ]);
             }
         }
         
