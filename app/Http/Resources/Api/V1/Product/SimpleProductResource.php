@@ -19,6 +19,7 @@ class SimpleProductResource extends JsonResource
             'name' => $this->name,
             'single_count' => $this->SingleCount ,
             'price' => number_format($this->price),
+            'snapp_pay_each_installment' => number_format($this->price/4),
             'minimum_available_weight' => $this->minimum_available_weight,
             'slug' => $this->slug,
             'weight' => $this->weight,
