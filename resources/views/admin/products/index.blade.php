@@ -188,7 +188,7 @@
                     <div class="form-group">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="apply_discount_to_children" name="apply_discount_to_children">
-                            <label class="form-check-label" for="apply_discount_to_children">
+                            <label class="form-check-label mx-3" for="apply_discount_to_children">
                                 اعمال برای زیر مجموعه ها
                             </label>
                         </div>
