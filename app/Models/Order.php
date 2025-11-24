@@ -254,7 +254,10 @@ class Order extends Model
 
     public function getProductNameColAttribute()
     {
-        $result = $this->FirstNameOfOrderItem . "<br/>" . number_format($this->final_amount)." تومان "."<br/> <p style='color: red'>" . number_format($this->total_amount)." تومان "."</p>";
+        $result = $this->FirstNameOfOrderItem . "<br/>" . number_format($this->final_amount)." تومان ";
+        if($this->total->amount != $this->final_amount){
+            $result = $result."<br/> <p style='color: blue'>" . number_format($this->total_amount)." تومان "."</p>";
+        }
         return request()->expectsJson() ?
             $result :
             new HtmlString($result );
