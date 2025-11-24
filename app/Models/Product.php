@@ -783,6 +783,45 @@ class Product extends Model implements HasMedia
         return $minWeight ?: null;
     }
 
+    public function getPriceWithoutDiscountMinimumAvailableProductAttribute()
+    {
+        // Ensure children relationship is loaded for availability checks
+        if (!$this->relationLoaded('children')) {
+            $this->load('children');
+        }
+
+        $availableProducts = collect();
+
+        if ($this->single_count >= 1) {
+            $availableProducts->push($this);
+        }
+
+        $this->children->each(function ($child) use ($availableProducts) {
+            if ($child->single_count >= 1) {
+                $availableProducts->push($child);
+            }
+        });
+
+        if ($availableProducts->isEmpty()) {
+            return null;
+        }
+
+        // Prefer products with a valid positive weight
+        $availableWithWeight = $availableProducts->filter(function ($product) {
+            return ($product->weight ?? 0) > 0;
+        });
+
+        $targetProduct = $availableWithWeight->sortBy(function ($product) {
+            return $product->weight;
+        })->first();
+
+        if (!$targetProduct) {
+            $targetProduct = $availableProducts->first();
+        }
+
+        return $targetProduct ? $targetProduct->price_without_discount : null;
+    }
+
     public function scopeHasCountAndImage(Builder $query): Builder
     {
         return $query
