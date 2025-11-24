@@ -27,6 +27,18 @@ class ShoppingCartController extends Controller
             ], 400);
         }
 
+        // Check if user already has a shopping cart item with a different product
+        $existingItem = ShoppingCartItem::query()
+            ->where('user_id', $user->id)
+            ->where('product_id', '!=', $product->id)
+            ->first();
+
+        if ($existingItem) {
+            return response()->json([
+                'message' => 'شما فقط می توانید یک عدد از این محصول را در سبد خرید داشته باشید'
+            ], 400);
+        }
+
         $item = ShoppingCartItem::query()
             ->firstOrCreate(
                 [
@@ -37,6 +49,13 @@ class ShoppingCartController extends Controller
                     'count' => 0 // applies only on creation
                 ]
             );
+
+        // Prevent adding more than one quantity of the product
+        if ($item->count >= 1) {
+            return response()->json([
+                'message' => 'شما فقط می توانید یک عدد از این محصول را در سبد خرید داشته باشید'
+            ], 400);
+        }
 
         // Check if adding one more exceeds stock
         if ($item->count + 1 > $product->SingleCount) {
