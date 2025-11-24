@@ -186,6 +186,14 @@
                         <input type="number" class="form-control" id="discount_percentage" value="${product.discount_percentage || ''}" >
                     </div>
                     <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="apply_discount_to_children" name="apply_discount_to_children">
+                            <label class="form-check-label" for="apply_discount_to_children">
+                                اعمال برای زیر مجموعه ها
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label for="product-description">توضیحات</label>
                         <textarea class="form-control" id="product-description" rows="4">${product.description || ''}</textarea>
                     </div>
@@ -331,6 +339,7 @@
                         formData.append('price', $('#product-price').val());
                         formData.append('weight', $('#product-weight').val());
                         formData.append('discount_percentage', $('#discount_percentage').val());
+                        formData.append('apply_discount_to_children', $('#apply_discount_to_children').is(':checked') ? '1' : '0');
                         formData.append('count', $('#product-count').val());
                         formData.append('description', $('#product-description').val());
                         const categoryIds = $('#product-categories').val() ? $('#product-categories').val().map(Number) : [];

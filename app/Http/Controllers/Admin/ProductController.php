@@ -118,6 +118,15 @@ class ProductController extends Controller
         }
         
         $product->update($validated);
+        
+        // Apply discount_percentage to children if checkbox is checked
+        if ($request->has('apply_discount_to_children') && $request->input('apply_discount_to_children') == '1') {
+            $discountPercentage = $request->input('discount_percentage') ?? 0;
+            $children = $product->children()->get();
+            foreach ($children as $child) {
+                $child->update(['discount_percentage' => $discountPercentage]);
+            }
+        }
 
         // Handle cover image deletion
         if ($request->has('delete_cover_image') && $request->delete_cover_image == '1') {
