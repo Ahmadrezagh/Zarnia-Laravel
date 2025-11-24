@@ -118,7 +118,7 @@
         'purchase_date' => jdate($order->created_at)->format('Y/m/d'),
         'purchase_date2' => jdate($order->created_at)->format('Y/m/d'),
         'gold_price' => number_format(get_gold_price()/10),
-        'total_label' => number_format($order->total_amount),
+        'total_label' => number_format($order->final_amount),
         'notes_label' => $order->note ?? '',
         'invoice_number' => $order->id ?? '',
         'previous_purchase_count' => \App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->count(),
