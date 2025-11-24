@@ -58,7 +58,7 @@
                 <div class="detail-row">
                     <span class="label">روش ارسال</span>
                     <span class="dots">............................</span>
-                    <span class="value" id="shippingMethod">{{ $order->gatewayName }}</span>
+                    <span class="value" id="shippingMethod">{{ $order->shippingName }}</span>
                 </div>
             </div>
 
