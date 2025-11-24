@@ -109,6 +109,7 @@ class GatewayController extends Controller
         }
         // Handle Saman callback (uses ResNum which is the order ID)
         elseif ($request->has('ResNum')) {
+            return $request;
             try {
                 $orderId = $request->ResNum;
                 $order = Order::find($orderId);
