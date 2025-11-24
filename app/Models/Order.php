@@ -486,7 +486,7 @@ class Order extends Model
     /**
      * Mark order as paid and send SMS
      */
-    private function markAsPaid()
+    public function markAsPaid()
     {
         $this->update([
             'status' => 'paid'

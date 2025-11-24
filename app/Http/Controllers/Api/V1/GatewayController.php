@@ -107,34 +107,47 @@ class GatewayController extends Controller
                 $order->verify();
             }
         }
-        // Handle Saman callback (uses ResNum which is the order ID)
-        elseif ($request->has('ResNum')) {
-            return $request;
+        // Handle Saman callback (uses Token to find order by payment_token)
+        elseif ($request->has('Token')) {
             try {
-                $orderId = $request->ResNum;
-                $order = Order::find($orderId);
+                $token = $request->Token;
+                $order = Order::where('payment_token', $token)->first();
                 
-                // If order found and has Saman gateway, process the callback
-                if ($order && $order->gateway && $order->gateway->key == 'saman' && $order->status == Order::$STATUSES[0]) {
+                // Check if State is OK and order exists with Saman gateway
+                if ($request->State == 'OK' && $order && $order->gateway && $order->gateway->key == 'saman' && $order->status == Order::$STATUSES[0]) {
                     $samanGateway = new SamanGateway();
-                    $callbackResult = $samanGateway->callback($request);
                     
-                    if ($callbackResult['success']) {
-                        // Update payment_token if provided
-                        if (isset($callbackResult['token'])) {
-                            $order->update(['payment_token' => $callbackResult['token']]);
-                        }
-                        // Verify the payment
-                        if ($order->status == Order::$STATUSES[0]) {
-                            $order->verify();
+                    // Verify transaction using RefNum and TerminalId
+                    if ($request->has('RefNum') && $request->has('TerminalId')) {
+                        $verifyResult = $samanGateway->verifyTransaction($request->RefNum, $request->TerminalId);
+                        
+                        if ($verifyResult['success']) {
+                            // Verification successful, mark order as paid directly
+                            // (no need to call verify() again as we've already verified with verifyTransaction)
+                            if ($order->status == Order::$STATUSES[0]) {
+                                $order->markAsPaid();
+                            }
+                        } else {
+                            // Verification failed
+                            Log::info('Saman: Transaction verification failed', [
+                                'order_id' => $order->id,
+                                'ref_num' => $request->RefNum,
+                                'message' => $verifyResult['message'] ?? 'Unknown error',
+                            ]);
                         }
                     } else {
-                        // Payment failed or cancelled
-                        Log::info('Saman: Payment failed or cancelled', [
+                        Log::warning('Saman: Missing RefNum or TerminalId in callback', [
                             'order_id' => $order->id,
-                            'message' => $callbackResult['message'] ?? 'Unknown error',
+                            'request' => $request->all(),
                         ]);
                     }
+                } elseif ($request->State != 'OK' && $order) {
+                    // Payment failed or cancelled
+                    Log::info('Saman: Payment failed or cancelled', [
+                        'order_id' => $order->id,
+                        'state' => $request->State,
+                        'message' => $request->Message ?? 'Payment cancelled or failed',
+                    ]);
                 }
             } catch (\Exception $e) {
                 Log::error('Saman Gateway Error : ' . $e->getMessage(), [
@@ -142,7 +155,7 @@ class GatewayController extends Controller
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
                     'trace' => $e->getTraceAsString(),
-                    'order_id' => $orderId ?? null,
+                    'token' => $token ?? null,
                 ]);
             }
         }

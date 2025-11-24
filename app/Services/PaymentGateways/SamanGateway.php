@@ -147,6 +147,64 @@ class SamanGateway
         return $verify;
     }
 
+    /**
+     * Verify transaction using RefNum and TerminalNumber
+     * This is the new verification endpoint for Saman gateway
+     */
+    public function verifyTransaction(string $refNum, string $terminalNumber): array
+    {
+        $payload = [
+            'RefNum' => $refNum,
+            'TerminalNumber' => (int)$terminalNumber,
+        ];
+
+        try {
+            $response = $this->http->post('https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/VerifyTransaction', [
+                'json' => $payload,
+                'timeout' => $this->cfg['timeout'],
+            ]);
+
+            $body = json_decode((string)$response->getBody(), true) ?: [];
+
+            $success = isset($body['Success']) && $body['Success'] === true && 
+                      isset($body['ResultCode']) && $body['ResultCode'] == 0;
+
+            $transactionDetail = $body['TransactionDetail'] ?? [];
+
+            return [
+                'success' => $success,
+                'result_code' => $body['ResultCode'] ?? null,
+                'result_description' => $body['ResultDescription'] ?? null,
+                'transaction_detail' => $transactionDetail,
+                'rrn' => $transactionDetail['RRN'] ?? null,
+                'ref_num' => $transactionDetail['RefNum'] ?? null,
+                'masked_pan' => $transactionDetail['MaskedPan'] ?? null,
+                'terminal_number' => $transactionDetail['TerminalNumber'] ?? null,
+                'original_amount' => $transactionDetail['OrginalAmount'] ?? null,
+                'affective_amount' => $transactionDetail['AffectiveAmount'] ?? null,
+                'trace_date' => $transactionDetail['StraceDate'] ?? null,
+                'trace_no' => $transactionDetail['StraceNo'] ?? null,
+                'message' => $body['ResultDescription'] ?? ($success ? 'عملیات با موفقیت انجام شد' : 'Verification failed'),
+                'raw' => $body,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Saman Gateway Error : ' . $e->getMessage(), [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'ref_num' => $refNum,
+                'terminal_number' => $terminalNumber,
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Error verifying transaction: ' . $e->getMessage(),
+                'raw' => [],
+            ];
+        }
+    }
+
     public function buildRedirectUrl(string $token): string
     {
         $base = rtrim($this->cfg['redirect_base'], '/');
