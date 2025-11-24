@@ -155,3 +155,6 @@ Route::middleware(['auth'])->prefix('admin')-> group(function (){
 Route::get('order/print/{order}', [OrderController::class, 'print'])->name('order.print');
 Route::get('/payment/request', [GatewayController::class, 'pay'])->name('payment.request');
 Route::any('/payment/callback', [GatewayController::class, 'callback2'])->name('payment.callback');
+
+// Sitemap
+Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index']);
