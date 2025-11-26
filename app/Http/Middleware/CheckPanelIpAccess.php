@@ -26,7 +26,7 @@ class CheckPanelIpAccess
         
         // If setting is empty or null, deny all access
         if (empty($allowedIps)) {
-            abort(403, 'Access denied.');
+            abort(404);
         }
         
         // Get client IP address (handles Cloudflare and other proxies)
@@ -39,7 +39,7 @@ class CheckPanelIpAccess
         
         // Check if client IP is in the allowed list
         if (!in_array($clientIp, $allowedIpList)) {
-            abort(403, 'Access denied. Your IP address is not allowed.');
+            abort(404);
         }
         
         return $next($request);
