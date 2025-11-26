@@ -161,3 +161,6 @@ Route::any('/payment/callback', [GatewayController::class, 'callback2'])->name('
 // Sitemap
 Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index']);
 
+// Product RSS Feed
+Route::get('/products/feed.xml', [\App\Http\Controllers\ProductFeedController::class, 'index'])->name('products.feed');
+
