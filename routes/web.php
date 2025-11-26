@@ -30,7 +30,7 @@ use App\Http\Controllers\Admin\VisitController;
 use App\Http\Controllers\Api\V1\GatewayController;
 use Illuminate\Support\Facades\Route;
 
-Route::domain('panel.zarniagoldgallery.ir')->group(function () {
+Route::domain('panel.zarniagoldgallery.ir')->middleware('panel.ip')->group(function () {
     Route::get('/', function () {
         return redirect('home');
     });

@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             SettingGroupSeeder::class,
             SettingSeeder::class,
+            PanelIpAccessSeeder::class,
 //            ProductSeeder::class,
 //            ProductCategorySeeder::class,
         ]);

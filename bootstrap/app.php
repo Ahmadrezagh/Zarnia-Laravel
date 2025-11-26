@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'payment/callback/*',  // disables CSRF for any callback
             'payment/callback',  // disables CSRF for any callback
         ]);
+        $middleware->alias([
+            'panel.ip' => \App\Http\Middleware\CheckPanelIpAccess::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $th) {
