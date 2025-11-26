@@ -26,8 +26,10 @@ class ProductFeedController extends Controller
             ->pluck('id')
             ->toArray();
 
-        // Get all products with relationships
+        // Get only main products (no children), with count >= 1, and with images
         $products = Product::query()
+            ->main() // Only main products (parent_id is null)
+            ->hasCountAndImage() // Has count >= 1 and has image
             ->with(['categories', 'etikets'])
             ->get();
 
