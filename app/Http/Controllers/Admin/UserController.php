@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\UsersExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\User\StoreUserRequest;
 use App\Http\Requests\Admin\User\UpdateUserRequest;
@@ -11,6 +12,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Maatwebsite\Excel\Facades\Excel;
 use function Laravel\Prompts\password;
 
 class UserController extends Controller
@@ -45,6 +47,19 @@ class UserController extends Controller
             $users->appends(['search' => $search]);
         }
         return view('admin.users.index', compact('users', 'search'));
+    }
+
+    /**
+     * Export the filtered list of users as an Excel file.
+     */
+    public function export(Request $request)
+    {
+        $fileName = 'users_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(
+            new UsersExport($request->input('search')),
+            $fileName
+        );
     }
 
     /**

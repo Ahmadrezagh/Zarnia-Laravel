@@ -81,6 +81,7 @@ Route::domain('panel.zarniagoldgallery.ir')->middleware('panel.ip')->group(funct
     });
     Route::middleware(['auth'])->prefix('admin')-> group(function (){
         Route::resource('roles', RoleController::class );
+        Route::get('users/export', [UserController::class, 'export'])->name('users.export');
         Route::resource('users', UserController::class );
         Route::resource('admins', AdminController::class );
         Route::resource('categories', CategoryController::class );
