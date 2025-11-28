@@ -56,6 +56,9 @@
                     <button type="button" class="btn btn-warning" onclick="clearSystemCache()">
                         <i class="fas fa-broom"></i> پاک کردن کش
                     </button>
+                    <button type="button" class="btn btn-success" onclick="getEtiketsFromAccounting()">
+                        <i class="fas fa-download"></i> دریافت از حسابداری
+                    </button>
                     <div class="bulk-actions">
                         <div class="btn-group">
                             <button type="button" class="btn btn-info" id="bulk-status-btn" onclick="openBulkStatusModal()">
@@ -1520,6 +1523,46 @@
                         toastr.error(xhr.responseJSON.message);
                     } else {
                         toastr.error('خطا در پاک کردن کش');
+                    }
+                }
+            });
+        }
+
+        function getEtiketsFromAccounting() {
+            if (!confirm('آیا از دریافت اطلاعات از حسابداری اطمینان دارید؟ این عملیات ممکن است چند دقیقه طول بکشد.')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '{{ route("admin_orders.get_etikets") }}',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                beforeSend: function() {
+                    // Show loading state
+                    toastr.info('در حال شروع دریافت از حسابداری...', '', {timeOut: 3000});
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message || 'دریافت از حسابداری شروع شد');
+                    } else {
+                        toastr.error(response.message || 'خطا در شروع دریافت از حسابداری');
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 419) {
+                        toastr.error('نشست شما منقضی شده است. لطفا صفحه را رفرش کنید.');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        toastr.error(xhr.responseJSON.message);
+                    } else {
+                        toastr.error('خطا در دریافت از حسابداری');
                     }
                 }
             });

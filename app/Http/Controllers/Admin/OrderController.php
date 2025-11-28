@@ -790,4 +790,29 @@ class OrderController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * دریافت از حسابداری - Get etikets from accounting system
+     */
+    public function getEtiketsFromAccounting()
+    {
+        try {
+            // Run getEtikets in background to avoid blocking the response
+            dispatch(function () {
+                getEtikets();
+            })->afterResponse();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'دریافت از حسابداری شروع شد. این عملیات در پس‌زمینه انجام می‌شود.'
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error starting getEtikets: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در شروع دریافت از حسابداری: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

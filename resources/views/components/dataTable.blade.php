@@ -73,6 +73,24 @@
         #{{ $id }} th {
             vertical-align: middle;
         }
+
+        /* ✅ Fix dropdown in DataTable */
+        #{{ $id }} .btn-group.dropdown {
+            position: relative;
+        }
+
+        #{{ $id }} .dropdown-menu {
+            position: absolute !important;
+            top: 100% !important;
+            left: auto !important;
+            right: 0 !important;
+            z-index: 1000 !important;
+            margin-top: 0.125rem;
+        }
+
+        #{{ $id }} .dropdown-menu.show {
+            display: block !important;
+        }
     </style>
 @endsection
 
@@ -182,7 +200,7 @@
                         orderable: false,
                         searchable: false,
                         render: function(data, type, row) {
-                            let actionsHtml = `<div class="btn-group"><button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">عملیات</button><div class="dropdown-menu">`;
+                            let actionsHtml = `<div class="btn-group dropdown"><button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">عملیات</button><div class="dropdown-menu dropdown-menu-right">`;
                             @foreach($actions as $action)
                             @if(isset($action['route']))
                             let url = '{{ route($action['route'][0], array_fill(0, count($action['route'][1]), ':param')) }}';
@@ -258,6 +276,57 @@
                             console.error('Failed to load ajax cell:', err);
                             span.html('<span class="text-danger">خطا</span>');
                         });
+                });
+                
+                // Initialize Bootstrap dropdowns for dynamically created rows
+                $('#{{ $id }}').find('.dropdown-toggle').each(function() {
+                    const $dropdown = $(this);
+                    const $menu = $dropdown.next('.dropdown-menu');
+                    
+                    // Ensure dropdown menu exists and is properly positioned
+                    if ($menu.length) {
+                        // Remove any existing event handlers
+                        $dropdown.off('click.bs.dropdown click');
+                        
+                        // Initialize Bootstrap dropdown
+                        try {
+                            $dropdown.dropdown({
+                                popperConfig: {
+                                    placement: 'bottom-end'
+                                }
+                            });
+                        } catch (e) {
+                            // Fallback: manual toggle if Bootstrap dropdown fails
+                            $dropdown.on('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                // Close other open dropdowns
+                                $('#{{ $id }}').find('.dropdown-menu.show').removeClass('show');
+                                
+                                // Toggle current dropdown
+                                $menu.toggleClass('show');
+                                
+                                // Position dropdown
+                                if ($menu.hasClass('show')) {
+                                    $menu.css({
+                                        'position': 'absolute',
+                                        'top': '100%',
+                                        'left': 'auto',
+                                        'right': '0',
+                                        'z-index': '1000'
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
+                
+                // Close dropdowns when clicking outside
+                $(document).off('click.dropdown-{{ $id }}').on('click.dropdown-{{ $id }}', function(e) {
+                    if (!$(e.target).closest('.dropdown').length) {
+                        $('#{{ $id }}').find('.dropdown-menu.show').removeClass('show');
+                    }
                 });
             });
 
