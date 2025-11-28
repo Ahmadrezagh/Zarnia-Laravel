@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Etiket extends Model
 {
@@ -32,5 +33,27 @@ class Etiket extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Check if this etiket is currently reserved (cached for 32 minutes during order processing)
+     * Reserved etikets should return is_mojood = 0 during the reservation period
+     */
+    public function isReserved(): bool
+    {
+        $cacheKey = 'reserved_etiket_' . $this->code;
+        return Cache::has($cacheKey);
+    }
+
+    /**
+     * Get the effective availability status (considering reservations)
+     * Returns 0 if reserved, otherwise returns the actual is_mojood value
+     */
+    public function getEffectiveIsMojoodAttribute(): int
+    {
+        if ($this->isReserved()) {
+            return 0;
+        }
+        return (int) $this->is_mojood;
     }
 }

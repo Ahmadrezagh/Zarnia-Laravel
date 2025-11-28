@@ -14,6 +14,7 @@ use App\Models\Shipping;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class OrderController extends Controller
 {
@@ -100,6 +101,43 @@ class OrderController extends Controller
         }
         $finalAmount = ($totalAmount + $shipping_price) - $discountPrice;
 
+        // Check availability after cache filtering (reserved etikets)
+        // This ensures products have unreserved etikets available
+        $unavailableProductsAfterCache = [];
+        foreach ($cartItems as $cartItem) {
+            // Get all available etikets for this product
+            $availableEtikets = Etiket::where('product_id', $cartItem->product_id)
+                ->where('is_mojood', '=', '1')
+                ->get();
+            
+            // Check if there's at least one unreserved etiket
+            $hasUnreservedEtiket = false;
+            foreach ($availableEtikets as $availableEtiket) {
+                $cacheKey = 'reserved_etiket_' . $availableEtiket->code;
+                // If etiket is not in cache (not reserved), product is available
+                if (!Cache::has($cacheKey)) {
+                    $hasUnreservedEtiket = true;
+                    break;
+                }
+            }
+            
+            // If no unreserved etiket found, add to unavailable list
+            if (!$hasUnreservedEtiket) {
+                $unavailableProductsAfterCache[] = $cartItem->product->name;
+            }
+        }
+
+        // If any products are unavailable after cache check, return error
+        if (!empty($unavailableProductsAfterCache)) {
+            $errorMessages = array_map(function ($productName) {
+                return "محصول {$productName} موجود نمی باشد";
+            }, $unavailableProductsAfterCache);
+            
+            return response()->json([
+                'message' => implode('. ', $errorMessages)
+            ], 400);
+        }
+
         // Create the order
         $order = Order::create([
             'user_id' => $user->id,
@@ -118,9 +156,27 @@ class OrderController extends Controller
             'shipping_price' => $shipping_price,
         ]);
 
-        // Create order items from cart
+        // Create order items from cart and collect reserved etiket codes
+        $reservedEtiketCodes = [];
+        
         foreach ($cartItems as $cartItem) {
-            $etiketCode = Etiket::where('product_id', $cartItem->product_id)->where('is_mojood','=','1')->value('code');
+            // Get all available etikets for this product
+            $availableEtikets = Etiket::where('product_id', $cartItem->product_id)
+                ->where('is_mojood', '=', '1')
+                ->get();
+            
+            // Filter out etikets that are currently reserved (cached)
+            $unreservedEtiket = null;
+            foreach ($availableEtikets as $availableEtiket) {
+                $cacheKey = 'reserved_etiket_' . $availableEtiket->code;
+                // If etiket is not in cache (not reserved), use it
+                if (!Cache::has($cacheKey)) {
+                    $unreservedEtiket = $availableEtiket;
+                    break;
+                }
+            }
+            
+            $etiketCode = $unreservedEtiket ? $unreservedEtiket->code : null;
 
             OrderItem::create([
                 'order_id' => $order->id,
@@ -130,6 +186,19 @@ class OrderController extends Controller
                 'count' => $cartItem->count,
                 'price' => $cartItem->product->price,
             ]);
+            
+            // Collect etiket codes that are being reserved
+            if ($etiketCode) {
+                $reservedEtiketCodes[] = $etiketCode;
+            }
+        }
+
+        // Cache reserved etiket codes for 32 minutes (1920 seconds)
+        // This reserves them until gateway response comes (success or failed)
+        // During this time, when checking availability, these etikets will return is_mojood = 0
+        foreach ($reservedEtiketCodes as $etiketCode) {
+            $cacheKey = 'reserved_etiket_' . $etiketCode;
+            Cache::put($cacheKey, true, 1920); // 32 minutes = 1920 seconds
         }
 
         $order_url = null;
