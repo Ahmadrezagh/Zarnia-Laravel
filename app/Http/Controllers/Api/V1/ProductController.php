@@ -50,7 +50,7 @@ class ProductController extends Controller
             'user_id' => $user?->id,
         ]));
         
-        return Cache::remember($cacheKey, 3600, function () use ($request, $user, $sortType, $fromPrice, $toPrice) {
+        return Cache::remember($cacheKey, 1200, function () use ($request, $user, $sortType, $fromPrice, $toPrice) {
             $products = Product::query()
                 ->with('children') // Eager load children for price_range_title
                 ->main()
@@ -101,7 +101,7 @@ class ProductController extends Controller
             'user_id' => $user?->id,
         ]));
 
-        return Cache::remember($cacheKey, 3600, function () use ($request, $user, $categoryIds, $sortType, $fromPrice, $toPrice) {
+        return Cache::remember($cacheKey, 1200, function () use ($request, $user, $categoryIds, $sortType, $fromPrice, $toPrice) {
             $products = Product::query()
                 ->with('children')
                 ->main()
@@ -124,7 +124,7 @@ class ProductController extends Controller
         // Create unique cache key based on product ID and user ID
         $cacheKey = 'product_show_' . $product->id . '_user_' . ($user?->id ?? 'guest');
         
-        return Cache::remember($cacheKey, 3600, function () use ($product, $user) {
+        return Cache::remember($cacheKey, 1200, function () use ($product, $user) {
             // Eager load children for price_range_title
             $product->load('children');
             
@@ -139,7 +139,7 @@ class ProductController extends Controller
         // Create unique cache key based on product ID and user ID
         $cacheKey = 'product_related_complementary_' . $product->id . '_user_' . ($user?->id ?? 'guest');
         
-        return Cache::remember($cacheKey, 3600, function () use ($product, $user) {
+        return Cache::remember($cacheKey, 1200, function () use ($product, $user) {
             // Get related products - filter by single_count >= 1 and has image
             $relatedProducts = $product->relatedProducts()
                 ->filter(function($prod) {
