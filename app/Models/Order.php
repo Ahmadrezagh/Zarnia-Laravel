@@ -254,7 +254,21 @@ class Order extends Model
 
     public function getProductNameColAttribute()
     {
-        $result = $this->FirstNameOfOrderItem . "<br/>" . number_format($this->final_amount)." تومان ";
+        $productName = $this->FirstNameOfOrderItem;
+        
+        // Get product from first order item (use loaded relationship if available)
+        $firstOrderItem = $this->relationLoaded('orderItems') 
+            ? $this->orderItems->first() 
+            : $this->orderItems()->first();
+        
+        $product = $firstOrderItem->product ?? null;
+        
+        // Make product name clickable if product exists and has frontend URL
+        if ($product && $product->frontend_url) {
+            $productName = "<a href='" . e($product->frontend_url) . "' target='_blank' style='color: #007bff; text-decoration: none;'>" . e($productName) . "</a>";
+        }
+        
+        $result = $productName . "<br/>" . number_format($this->final_amount)." تومان ";
         if($this->total_amount != $this->final_amount){
             $result = $result."<br/> <p style='color: blue'>" . number_format($this->total_amount)." تومان "."</p>";
         }
