@@ -208,20 +208,31 @@ class Order extends Model
 
         // Check if any order item has a product with discount
         $hasDiscount = false;
+        $discountPercentage = null;
+        
         if ($this->relationLoaded('orderItems')) {
             // Ensure products are loaded if orderItems are loaded
             if ($this->orderItems->isNotEmpty() && !$this->orderItems->first()->relationLoaded('product')) {
                 $this->load('orderItems.product');
             }
             
-            $hasDiscount = $this->orderItems->contains(function ($orderItem) {
+            // Find first product with discount and get its discount_percentage
+            foreach ($this->orderItems as $orderItem) {
                 if ($orderItem->product) {
                     $product = $orderItem->product;
-                    return ($product->discounted_price && $product->discounted_price != 0) 
+                    $hasProductDiscount = ($product->discounted_price && $product->discounted_price != 0) 
                         || ($product->discount_percentage && $product->discount_percentage != 0);
+                    
+                    if ($hasProductDiscount) {
+                        $hasDiscount = true;
+                        // Get discount_percentage if available
+                        if ($product->discount_percentage && $product->discount_percentage != 0) {
+                            $discountPercentage = $product->discount_percentage;
+                            break; // Use first product with discount_percentage
+                        }
+                    }
                 }
-                return false;
-            });
+            }
         } else {
             // If not loaded, check with a query
             $hasDiscount = $this->orderItems()
@@ -232,10 +243,31 @@ class Order extends Model
                     })->orWhere('discount_percentage', '!=', 0);
                 })
                 ->exists();
+            
+            // Get discount_percentage from first product with discount
+            if ($hasDiscount) {
+                $orderItemWithDiscount = $this->orderItems()
+                    ->whereHas('product', function ($query) {
+                        $query->where(function ($q) {
+                            $q->where('discounted_price', '!=', 0)
+                              ->whereNotNull('discounted_price');
+                        })->orWhere('discount_percentage', '!=', 0);
+                    })
+                    ->with('product')
+                    ->first();
+                
+                if ($orderItemWithDiscount && $orderItemWithDiscount->product) {
+                    $discountPercentage = $orderItemWithDiscount->product->discount_percentage;
+                }
+            }
         }
 
         if ($hasDiscount) {
-            $value .= "<br/><span style='color: green; font-weight: bold;'>سفارش با تخفیف</span>";
+            $discountText = "<br/><span style='color: green; font-weight: bold;'>سفارش با تخفیف</span>";
+            if ($discountPercentage && $discountPercentage != 0) {
+                $discountText .= " - " . number_format($discountPercentage) . "%";
+            }
+            $value .= $discountText;
         }
 
         return request()->expectsJson()
