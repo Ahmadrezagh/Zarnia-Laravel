@@ -59,6 +59,11 @@
                         <i class="fas fa-file-excel"></i> خروجی اکسل
                     </button>
                 </div>
+                <div class="col-3">
+                    <button type="button" class="btn btn-warning" onclick="recalculateDiscounts()">
+                        <i class="fas fa-calculator"></i> محاسبه مجدد تخفیف ها
+                    </button>
+                </div>
             </div>
         </x-slot>
         <x-dataTable
@@ -905,6 +910,48 @@
             window.location.href = exportUrl;
             
             toastr.success('در حال تهیه فایل اکسل...');
+        }
+
+        /**
+         * Recalculate discounts for all products with discount_percentage > 0
+         */
+        function recalculateDiscounts() {
+            if (!confirm('آیا از محاسبه مجدد تخفیف تمام محصولات با تخفیف مطمئن هستید؟')) {
+                return;
+            }
+
+            // Show loading message
+            toastr.info('در حال محاسبه تخفیف ها...', 'لطفا صبر کنید');
+
+            $.ajax({
+                url: '{{ route('products.recalculate_discounts') }}',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        
+                        // Refresh the table
+                        if (typeof window.refreshTable === 'function') {
+                            window.refreshTable();
+                        } else if (typeof window.loadDataWithNewUrl === 'function') {
+                            window.loadDataWithNewUrl('{{ route('table.products') }}');
+                        }
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error recalculating discounts:', xhr);
+                    let errorMessage = 'خطا در محاسبه مجدد تخفیف ها';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    toastr.error(errorMessage);
+                }
+            });
         }
 
     </script>

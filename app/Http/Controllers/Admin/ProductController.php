@@ -77,7 +77,9 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // TODO: Implement product creation logic
+        // After creating the product, call:
+        // $this->updateDiscountedPrice($product);
     }
 
     /**
@@ -125,6 +127,8 @@ class ProductController extends Controller
             $children = $product->children()->get();
             foreach ($children as $child) {
                 $child->update(['discount_percentage' => $discountPercentage]);
+                // Update discounted price for child
+                $this->updateDiscountedPrice($child);
             }
         }
 
@@ -196,6 +200,9 @@ class ProductController extends Controller
                     ->delete();
             }
         }
+
+        // Update discounted price
+        $this->updateDiscountedPrice($product);
 
         return response()->json($product);
     }
@@ -808,6 +815,9 @@ class ProductController extends Controller
                     return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
                 }
             }
+
+            // Update discounted price
+            $this->updateDiscountedPrice($product);
         }
 
         // Clean up original temporary file
@@ -915,6 +925,9 @@ class ProductController extends Controller
                     'product_id' => $productId,
                 ]);
             }
+            
+            // Update discounted price
+            $this->updateDiscountedPrice($product);
             
             return back()->with('success', 'محصول جامع با موفقیت ایجاد شد');
         } catch (\Exception $e) {
@@ -1212,5 +1225,61 @@ class ProductController extends Controller
             new ProductsExport($filters), 
             'products_' . date('Y-m-d_H-i-s') . '.xlsx'
         );
+    }
+
+    /**
+     * Recalculate discounts for all products with discount_percentage > 0
+     */
+    public function recalculateDiscounts(Request $request)
+    {
+        try {
+            // Get all products with discount_percentage > 0
+            $products = Product::where('discount_percentage', '>', 0)->get();
+            
+            $count = 0;
+            foreach ($products as $product) {
+                $this->updateDiscountedPrice($product);
+                $count++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "تخفیف {$count} محصول با موفقیت محاسبه شد",
+                'count' => $count
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error recalculating discounts: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در محاسبه مجدد تخفیف ها: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Calculate and update discounted price.
+     */
+    private function updateDiscountedPrice(Product $product)
+    {
+        // Get raw price value (stored multiplied by 10) and discount percentage
+        $rawPrice = $product->getRawOriginal('price');
+        $discountPercentage = $product->discount_percentage;
+
+        if ($rawPrice != 0 && $discountPercentage != 0) {
+            // Calculate discounted price
+            // Raw price is stored multiplied by 10, so divide by 10 to get actual price
+            // discounted_price is stored as-is (not multiplied by 10)
+            $discountedPrice = ($rawPrice / 10) * (1 - $discountPercentage / 100);
+
+            // Round to nearest 1000 (last three digits to 000)
+            $discountedPrice = round($discountedPrice, -3);
+
+            $product->discounted_price = $discountedPrice;
+        } else {
+            $product->discounted_price = null;
+            $product->discount_percentage = 0;
+        }
+
+        $product->saveQuietly();
     }
 }

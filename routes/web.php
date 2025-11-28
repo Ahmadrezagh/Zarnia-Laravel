@@ -93,6 +93,7 @@ Route::domain('panel.zarniagoldgallery.ir')->middleware('panel.ip')->group(funct
         Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
         Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
         Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');
+        Route::post('products/recalculate-discounts', [ProductController::class,'recalculateDiscounts' ])->name('products.recalculate_discounts');
         
         Route::resource('products', ProductController::class );
         Route::resource('admin_orders', OrderController::class );
