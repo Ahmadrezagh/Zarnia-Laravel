@@ -535,8 +535,88 @@
         }
 
         function modalCancel(id){
-            const dModal = $("#modal-cancel-"+id)
-            dModal.modal("show")
+            // Check if modal exists, if not create it dynamically
+            let modalId = "modal-cancel-"+id;
+            let dModal = $("#"+modalId);
+            
+            if (dModal.length === 0) {
+                // Create modal dynamically
+                const modalHtml = `
+                    <div class="modal fade" id="${modalId}" tabindex="-1" role="dialog">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">لغو سفارش</h5>
+                                    <button type="button" class="close" data-dismiss="modal">
+                                        <span>&times;</span>
+                                    </button>
+                                </div>
+                                <form action="/admin/admin_order/cancel/${id}" method="GET" class="ajax-form" data-method="GET">
+                                    <div class="modal-body">
+                                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                        <h5>آیا در لغو '<b>سفارش ${id}</b>' مطمئن هستید؟</h5>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                                        <button type="submit" class="btn btn-primary">لغو سفارش</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Append modal to body
+                $('body').append(modalHtml);
+                dModal = $("#"+modalId);
+                
+                // Handle form submission
+                dModal.find('form').on('submit', function(e) {
+                    e.preventDefault();
+                    const form = $(this);
+                    const action = form.attr('action');
+                    
+                    $.ajax({
+                        url: action,
+                        type: 'GET',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            toastr.success('سفارش با موفقیت لغو شد');
+                            dModal.modal('hide');
+                            
+                            // Remove modal from DOM after hiding
+                            dModal.on('hidden.bs.modal', function() {
+                                $(this).remove();
+                            });
+                            
+                            // Reload table
+                            if (typeof window.refreshTable === 'function') {
+                                window.refreshTable();
+                            } else {
+                                location.reload();
+                            }
+                        },
+                        error: function(xhr) {
+                            if (xhr.status === 419) {
+                                toastr.error('نشست شما منقضی شده است. لطفا صفحه را رفرش کنید.');
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 2000);
+                            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                                toastr.error(xhr.responseJSON.message);
+                            } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                                toastr.error(xhr.responseJSON.error);
+                            } else {
+                                toastr.error('خطا در لغو سفارش');
+                            }
+                        }
+                    });
+                });
+            }
+            
+            dModal.modal("show");
         }
 
     </script>
