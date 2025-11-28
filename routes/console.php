@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::call(function () {
     getEtikets();
-})->everyThirtyMinutes();
+})->everyFiveMinutes();
 Schedule::call(function () {
     getUpdatedEtikets();
 })->everyFiveSeconds();
