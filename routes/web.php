@@ -112,6 +112,7 @@ Route::domain('panel.zarniagoldgallery.ir')->middleware('panel.ip')->group(funct
         Route::post('admin_orders/bulk-status', [OrderController::class, 'bulkStatus'])->name('admin_orders.bulk_status');
         Route::post('admin_orders/bulk-delete', [OrderController::class, 'bulkDelete'])->name('admin_orders.bulk_delete');
         Route::get('admin_order/users/{user}/addresses', [OrderController::class, 'getUserAddresses'])->name('admin_order.users.addresses');
+        Route::post('admin_orders/clear-cache', [OrderController::class, 'clearCache'])->name('admin_orders.clear_cache');
         Route::get('products_not_available', [ProductController::class,'notAvailable' ])->name('products.products_not_available');
         Route::get('products_without_category', [ProductController::class,'withoutCategory' ])->name('products.product_without_category');
         Route::get('products_comprehensive', [ProductController::class,'productsComprehensive' ])->name('products.products_comprehensive');

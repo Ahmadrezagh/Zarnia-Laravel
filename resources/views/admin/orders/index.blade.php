@@ -52,14 +52,19 @@
             <hr>
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <button class="btn btn-primary" type="button" onclick="openCreateOrderModal()">ایجاد سفارش جدید</button>
-                <div class="bulk-actions">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-info" id="bulk-status-btn" onclick="openBulkStatusModal()">
-                            <i class="fas fa-edit"></i> تغییر وضعیت دسته‌ای
-                        </button>
-                        <button type="button" class="btn btn-danger" id="bulk-delete-btn" onclick="openBulkDeleteModal()">
-                            <i class="fas fa-trash"></i> حذف دسته‌ای
-                        </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-warning" onclick="clearSystemCache()">
+                        <i class="fas fa-broom"></i> پاک کردن کش
+                    </button>
+                    <div class="bulk-actions">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-info" id="bulk-status-btn" onclick="openBulkStatusModal()">
+                                <i class="fas fa-edit"></i> تغییر وضعیت دسته‌ای
+                            </button>
+                            <button type="button" class="btn btn-danger" id="bulk-delete-btn" onclick="openBulkDeleteModal()">
+                                <i class="fas fa-trash"></i> حذف دسته‌ای
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1475,6 +1480,46 @@
                         if (xhr.responseText) {
                             console.error('Error response:', xhr.responseText);
                         }
+                    }
+                }
+            });
+        }
+
+        function clearSystemCache() {
+            if (!confirm('آیا از پاک کردن تمام کش‌های سیستم اطمینان دارید؟')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '{{ route("admin_orders.clear_cache") }}',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                beforeSend: function() {
+                    // Show loading state
+                    toastr.info('در حال پاک کردن کش‌ها...', '', {timeOut: 2000});
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message || 'تمام کش‌های سیستم با موفقیت پاک شدند');
+                    } else {
+                        toastr.error(response.message || 'خطا در پاک کردن کش');
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 419) {
+                        toastr.error('نشست شما منقضی شده است. لطفا صفحه را رفرش کنید.');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        toastr.error(xhr.responseJSON.message);
+                    } else {
+                        toastr.error('خطا در پاک کردن کش');
                     }
                 }
             });

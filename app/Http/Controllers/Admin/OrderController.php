@@ -13,7 +13,9 @@ use App\Models\Page;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
@@ -743,26 +745,49 @@ class OrderController extends Controller
      */
     public function getUserAddresses($userId)
     {
-        $user = \App\Models\User::with('addresses')->findOrFail($userId);
-        
+        $user = \App\Models\User::findOrFail($userId);
+        $addresses = $user->addresses()->get()->map(function ($address) {
+            return [
+                'id' => $address->id,
+                'receiver_name' => $address->receiver_name,
+                'city' => $address->city ? $address->city->name : null,
+                'address' => $address->address,
+            ];
+        });
+
         return response()->json([
             'success' => true,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-            ],
-            'addresses' => $user->addresses->map(function($address) {
-                return [
-                    'id' => $address->id,
-                    'receiver_name' => $address->receiver_name,
-                    'receiver_phone' => $address->receiver_phone ?? $address->phone,
-                    'address' => $address->address,
-                    'postal_code' => $address->postal_code ?? '',
-                    'province' => $address->province ?? '',
-                    'city' => $address->city ?? '',
-                ];
-            })
+            'addresses' => $addresses
         ]);
+    }
+
+    /**
+     * Clear all system caches
+     */
+    public function clearCache()
+    {
+        try {
+            // Clear all application cache
+            Cache::flush();
+            
+            // Clear config cache
+            Artisan::call('config:clear');
+            
+            // Clear route cache
+            Artisan::call('route:clear');
+            
+            // Clear view cache
+            Artisan::call('view:clear');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'تمام کش‌های سیستم با موفقیت پاک شدند'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در پاک کردن کش: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
