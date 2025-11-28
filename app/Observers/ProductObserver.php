@@ -78,9 +78,15 @@ class ProductObserver
      */
     private function updateDiscountedPrice(Product $product)
     {
-        if ($product->price != 0 && $product->discount_percentage != 0) {
+        // Get raw price value (stored multiplied by 10) and discount percentage
+        $rawPrice = $product->getRawOriginal('price');
+        $discountPercentage = $product->discount_percentage;
+
+        if ($rawPrice != 0 && $discountPercentage != 0) {
             // Calculate discounted price
-            $discountedPrice = $product->originalPrice * (1 - $product->discount_percentage / 100);
+            // Raw price is stored multiplied by 10, so divide by 10 to get actual price
+            // discounted_price is stored as-is (not multiplied by 10)
+            $discountedPrice = ($rawPrice / 10) * (1 - $discountPercentage / 100);
 
             // Round to nearest 1000 (last three digits to 000)
             $discountedPrice = round($discountedPrice, -3);
