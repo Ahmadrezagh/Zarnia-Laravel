@@ -90,7 +90,7 @@
                             <td>{{ number_format($item['purchase_commission_grams'], 3) }}</td>
                             <td>{{ number_format($item['sale_percentage'], 2) }}%</td>
                             <td>{{ number_format($item['sale_commission_grams'], 3) }}</td>
-                            <td>{{ $item['mazaneh'] !== null && $item['mazaneh'] > 0 ? number_format($item['discount_per_gram'], 2) : '-' }}</td>
+                            <td>{{ $item['mazaneh'] !== null && $item['mazaneh'] > 0 ? number_format($item['discount_per_gram'], 3) : '-' }}</td>
                         </tr>
                     @endforeach
                 </tbody>
