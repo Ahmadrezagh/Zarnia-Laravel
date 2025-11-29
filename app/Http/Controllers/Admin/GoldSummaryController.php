@@ -227,6 +227,30 @@ class GoldSummaryController extends Controller
                 }
             }
 
+            // Calculate discount per gram of gold
+            $totalDiscount = floatval($order->discount_price ?? 0);
+            $firstMazaneh = null;
+            
+            // Sum discounted_price from all order items' products
+            foreach ($order->orderItems as $item) {
+                if ($item->product) {
+                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0);
+                    if ($productDiscountedPrice > 0) {
+                        $totalDiscount += $productDiscountedPrice * intval($item->count);
+                    }
+                    
+                    // Find first mazaneh that is not 0
+                    if ($firstMazaneh === null && $item->product->mazaneh && floatval($item->product->mazaneh) != 0) {
+                        $firstMazaneh = floatval($item->product->mazaneh);
+                    }
+                }
+            }
+            
+            $discountPerGram = 0;
+            if ($firstMazaneh !== null && $firstMazaneh > 0) {
+                $discountPerGram = $totalDiscount / $firstMazaneh;
+            }
+
             $cumulativeAmount += $orderAmount;
             
             \Log::info('Gold Summary - Order processed:', [
@@ -247,6 +271,7 @@ class GoldSummaryController extends Controller
                 'cumulative_amount' => number_format($cumulativeAmount) . ' تومان',
                 'purchase_commission_grams' => number_format($orderPurchaseWeightSum, 3) . ' گرم',
                 'sale_commission_grams' => number_format($orderSaleWeightSum, 3) . ' گرم',
+                'discount_per_gram' => $firstMazaneh !== null && $firstMazaneh > 0 ? number_format($discountPerGram, 2) : '-',
             ];
         }
         

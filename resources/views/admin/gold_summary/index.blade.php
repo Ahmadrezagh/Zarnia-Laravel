@@ -109,6 +109,7 @@
                         <th>جمع تجمعی (تومان)</th>
                         <th>کارمزد خرید (گرم)</th>
                         <th>کارمزد فروش (گرم)</th>
+                        <th>تخفیف به گرم طلا</th>
                     </tr>
                 </thead>
                 <style>
@@ -145,6 +146,30 @@
                                 }
                             }
 
+                            // Calculate discount per gram of gold
+                            $totalDiscount = floatval($order->discount_price ?? 0);
+                            $firstMazaneh = null;
+                            
+                            // Sum discounted_price from all order items' products
+                            foreach ($order->orderItems as $item) {
+                                if ($item->product) {
+                                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0);
+                                    if ($productDiscountedPrice > 0) {
+                                        $totalDiscount += $productDiscountedPrice * intval($item->count);
+                                    }
+                                    
+                                    // Find first mazaneh that is not 0
+                                    if ($firstMazaneh === null && $item->product->mazaneh && floatval($item->product->mazaneh) != 0) {
+                                        $firstMazaneh = floatval($item->product->mazaneh);
+                                    }
+                                }
+                            }
+                            
+                            $discountPerGram = 0;
+                            if ($firstMazaneh !== null && $firstMazaneh > 0) {
+                                $discountPerGram = $totalDiscount / $firstMazaneh;
+                            }
+
                             $cumulativeAmount += $orderAmount;
                         @endphp
                         <tr style="cursor: pointer;" onclick="window.open('{{ route('gold_summary.show', $order->id) }}', '_blank')">
@@ -156,6 +181,7 @@
                             <td>{{ number_format($cumulativeAmount) }}</td>
                             <td>{{ number_format($orderPurchaseWeightSum, 3) }}</td>
                             <td>{{ number_format($orderSaleWeightSum, 3) }}</td>
+                            <td>{{ $firstMazaneh !== null && $firstMazaneh > 0 ? number_format($discountPerGram, 2) : '-' }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -167,6 +193,7 @@
                         <td>-</td>
                         <td>{{ $summary['page_purchase_commission'] }}</td>
                         <td>{{ $summary['page_sale_commission'] }}</td>
+                        <td>-</td>
                     </tr>
                     <tr class="font-weight-bold bg-primary text-white">
                         <td colspan="3">جمع کل همه سفارشات</td>
@@ -175,6 +202,7 @@
                         <td>{{ $summary['total_amount'] }}</td>
                         <td>{{ $summary['total_purchase_commission'] }}</td>
                         <td>{{ $summary['total_sale_commission'] }}</td>
+                        <td>-</td>
                     </tr>
                 </tfoot>
             </table>
