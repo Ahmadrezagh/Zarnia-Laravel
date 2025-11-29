@@ -271,6 +271,7 @@ class GoldSummaryController extends Controller
                 'cumulative_amount' => number_format($cumulativeAmount) . ' تومان',
                 'purchase_commission_grams' => number_format($orderPurchaseWeightSum, 3) . ' گرم',
                 'sale_commission_grams' => number_format($orderSaleWeightSum, 3) . ' گرم',
+                'total_discount' => number_format($totalDiscount) . ' تومان',
                 'discount_per_gram' => $firstMazaneh !== null && $firstMazaneh > 0 ? number_format($discountPerGram, 3) : '-',
             ];
         }
@@ -365,6 +366,7 @@ class GoldSummaryController extends Controller
                     'purchase_commission_grams' => $purchaseCommissionGrams,
                     'sale_percentage' => $ojrat,
                     'sale_commission_grams' => $saleCommissionGrams,
+                    'total_discount' => $itemDiscount,
                     'discount_per_gram' => $discountPerGram,
                     'mazaneh' => $mazaneh,
                 ];
