@@ -404,6 +404,8 @@ class GoldSummaryController extends Controller
         $totalAmount = 0;
         $totalPurchaseCommission = 0;
         $totalSaleCommission = 0;
+        $totalDiscount = 0;
+        $totalDiscountPerGram = 0;
 
         // Calculate total order discount for proportional allocation
         $orderDiscountPrice = floatval($order->discount_price ?? 0);
@@ -457,6 +459,8 @@ class GoldSummaryController extends Controller
                 $totalAmount += $itemAmount;
                 $totalPurchaseCommission += $purchaseCommissionGrams;
                 $totalSaleCommission += $saleCommissionGrams;
+                $totalDiscount += $itemDiscount;
+                $totalDiscountPerGram += $discountPerGram;
             }
         }
 
@@ -471,6 +475,8 @@ class GoldSummaryController extends Controller
             'total_sale_commission' => $totalSaleCommission,
             'avg_purchase_percentage' => $avgPurchasePercentage,
             'avg_sale_percentage' => $avgSalePercentage,
+            'total_discount' => $totalDiscount,
+            'total_discount_per_gram' => $totalDiscountPerGram,
         ];
 
         return view('admin.gold_summary.show', compact('order', 'items', 'summary'));

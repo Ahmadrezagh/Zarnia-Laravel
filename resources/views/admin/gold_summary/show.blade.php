@@ -108,9 +108,9 @@
                         <td>{{ number_format($summary['total_purchase_commission'], 3) }} گرم</td>
                         <td>-</td>
                         <td>{{ number_format($summary['total_sale_commission'], 3) }} گرم</td>
+                        <td>{{ number_format($summary['total_discount']) }} تومان</td>
                         <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
+                        <td>{{ number_format($summary['total_discount_per_gram'], 3) }}</td>
                     </tr>
                 </tfoot>
             </table>
