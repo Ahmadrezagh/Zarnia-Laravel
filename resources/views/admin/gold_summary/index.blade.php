@@ -184,7 +184,7 @@
                             <td>{{ number_format($orderPurchaseWeightSum, 3) }}</td>
                             <td>{{ number_format($orderSaleWeightSum, 3) }}</td>
                             <td>{{ number_format($totalDiscount) }}</td>
-                            <td>{{ $firstMazaneh !== null ? number_format($firstMazaneh, 3) : '-' }}</td>
+                            <td>{{ $firstMazaneh !== null ? number_format($firstMazaneh / 10, 3) : '-' }}</td>
                             <td>{{ $firstMazaneh !== null && $firstMazaneh > 0 ? number_format($discountPerGram, 3) : '-' }}</td>
                         </tr>
                     @endforeach
