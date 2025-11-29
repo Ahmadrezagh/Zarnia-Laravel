@@ -110,6 +110,7 @@
                         <th>کارمزد خرید (گرم)</th>
                         <th>کارمزد فروش (گرم)</th>
                         <th>مبلغ مجموع تخفیف</th>
+                        <th>مزنه</th>
                         <th>تخفیف به گرم طلا</th>
                     </tr>
                 </thead>
@@ -183,6 +184,7 @@
                             <td>{{ number_format($orderPurchaseWeightSum, 3) }}</td>
                             <td>{{ number_format($orderSaleWeightSum, 3) }}</td>
                             <td>{{ number_format($totalDiscount) }}</td>
+                            <td>{{ $firstMazaneh !== null ? number_format($firstMazaneh, 3) : '-' }}</td>
                             <td>{{ $firstMazaneh !== null && $firstMazaneh > 0 ? number_format($discountPerGram, 3) : '-' }}</td>
                         </tr>
                     @endforeach
@@ -197,6 +199,7 @@
                         <td>{{ $summary['page_sale_commission'] }}</td>
                         <td>-</td>
                         <td>-</td>
+                        <td>-</td>
                     </tr>
                     <tr class="font-weight-bold bg-primary text-white">
                         <td colspan="3">جمع کل همه سفارشات</td>
@@ -205,6 +208,7 @@
                         <td>{{ $summary['total_amount'] }}</td>
                         <td>{{ $summary['total_purchase_commission'] }}</td>
                         <td>{{ $summary['total_sale_commission'] }}</td>
+                        <td>-</td>
                         <td>-</td>
                         <td>-</td>
                     </tr>
