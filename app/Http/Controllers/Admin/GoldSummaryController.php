@@ -322,6 +322,10 @@ class GoldSummaryController extends Controller
         $totalPurchaseCommission = 0;
         $totalSaleCommission = 0;
 
+        // Calculate total order discount for proportional allocation
+        $orderDiscountPrice = floatval($order->discount_price ?? 0);
+        $totalOrderItemsCount = $order->orderItems->sum('count');
+        
         foreach ($order->orderItems as $item) {
             if ($item->product) {
                 $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
@@ -332,6 +336,22 @@ class GoldSummaryController extends Controller
                 
                 $ojrat = floatval($item->product->ojrat ?? 0);
                 $saleCommissionGrams = ($itemWeight * $ojrat) / 100;
+
+                // Calculate discount per gram for this item
+                $itemDiscount = 0;
+                if ($totalOrderItemsCount > 0) {
+                    // Proportional share of order discount
+                    $proportionalOrderDiscount = ($orderDiscountPrice * intval($item->count)) / $totalOrderItemsCount;
+                    // Product discounted price
+                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0) * intval($item->count);
+                    $itemDiscount = $proportionalOrderDiscount + $productDiscountedPrice;
+                }
+                
+                $mazaneh = $item->product->mazaneh ? floatval($item->product->mazaneh) : null;
+                $discountPerGram = 0;
+                if ($mazaneh !== null && $mazaneh > 0) {
+                    $discountPerGram = $itemDiscount / $mazaneh;
+                }
 
                 $items[] = [
                     'product_name' => $item->name,
@@ -345,6 +365,8 @@ class GoldSummaryController extends Controller
                     'purchase_commission_grams' => $purchaseCommissionGrams,
                     'sale_percentage' => $ojrat,
                     'sale_commission_grams' => $saleCommissionGrams,
+                    'discount_per_gram' => $discountPerGram,
+                    'mazaneh' => $mazaneh,
                 ];
 
                 $totalWeight += $itemWeight;
