@@ -16,11 +16,14 @@
             <hr>
             <form  method="GET">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <x-form.input title="کد پیگیری" name="transaction_id" id="transaction_id" :value="request('transaction_id')" />
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <x-form.input title="جستجو (شناسه / نام محصول / نام کاربر)" name="search" id="search_input" :value="request('search')" />
+                    </div>
+                    <div class="col-md-4">
+                        <x-form.input title="جستجو شماره تلفن (کاربر / گیرنده)" name="phone" id="phone_input" :value="request('phone')" />
                     </div>
                 </div>
                 <div class="row">
@@ -696,7 +699,7 @@
         
         // Add Enter key support for input fields
         $(document).ready(function() {
-            $('#transaction_id, #search_input').on('keypress', function(e) {
+            $('#transaction_id, #search_input, #phone_input').on('keypress', function(e) {
                 if(e.which === 13) { // Enter key
                     e.preventDefault();
                     applyFilters();
@@ -712,10 +715,12 @@
         function applyFilters(){
             let transaction_id = $("#transaction_id").val();
             let search = $("#search_input").val();
+            let phone = $("#phone_input").val();
             
             let params = [];
             if(transaction_id) params.push("transaction_id=" + encodeURIComponent(transaction_id));
             if(search) params.push("search=" + encodeURIComponent(search));
+            if(phone) params.push("phone=" + encodeURIComponent(phone));
             if(currentStatusFilter) params.push("status=" + encodeURIComponent(currentStatusFilter));
             
             let url = "{{route('table.orders')}}" + (params.length ? "?" + params.join("&") : "");
@@ -741,10 +746,12 @@
             
             let transaction_id = $("#transaction_id").val();
             let search = $("#search_input").val();
+            let phone = $("#phone_input").val();
             
             let params = [];
             if(transaction_id) params.push("transaction_id=" + encodeURIComponent(transaction_id));
             if(search) params.push("search=" + encodeURIComponent(search));
+            if(phone) params.push("phone=" + encodeURIComponent(phone));
             if(status) params.push("status=" + encodeURIComponent(status));
             
             let tableUrl = "{{route('table.orders')}}" + (params.length ? "?" + params.join("&") : "");
@@ -755,6 +762,7 @@
             // Clear input fields
             $("#transaction_id").val('');
             $("#search_input").val('');
+            $("#phone_input").val('');
             
             // Reset status filter
             currentStatusFilter = '';

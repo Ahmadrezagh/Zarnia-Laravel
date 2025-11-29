@@ -35,6 +35,7 @@ class OrderController extends Controller
             ->with(['orderItems.product', 'user', 'address'])
             ->filterByTransactionId($request->transaction_id)
             ->filterByStatus($request->status)
+            ->filterByPhone($request->phone)
             ->search($request->search)
             ->orderByStatusPriority()
             ->paginate();
@@ -541,7 +542,8 @@ class OrderController extends Controller
         // Build base query with filters
         $query = Order::query()
             ->filterByTransactionId($request->transaction_id)
-            ->filterByStatus($request->status);
+            ->filterByStatus($request->status)
+            ->filterByPhone($request->phone);
 
         // Apply search filter - handle both DataTables search and direct search parameter
         $searchValue = null;
@@ -598,7 +600,8 @@ class OrderController extends Controller
         // Build base query with filters - only trashed orders
         $query = Order::onlyTrashed()
             ->filterByTransactionId($request->transaction_id)
-            ->filterByStatus($request->status);
+            ->filterByStatus($request->status)
+            ->filterByPhone($request->phone);
 
         // Apply search filter - handle both DataTables search and direct search parameter
         $searchValue = null;

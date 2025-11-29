@@ -107,6 +107,23 @@ class Order extends Model
         return $query;
     }
 
+    public function scopeFilterByPhone(Builder $query, string $phone = null)
+    {
+        if($phone){
+            $phone = self::normalizeSearchValue($phone);
+            
+            $query->where(function($q) use ($phone) {
+                $q->whereHas('user', function ($q) use ($phone) {
+                    $q->where('phone', 'LIKE', "%{$phone}%");
+                })
+                ->orWhereHas('address', function ($q) use ($phone) {
+                    $q->where('receiver_phone', 'LIKE', "%{$phone}%");
+                });
+            });
+        }
+        return $query;
+    }
+
     public function scopeOrderByStatusPriority(Builder $query)
     {
         return $query->orderByRaw("
