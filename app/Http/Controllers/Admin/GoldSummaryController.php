@@ -42,9 +42,14 @@ class GoldSummaryController extends Controller
         $totalAmount = 0;
         $totalPurchasePercentageWeight = 0;
         $totalSalePercentageWeight = 0;
+        $totalDiscount = 0;
+        $totalDiscountPerGram = 0;
 
         // Calculate totals from ALL filtered orders
         foreach ($allFilteredOrders as $order) {
+            $orderTotalDiscount = floatval($order->discount_price ?? 0);
+            $firstMazaneh = null;
+            
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
                     $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
@@ -54,6 +59,17 @@ class GoldSummaryController extends Controller
                     $purchaseCommissionGrams = ($itemWeight * $darsadKharid) / 100;
                     
                     $ojrat = floatval($item->product->ojrat ?? 0);
+                    
+                    // Sum discounted_price from products
+                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0);
+                    if ($productDiscountedPrice > 0) {
+                        $orderTotalDiscount += $productDiscountedPrice * intval($item->count);
+                    }
+                    
+                    // Find first mazaneh that is not 0
+                    if ($firstMazaneh === null && $item->product->mazaneh && floatval($item->product->mazaneh) != 0) {
+                        $firstMazaneh = floatval($item->product->mazaneh);
+                    }
                     
                     $totalWeight += $itemWeight;
                     $totalAmount += $itemAmount;
@@ -61,6 +77,15 @@ class GoldSummaryController extends Controller
                     $totalSalePercentageWeight += ($itemWeight * $ojrat) / 100;
                 }
             }
+            
+            // Calculate discount per gram for this order
+            $orderDiscountPerGram = 0;
+            if ($firstMazaneh !== null && $firstMazaneh > 0) {
+                $orderDiscountPerGram = ($orderTotalDiscount / $firstMazaneh) * 10;
+            }
+            
+            $totalDiscount += $orderTotalDiscount;
+            $totalDiscountPerGram += $orderDiscountPerGram;
         }
 
         // Calculate page-specific data (for footer comparison)
@@ -68,9 +93,14 @@ class GoldSummaryController extends Controller
         $pageAmount = 0;
         $pagePurchasePercentageWeight = 0;
         $pageSalePercentageWeight = 0;
+        $pageTotalDiscount = 0;
+        $pageTotalDiscountPerGram = 0;
 
         // Calculate totals from current page orders only
         foreach ($orders as $order) {
+            $orderTotalDiscount = floatval($order->discount_price ?? 0);
+            $firstMazaneh = null;
+            
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
                     $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
@@ -81,12 +111,32 @@ class GoldSummaryController extends Controller
                     
                     $ojrat = floatval($item->product->ojrat ?? 0);
                     
+                    // Sum discounted_price from products
+                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0);
+                    if ($productDiscountedPrice > 0) {
+                        $orderTotalDiscount += $productDiscountedPrice * intval($item->count);
+                    }
+                    
+                    // Find first mazaneh that is not 0
+                    if ($firstMazaneh === null && $item->product->mazaneh && floatval($item->product->mazaneh) != 0) {
+                        $firstMazaneh = floatval($item->product->mazaneh);
+                    }
+                    
                     $pageWeight += $itemWeight;
                     $pageAmount += $itemAmount;
                     $pagePurchasePercentageWeight += $purchaseCommissionGrams;
                     $pageSalePercentageWeight += ($itemWeight * $ojrat) / 100;
                 }
             }
+            
+            // Calculate discount per gram for this order
+            $orderDiscountPerGram = 0;
+            if ($firstMazaneh !== null && $firstMazaneh > 0) {
+                $orderDiscountPerGram = ($orderTotalDiscount / $firstMazaneh) * 10;
+            }
+            
+            $pageTotalDiscount += $orderTotalDiscount;
+            $pageTotalDiscountPerGram += $orderDiscountPerGram;
         }
 
         // Calculate overall averages from ALL filtered orders
@@ -103,11 +153,15 @@ class GoldSummaryController extends Controller
             'percentage_difference' => number_format($percentageDifference, 2) . '%',
             'total_purchase_commission' => number_format($totalPurchasePercentageWeight, 3) . ' گرم',
             'total_sale_commission' => number_format($totalSalePercentageWeight, 3) . ' گرم',
+            'total_discount' => number_format($totalDiscount) . ' تومان',
+            'total_discount_per_gram' => number_format($totalDiscountPerGram, 3),
             // Page-specific data (for footer comparison)
             'page_weight' => number_format($pageWeight, 3),
             'page_amount' => number_format($pageAmount),
             'page_purchase_commission' => number_format($pagePurchasePercentageWeight, 3),
             'page_sale_commission' => number_format($pageSalePercentageWeight, 3),
+            'page_total_discount' => number_format($pageTotalDiscount) . ' تومان',
+            'page_total_discount_per_gram' => number_format($pageTotalDiscountPerGram, 3),
         ];
 
         return view('admin.gold_summary.index', compact('orders', 'summary'));
@@ -169,9 +223,14 @@ class GoldSummaryController extends Controller
         $totalAmount = 0;
         $totalPurchasePercentageWeight = 0; // Sum of (weight * purchase_percentage)
         $totalSalePercentageWeight = 0;     // Sum of (weight * sale_percentage)
+        $totalDiscount = 0;
+        $totalDiscountPerGram = 0;
 
         // First, calculate totals from ALL orders for summary cards
         foreach ($allOrders as $order) {
+            $orderTotalDiscount = floatval($order->discount_price ?? 0);
+            $firstMazaneh = null;
+            
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
                     $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
@@ -184,12 +243,32 @@ class GoldSummaryController extends Controller
                     // Calculate sale commission percentage (ojrat)
                     $ojrat = floatval($item->product->ojrat ?? 0);
                     
+                    // Sum discounted_price from products
+                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0);
+                    if ($productDiscountedPrice > 0) {
+                        $orderTotalDiscount += $productDiscountedPrice * intval($item->count);
+                    }
+                    
+                    // Find first mazaneh that is not 0
+                    if ($firstMazaneh === null && $item->product->mazaneh && floatval($item->product->mazaneh) != 0) {
+                        $firstMazaneh = floatval($item->product->mazaneh);
+                    }
+                    
                     $totalWeight += $itemWeight;
                     $totalAmount += $itemAmount;
                     $totalPurchasePercentageWeight += $purchaseCommissionGrams;
                     $totalSalePercentageWeight += ($itemWeight * $ojrat) / 100;
                 }
             }
+            
+            // Calculate discount per gram for this order
+            $orderDiscountPerGram = 0;
+            if ($firstMazaneh !== null && $firstMazaneh > 0) {
+                $orderDiscountPerGram = ($orderTotalDiscount / $firstMazaneh) * 10;
+            }
+            
+            $totalDiscount += $orderTotalDiscount;
+            $totalDiscountPerGram += $orderDiscountPerGram;
         }
 
         // Now process paginated orders for table display
@@ -293,6 +372,8 @@ class GoldSummaryController extends Controller
             'percentage_difference' => number_format($percentageDifference, 2) . '%',
             'total_purchase_commission' => number_format($totalPurchasePercentageWeight, 3) . ' گرم',
             'total_sale_commission' => number_format($totalSalePercentageWeight, 3) . ' گرم',
+            'total_discount' => number_format($totalDiscount) . ' تومان',
+            'total_discount_per_gram' => number_format($totalDiscountPerGram, 3),
         ];
 
         return response()->json([

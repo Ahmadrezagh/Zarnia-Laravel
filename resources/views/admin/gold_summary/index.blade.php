@@ -197,9 +197,9 @@
                         <td>-</td>
                         <td>{{ $summary['page_purchase_commission'] }}</td>
                         <td>{{ $summary['page_sale_commission'] }}</td>
+                        <td>{{ $summary['page_total_discount'] }}</td>
                         <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
+                        <td>{{ $summary['page_total_discount_per_gram'] }}</td>
                     </tr>
                     <tr class="font-weight-bold bg-primary text-white">
                         <td colspan="3">جمع کل همه سفارشات</td>
@@ -208,9 +208,9 @@
                         <td>{{ $summary['total_amount'] }}</td>
                         <td>{{ $summary['total_purchase_commission'] }}</td>
                         <td>{{ $summary['total_sale_commission'] }}</td>
+                        <td>{{ $summary['total_discount'] }}</td>
                         <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
+                        <td>{{ $summary['total_discount_per_gram'] }}</td>
                     </tr>
                 </tfoot>
             </table>
