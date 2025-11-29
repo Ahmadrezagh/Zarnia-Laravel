@@ -167,7 +167,7 @@
                             
                             $discountPerGram = 0;
                             if ($firstMazaneh !== null && $firstMazaneh > 0) {
-                                $discountPerGram = $totalDiscount / $firstMazaneh;
+                                $discountPerGram = ($totalDiscount / $firstMazaneh) * 10;
                             }
 
                             $cumulativeAmount += $orderAmount;

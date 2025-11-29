@@ -248,7 +248,7 @@ class GoldSummaryController extends Controller
             
             $discountPerGram = 0;
             if ($firstMazaneh !== null && $firstMazaneh > 0) {
-                $discountPerGram = $totalDiscount / $firstMazaneh;
+                $discountPerGram = ($totalDiscount / $firstMazaneh) * 10;
             }
 
             $cumulativeAmount += $orderAmount;
@@ -350,7 +350,7 @@ class GoldSummaryController extends Controller
                 $mazaneh = $item->product->mazaneh ? floatval($item->product->mazaneh) : null;
                 $discountPerGram = 0;
                 if ($mazaneh !== null && $mazaneh > 0) {
-                    $discountPerGram = $itemDiscount / $mazaneh;
+                    $discountPerGram = ($itemDiscount / $mazaneh) * 10;
                 }
 
                 $items[] = [
