@@ -60,10 +60,12 @@ class GoldSummaryController extends Controller
                     
                     $ojrat = floatval($item->product->ojrat ?? 0);
                     
-                    // Sum discounted_price from products
-                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0);
-                    if ($productDiscountedPrice > 0) {
-                        $orderTotalDiscount += $productDiscountedPrice * intval($item->count);
+                    // Calculate discount: price - discounted_price
+                    $originalPrice = floatval($item->product->getRawOriginal('price') ?? 0) / 10;
+                    $discountedPrice = floatval($item->product->discounted_price ?? 0);
+                    if ($discountedPrice > 0 && $originalPrice > 0) {
+                        $productDiscountAmount = ($originalPrice - $discountedPrice) * intval($item->count);
+                        $orderTotalDiscount += $productDiscountAmount;
                     }
                     
                     // Find first mazaneh that is not 0
@@ -111,10 +113,12 @@ class GoldSummaryController extends Controller
                     
                     $ojrat = floatval($item->product->ojrat ?? 0);
                     
-                    // Sum discounted_price from products
-                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0);
-                    if ($productDiscountedPrice > 0) {
-                        $orderTotalDiscount += $productDiscountedPrice * intval($item->count);
+                    // Calculate discount: price - discounted_price
+                    $originalPrice = floatval($item->product->getRawOriginal('price') ?? 0) / 10;
+                    $discountedPrice = floatval($item->product->discounted_price ?? 0);
+                    if ($discountedPrice > 0 && $originalPrice > 0) {
+                        $productDiscountAmount = ($originalPrice - $discountedPrice) * intval($item->count);
+                        $orderTotalDiscount += $productDiscountAmount;
                     }
                     
                     // Find first mazaneh that is not 0
@@ -243,10 +247,12 @@ class GoldSummaryController extends Controller
                     // Calculate sale commission percentage (ojrat)
                     $ojrat = floatval($item->product->ojrat ?? 0);
                     
-                    // Sum discounted_price from products
-                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0);
-                    if ($productDiscountedPrice > 0) {
-                        $orderTotalDiscount += $productDiscountedPrice * intval($item->count);
+                    // Calculate discount: price - discounted_price
+                    $originalPrice = floatval($item->product->getRawOriginal('price') ?? 0) / 10;
+                    $discountedPrice = floatval($item->product->discounted_price ?? 0);
+                    if ($discountedPrice > 0 && $originalPrice > 0) {
+                        $productDiscountAmount = ($originalPrice - $discountedPrice) * intval($item->count);
+                        $orderTotalDiscount += $productDiscountAmount;
                     }
                     
                     // Find first mazaneh that is not 0
@@ -310,12 +316,14 @@ class GoldSummaryController extends Controller
             $totalDiscount = floatval($order->discount_price ?? 0);
             $firstMazaneh = null;
             
-            // Sum discounted_price from all order items' products
+            // Calculate discount: price - discounted_price for all order items' products
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
-                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0);
-                    if ($productDiscountedPrice > 0) {
-                        $totalDiscount += $productDiscountedPrice * intval($item->count);
+                    $originalPrice = floatval($item->product->getRawOriginal('price') ?? 0) / 10;
+                    $discountedPrice = floatval($item->product->discounted_price ?? 0);
+                    if ($discountedPrice > 0 && $originalPrice > 0) {
+                        $productDiscountAmount = ($originalPrice - $discountedPrice) * intval($item->count);
+                        $totalDiscount += $productDiscountAmount;
                     }
                     
                     // Find first mazaneh that is not 0
@@ -427,9 +435,14 @@ class GoldSummaryController extends Controller
                 if ($totalOrderItemsCount > 0) {
                     // Proportional share of order discount
                     $proportionalOrderDiscount = ($orderDiscountPrice * intval($item->count)) / $totalOrderItemsCount;
-                    // Product discounted price
-                    $productDiscountedPrice = floatval($item->product->discounted_price ?? 0) * intval($item->count);
-                    $itemDiscount = $proportionalOrderDiscount + $productDiscountedPrice;
+                    // Calculate product discount: price - discounted_price
+                    $originalPrice = floatval($item->product->getRawOriginal('price') ?? 0) / 10;
+                    $discountedPrice = floatval($item->product->discounted_price ?? 0);
+                    $productDiscountAmount = 0;
+                    if ($discountedPrice > 0 && $originalPrice > 0) {
+                        $productDiscountAmount = ($originalPrice - $discountedPrice) * intval($item->count);
+                    }
+                    $itemDiscount = $proportionalOrderDiscount + $productDiscountAmount;
                 }
                 
                 $mazaneh = $item->product->mazaneh ? floatval($item->product->mazaneh) : null;
