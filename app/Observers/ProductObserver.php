@@ -11,7 +11,7 @@ class ProductObserver
      */
     public function created(Product $product): void
     {
-        //
+        $this->updateDiscountedPrice($product);
     }
 
     /**
@@ -19,6 +19,9 @@ class ProductObserver
      */
     public function updated(Product $product): void
     {
+        // Check if price or discount_percentage changed
+        $this->updateDiscountedPrice($product);
+
         // ✅ Only check if product has a parent
         if ($product->parent_id) {
             $parent = Product::find($product->parent_id);
@@ -68,5 +71,32 @@ class ProductObserver
     public function forceDeleted(Product $product): void
     {
         //
+    }
+
+    /**
+     * Calculate and update discounted price.
+     */
+    private function updateDiscountedPrice(Product $product)
+    {
+        // Get raw price value (stored multiplied by 10) and discount percentage
+        $rawPrice = $product->getRawOriginal('price');
+        $discountPercentage = $product->discount_percentage;
+
+        if ($rawPrice != 0 && $discountPercentage != 0) {
+            // Calculate discounted price
+            // Raw price is stored multiplied by 10, so divide by 10 to get actual price
+            // discounted_price is stored as-is (not multiplied by 10)
+            $discountedPrice = ($rawPrice / 10) * (1 - $discountPercentage / 100);
+
+            // Round to nearest 1000 (last three digits to 000)
+            $discountedPrice = round($discountedPrice, -3);
+
+            $product->discounted_price = $discountedPrice;
+        } else {
+            $product->discounted_price = null;
+            $product->discount_percentage = 0;
+        }
+
+        $product->saveQuietly();
     }
 }
