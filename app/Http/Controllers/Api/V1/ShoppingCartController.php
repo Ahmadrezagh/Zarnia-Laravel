@@ -33,11 +33,6 @@ class ShoppingCartController extends Controller
             ->where('product_id', '!=', $product->id)
             ->first();
 
-        if ($existingItem) {
-            return response()->json([
-                'message' => 'شما فقط می توانید یک عدد از این محصول را در سبد خرید داشته باشید'
-            ], 400);
-        }
 
         $item = ShoppingCartItem::query()
             ->firstOrCreate(
