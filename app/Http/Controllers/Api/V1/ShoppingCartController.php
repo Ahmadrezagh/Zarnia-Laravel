@@ -50,12 +50,6 @@ class ShoppingCartController extends Controller
                 ]
             );
 
-        // Prevent adding more than one quantity of the product
-        if ($item->count >= 1) {
-            return response()->json([
-                'message' => 'شما فقط می توانید یک عدد از این محصول را در سبد خرید داشته باشید'
-            ], 400);
-        }
 
         // Check if adding one more exceeds stock
         if ($item->count + 1 > $product->SingleCount) {
