@@ -21,10 +21,11 @@ class StoreIndexBannerRequest extends FormRequest
      */
     public function rules(): array
     {
+
         return [
             'title' => 'required|string',
             'link' => 'required|string',
-            'cover_image' => 'required|image|max:2048',
+            'cover_image' => 'required|file',
         ];
     }
 
