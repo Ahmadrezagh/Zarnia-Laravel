@@ -21,51 +21,6 @@ class StoreIndexBannerRequest extends FormRequest
      */
     public function rules(): array
     {
-        \Log::info('StoreIndexBannerRequest - Validation rules requested', [
-            'request_method' => $this->method(),
-            'content_type' => $this->header('Content-Type'),
-            'has_cover_image' => $this->hasFile('cover_image'),
-            'all_input_keys' => array_keys($this->all()),
-        ]);
-
-        if ($this->hasFile('cover_image')) {
-            $file = $this->file('cover_image');
-            \Log::info('StoreIndexBannerRequest - File before validation', [
-                'file_name' => $file->getClientOriginalName(),
-                'file_size' => $file->getSize(),
-                'file_mime_type' => $file->getMimeType(),
-                'is_valid' => $file->isValid(),
-                'error_code' => $file->getError(),
-                'error_message' => $file->getErrorMessage(),
-            ]);
-        } else {
-            // Check if file exists but is invalid
-            $allFiles = $this->allFiles();
-            $fileInfo = [];
-            
-            if (isset($allFiles['cover_image'])) {
-                $file = $allFiles['cover_image'];
-                $fileInfo = [
-                    'file_exists' => true,
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_size' => $file->getSize(),
-                    'file_mime_type' => $file->getMimeType(),
-                    'is_valid' => $file->isValid(),
-                    'error_code' => $file->getError(),
-                    'error_message' => $file->getErrorMessage(),
-                    'temp_path' => $file->getRealPath(),
-                    'temp_path_exists' => file_exists($file->getRealPath()),
-                ];
-            }
-            
-            \Log::warning('StoreIndexBannerRequest - No cover_image file found', [
-                'hasFile_check' => false,
-                'all_files_keys' => array_keys($allFiles),
-                'cover_image_info' => $fileInfo,
-                'input' => $this->except(['_token']),
-            ]);
-        }
-
         return [
             'title' => 'required|string',
             'link' => 'required|string',
