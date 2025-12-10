@@ -31,7 +31,7 @@ class IndexBannerController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreIndexBannerRequest $request)
     {
         $banner = IndexBanner::query()->create($request->validated());
         if ($request->hasFile('cover_image')) {
