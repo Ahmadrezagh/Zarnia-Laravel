@@ -33,7 +33,7 @@ class IndexBannerController extends Controller
      */
     public function store(Request $request)
     {
-        return $request;
+        return $request->allFiles();
         $banner = IndexBanner::query()->create($request->validated());
         if ($request->hasFile('cover_image')) {
             $banner->clearMediaCollection('cover_image');
