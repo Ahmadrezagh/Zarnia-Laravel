@@ -39,8 +39,29 @@ class StoreIndexBannerRequest extends FormRequest
                 'error_message' => $file->getErrorMessage(),
             ]);
         } else {
+            // Check if file exists but is invalid
+            $allFiles = $this->allFiles();
+            $fileInfo = [];
+            
+            if (isset($allFiles['cover_image'])) {
+                $file = $allFiles['cover_image'];
+                $fileInfo = [
+                    'file_exists' => true,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_size' => $file->getSize(),
+                    'file_mime_type' => $file->getMimeType(),
+                    'is_valid' => $file->isValid(),
+                    'error_code' => $file->getError(),
+                    'error_message' => $file->getErrorMessage(),
+                    'temp_path' => $file->getRealPath(),
+                    'temp_path_exists' => file_exists($file->getRealPath()),
+                ];
+            }
+            
             \Log::warning('StoreIndexBannerRequest - No cover_image file found', [
-                'files' => $this->allFiles(),
+                'hasFile_check' => false,
+                'all_files_keys' => array_keys($allFiles),
+                'cover_image_info' => $fileInfo,
                 'input' => $this->except(['_token']),
             ]);
         }
