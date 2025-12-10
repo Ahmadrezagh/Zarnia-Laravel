@@ -33,13 +33,19 @@ class IndexBannerController extends Controller
      */
     public function store(StoreIndexBannerRequest $request)
     {
-        $banner = IndexBanner::query()->create($request->validated());
+        $validated = $request->validated();
+        // Remove cover_image from validated data as it's handled separately via media library
+        unset($validated['cover_image']);
+        
+        $banner = IndexBanner::query()->create($validated);
+        
         if ($request->hasFile('cover_image')) {
             $banner->clearMediaCollection('cover_image');
             $banner->addMedia($request->file('cover_image'))
                 ->toMediaCollection('cover_image');
         }
-        return response()->json();
+        
+        return response()->json(['message' => 'با موفقیت انجام شد']);
     }
 
     /**
@@ -63,13 +69,19 @@ class IndexBannerController extends Controller
      */
     public function update(UpdateIndexBannerRequest $request, IndexBanner $index_banner)
     {
-        $index_banner->update($request->validated());
+        $validated = $request->validated();
+        // Remove cover_image from validated data as it's handled separately via media library
+        unset($validated['cover_image']);
+        
+        $index_banner->update($validated);
+        
         if ($request->hasFile('cover_image')) {
             $index_banner->clearMediaCollection('cover_image');
             $index_banner->addMedia($request->file('cover_image'))
                 ->toMediaCollection('cover_image');
         }
-        return response()->json();
+        
+        return response()->json(['message' => 'با موفقیت انجام شد']);
     }
 
     /**
