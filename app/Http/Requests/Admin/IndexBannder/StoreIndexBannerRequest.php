@@ -25,7 +25,7 @@ class StoreIndexBannerRequest extends FormRequest
         return [
             'title' => 'required|string',
             'link' => 'required|string',
-            'cover_image' => 'required',
+            'cover_image' => 'required|file',
         ];
     }
 
