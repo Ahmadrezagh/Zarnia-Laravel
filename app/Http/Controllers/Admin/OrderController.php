@@ -801,9 +801,9 @@ class OrderController extends Controller
     {
         try {
             // Run getEtikets in background to avoid blocking the response
-            dispatch(function () {
+//            dispatch(function () {
                 getEtikets();
-            })->afterResponse();
+//            })->afterResponse();
             
             return response()->json([
                 'success' => true,
