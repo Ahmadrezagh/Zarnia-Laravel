@@ -304,14 +304,14 @@ class ProductController extends Controller
         }
 
         // Fetch paginated data
-        $data = $query;
+        $data = $query
 
-//            ->multipleSearch([$request->searchKey,$request->searchVal])
-//            ->WithMojoodCount($count_dir)
-//            ->WithImageStatus($image_dir)
-//            ->SortMojood($is_mojood_dir)
-//            ->FilterProduct($request->filter)
-//            ->categories($request->category_ids);
+            ->multipleSearch([$request->searchKey,$request->searchVal])
+            ->WithMojoodCount($count_dir)
+            ->WithImageStatus($image_dir)
+            ->SortMojood($is_mojood_dir)
+            ->FilterProduct($request->filter)
+            ->categories($request->category_ids);
 
 
         // Get filtered records count after search
@@ -321,7 +321,8 @@ class ProductController extends Controller
         ->take($length)
         ->get()
         ->map(function ($item) {
-            return AdminProductResource::make($item); // Ensure all necessary fields are included
+//            return AdminProductResource::make($item); // Ensure all necessary fields are included
+            return $item; // Ensure all necessary fields are included
         });
         return response()->json([
             'draw' => (int) $request->input('draw', 1),
