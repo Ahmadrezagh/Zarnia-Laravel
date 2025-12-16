@@ -30,7 +30,7 @@ class AdminProductResource extends JsonResource
             'etiketsCodeAsArray' => [],
             'parent_id' => $this->parent_id,
 //            'view_count' => $this->ViewCount,
-//            'frontend_url' => $this->frontend_url
+            'frontend_url' => $this->frontend_url
         ];
     }
     protected function getTruncatedCategoriesTitle(int $limit = 30): string
