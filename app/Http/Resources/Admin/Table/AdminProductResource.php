@@ -29,7 +29,7 @@ class AdminProductResource extends JsonResource
             'count' => $this->count,
             'etiketsCodeAsArray' => [],
             'parent_id' => $this->parent_id,
-//            'view_count' => $this->ViewCount,
+            'view_count' => $this->ViewCount,
             'frontend_url' => $this->frontend_url
         ];
     }
