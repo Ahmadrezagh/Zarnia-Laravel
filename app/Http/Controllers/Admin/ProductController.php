@@ -306,12 +306,12 @@ class ProductController extends Controller
         // Fetch paginated data
         $data = $query
 
-            ->multipleSearch([$request->searchKey,$request->searchVal])
-            ->WithMojoodCount($count_dir)
-            ->WithImageStatus($image_dir)
-            ->SortMojood($is_mojood_dir)
-            ->FilterProduct($request->filter)
-            ->categories($request->category_ids);
+//            ->multipleSearch([$request->searchKey,$request->searchVal])
+//            ->WithMojoodCount($count_dir)
+//            ->WithImageStatus($image_dir)
+//            ->SortMojood($is_mojood_dir)
+//            ->FilterProduct($request->filter)
+//            ->categories($request->category_ids);
 
 
         // Get filtered records count after search
