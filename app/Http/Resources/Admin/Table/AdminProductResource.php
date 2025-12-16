@@ -25,7 +25,7 @@ class AdminProductResource extends JsonResource
             'price' => number_format($this->price)." تومان",
             'categories_title' => $this->categories_title,
             'categories_title_truncated' => $this->getTruncatedCategoriesTitle(30),
-//            'discount_percentage' => $this->discount_percentage,
+            'discount_percentage' => $this->discount_percentage,
 //            'count' => $this->count,
 //            'etiketsCodeAsArray' => [],
 //            'parent_id' => $this->parent_id,
