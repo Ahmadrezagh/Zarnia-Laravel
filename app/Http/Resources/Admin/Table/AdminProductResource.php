@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Admin\Table;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Cache;
@@ -15,9 +16,14 @@ class AdminProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $viewCount = Cache::remember('view_count', 60, function () {
-            return $this->ViewCount;
-        });
+        // Cache view_count per product, expiring at the end of the current day (23:59:59)
+        $view_count = Cache::remember(
+            "product_view_count_{$this->id}",
+            Carbon::now()->endOfDay(), // Expires at midnight (next day 00:00:00)
+            function () {
+                return $this->ViewCount; // Assuming ViewCount is an attribute or accessor on the model
+            }
+        );
         return [
             'id' => $this->id,
             'nameUrl' => $this->nameUrl,
@@ -33,7 +39,7 @@ class AdminProductResource extends JsonResource
             'count' => $this->count,
             'etiketsCodeAsArray' => [],
             'parent_id' => $this->parent_id,
-            'view_count' => $viewCount,
+            'view_count' => $view_count,
             'frontend_url' => $this->frontend_url
         ];
     }
