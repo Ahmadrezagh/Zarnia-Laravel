@@ -304,7 +304,7 @@ class ProductController extends Controller
         }
 
         // Fetch paginated data
-        $data = $query
+        $data = $query;
 
 //            ->multipleSearch([$request->searchKey,$request->searchVal])
 //            ->WithMojoodCount($count_dir)
