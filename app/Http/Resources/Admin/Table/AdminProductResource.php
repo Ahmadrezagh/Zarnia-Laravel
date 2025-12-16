@@ -27,7 +27,7 @@ class AdminProductResource extends JsonResource
             'categories_title_truncated' => $this->getTruncatedCategoriesTitle(30),
             'discount_percentage' => $this->discount_percentage,
             'count' => $this->count,
-//            'etiketsCodeAsArray' => [],
+            'etiketsCodeAsArray' => [],
 //            'parent_id' => $this->parent_id,
 //            'view_count' => $this->ViewCount,
 //            'frontend_url' => $this->frontend_url
