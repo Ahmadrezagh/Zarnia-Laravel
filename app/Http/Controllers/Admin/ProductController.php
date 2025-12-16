@@ -319,7 +319,10 @@ class ProductController extends Controller
 
         $data = $data->skip($start)
         ->take($length)
-        ->get();
+        ->get()
+        ->map(function ($item) {
+            return AdminProductResource::make($item); // Ensure all necessary fields are included
+        });
         return response()->json([
             'draw' => (int) $request->input('draw', 1),
             'recordsTotal' => $totalRecords,
