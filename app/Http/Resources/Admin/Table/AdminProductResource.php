@@ -4,6 +4,7 @@ namespace App\Http\Resources\Admin\Table;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class AdminProductResource extends JsonResource
 {
@@ -14,6 +15,9 @@ class AdminProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $viewCount = Cache::remember('view_count', 60, function () {
+            return $this->ViewCount;
+        });
         return [
             'id' => $this->id,
             'nameUrl' => $this->nameUrl,
@@ -29,7 +33,7 @@ class AdminProductResource extends JsonResource
             'count' => $this->count,
             'etiketsCodeAsArray' => [],
             'parent_id' => $this->parent_id,
-            'view_count' => $this->ViewCount,
+            'view_count' => $viewCount,
             'frontend_url' => $this->frontend_url
         ];
     }
