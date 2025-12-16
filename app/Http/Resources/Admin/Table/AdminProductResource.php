@@ -15,22 +15,22 @@ class AdminProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-//            'id' => $this->id,
-            'nameUrl' => $this->nameUrl,
-            'slug' => $this->slug,
-            'image' => $this->image,
-            'weight' => $this->weight,
-            'ojrat' => $this->ojrat,
-            'darsad_kharid' => $this->darsad_kharid,
-            'price' => number_format($this->price)." تومان",
-            'categories_title' => $this->categories_title,
-            'categories_title_truncated' => $this->getTruncatedCategoriesTitle(30),
-            'discount_percentage' => $this->discount_percentage,
-            'count' => $this->count,
-            'etiketsCodeAsArray' => [],
-            'parent_id' => $this->parent_id,
-            'view_count' => $this->ViewCount,
-            'frontend_url' => $this->frontend_url
+            'id' => $this->id,
+//            'nameUrl' => $this->nameUrl,
+//            'slug' => $this->slug,
+//            'image' => $this->image,
+//            'weight' => $this->weight,
+//            'ojrat' => $this->ojrat,
+//            'darsad_kharid' => $this->darsad_kharid,
+//            'price' => number_format($this->price)." تومان",
+//            'categories_title' => $this->categories_title,
+//            'categories_title_truncated' => $this->getTruncatedCategoriesTitle(30),
+//            'discount_percentage' => $this->discount_percentage,
+//            'count' => $this->count,
+//            'etiketsCodeAsArray' => [],
+//            'parent_id' => $this->parent_id,
+//            'view_count' => $this->ViewCount,
+//            'frontend_url' => $this->frontend_url
         ];
     }
     protected function getTruncatedCategoriesTitle(int $limit = 30): string
