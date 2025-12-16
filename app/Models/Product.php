@@ -336,6 +336,7 @@ class Product extends Model implements HasMedia
 
     public function getCategoriesTitleAttribute()
     {
+        return "";
         if($this->categories()->count()){
             $categoriesTitle = "";
             foreach ($this->categories as $category){
