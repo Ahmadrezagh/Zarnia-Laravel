@@ -40,6 +40,7 @@ class GoldSummaryController extends Controller
         // Calculate summary data from ALL filtered orders (matching the filters)
         $totalWeight = 0;
         $totalAmount = 0;
+        $snappTotalAmount = 0;
         $totalPurchasePercentageWeight = 0;
         $totalSalePercentageWeight = 0;
         $totalDiscount = 0;
