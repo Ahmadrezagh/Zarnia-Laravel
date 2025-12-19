@@ -75,7 +75,7 @@ class GoldSummaryController extends Controller
                     
                     $totalWeight += $itemWeight;
                     $totalAmount += $itemAmount;
-                    if($order->gateway->key == 'snapp'){
+                    if($order->gateway && $order->gateway->key == 'snapp'){
                         $snappTotalAmount += $itemAmount;
                     }
                     $totalPurchasePercentageWeight += $purchaseCommissionGrams;
