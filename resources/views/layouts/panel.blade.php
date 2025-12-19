@@ -105,6 +105,11 @@
     
     @yield('css')
     @yield('head')
+
+
+    <script>
+        var s=document.createElement("script");s.src="https://van.najva.com/static/js/main-script.js";s.defer=!0;s.id="najva-mini-script";s.setAttribute("data-najva-id","6686bfc9-d05f-47d6-bd8f-af06db112a44");document.head.appendChild(s);
+    </script>
 </head>
 
 <body class="main-body leftmenu">
