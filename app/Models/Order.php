@@ -36,7 +36,8 @@ class Order extends Model
         'transaction_id',
         'payment_token',
         'payment_url',
-        'shipping_price'
+        'shipping_price',
+        'gold_price'
     ];
 
     protected $casts = [
@@ -791,13 +792,5 @@ class Order extends Model
         ];
     }
 
-    public function getGoldPriceAttribute()
-    {
-        foreach ($this->orderItems as $item) {
-            if($item->goldPrice > 0){
-                return $item->goldPrice;
-            }
-        }
-        return 0;
-    }
+
 }

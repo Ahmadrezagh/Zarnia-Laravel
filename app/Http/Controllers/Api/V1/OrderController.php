@@ -154,6 +154,7 @@ class OrderController extends Controller
             'note' => $validated['note'] ?? null,
             'user_agent' => $validated['user_agent'] ?? null,
             'shipping_price' => $shipping_price,
+            'gold_price' => number_format(get_gold_price()/10)
         ]);
 
         // Create order items from cart and collect reserved etiket codes

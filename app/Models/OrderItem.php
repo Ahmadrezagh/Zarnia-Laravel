@@ -52,12 +52,5 @@ class OrderItem extends Model
         return $this->hasOne(Etiket::class,'id','etiket');
     }
 
-    public function getGoldPriceAttribute()
-    {
-        $etiket = $this->etiket()->first();
-        if($etiket){
-            return $etiket->mazaneh;
-        }
-        return 0;
-    }
+
 }
