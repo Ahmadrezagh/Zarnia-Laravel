@@ -111,33 +111,13 @@
     }
     $gatewayName = $order->gateway->name ?? ($order->gateway->title ?? '');
 
-    $gold_price = null;
-
-    foreach ($order->orderItems as $index => $orderItem){
-        if($orderItem->etiket){
-            if($orderItem->etiket->mazaneh){
-                $gold_price = $orderItem->etiket->mazaneh;
-            }
-        }
-        $idx = $index + 1;
-        $img = $orderItem->product->image;
-        $map['product_'.$idx.'_image'] = "<img src='$img' style='width:100px;height:100px' ></img>";
-        $map['product_'.$idx.'_title'] = $orderItem->name;
-        $map['product_'.$idx.'_count'] = $orderItem->count;
-        $map['product_'.$idx.'_weight'] = $orderItem->product->weight;
-        $map['product_'.$idx.'_weight_2'] = $orderItem->product->weight;
-        $map['product_'.$idx.'_ayar'] = '18';
-        $map['product_'.$idx.'_etiket'] = $orderItem->etiket;
-        $map['product_'.$idx.'_price'] = number_format($orderItem->price);
-    }
-    // number_format(get_gold_price()/10)
     $map = [
         'invoice_id' => $order->id,
         'receiver_name' => $order->address->receiver_name ?? $order->user->name,
         'receiver_name2' => $order->address->receiver_name ?? $order->user->name,
         'purchase_date' => jdate($order->created_at)->format('Y/m/d'),
         'purchase_date2' => jdate($order->created_at)->format('Y/m/d'),
-        'gold_price' => number_format($gold_price),
+        'gold_price' => number_format($order->goldPrice),
         'total_label' => number_format($order->final_amount),
         'notes_label' => $order->note ?? '',
         'invoice_number' => $order->id ?? '',
@@ -151,6 +131,18 @@
 
 
     ];
+    foreach ($order->orderItems as $index => $orderItem){
+        $idx = $index + 1;
+        $img = $orderItem->product->image;
+        $map['product_'.$idx.'_image'] = "<img src='$img' style='width:100px;height:100px' ></img>";
+        $map['product_'.$idx.'_title'] = $orderItem->name;
+        $map['product_'.$idx.'_count'] = $orderItem->count;
+        $map['product_'.$idx.'_weight'] = $orderItem->product->weight;
+        $map['product_'.$idx.'_weight_2'] = $orderItem->product->weight;
+        $map['product_'.$idx.'_ayar'] = '18';
+        $map['product_'.$idx.'_etiket'] = $orderItem->etiket;
+        $map['product_'.$idx.'_price'] = number_format($orderItem->price);
+    }
 @endphp
 
 <div id="editor-container" style="position: relative; margin: auto; width: {{ $containerWidth }}px; height: {{ $containerHeight }}px;">

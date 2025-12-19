@@ -790,4 +790,14 @@ class Order extends Model
             self::$STATUSES[8], // completed
         ];
     }
+
+    public function getGoldPriceAttribute()
+    {
+        foreach ($this->orderItems as $item) {
+            if($item->goldPrice > 0){
+                return $item->goldPrice;
+            }
+        }
+        return 0;
+    }
 }
