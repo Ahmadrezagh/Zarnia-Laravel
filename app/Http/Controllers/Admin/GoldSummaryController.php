@@ -75,6 +75,9 @@ class GoldSummaryController extends Controller
                     
                     $totalWeight += $itemWeight;
                     $totalAmount += $itemAmount;
+                    if($order->gateway->key == 'snapp'){
+                        $snappTotalAmount += $itemAmount;
+                    }
                     $totalPurchasePercentageWeight += $purchaseCommissionGrams;
                     $totalSalePercentageWeight += ($itemWeight * $ojrat) / 100;
                 }
@@ -152,6 +155,7 @@ class GoldSummaryController extends Controller
             // Overall totals from ALL filtered orders (matching date/status filters)
             'total_weight' => number_format($totalWeight, 3) . ' گرم',
             'total_amount' => number_format($totalAmount) . ' تومان',
+            'snapp_total_amount' => number_format($snappTotalAmount) . ' تومان',
             'avg_purchase_percentage' => number_format($avgPurchasePercentage, 2) . '%',
             'avg_sale_percentage' => number_format($avgSalePercentage, 2) . '%',
             'percentage_difference' => number_format($percentageDifference, 2) . '%',

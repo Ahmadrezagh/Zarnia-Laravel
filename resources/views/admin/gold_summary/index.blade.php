@@ -77,6 +77,15 @@
                     </div>
                 </div>
                 <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6>مجموع ریالی</h6>
+                            <h4>{{ $summary['snapp_total_amount'] }}</h4>
+                            <small>از همه سفارشات</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="card bg-info text-white">
                         <div class="card-body">
                             <h6>میانگین درصد خرید</h6>
