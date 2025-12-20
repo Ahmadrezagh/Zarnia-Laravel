@@ -58,7 +58,7 @@
 
             <!-- Summary Cards -->
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-2">
                     <div class="card bg-primary text-white">
                         <div class="card-body">
                             <h6>مجموع وزن طلا</h6>
@@ -67,7 +67,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-2">
                     <div class="card bg-primary text-white">
                         <div class="card-body">
                             <h6>مجموع وزن طلا (اسنپ پی)</h6>
@@ -76,7 +76,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-2">
                     <div class="card bg-success text-white">
                         <div class="card-body">
                             <h6>مجموع ریالی</h6>
@@ -85,7 +85,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-2">
                     <div class="card bg-success text-white">
                         <div class="card-body">
                             <h6>مجموع ریالی (اسنپ پی)</h6>
@@ -95,7 +95,7 @@
                     </div>
                 </div>
                 
-                <div class="col-md-6">
+                <div class="col-md-2">
                     <div class="card bg-info text-white">
                         <div class="card-body">
                             <h6>میانگین درصد خرید</h6>
@@ -104,7 +104,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-2">
                     <div class="card bg-warning text-white">
                         <div class="card-body">
                             <h6>میانگین فروش - خرید</h6>
@@ -237,7 +237,7 @@
 
         @if(method_exists($orders, 'links'))
             <div class="row mt-3">
-                <div class="col-md-6">
+                <div class="col-md-2">
                     <div class="d-flex align-items-center">
                         <span class="text-muted">
                             نمایش {{ $orders->firstItem() ?? 0 }} تا {{ $orders->lastItem() ?? 0 }} 
@@ -245,7 +245,7 @@
                         </span>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-2">
                     <div class="d-flex justify-content-end">
                         {{ $orders->appends(request()->query())->links() }}
                     </div>
