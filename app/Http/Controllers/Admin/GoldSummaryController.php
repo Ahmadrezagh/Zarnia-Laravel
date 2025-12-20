@@ -19,7 +19,7 @@ class GoldSummaryController extends Controller
     public function index(Request $request)
     {
         // Build base query with date filters
-        $query = Order::with(['orderItems.product'])
+        $query = Order::with(['orderItems.product', 'gateway'])
             ->whereIn('status', self::VALID_STATUSES);
 
         // Apply date filters if provided
@@ -41,6 +41,7 @@ class GoldSummaryController extends Controller
         $totalWeight = 0;
         $totalAmount = 0;
         $snappTotalAmount = 0;
+        $snappTotalWeight = 0;
         $totalPurchasePercentageWeight = 0;
         $totalSalePercentageWeight = 0;
         $totalDiscount = 0;
@@ -78,6 +79,7 @@ class GoldSummaryController extends Controller
                     $totalAmount += $itemAmount;
                     if($order->gateway && $order->gateway->key == 'snapp'){
                         $snappTotalAmount += $itemAmount;
+                        $snappTotalWeight += $itemWeight;
                     }
                     $totalPurchasePercentageWeight += $purchaseCommissionGrams;
                     $totalSalePercentageWeight += ($itemWeight * $ojrat) / 100;
@@ -157,6 +159,7 @@ class GoldSummaryController extends Controller
             'total_weight' => number_format($totalWeight, 3) . ' گرم',
             'total_amount' => number_format($totalAmount) . ' تومان',
             'snapp_total_amount' => number_format($snappTotalAmount) . ' تومان',
+            'snapp_total_weight' => number_format($snappTotalWeight, 3) . ' گرم',
             'avg_purchase_percentage' => number_format($avgPurchasePercentage, 2) . '%',
             'avg_sale_percentage' => number_format($avgSalePercentage, 2) . '%',
             'percentage_difference' => number_format($percentageDifference, 2) . '%',
