@@ -1252,6 +1252,8 @@
                 const row = $(this).data('row');
                 // Get product ID from price input data attribute (set during etiket code search)
                 const productId = $(`.product-price[data-row="${row}"]`).data('product-id');
+                // Get etiket code from input field
+                const etiketCode = $(`.product-etiket-code[data-row="${row}"]`).val().trim();
                 // Quantity is always 1 (field removed)
                 const quantity = 1;
                 
@@ -1276,9 +1278,10 @@
                     price = $(`.product-price[data-row="${row}"]`).data('price');
                 }
                 
-                if (productId && quantity && price && price > 0) {
+                if (productId && etiketCode && quantity && price && price > 0) {
                     products.push({
                         product_id: productId,
+                        etiket_code: etiketCode,
                         quantity: quantity,
                         price: price
                     });

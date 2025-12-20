@@ -128,6 +128,7 @@ class OrderController extends Controller
             foreach ($products as $productData) {
                 $productId = (int) ($productData['product_id'] ?? 0);
                 $quantity = max(1, (int) ($productData['quantity'] ?? 1));
+                $etiketCode = $productData['etiket_code'] ?? null;
 
                 if (!$productId || !$productModels->has($productId)) {
                     return response()->json([
@@ -136,7 +137,29 @@ class OrderController extends Controller
                     ], 422);
                 }
 
+                // Validate that etiket code is provided
+                if (empty($etiketCode)) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['products' => ['کد اتیکت برای همه محصولات الزامی است']]
+                    ], 422);
+                }
+
                 $productModel = $productModels->get($productId);
+                
+                // Validate etiket code exists and belongs to the product
+                $etiket = \App\Models\Etiket::where('code', $etiketCode)
+                    ->where('product_id', $productId)
+                    ->where('is_mojood', 1)
+                    ->first();
+                
+                if (!$etiket) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['products' => ['کد اتیکت ' . $etiketCode . ' برای این محصول معتبر نیست یا موجود نمی‌باشد']]
+                    ], 422);
+                }
+                
                 // Use edited price from request if provided, otherwise use product's default price
                 $unitPrice = isset($productData['price']) && $productData['price'] > 0 
                     ? (int) $productData['price'] 
@@ -146,6 +169,7 @@ class OrderController extends Controller
                     'model' => $productModel,
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
+                    'etiket_code' => $etiketCode,
                 ];
 
                 $totalAmount += $unitPrice * $quantity;
@@ -202,6 +226,9 @@ class OrderController extends Controller
             foreach ($orderItemsPayload as $itemPayload) {
                 /** @var \App\Models\Product $product */
                 $product = $itemPayload['model'];
+                
+                // Use the exact etiket code provided by admin, or fallback to first available
+                $etiketCode = $itemPayload['etiket_code'] ?? ($product->etikets->first()->code ?? null);
 
                 \App\Models\OrderItem::create([
                     'order_id' => $order->id,
@@ -209,7 +236,7 @@ class OrderController extends Controller
                     'name' => $product->name,
                     'count' => $itemPayload['quantity'],
                     'price' => $itemPayload['unit_price'],
-                    'etiket' => $product->etikets->first()->code ?? null,
+                    'etiket' => $etiketCode,
                 ]);
             }
 
