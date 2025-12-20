@@ -94,6 +94,8 @@ Route::middleware('panel.ip')->group(function () {
         Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
         Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');
         Route::post('products/recalculate-discounts', [ProductController::class,'recalculateDiscounts' ])->name('products.recalculate_discounts');
+        Route::get('products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
+        Route::get('products/search-by-etiket', [ProductController::class, 'searchByEtiketCode'])->name('products.search.by.etiket');
         
         Route::resource('products', ProductController::class );
         Route::resource('admin_orders', OrderController::class );
@@ -120,7 +122,6 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('products_comprehensive', [ProductController::class,'productsComprehensive' ])->name('products.products_comprehensive');
         Route::get('products_comprehensive_not_available', [ProductController::class,'productsComprehensiveNotAvailable' ])->name('products.products_comprehensive_not_available');
         Route::get('products_children_of/{product}', [ProductController::class,'productsChildrenOf' ])->name('products.products_children_of');
-        Route::get('/products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
         Route::resource('index_banners', IndexBannerController::class );
         Route::resource('index_buttons', IndexButtonController::class );
         Route::resource('qas', QAController::class );

@@ -968,19 +968,21 @@
                 <div class="product-row card mb-2 p-3" data-row="${productRowCounter}">
                     <div class="row">
                         <div class="col-md-5">
-                            <label>محصول</label>
-                            <select class="form-control product-select" data-row="${productRowCounter}" style="width: 100%; pointer-events: auto;"></select>
+                            <label>کد اتیکت</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <input type="text" class="form-control product-etiket-code" data-row="${productRowCounter}" placeholder="کد اتیکت را وارد کنید">
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" class="form-control product-name-display" data-row="${productRowCounter}" placeholder="نام محصول" disabled style="background-color: #e9ecef; cursor: not-allowed;">
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <label>وزن (گرم)</label>
                             <input type="text" class="form-control product-weight" readonly data-row="${productRowCounter}" placeholder="-">
                         </div>
-                        <div class="col-md-2">
-                            <label>تعداد</label>
-                            <input type="number" class="form-control product-quantity" min="1" value="1" data-row="${productRowCounter}">
-                            <small class="form-text text-muted product-stock-info" data-row="${productRowCounter}">موجودی: -</small>
-                        </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <label>قیمت</label>
                             <input type="text" class="form-control product-price" data-row="${productRowCounter}">
                             <small class="form-text text-muted product-original-price" data-row="${productRowCounter}" style="display:none;"></small>
@@ -999,117 +1001,102 @@
             
             console.log('Product row added:', productRowCounter);
             
-            // Initialize Select2 for the new product select
-            const $productSelect = $(`.product-select[data-row="${productRowCounter}"]`);
-            console.log('Initializing product Select2 for row:', productRowCounter);
+            // Get the etiket code input for this row
+            const $etiketCodeInput = $(`.product-etiket-code[data-row="${productRowCounter}"]`);
             
-            $productSelect.select2({
-                placeholder: 'جستجوی محصول...',
-                allowClear: true,
-                dropdownParent: $('#modal-create-order'),
-                width: '100%',
-                minimumInputLength: 0,
-                ajax: {
-                    url: '{{ route("products.ajax.search") }}',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return {
-                            q: params.term || ''
-                        };
-                    },
-                    processResults: function (data) {
-                        console.log('Product search results:', data);
-                        return {
-                            results: data.results.map(item => {
-                                // Extract product ID from "Product:123" format
-                                let id = item.id.replace('Product:', '');
-                                return {
-                                    id: id,
-                                    text: item.text,
-                                    price: item.price,
-                                    single_count: item.single_count || 0,
-                                    weight: item.weight || null
-                                };
-                            }).filter(item => item.id.match(/^\d+$/)) // Only numeric IDs
-                        };
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Product search error:', error);
-                    }
-                }
-            });
-            
-            console.log('Product Select2 initialized for row:', productRowCounter);
-            
-            // Focus search field when dropdown opens
-            $productSelect.on('select2:open', function() {
-                console.log('Product dropdown opened for row:', productRowCounter);
-                setTimeout(function() {
-                    $('.select2-search__field').focus();
-                }, 100);
-            });
-            
-            // Update price, weight, and single count when product is selected
-            $productSelect.on('change', function() {
-                const selectedData = $(this).select2('data')[0];
-                const rowId = $(this).data('row');
+            // Function to search product by etiket code
+            function searchProductByEtiketCode() {
+                const etiketCode = $etiketCodeInput.val().trim();
+                const rowId = productRowCounter;
                 
-                if (selectedData) {
-                    const basePrice = parseInt(selectedData.price || 0, 10) || 0;
-                    const discountedPrice = parseInt(selectedData.discounted_price || 0, 10);
-                    const originalPrice = parseInt(selectedData.original_price || 0, 10) || null;
-                    const finalPrice = (discountedPrice && discountedPrice > 0) ? discountedPrice : basePrice;
-
-                    $(`.product-price[data-row="${rowId}"]`).val(finalPrice);
-                    $(`.product-price[data-row="${rowId}"]`).data('price', finalPrice);
-
-                    const $originalPriceEl = $(`.product-original-price[data-row="${rowId}"]`);
-                    if (discountedPrice && originalPrice && originalPrice !== finalPrice) {
-                        $originalPriceEl.text('قیمت بدون تخفیف: ' + number_format(originalPrice) + ' تومان').show();
-                    } else {
-                        $originalPriceEl.text('').hide();
-                    }
-                    
-                    // Set weight
-                    const weight = selectedData.weight || null;
-                    if (weight) {
-                        $(`.product-weight[data-row="${rowId}"]`).val(weight + ' گرم');
-                    } else {
-                        $(`.product-weight[data-row="${rowId}"]`).val('-');
-                    }
-                    
-                    // Set single count as max for quantity input
-                    const singleCount = selectedData.single_count || 0;
-                    $(`.product-quantity[data-row="${rowId}"]`).attr('max', singleCount > 0 ? singleCount : 999);
-                    $(`.product-quantity[data-row="${rowId}"]`).data('single-count', singleCount);
-                    
-                    // Update stock info text
-                    $(`.product-stock-info[data-row="${rowId}"]`).text('موجودی: ' + singleCount + ' عدد');
-                    
-                    // Reset quantity to 1
-                    $(`.product-quantity[data-row="${rowId}"]`).val(1);
-                    
+                if (!etiketCode) {
+                    // Clear fields if etiket code is empty
+                    $(`.product-name-display[data-row="${rowId}"]`).val('');
+                    $(`.product-price[data-row="${rowId}"]`).val('');
+                    $(`.product-weight[data-row="${rowId}"]`).val('-');
+                    $(`.product-price[data-row="${rowId}"]`).data('product-id', '');
                     updateOrderSummary();
+                    return;
+                }
+                
+                // Show loading state
+                $etiketCodeInput.prop('disabled', true);
+                $(`.product-name-display[data-row="${rowId}"]`).val('در حال جستجو...');
+                
+                $.ajax({
+                    url: '{{ route("products.search.by.etiket") }}',
+                    method: 'GET',
+                    data: {
+                        etiket_code: etiketCode
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        $etiketCodeInput.prop('disabled', false);
+                        
+                        if (response.success && response.product) {
+                            const product = response.product;
+                            
+                            // Set product name in disabled field
+                            $(`.product-name-display[data-row="${rowId}"]`).val(product.name);
+                            
+                            // Set price
+                            const basePrice = parseInt(product.price || 0, 10) || 0;
+                            const discountedPrice = parseInt(product.discounted_price || 0, 10);
+                            const originalPrice = parseInt(product.original_price || 0, 10) || null;
+                            const finalPrice = (discountedPrice && discountedPrice > 0) ? discountedPrice : basePrice;
+                            
+                            $(`.product-price[data-row="${rowId}"]`).val(finalPrice);
+                            $(`.product-price[data-row="${rowId}"]`).data('price', finalPrice);
+                            $(`.product-price[data-row="${rowId}"]`).data('product-id', product.id);
+                            
+                            // Show original price if discounted
+                            const $originalPriceEl = $(`.product-original-price[data-row="${rowId}"]`);
+                            if (discountedPrice && originalPrice && originalPrice !== finalPrice) {
+                                $originalPriceEl.text('قیمت بدون تخفیف: ' + number_format(originalPrice) + ' تومان').show();
+                            } else {
+                                $originalPriceEl.text('').hide();
+                            }
+                            
+                            // Set weight
+                            const weight = product.weight || null;
+                            if (weight) {
+                                $(`.product-weight[data-row="${rowId}"]`).val(weight + ' گرم');
+                            } else {
+                                $(`.product-weight[data-row="${rowId}"]`).val('-');
+                            }
+                            
+                            updateOrderSummary();
+                        } else {
+                            $(`.product-name-display[data-row="${rowId}"]`).val('');
+                            toastr.error(response.message || 'محصولی با این کد اتیکت یافت نشد');
+                        }
+                    },
+                    error: function(xhr) {
+                        $etiketCodeInput.prop('disabled', false);
+                        $(`.product-name-display[data-row="${rowId}"]`).val('');
+                        
+                        let errorMessage = 'خطا در جستجوی محصول';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        toastr.error(errorMessage);
+                    }
+                });
+            }
+            
+            // Handle Enter key
+            $etiketCodeInput.on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    searchProductByEtiketCode();
                 }
             });
             
-            // Validate quantity when it changes
-            $(`.product-quantity[data-row="${productRowCounter}"]`).on('input', function() {
-                const rowId = $(this).data('row');
-                const singleCount = parseInt($(this).data('single-count')) || 999;
-                const enteredQty = parseInt($(this).val()) || 0;
-                
-                if (enteredQty > singleCount && singleCount > 0) {
-                    toastr.error('تعداد درخواستی بیشتر از موجودی است! موجودی: ' + singleCount);
-                    $(this).val(singleCount);
-                }
-                
-                if (enteredQty < 1) {
-                    $(this).val(1);
-                }
-                
-                updateOrderSummary();
+            // Handle Tab key and blur (when input loses focus)
+            $etiketCodeInput.on('blur', function() {
+                searchProductByEtiketCode();
             });
             
             // Handle price editing
@@ -1197,8 +1184,8 @@
                     }
                 }
                 
-                const quantity = parseInt($(`.product-quantity[data-row="${row}"]`).val()) || 0;
-                subtotal += price * quantity;
+                // Quantity is always 1 (field removed)
+                subtotal += price * 1;
             });
             
             // Get shipping cost
@@ -1234,8 +1221,10 @@
             const products = [];
             $('.product-row').each(function() {
                 const row = $(this).data('row');
-                const productId = $(`.product-select[data-row="${row}"]`).val();
-                const quantity = $(`.product-quantity[data-row="${row}"]`).val();
+                // Get product ID from price input data attribute (set during etiket code search)
+                const productId = $(`.product-price[data-row="${row}"]`).data('product-id');
+                // Quantity is always 1 (field removed)
+                const quantity = 1;
                 
                 // Get price from input field value (parse it)
                 const priceInput = $(`.product-price[data-row="${row}"]`).val();

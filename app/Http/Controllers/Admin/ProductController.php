@@ -1188,6 +1188,54 @@ class ProductController extends Controller
     }
 
     /**
+     * Search product by etiket code
+     */
+    public function searchByEtiketCode(Request $request)
+    {
+        $etiketCode = $request->input('etiket_code');
+        
+        if (empty($etiketCode)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'کد اتیکت الزامی است'
+            ], 400);
+        }
+
+        // Find etiket by code
+        $etiket = \App\Models\Etiket::where('code', $etiketCode)
+            ->where('is_mojood', 1)
+            ->with('product')
+            ->first();
+
+        if (!$etiket || !$etiket->product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'محصولی با این کد اتیکت یافت نشد'
+            ], 404);
+        }
+
+        $product = $etiket->product;
+        $singleCount = $product->single_count;
+        $finalPrice = (int) $product->price;
+        $originalPrice = (int) $product->originalPrice;
+        $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
+
+        return response()->json([
+            'success' => true,
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $finalPrice,
+                'discounted_price' => $discountedPrice,
+                'original_price' => $originalPrice,
+                'single_count' => $singleCount,
+                'weight' => $product->weight,
+                'etiket_code' => $etiketCode
+            ]
+        ]);
+    }
+
+    /**
      * Remove cover image from product
      */
     public function removeCoverImage($product_id)
