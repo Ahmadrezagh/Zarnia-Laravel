@@ -23,11 +23,14 @@ class SitemapController extends Controller
             'priority' => '1.0'
         ];
 
-        // Add products (only main products, not children)
+        // Add products (only main products, not children, with count > 0)
         $products = Product::query()
             ->whereNull('parent_id')
             ->whereNotNull('slug')
-            ->get();
+            ->get()
+            ->filter(function ($product) {
+                return $product->count > 0;
+            });
 
         foreach ($products as $product) {
             $urls[] = [
