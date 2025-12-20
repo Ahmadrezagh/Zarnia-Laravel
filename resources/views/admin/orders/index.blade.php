@@ -1015,6 +1015,33 @@
                     $(`.product-price[data-row="${rowId}"]`).val('');
                     $(`.product-weight[data-row="${rowId}"]`).val('-');
                     $(`.product-price[data-row="${rowId}"]`).data('product-id', '');
+                    $(`.product-etiket-code[data-row="${rowId}"]`).data('etiket-code', '');
+                    updateOrderSummary();
+                    return;
+                }
+                
+                // Check if this etiket code is already used in another row
+                let isDuplicate = false;
+                $('.product-etiket-code').each(function() {
+                    const otherRowId = $(this).data('row');
+                    if (otherRowId !== rowId) {
+                        const otherEtiketCode = $(this).val().trim();
+                        if (otherEtiketCode && otherEtiketCode === etiketCode) {
+                            isDuplicate = true;
+                            return false; // Break the loop
+                        }
+                    }
+                });
+                
+                if (isDuplicate) {
+                    // Clear fields and show error
+                    $(`.product-name-display[data-row="${rowId}"]`).val('');
+                    $(`.product-price[data-row="${rowId}"]`).val('');
+                    $(`.product-weight[data-row="${rowId}"]`).val('-');
+                    $(`.product-price[data-row="${rowId}"]`).data('product-id', '');
+                    $(`.product-etiket-code[data-row="${rowId}"]`).data('etiket-code', '');
+                    $etiketCodeInput.val('');
+                    toastr.error('نمی توانید یک کد اتیکت رو بیش از یک بار وارد نمائید');
                     updateOrderSummary();
                     return;
                 }
@@ -1050,6 +1077,8 @@
                             $(`.product-price[data-row="${rowId}"]`).val(finalPrice);
                             $(`.product-price[data-row="${rowId}"]`).data('price', finalPrice);
                             $(`.product-price[data-row="${rowId}"]`).data('product-id', product.id);
+                            // Store etiket code in data attribute for duplicate checking
+                            $(`.product-etiket-code[data-row="${rowId}"]`).data('etiket-code', etiketCode);
                             
                             // Show original price if discounted
                             const $originalPriceEl = $(`.product-original-price[data-row="${rowId}"]`);
