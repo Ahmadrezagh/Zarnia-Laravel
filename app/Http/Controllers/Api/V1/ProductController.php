@@ -57,25 +57,26 @@ class ProductController extends Controller
         $sortType = null;
         if ($request->has('random')) {
             $sortType = 'random';
-        } elseif ($request->price_dir) {
-            $sortType = $request->price_dir === 'asc' ? 'price_asc' : 'price_desc';
-        } elseif ($request->sort_by) {
-            $sortType = $request->sort_by;
-        }
+        } 
+        // elseif ($request->price_dir) {
+        //     $sortType = $request->price_dir === 'asc' ? 'price_asc' : 'price_desc';
+        // } elseif ($request->sort_by) {
+        //     $sortType = $request->sort_by;
+        // }
 
         // $fromPrice = $request->filled('from_price') ? $request->from_price : ($request->filled('minPrice') ? $request->minPrice : null);
         // $toPrice = $request->filled('to_price') ? $request->to_price : ($request->filled('maxPrice') ? $request->maxPrice : null);
 
-        $categoryIds = collect((array) $request->category_ids)
-            ->filter()
-            ->push($category->id)
-            ->unique()
-            ->all();
+        // $categoryIds = collect((array) $request->category_ids)
+        //     ->filter()
+        //     ->push($category->id)
+        //     ->unique()
+        //     ->all();
 
         $products = Product::query()
             // ->with('children')
             ->main()
-            ->categories($categoryIds)
+            ->categories([$category->id])
             // ->search($request->search)
             // ->priceRange($fromPrice, $toPrice)
             ->hasCountAndImage()
