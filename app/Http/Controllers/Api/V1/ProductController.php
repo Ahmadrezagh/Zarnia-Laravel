@@ -52,9 +52,9 @@ class ProductController extends Controller
 
     public function categoryProducts(Request $request, Category $category)
     {
-        $user = $request->user('sanctum');
+        // $user = $request->user('sanctum');
 
-        $sortType = null;
+        // $sortType = null;
         // if ($request->has('random')) {
         //     $sortType = 'random';
         // } 
