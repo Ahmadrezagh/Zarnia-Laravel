@@ -9,7 +9,8 @@ class ProductSlider extends Model
     protected $fillable = [
         'title',
         'query',
-        'show_more'
+        'show_more',
+        'before_category_slider'
     ];
 
     public function buttons()
