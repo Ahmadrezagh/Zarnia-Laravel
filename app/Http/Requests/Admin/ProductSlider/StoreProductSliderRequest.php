@@ -26,6 +26,7 @@ class StoreProductSliderRequest extends FormRequest
             'query' => 'required|string',
             'show_more' => 'nullable|numeric',
             'before_category_slider' => 'nullable|integer|min:0',
+            'after_category_slider' => 'nullable|integer|min:0',
         ];
     }
 }

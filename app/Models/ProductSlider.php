@@ -10,7 +10,8 @@ class ProductSlider extends Model
         'title',
         'query',
         'show_more',
-        'before_category_slider'
+        'before_category_slider',
+        'after_category_slider'
     ];
 
     public function buttons()

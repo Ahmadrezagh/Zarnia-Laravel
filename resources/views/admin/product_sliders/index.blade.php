@@ -16,6 +16,7 @@
                 <x-form.input title="عنوان"  name="title"  />
                 <x-form.input title="کوئری"  name="query"  />
                 <x-form.input title="قبل از دسته بندی اسلایدر"  name="before_category_slider" type="number" :value="0" />
+                <x-form.input title="بعد از دسته بندی اسلایدر"  name="after_category_slider" type="number" :value="0" />
             </x-modal.create>
         </x-slot>
 
@@ -41,6 +42,7 @@
                     <x-form.input title="عنوان"  name="title" :value="$product_slider->title" />
                     <x-form.input title="کوئری"  name="query" :value="$product_slider->query" />
                     <x-form.input title="قبل از دسته بندی اسلایدر"  name="before_category_slider" type="number" :value="$product_slider->before_category_slider ?? 0" />
+                    <x-form.input title="بعد از دسته بندی اسلایدر"  name="after_category_slider" type="number" :value="$product_slider->after_category_slider ?? 0" />
                 </x-modal.update>
             @endforeach
         </x-table>

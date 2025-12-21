@@ -20,6 +20,7 @@ class ProductSliderResource extends JsonResource
             'query' => $this->query,
             'show_more' => boolval($this->show_more),
             'before_category_slider' => (int) ($this->before_category_slider ?? 0),
+            'after_category_slider' => (int) ($this->after_category_slider ?? 0),
             'buttons' => ProductSliderButtonResource::collection($this->buttons)
         ];
     }
