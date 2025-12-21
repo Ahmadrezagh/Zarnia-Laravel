@@ -55,9 +55,9 @@ class ProductController extends Controller
         $user = $request->user('sanctum');
 
         $sortType = null;
-        if ($request->has('random')) {
-            $sortType = 'random';
-        } 
+        // if ($request->has('random')) {
+        //     $sortType = 'random';
+        // } 
         // elseif ($request->price_dir) {
         //     $sortType = $request->price_dir === 'asc' ? 'price_asc' : 'price_desc';
         // } elseif ($request->sort_by) {
