@@ -63,8 +63,8 @@ class ProductController extends Controller
             $sortType = $request->sort_by;
         }
 
-        $fromPrice = $request->filled('from_price') ? $request->from_price : ($request->filled('minPrice') ? $request->minPrice : null);
-        $toPrice = $request->filled('to_price') ? $request->to_price : ($request->filled('maxPrice') ? $request->maxPrice : null);
+        // $fromPrice = $request->filled('from_price') ? $request->from_price : ($request->filled('minPrice') ? $request->minPrice : null);
+        // $toPrice = $request->filled('to_price') ? $request->to_price : ($request->filled('maxPrice') ? $request->maxPrice : null);
 
         $categoryIds = collect((array) $request->category_ids)
             ->filter()
@@ -73,14 +73,14 @@ class ProductController extends Controller
             ->all();
 
         $products = Product::query()
-            ->with('children')
+            // ->with('children')
             ->main()
             ->categories($categoryIds)
-            ->search($request->search)
-            ->priceRange($fromPrice, $toPrice)
+            // ->search($request->search)
+            // ->priceRange($fromPrice, $toPrice)
             ->hasCountAndImage()
-            ->applyDefaultSort($sortType)
-            ->HasDiscount($request->hasDiscount)
+            // ->applyDefaultSort($sortType)
+            // ->HasDiscount($request->hasDiscount)
             ->paginate($request->get('per_page') ?? 12);
 
         return new ProductItemCollection($products, $user);
