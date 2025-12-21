@@ -83,9 +83,10 @@ class ProductSliderController extends Controller
                 <<<'BLADE'
              <x-modal.destroy id="modal-destroy-{{$product_slider->id}}" title="حذف نقش" action="{{route('product_sliders.destroy', $product_slider->id)}}" title="{{$product_slider->title}}" />
 
-                <x-modal.update id="modal-edit-{{$product_slider->id}}" title="ویرایش نقش" action="{{route('product_sliders.update',$product_slider->id)}}" >
-                     <x-form.input title="سوال"  name="question" :value="$product_slider->question" />
-                    <x-form.input title="جواب"  name="answer" :value="$product_slider->answer" />
+                <x-modal.update id="modal-edit-{{$product_slider->id}}" title="ویرایش اسلایدر" action="{{route('product_sliders.update',$product_slider->id)}}" >
+                     <x-form.input title="عنوان"  name="title" :value="$product_slider->title" />
+                    <x-form.input title="کوئری"  name="query" :value="$product_slider->query" />
+                    <x-form.input title="قبل از دسته بندی اسلایدر"  name="before_category_slider" type="number" :value="$product_slider->before_category_slider ?? 0" />
                 </x-modal.update>
             BLADE,
                 ['product_slider' => $product_slider, 'permissions']

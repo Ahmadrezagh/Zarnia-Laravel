@@ -15,6 +15,7 @@
             <x-modal.create id="modal-create" title="ساخت اسلایدر" action="{{route('product_sliders.store')}}" >
                 <x-form.input title="عنوان"  name="title"  />
                 <x-form.input title="کوئری"  name="query"  />
+                <x-form.input title="قبل از دسته بندی اسلایدر"  name="before_category_slider" type="number" :value="0" />
             </x-modal.create>
         </x-slot>
 
@@ -39,6 +40,7 @@
                 <x-modal.update id="modal-edit-{{$product_slider->id}}" title="ویرایش اسلایدر" action="{{route('product_sliders.update',$product_slider->id)}}" >
                     <x-form.input title="عنوان"  name="title" :value="$product_slider->title" />
                     <x-form.input title="کوئری"  name="query" :value="$product_slider->query" />
+                    <x-form.input title="قبل از دسته بندی اسلایدر"  name="before_category_slider" type="number" :value="$product_slider->before_category_slider ?? 0" />
                 </x-modal.update>
             @endforeach
         </x-table>
