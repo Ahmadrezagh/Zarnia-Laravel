@@ -371,7 +371,11 @@ class Order extends Model
 
         // Handle in-store orders without address
         $addressText = $this->address ? $this->address->province->name : 'خرید حضوری';
-        $result = $addressText . "<br/> نوع پرداخت : " . $gateway;
+        
+        // Add shipping type
+        $shippingText = $this->shipping ? $this->shipping->title : 'بدون ارسال';
+        
+        $result = $addressText . "<br/> نوع ارسال : " . $shippingText . "<br/> نوع پرداخت : " . $gateway;
 
         return request()->expectsJson()
             ? ($result) // return plain text for JSON
