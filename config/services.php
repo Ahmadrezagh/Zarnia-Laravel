@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'torob' => [
+        'api_token' => env('TOROB_API_TOKEN'),
+    ],
+
 ];

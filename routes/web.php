@@ -169,3 +169,6 @@ Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'ind
 // Product RSS Feed
 Route::get('/products/feed.xml', [\App\Http\Controllers\ProductFeedController::class, 'index'])->name('products.feed');
 
+// Torob API
+Route::get('/api/torob/products', [\App\Http\Controllers\TorobController::class, 'getProducts'])->name('torob.products');
+
