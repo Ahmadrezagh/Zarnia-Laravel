@@ -30,7 +30,7 @@ class MarkPendingOrdersAsFailed extends Command
             ->where('created_at', '<=', $cutoff)
             ->chunkById(100, function ($orders) use (&$updated) {
                 foreach ($orders as $order) {
-                    $order->update(['status' => Order::$STATUSES[4]]);
+                    $order->update(['status' => Order::$STATUSES[3]]);
                     $updated++;
                 }
             });
