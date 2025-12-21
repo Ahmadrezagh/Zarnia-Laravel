@@ -54,10 +54,10 @@ class ProductController extends Controller
     {
         // $user = $request->user('sanctum');
 
-        // $sortType = null;
-        // if ($request->has('random')) {
-        //     $sortType = 'random';
-        // } 
+        $sortType = null;
+        if ($request->has('random')) {
+            $sortType = 'random';
+        } 
         // elseif ($request->price_dir) {
         //     $sortType = $request->price_dir === 'asc' ? 'price_asc' : 'price_desc';
         // } elseif ($request->sort_by) {
@@ -80,7 +80,7 @@ class ProductController extends Controller
             // ->search($request->search)
             // ->priceRange($fromPrice, $toPrice)
             ->hasCountAndImage()
-            // ->applyDefaultSort($sortType)
+            ->applyDefaultSort($sortType)
             // ->HasDiscount($request->hasDiscount)
             ->paginate($request->get('per_page') ?? 12);
 
