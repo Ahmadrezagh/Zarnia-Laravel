@@ -84,7 +84,7 @@ class ProductController extends Controller
             // ->HasDiscount($request->hasDiscount)
             ->paginate($request->get('per_page') ?? 12);
 
-        return new ProductListCollection($products, $user);
+        return new ProductListCollection($products);
     }
 
     public function show(Request $request, Product $product)
