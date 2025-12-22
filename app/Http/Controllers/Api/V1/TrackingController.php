@@ -28,7 +28,9 @@ class TrackingController extends Controller
             $ip = substr_replace($ip, ':0000:0000:0000:0000', -19);
         }
 
-        if ($request->userAgent() && preg_match('/bot|crawl|spider/i', $request->userAgent())) {
+        // Check for bots in user agent (check both validated user_agent and request userAgent)
+        $userAgent = $validated['user_agent'] ?? $request->userAgent();
+        if ($userAgent && $this->isBot($userAgent)) {
             return response()->json(['status' => 'ignored'], 200);
         }
 
@@ -59,5 +61,35 @@ class TrackingController extends Controller
         ]);
 
         return response()->json(['status' => 'tracked'], 200);
+    }
+
+    /**
+     * Check if user agent is a bot
+     */
+    private function isBot(?string $userAgent): bool
+    {
+        if (empty($userAgent)) {
+            return false;
+        }
+
+        $botPatterns = [
+            'bot', 'crawl', 'spider', 'scraper', 'curl', 'wget',
+            'python', 'java', 'perl', 'ruby', 'php', 'http',
+            'feed', 'rss', 'parser', 'monitor', 'check', 'ping',
+            'validator', 'indexer', 'fetcher', 'extractor', 'analyzer',
+            'collector', 'harvester', 'downloader', 'tool', 'api',
+            'client', 'library', 'framework', 'engine', 'agent',
+            'service', 'daemon', 'automation', 'headless', 'phantom',
+            'selenium', 'webdriver', 'chromium', 'gecko', 'webkit'
+        ];
+
+        $userAgentLower = strtolower($userAgent);
+        foreach ($botPatterns as $pattern) {
+            if (strpos($userAgentLower, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

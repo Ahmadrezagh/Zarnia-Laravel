@@ -16,8 +16,13 @@
     <!-- Row -->
     <x-page>
         <div class="card mt-3">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h4>در حال حاضر آنلاین</h4>
+                @if($bot_visits_count > 0)
+                    <button type="button" class="btn btn-danger" onclick="clearBotVisits()">
+                        <i class="fas fa-trash"></i> حذف بازدیدهای رباتی ({{ $bot_visits_count }})
+                    </button>
+                @endif
             </div>
             <div class="card-body">
                 <p>کاربران آنلاین: {{ $online_users }}</p>
@@ -538,6 +543,33 @@
                     trafficTrendChart.update();
                 });
             });
+
+            function clearBotVisits() {
+                if (!confirm('آیا مطمئن هستید که می‌خواهید تمام بازدیدهای رباتی را حذف کنید؟')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ route('visit.clear.bots') }}',
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            toastr.error('خطا در حذف بازدیدهای رباتی');
+                        }
+                    },
+                    error: function(xhr) {
+                        toastr.error('خطا در حذف بازدیدهای رباتی');
+                    }
+                });
+            }
         </script>
     @endpush
 

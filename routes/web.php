@@ -153,6 +153,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
     
         Route::get('visit',[VisitController::class,'index'])->name('visit.index');
+        Route::post('visit/clear-bots',[VisitController::class,'clearBotVisits'])->name('visit.clear.bots');
         Route::get('gold_summary',[GoldSummaryController::class,'index'])->name('gold_summary.index');
         Route::get('gold_summary/{order}',[GoldSummaryController::class,'show'])->name('gold_summary.show');
     
