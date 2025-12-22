@@ -67,6 +67,7 @@ class Product extends Model implements HasMedia
 
     public function getPriceAttribute($value)
     {
+        // Use discounted_price if exists (already calculated from parent's discount_percentage if applicable)
         if($this->discounted_price){
             $price = $this->discounted_price;
         }else{
@@ -665,6 +666,27 @@ class Product extends Model implements HasMedia
     public function getOriginalPriceAttribute()
     {
         return $this->getRawOriginal('price') /10;
+    }
+
+    /**
+     * Get discount percentage - return parent's discount_percentage if product has parent_id
+     */
+    public function getDiscountPercentageAttribute($value)
+    {
+        // If product has parent, return parent's discount_percentage
+        if ($this->parent_id) {
+            // Load parent if not already loaded
+            if (!$this->relationLoaded('parent')) {
+                $this->load('parent');
+            }
+            
+            if ($this->parent) {
+                return $this->parent->getRawOriginal('discount_percentage') ?? 0;
+            }
+        }
+        
+        // Return own discount_percentage
+        return $value ?? 0;
     }
 
     public function getPriceRangeTitleAttribute()

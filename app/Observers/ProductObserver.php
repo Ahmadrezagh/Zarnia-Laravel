@@ -46,6 +46,23 @@ class ProductObserver
                 }
             }
         }
+        
+        // If this is a parent product and discount_percentage changed, update all children
+        if (!$product->parent_id && $product->wasChanged('discount_percentage')) {
+            $this->updateChildrenDiscountedPrices($product);
+        }
+    }
+
+    /**
+     * Update discounted prices for all children when parent's discount_percentage changes
+     */
+    private function updateChildrenDiscountedPrices(Product $parent): void
+    {
+        $children = Product::where('parent_id', $parent->id)->get();
+        
+        foreach ($children as $child) {
+            $this->updateDiscountedPrice($child);
+        }
     }
 
 
@@ -80,7 +97,18 @@ class ProductObserver
     {
         // Get raw price value (stored multiplied by 10) and discount percentage
         $rawPrice = $product->getRawOriginal('price');
-        $discountPercentage = $product->discount_percentage;
+        
+        // If product has parent, use parent's discount_percentage
+        $discountPercentage = 0;
+        if ($product->parent_id) {
+            $parent = Product::find($product->parent_id);
+            if ($parent) {
+                $discountPercentage = $parent->getRawOriginal('discount_percentage') ?? 0;
+            }
+        } else {
+            // Use own discount_percentage
+            $discountPercentage = $product->getRawOriginal('discount_percentage') ?? 0;
+        }
 
         if ($rawPrice != 0 && $discountPercentage != 0) {
             // Calculate discounted price
@@ -94,7 +122,6 @@ class ProductObserver
             $product->discounted_price = $discountedPrice;
         } else {
             $product->discounted_price = null;
-            $product->discount_percentage = 0;
         }
 
         $product->saveQuietly();
