@@ -37,17 +37,18 @@ class AddressController extends Controller
         $user = auth()->user();
         $validated = $request->validated();
         
-        // If receiver_name is not provided in request (not set at all), set it to user's name
-        // But allow explicit null values to remain null
-        if (!isset($validated['receiver_name']) && $user->name) {
-            $validated['receiver_name'] = $user->name;
-        }
-        
         // Ensure receiver_name and receiver_phone can be null
         $validated['receiver_name'] = $validated['receiver_name'] ?? null;
         $validated['receiver_phone'] = $validated['receiver_phone'] ?? null;
         
         $address = $user->addresses()->create($validated);
+        
+        // If user's name is null and receiver_name is available, set user's name
+        if (empty($user->name) && $address->receiver_name) {
+            $user->name = $address->receiver_name;
+            $user->save();
+        }
+        
         return new AddressResource($address);
     }
 
