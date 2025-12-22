@@ -32,37 +32,7 @@ class VisitController extends Controller
 
     public function clearBotVisits()
     {
-        $deletedCount = Visit::where(function ($query) {
-            // Only detect search engine bots
-            $searchEngineBots = [
-                'googlebot',
-                'bingbot',
-                'slurp', // Yahoo
-                'duckduckbot',
-                'baiduspider',
-                'yandexbot',
-                'sogou',
-                'exabot',
-                'facebot', // Facebook
-                'ia_archiver', // Alexa
-                'ahrefsbot',
-                'semrushbot',
-                'mj12bot',
-                'dotbot',
-                'msnbot',
-                'teoma', // Ask.com
-                'gigabot',
-                'scoutjet',
-            ];
-
-            foreach ($searchEngineBots as $index => $bot) {
-                if ($index === 0) {
-                    $query->whereRaw('LOWER(user_agent) LIKE ?', ['%' . $bot . '%']);
-                } else {
-                    $query->orWhereRaw('LOWER(user_agent) LIKE ?', ['%' . $bot . '%']);
-                }
-            }
-        })->delete();
+        $deletedCount = $this->getSearchEngineBotQuery()->delete();
 
         return response()->json([
             'success' => true,
@@ -72,6 +42,14 @@ class VisitController extends Controller
     }
 
     private function getBotVisitsCount(): int
+    {
+        return $this->getSearchEngineBotQuery()->count();
+    }
+
+    /**
+     * Get query for search engine bots only
+     */
+    private function getSearchEngineBotQuery()
     {
         return Visit::where(function ($query) {
             // Only detect search engine bots
@@ -103,6 +81,6 @@ class VisitController extends Controller
                     $query->orWhereRaw('LOWER(user_agent) LIKE ?', ['%' . $bot . '%']);
                 }
             }
-        })->count();
+        });
     }
 }
