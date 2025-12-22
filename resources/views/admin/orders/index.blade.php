@@ -9,9 +9,14 @@
         <x-slot name="header">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5>سفارشات</h5>
-                <a href="{{ route('admin_orders.trash') }}" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> زباله دان ({{ \App\Models\Order::onlyTrashed()->count() }})
-                </a>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="badge badge-info" style="padding: 8px 12px; font-size: 14px;">
+                        <i class="fas fa-users"></i> کاربران آنلاین: {{ $onlineUsersCount }}
+                    </span>
+                    <a href="{{ route('admin_orders.trash') }}" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> زباله دان ({{ \App\Models\Order::onlyTrashed()->count() }})
+                    </a>
+                </div>
             </div>
             <hr>
             <form  method="GET">

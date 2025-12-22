@@ -39,7 +39,11 @@ class OrderController extends Controller
             ->search($request->search)
             ->orderByStatusPriority()
             ->paginate();
-        return view('admin.orders.index', compact('orders', 'statusCounts'));
+        
+        // Get online users count (last 5 minutes)
+        $onlineUsersCount = \App\Models\Visit::getOnlineUsers(5);
+        
+        return view('admin.orders.index', compact('orders', 'statusCounts', 'onlineUsersCount'));
     }
 
     /**
