@@ -33,22 +33,33 @@ class VisitController extends Controller
     public function clearBotVisits()
     {
         $deletedCount = Visit::where(function ($query) {
-            $botPatterns = [
-                'bot', 'crawl', 'spider', 'scraper', 'curl', 'wget',
-                'python', 'java', 'perl', 'ruby', 'php', 'http',
-                'feed', 'rss', 'parser', 'monitor', 'check', 'ping',
-                'validator', 'indexer', 'fetcher', 'extractor', 'analyzer',
-                'collector', 'harvester', 'downloader', 'tool', 'api',
-                'client', 'library', 'framework', 'engine', 'agent',
-                'service', 'daemon', 'automation', 'headless', 'phantom',
-                'selenium', 'webdriver', 'chromium', 'gecko', 'webkit'
+            // Only detect search engine bots
+            $searchEngineBots = [
+                'googlebot',
+                'bingbot',
+                'slurp', // Yahoo
+                'duckduckbot',
+                'baiduspider',
+                'yandexbot',
+                'sogou',
+                'exabot',
+                'facebot', // Facebook
+                'ia_archiver', // Alexa
+                'ahrefsbot',
+                'semrushbot',
+                'mj12bot',
+                'dotbot',
+                'msnbot',
+                'teoma', // Ask.com
+                'gigabot',
+                'scoutjet',
             ];
 
-            foreach ($botPatterns as $index => $pattern) {
+            foreach ($searchEngineBots as $index => $bot) {
                 if ($index === 0) {
-                    $query->whereRaw('LOWER(user_agent) LIKE ?', ['%' . $pattern . '%']);
+                    $query->whereRaw('LOWER(user_agent) LIKE ?', ['%' . $bot . '%']);
                 } else {
-                    $query->orWhereRaw('LOWER(user_agent) LIKE ?', ['%' . $pattern . '%']);
+                    $query->orWhereRaw('LOWER(user_agent) LIKE ?', ['%' . $bot . '%']);
                 }
             }
         })->delete();
@@ -63,22 +74,33 @@ class VisitController extends Controller
     private function getBotVisitsCount(): int
     {
         return Visit::where(function ($query) {
-            $botPatterns = [
-                'bot', 'crawl', 'spider', 'scraper', 'curl', 'wget',
-                'python', 'java', 'perl', 'ruby', 'php', 'http',
-                'feed', 'rss', 'parser', 'monitor', 'check', 'ping',
-                'validator', 'indexer', 'fetcher', 'extractor', 'analyzer',
-                'collector', 'harvester', 'downloader', 'tool', 'api',
-                'client', 'library', 'framework', 'engine', 'agent',
-                'service', 'daemon', 'automation', 'headless', 'phantom',
-                'selenium', 'webdriver', 'chromium', 'gecko', 'webkit'
+            // Only detect search engine bots
+            $searchEngineBots = [
+                'googlebot',
+                'bingbot',
+                'slurp', // Yahoo
+                'duckduckbot',
+                'baiduspider',
+                'yandexbot',
+                'sogou',
+                'exabot',
+                'facebot', // Facebook
+                'ia_archiver', // Alexa
+                'ahrefsbot',
+                'semrushbot',
+                'mj12bot',
+                'dotbot',
+                'msnbot',
+                'teoma', // Ask.com
+                'gigabot',
+                'scoutjet',
             ];
 
-            foreach ($botPatterns as $index => $pattern) {
+            foreach ($searchEngineBots as $index => $bot) {
                 if ($index === 0) {
-                    $query->whereRaw('LOWER(user_agent) LIKE ?', ['%' . $pattern . '%']);
+                    $query->whereRaw('LOWER(user_agent) LIKE ?', ['%' . $bot . '%']);
                 } else {
-                    $query->orWhereRaw('LOWER(user_agent) LIKE ?', ['%' . $pattern . '%']);
+                    $query->orWhereRaw('LOWER(user_agent) LIKE ?', ['%' . $bot . '%']);
                 }
             }
         })->count();

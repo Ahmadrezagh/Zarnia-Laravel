@@ -64,7 +64,7 @@ class TrackingController extends Controller
     }
 
     /**
-     * Check if user agent is a bot
+     * Check if user agent is a search engine bot
      */
     private function isBot(?string $userAgent): bool
     {
@@ -72,20 +72,31 @@ class TrackingController extends Controller
             return false;
         }
 
-        $botPatterns = [
-            'bot', 'crawl', 'spider', 'scraper', 'curl', 'wget',
-            'python', 'java', 'perl', 'ruby', 'php', 'http',
-            'feed', 'rss', 'parser', 'monitor', 'check', 'ping',
-            'validator', 'indexer', 'fetcher', 'extractor', 'analyzer',
-            'collector', 'harvester', 'downloader', 'tool', 'api',
-            'client', 'library', 'framework', 'engine', 'agent',
-            'service', 'daemon', 'automation', 'headless', 'phantom',
-            'selenium', 'webdriver', 'chromium', 'gecko', 'webkit'
+        // Only detect search engine bots
+        $searchEngineBots = [
+            'googlebot',
+            'bingbot',
+            'slurp', // Yahoo
+            'duckduckbot',
+            'baiduspider',
+            'yandexbot',
+            'sogou',
+            'exabot',
+            'facebot', // Facebook
+            'ia_archiver', // Alexa
+            'ahrefsbot',
+            'semrushbot',
+            'mj12bot',
+            'dotbot',
+            'msnbot',
+            'teoma', // Ask.com
+            'gigabot',
+            'scoutjet',
         ];
 
         $userAgentLower = strtolower($userAgent);
-        foreach ($botPatterns as $pattern) {
-            if (strpos($userAgentLower, $pattern) !== false) {
+        foreach ($searchEngineBots as $bot) {
+            if (strpos($userAgentLower, $bot) !== false) {
                 return true;
             }
         }
