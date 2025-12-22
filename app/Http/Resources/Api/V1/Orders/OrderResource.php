@@ -28,6 +28,7 @@ class OrderResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'uuid' => $this->uuid,
             'user' => UserResource::make($this->user),
             'address' => AddressResource::make($this->address),
             'shipping' => ShippingResource::make($this->shipping),
@@ -46,7 +47,7 @@ class OrderResource extends JsonResource
             'items' => OrderItemResource::collection($this->orderItems),
             'transaction_id' => $this->transaction_id,
             'reference' => $this->reference,
-            'print_url' => route('order.print',$this->id),
+            'print_url' => route('order.print', $this->uuid),
             'created_at' => Jalalian::forge($this->created_at)->format('Y-m-d'),
         ];
     }

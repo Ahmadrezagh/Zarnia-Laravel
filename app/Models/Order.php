@@ -38,13 +38,25 @@ class Order extends Model
         'payment_url',
         'shipping_price',
         'gold_price',
-        'reference'
+        'reference',
+        'uuid'
     ];
 
     protected $casts = [
         'paid_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($order) {
+            if (empty($order->uuid)) {
+                $order->uuid = \Illuminate\Support\Str::uuid()->toString();
+            }
+        });
+    }
 
     public function scopeFilterByTransactionId(Builder $query, string $transactionId = null)
     {

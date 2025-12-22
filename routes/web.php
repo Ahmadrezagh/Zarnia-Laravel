@@ -99,7 +99,7 @@ Route::middleware('panel.ip')->group(function () {
         
         Route::resource('products', ProductController::class );
         Route::resource('admin_orders', OrderController::class );
-        Route::get('admin_order/print/{order}', [OrderController::class, 'print'])->name('admin_order.print');
+        Route::get('admin_order/print/{order:uuid}', [OrderController::class, 'print'])->name('admin_order.print');
         Route::get('admin_order/cancel/{order}', [OrderController::class, 'cancel'])->name('admin_order.cancel');
         Route::post('admin_order/update/{order}', [OrderController::class, 'updateOrder'])->name('admin_order.update');
         Route::post('update_order_status', [OrderController::class,'updateOrderStatus'] )->name('update_order_status');
@@ -159,7 +159,7 @@ Route::middleware('panel.ip')->group(function () {
     });
 });
 
-Route::get('order/print/{order}', [OrderController::class, 'print'])->name('order.print');
+Route::get('order/print/{order:uuid}', [OrderController::class, 'print'])->name('order.print');
 Route::get('/payment/request', [GatewayController::class, 'pay'])->name('payment.request');
 Route::any('/payment/callback', [GatewayController::class, 'callback2'])->name('payment.callback');
 
