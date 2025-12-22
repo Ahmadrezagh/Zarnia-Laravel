@@ -22,8 +22,8 @@ class StoreAddressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'receiver_name' => 'string|required',
-            'receiver_phone' => 'string|required',
+            'receiver_name' => 'nullable|string',
+            'receiver_phone' => 'nullable|string',
             'address' => 'string|required',
             'postal_code' => 'numeric|required',
             'province_id' => 'numeric|required|exists:iran_provinces,id',
