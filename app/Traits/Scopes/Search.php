@@ -12,13 +12,13 @@ trait Search{
             return $query->where(function ($q) use ($search, $normalized) {
                 // Search in product name
                 $q->where('name', 'like', '%'.$search.'%')
-                  // Also search in etiket codes
+                  // Also search in etiket codes (exact match)
                   ->orWhereHas('etikets', function ($sub) use ($normalized) {
-                      $sub->where('code', 'like', '%'.$normalized.'%');
+                      $sub->where('code', $normalized);
                   })
-                  // Also search in children's etiket codes
+                  // Also search in children's etiket codes (exact match)
                   ->orWhereHas('children.etikets', function ($sub) use ($normalized) {
-                      $sub->where('code', 'like', '%'.$normalized.'%');
+                      $sub->where('code', $normalized);
                   });
             });
         }
