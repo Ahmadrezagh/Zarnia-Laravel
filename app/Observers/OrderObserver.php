@@ -14,6 +14,10 @@ class OrderObserver
     public function created(Order $order): void
     {
         $gateway = Gateway::find($order->gateway_id);
+        $gold_rpice = number_format(get_gold_price()/10);
+        $order->update([
+            'gold_price' => $gold_rpice
+        ]);
 //        $gateway->createTransaction($order);
         
         // Use user's phone and name for SMS
