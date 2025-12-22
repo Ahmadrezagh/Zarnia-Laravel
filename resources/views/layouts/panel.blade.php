@@ -1216,7 +1216,14 @@
 
     function doCkEditor(){
         $("textarea").not(".no_ck_editor").each(function() {
-            CKEDITOR.replace(this);
+            var editor = CKEDITOR.replace(this, {
+                filebrowserImageBrowseUrl: '{{ url("/filemanager?type=Images") }}',
+                filebrowserImageUploadUrl: '{{ url("/filemanager/upload?type=Images&_token=") }}{{ csrf_token() }}',
+                filebrowserBrowseUrl: '{{ url("/filemanager?type=Files") }}',
+                filebrowserUploadUrl: '{{ url("/filemanager/upload?type=Files&_token=") }}{{ csrf_token() }}',
+                filebrowserWindowWidth: '900',
+                filebrowserWindowHeight: '600'
+            });
         });
     }
 
