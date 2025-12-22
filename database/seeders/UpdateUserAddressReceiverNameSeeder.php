@@ -17,14 +17,14 @@ class UpdateUserAddressReceiverNameSeeder extends Seeder
         foreach ($users as $user) {
             $firstAddress = $user->addresses->first();
             
-            if ($firstAddress && $user->name) {
-                $firstAddress->receiver_name = $user->name;
-                $firstAddress->save();
+            if ($firstAddress && $firstAddress->receiver_name) {
+                $user->name = $firstAddress->receiver_name;
+                $user->save();
                 
-                $this->command->info("Updated receiver_name for user {$user->id} ({$user->name})");
+                $this->command->info("Updated name for user {$user->id} to {$firstAddress->receiver_name}");
             }
         }
         
-        $this->command->info('Finished updating receiver names in addresses.');
+        $this->command->info('Finished updating user names from addresses.');
     }
 }
