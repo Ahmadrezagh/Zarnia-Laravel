@@ -35,7 +35,19 @@ class AddressController extends Controller
     public function store(StoreAddressRequest $request)
     {
         $user = auth()->user();
-        $address = $user->addresses()->create($request->validated());
+        $validated = $request->validated();
+        
+        // If receiver_name is not provided in request (not set at all), set it to user's name
+        // But allow explicit null values to remain null
+        if (!isset($validated['receiver_name']) && $user->name) {
+            $validated['receiver_name'] = $user->name;
+        }
+        
+        // Ensure receiver_name and receiver_phone can be null
+        $validated['receiver_name'] = $validated['receiver_name'] ?? null;
+        $validated['receiver_phone'] = $validated['receiver_phone'] ?? null;
+        
+        $address = $user->addresses()->create($validated);
         return new AddressResource($address);
     }
 
@@ -60,7 +72,13 @@ class AddressController extends Controller
      */
     public function update(UpdateAddressRequest $request, Address $address)
     {
-        $address->update($request->validated());
+        $validated = $request->validated();
+        
+        // Ensure receiver_name and receiver_phone can be null
+        $validated['receiver_name'] = $validated['receiver_name'] ?? null;
+        $validated['receiver_phone'] = $validated['receiver_phone'] ?? null;
+        
+        $address->update($validated);
         return new AddressResource($address);
     }
 
