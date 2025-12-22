@@ -205,6 +205,9 @@ class OrderController extends Controller
             // Generate unique transaction ID
             $transactionId = Order::generateUniqueTransactionId();
 
+            // Calculate gold price
+            $gold_price = number_format(get_gold_price()/10);
+
             // Create order
             $order = Order::create([
                 'user_id' => $request->user_id,
@@ -221,7 +224,7 @@ class OrderController extends Controller
                 'transaction_id' => $transactionId,
                 'note' => $note,
                 'paid_at' => in_array($request->status, ['paid', 'boxing', 'sent', 'post', 'completed']) ? now() : null,
-                'gold_price' => number_format(get_gold_price()/10),
+                'gold_price' => $gold_price,
                 'reference' => $request->reference ?? null,
             ]);
 
