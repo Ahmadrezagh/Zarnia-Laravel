@@ -910,7 +910,19 @@ class Product extends Model implements HasMedia
 
     public function scopeWihtoutCategory(Builder $query)
     {
-        return $query->whereDoesntHave('categories');
+        return $query->whereDoesntHave('categories')
+            ->where(function (Builder $q) {
+                // Variant product: has etikets
+                $q->where(function ($variantQuery) {
+                    $variantQuery->whereNotNull('products.parent_id')
+                        ->whereHas('etikets');
+                })
+                // OR parent product: has children with etikets
+                ->orWhere(function ($parentQuery) {
+                    $parentQuery->whereNull('products.parent_id')
+                        ->whereHas('children.etikets');
+                });
+            });
     }
 
     public function scopeComprehensive(Builder $query)
