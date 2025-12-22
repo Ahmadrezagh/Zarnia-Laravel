@@ -15,7 +15,7 @@ class Visit extends Model
     use HasFactory;
 
     protected $fillable = [
-        'ip', 'country_code', 'title', 'user_agent', 'url', 'referrer', 'user_id'
+        'ip', 'country_code', 'title', 'user_agent', 'url', 'referrer', 'user_id', 'reference'
     ];
 
     public function scopeDaily($query, $date = null)

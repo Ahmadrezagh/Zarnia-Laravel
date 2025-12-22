@@ -73,6 +73,7 @@ class OrderController extends Controller
             'products' => 'required|string',
             'status' => 'required|in:' . implode(',', Order::$STATUSES),
             'discount_code' => 'nullable|string',
+            'reference' => 'nullable|string|max:255',
             'note' => 'nullable|string',
         ]);
 
@@ -220,7 +221,8 @@ class OrderController extends Controller
                 'transaction_id' => $transactionId,
                 'note' => $note,
                 'paid_at' => in_array($request->status, ['paid', 'boxing', 'sent', 'post', 'completed']) ? now() : null,
-                'gold_price' => number_format(get_gold_price()/10)
+                'gold_price' => number_format(get_gold_price()/10),
+                'reference' => $request->reference ?? null,
             ]);
 
             // Create order items

@@ -17,6 +17,7 @@ class TrackingController extends Controller
             'title' => 'nullable|string|max:255',
             'referrer' => 'nullable|url',
             'user_agent' => 'nullable|string|max:1000',
+            'reference' => 'nullable|string|max:255',
         ]);
 
         $ip = $validated['ip'];
@@ -54,6 +55,7 @@ class TrackingController extends Controller
             'url' => $validated['url'],
             'referrer' => (isset($validated['referrer']) && $validated['referrer']) ? $validated['referrer'] : null,
             'user_id' => $userId,
+            'reference' => $validated['reference'] ?? null,
         ]);
 
         return response()->json(['status' => 'tracked'], 200);

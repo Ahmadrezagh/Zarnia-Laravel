@@ -37,7 +37,8 @@ class Order extends Model
         'payment_token',
         'payment_url',
         'shipping_price',
-        'gold_price'
+        'gold_price',
+        'reference'
     ];
 
     protected $casts = [
