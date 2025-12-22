@@ -93,26 +93,56 @@
             color: #007bff !important;
         }
         
+        .main-sidebar .nav-sub {
+            background-color: #f8f9fa !important;
+        }
+        
         .main-sidebar .nav-sub-link {
-            color: #6c757d !important;
+            color: #495057 !important;
         }
         
         .main-sidebar .nav-sub-link:hover {
-            background-color: #f8f9fa !important;
+            background-color: #e9ecef !important;
             color: #007bff !important;
+        }
+        
+        .main-sidebar .nav-sub-item {
+            color: #495057 !important;
+        }
+        
+        .main-sidebar .nav-sub-item a {
+            color: #495057 !important;
+        }
+        
+        .main-sidebar .nav-sub-item a:hover {
+            color: #007bff !important;
+        }
+        
+        .main-sidebar .nav-sub .nav-sub-link,
+        .main-sidebar .nav-sub .nav-sub-item .nav-sub-link {
+            color: #495057 !important;
         }
         
         .main-sidebar .angle {
             color: #6c757d !important;
         }
         
-        .main-sidebar .nav-sub {
-            background-color: #f8f9fa !important;
-        }
-        
         .main-sidebar .shape1,
         .main-sidebar .shape2 {
             background-color: transparent !important;
+        }
+        
+        /* Force all submenu text to be dark */
+        .main-sidebar .nav-sub,
+        .main-sidebar .nav-sub *,
+        .main-sidebar .nav-sub-item,
+        .main-sidebar .nav-sub-item * {
+            color: #495057 !important;
+        }
+        
+        .main-sidebar .nav-sub-item:hover,
+        .main-sidebar .nav-sub-item:hover * {
+            color: #007bff !important;
         }
     </style>
 
