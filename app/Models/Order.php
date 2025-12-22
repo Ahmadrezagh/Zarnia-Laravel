@@ -323,6 +323,12 @@ class Order extends Model
         if($this->total_amount != $this->final_amount){
             $result = $result."<br/> <p style='color: blue'>" . number_format($this->total_amount)." تومان "."</p>";
         }
+        
+        // Add reference at the bottom if it exists
+        if ($this->reference) {
+            $result .= "<br/><small style='color: #6c757d;'>منبع: " . e($this->reference) . "</small>";
+        }
+        
         return request()->expectsJson() ?
             $result :
             new HtmlString($result );
