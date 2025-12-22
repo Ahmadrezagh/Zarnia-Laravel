@@ -58,6 +58,62 @@
         .cke_notification_warning{
             display: none;
         }
+        
+        /* White mode sidebar */
+        .main-sidebar {
+            background-color: #ffffff !important;
+            border-right: 1px solid #e0e0e0 !important;
+        }
+        
+        .main-sidebar .sidemenu-logo {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+        }
+        
+        .main-sidebar .nav-link {
+            color: #495057 !important;
+        }
+        
+        .main-sidebar .nav-link:hover,
+        .main-sidebar .nav-link.active {
+            background-color: #f8f9fa !important;
+            color: #007bff !important;
+        }
+        
+        .main-sidebar .sidemenu-label {
+            color: #495057 !important;
+        }
+        
+        .main-sidebar .sidemenu-icon {
+            color: #6c757d !important;
+        }
+        
+        .main-sidebar .nav-link:hover .sidemenu-icon,
+        .main-sidebar .nav-link.active .sidemenu-icon {
+            color: #007bff !important;
+        }
+        
+        .main-sidebar .nav-sub-link {
+            color: #6c757d !important;
+        }
+        
+        .main-sidebar .nav-sub-link:hover {
+            background-color: #f8f9fa !important;
+            color: #007bff !important;
+        }
+        
+        .main-sidebar .angle {
+            color: #6c757d !important;
+        }
+        
+        .main-sidebar .nav-sub {
+            background-color: #f8f9fa !important;
+        }
+        
+        .main-sidebar .shape1,
+        .main-sidebar .shape2 {
+            background-color: transparent !important;
+        }
     </style>
 
 
