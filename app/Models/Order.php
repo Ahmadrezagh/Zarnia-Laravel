@@ -434,7 +434,7 @@ class Order extends Model
     }
     public function getFactorColAttribute()
     {
-        $urt = route('admin_order.print',$this->id);
+        $urt = route('admin_order.print', $this->uuid);
         $result =  "<a href='$urt' class='btn btn-primary'>دانلود pdf</a> <a href='$urt' class='btn btn-success'>پرینت</a> ";
 
         return request()->expectsJson() ?

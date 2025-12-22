@@ -163,7 +163,7 @@
                         ]"
             :items="$orders"
             :actions="[
-                            ['label' => 'پرینت','type' =>'route','route' => ['admin_order.print',   ['order'=>'{id}'] ] ],
+                            ['label' => 'پرینت','type' =>'route','route' => ['admin_order.print',   ['order'=>'{uuid}'] ] ],
                             ['label' => 'ویرایش', 'type' => 'modalEdit'],
                             ['label' => 'لغو', 'type' => 'modalCancel'],
                             ['label' => 'حذف', 'type' => 'modalDestroy']

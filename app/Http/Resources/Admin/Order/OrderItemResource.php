@@ -16,6 +16,7 @@ class OrderItemResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'uuid' => $this->uuid,
             'orderColumn' => $this->orderColumn,
             'persianStatus' => $this->persianStatus,
             'firstImageOfOrderItem' => $this->firstImageOfOrderItem,
