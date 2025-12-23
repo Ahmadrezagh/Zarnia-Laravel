@@ -113,14 +113,20 @@ body {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
+    font-size: 1.25rem !important;
 }
 
 .order-number-row .value {
     font-weight: bold !important;
     border: none !important;
+    font-size: 1.25rem !important;
 }
 
-.order-number-row .label,
+.order-number-row .label {
+    border: none !important;
+    font-size: 1.25rem !important;
+}
+
 .order-number-row .dots {
     border: none !important;
 }
