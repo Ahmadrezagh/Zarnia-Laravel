@@ -336,6 +336,23 @@ class Order extends Model
             $result = $result."<br/> <p style='color: blue'>" . number_format($this->total_amount)." تومان "."</p>";
         }
         
+        // Add etiket codes from all order items
+        $orderItems = $this->relationLoaded('orderItems') 
+            ? $this->orderItems 
+            : $this->orderItems()->get();
+        
+        $etiketCodes = [];
+        foreach ($orderItems as $orderItem) {
+            if (!empty($orderItem->etiket)) {
+                $etiketCodes[] = $orderItem->etiket;
+            }
+        }
+        
+        if (!empty($etiketCodes)) {
+            $etiketCodesText = implode('، ', array_unique($etiketCodes));
+            $result .= "<br/><small style='color: #6c757d;'>کد اتیکت: " . e($etiketCodesText) . "</small>";
+        }
+        
         // Add reference at the bottom if it exists
         if ($this->reference) {
             $result .= "<br/><small style='color: #6c757d;'>منبع: " . e($this->reference) . "</small>";
