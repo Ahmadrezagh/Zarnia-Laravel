@@ -48,6 +48,11 @@ class ProductFeedResource extends JsonResource
         $regularPrice = $this->getRawOriginal('price') / 10; // Convert from stored format
         $salePrice = $this->discounted_price ? $this->discounted_price : null;
         
+        // If sale_price is null, use regular_price
+        if ($salePrice === null) {
+            $salePrice = $regularPrice;
+        }
+        
         // Get availability
         $availability = $this->single_count > 0 ? 'in_stock' : 'out_of_stock';
         
@@ -80,7 +85,7 @@ class ProductFeedResource extends JsonResource
             'image_link' => $imageUrl,
             'availability' => $availability,
             'regular_price' => (int) $regularPrice,
-            'sale_price' => $salePrice ? (int) $salePrice : null,
+            'sale_price' => (int) $salePrice,
             'category' => $category,
             'description' => !empty($description) ? $description : null,
             'brand' => $brand,
