@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductSlider\StoreProductSliderRequest;
 use App\Http\Requests\Admin\ProductSlider\UpdateProductSliderRequest;
+use App\Models\Category;
 use App\Models\ProductSlider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
@@ -17,7 +18,8 @@ class ProductSliderController extends Controller
     public function index()
     {
         $product_sliders = ProductSlider::query()->latest()->paginate();
-        return view('admin.product_sliders.index', compact('product_sliders'));
+        $categories = Category::query()->select('id','title','parent_id')->orderBy('title')->get();
+        return view('admin.product_sliders.index', compact('product_sliders', 'categories'));
     }
 
     /**
@@ -75,7 +77,8 @@ class ProductSliderController extends Controller
     public function table()
     {
         $product_sliders = ProductSlider::query()->paginate();
-
+        $categories = Category::query()->select('id','title','parent_id')->orderBy('title')->get();
+        $slotContent = '';
 
         // Loop through users and render the Blade string for each
         foreach ($product_sliders as $product_slider) {
@@ -85,12 +88,15 @@ class ProductSliderController extends Controller
 
                 <x-modal.update id="modal-edit-{{$product_slider->id}}" title="ویرایش اسلایدر" action="{{route('product_sliders.update',$product_slider->id)}}" >
                      <x-form.input title="عنوان"  name="title" :value="$product_slider->title" />
-                    <x-form.input title="کوئری"  name="query" :value="$product_slider->query" />
+                    
+                    <x-query.generator :categories="$categories" targetInputId="query-edit-{{$product_slider->id}}" />
+                    
+                    <x-form.input title="کوئری"  name="query" id="query-edit-{{$product_slider->id}}" :value="$product_slider->query" />
                     <x-form.input title="قبل از دسته بندی اسلایدر"  name="before_category_slider" type="number" :value="$product_slider->before_category_slider ?? 0" />
                     <x-form.input title="بعد از دسته بندی اسلایدر"  name="after_category_slider" type="number" :value="$product_slider->after_category_slider ?? 0" />
                 </x-modal.update>
             BLADE,
-                ['product_slider' => $product_slider, 'permissions']
+                ['product_slider' => $product_slider, 'categories' => $categories]
             );
         }
 

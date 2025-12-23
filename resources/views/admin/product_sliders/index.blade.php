@@ -14,7 +14,10 @@
             <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن اسلایدر</button>
             <x-modal.create id="modal-create" title="ساخت اسلایدر" action="{{route('product_sliders.store')}}" >
                 <x-form.input title="عنوان"  name="title"  />
-                <x-form.input title="کوئری"  name="query"  />
+                
+                <x-query.generator :categories="$categories" targetInputId="query-create" />
+                
+                <x-form.input title="کوئری"  name="query" id="query-create" />
                 <x-form.input title="قبل از دسته بندی اسلایدر"  name="before_category_slider" type="number" :value="0" />
                 <x-form.input title="بعد از دسته بندی اسلایدر"  name="after_category_slider" type="number" :value="0" />
             </x-modal.create>
