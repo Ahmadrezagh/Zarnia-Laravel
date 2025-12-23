@@ -97,6 +97,21 @@
     #generated-query {
         background-color: #f8f9fa;
     }
+    /* Ensure Select2 search box is visible in dropdown */
+    .select2-container--default .select2-search--dropdown {
+        display: block !important;
+        padding: 5px !important;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+        border: 1px solid #aaa !important;
+        padding: 6px 12px !important;
+        width: 100% !important;
+        border-radius: 4px !important;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+        border-color: #5897fb !important;
+        outline: 0 !important;
+    }
 </style>
 @endpush
 
@@ -200,13 +215,14 @@
         const $modal = $select.closest('.modal');
         const dropdownParent = $modal.length ? $modal : $('body');
         
-        // Initialize Select2
+        // Initialize Select2 with search enabled
         $select.select2({
             placeholder: 'جستجو و انتخاب دسته بندی‌ها',
             allowClear: true,
             dir: 'rtl',
             width: '100%',
             dropdownParent: dropdownParent,
+            minimumInputLength: 0, // Show search box immediately
             language: {
                 noResults: function() {
                     return "نتیجه‌ای یافت نشد";
@@ -222,30 +238,34 @@
     }
     
     // Auto-generate query on input change
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Select2
-        initializeSelect2();
-        
-        const queryParams = document.querySelectorAll('.query-param');
-        queryParams.forEach(param => {
-            // Skip Select2 elements as they're handled separately
-            if (!$(param).hasClass('query-select2-categories')) {
-                param.addEventListener('change', generateQuery);
-                param.addEventListener('input', generateQuery);
-            }
-        });
-        
-        // Initial generation
-        generateQuery();
+    $(document).ready(function() {
+        // Wait a bit to ensure Select2 library is loaded
+        setTimeout(function() {
+            // Initialize Select2
+            initializeSelect2();
+            
+            const queryParams = document.querySelectorAll('.query-param');
+            queryParams.forEach(param => {
+                // Skip Select2 elements as they're handled separately
+                if (!$(param).hasClass('query-select2-categories')) {
+                    param.addEventListener('change', generateQuery);
+                    param.addEventListener('input', generateQuery);
+                }
+            });
+            
+            // Initial generation
+            generateQuery();
+        }, 100);
     });
     
     // Re-initialize Select2 when modal is shown (for modals)
-    $(document).on('shown.bs.modal', function() {
-        setTimeout(function() {
-            if ($('#query-category-ids').length && !$('#query-category-ids').hasClass('select2-hidden-accessible')) {
+    $(document).on('shown.bs.modal', function(e) {
+        const $modal = $(e.target);
+        if ($modal.find('#query-category-ids').length) {
+            setTimeout(function() {
                 initializeSelect2();
-            }
-        }, 100);
+            }, 100);
+        }
     });
 </script>
 @endpush
