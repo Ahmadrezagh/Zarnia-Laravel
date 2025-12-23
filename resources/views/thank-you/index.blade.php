@@ -30,7 +30,7 @@
 
         <div class="order-details">
             <div class="order-details-list">
-                <div class="detail-row">
+                <div class="detail-row order-number-row">
                     <span class="label">شماره سفارش</span>
                     <span class="dots">............................</span>
                     <span class="value" id="orderNumber">{{ $order->id }}</span>
