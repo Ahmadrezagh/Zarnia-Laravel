@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductSlider\StoreProductSliderButtonRequest;
 use App\Http\Requests\Admin\ProductSlider\UpdateProductSliderButtonRequest;
+use App\Models\Category;
 use App\Models\ProductSlider;
 use App\Models\ProductSliderButton;
 use Illuminate\Http\Request;
@@ -18,7 +19,8 @@ class ProductSliderButtonController extends Controller
     public function index(ProductSlider $product_slider)
     {
         $product_slider_buttons = $product_slider->buttons()->paginate();
-        return view('admin.product_slider_buttons.index', compact('product_slider', 'product_slider_buttons'));
+        $categories = Category::query()->select('id','title','parent_id')->orderBy('title')->get();
+        return view('admin.product_slider_buttons.index', compact('product_slider', 'product_slider_buttons', 'categories'));
     }
 
     /**
@@ -76,7 +78,8 @@ class ProductSliderButtonController extends Controller
     public function table(ProductSlider $product_slider)
     {
         $buttons = $product_slider->buttons()->paginate();
-
+        $categories = Category::query()->select('id','title','parent_id')->orderBy('title')->get();
+        $slotContent = '';
 
         // Loop through users and render the Blade string for each
         foreach ($buttons as $button) {
@@ -86,10 +89,13 @@ class ProductSliderButtonController extends Controller
 
                 <x-modal.update id="modal-edit-{{$product_slider_button->id}}" title="ویرایش اسلایدر" action="{{route('product_sliders.product_slider_buttons.update',['product_slider' => $product_slider->id,'product_slider_button' => $product_slider_button->id])}}" >
                     <x-form.input title="عنوان"  name="title" :value="$product_slider_button->title" />
-                    <x-form.input title="کوئری"  name="query" :value="$product_slider_button->query" />
+                    
+                    <x-query.generator :categories="$categories" targetInputId="query-edit-{{$product_slider_button->id}}" />
+                    
+                    <x-form.input title="کوئری"  name="query" id="query-edit-{{$product_slider_button->id}}" :value="$product_slider_button->query" />
                 </x-modal.update>
             BLADE,
-                ['product_slider_button' => $button]
+                ['product_slider_button' => $button, 'product_slider' => $product_slider, 'categories' => $categories]
             );
         }
 

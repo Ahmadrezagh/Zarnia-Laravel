@@ -16,7 +16,10 @@
             <button class="btn btn-primary mb-3"  data-toggle="modal" data-target="#modal-create">افزودن دکمه</button>
             <x-modal.create id="modal-create" title="ساخت دکمه" action="{{route('product_sliders.product_slider_buttons.store',$product_slider->id)}}" >
                 <x-form.input title="عنوان"  name="title"  />
-                <x-form.input title="کوئری"  name="query"  />
+                
+                <x-query.generator :categories="$categories" targetInputId="query-create" />
+                
+                <x-form.input title="کوئری"  name="query" id="query-create" />
             </x-modal.create>
         </x-slot>
 
@@ -39,7 +42,10 @@
 
                 <x-modal.update id="modal-edit-{{$product_slider_button->id}}" title="ویرایش دکمه" action="{{route('product_sliders.product_slider_buttons.update',['product_slider' => $product_slider->id,'product_slider_button' => $product_slider_button->id])}}" >
                     <x-form.input title="عنوان"  name="title" :value="$product_slider_button->title" />
-                    <x-form.input title="کوئری"  name="query" :value="$product_slider_button->query" />
+                    
+                    <x-query.generator :categories="$categories" targetInputId="query-edit-{{$product_slider_button->id}}" />
+                    
+                    <x-form.input title="کوئری"  name="query" id="query-edit-{{$product_slider_button->id}}" :value="$product_slider_button->query" />
                 </x-modal.update>
             @endforeach
         </x-table>
