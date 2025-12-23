@@ -104,13 +104,25 @@ body {
 }
 
 .order-number-row {
-    border: 1px solid #bca27b;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
+    border: 2px solid #bca27b !important;
+    padding: 0.75rem !important;
+    border-radius: 0.5rem !important;
+    margin: 0.5rem 0 !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
 }
 
 .order-number-row .value {
-    font-weight: bold;
+    font-weight: bold !important;
+    border: none !important;
+}
+
+.order-number-row .label,
+.order-number-row .dots {
+    border: none !important;
 }
 
 /* Divider */
@@ -204,3 +216,4 @@ body {
         display: none;
     }
 }
+
