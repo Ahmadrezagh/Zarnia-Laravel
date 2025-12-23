@@ -103,6 +103,14 @@ body {
     text-align: left;
 }
 
+#orderNumber {
+    font-weight: bold;
+    border: 1px solid #bca27b;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+}
+
 /* Divider */
 .divider {
     width: 100%;

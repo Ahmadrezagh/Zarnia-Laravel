@@ -173,3 +173,14 @@ Route::get('/products/feed.xml', [\App\Http\Controllers\ProductFeedController::c
 // Torob API
 Route::get('/api/torob/products', [\App\Http\Controllers\TorobController::class, 'getProducts'])->name('torob.products');
 
+// TEST ROUTE - Remove after testing
+Route::get('/test-thank-you/{orderId}', function($orderId) {
+    $order = \App\Models\Order::with(['gateway', 'shipping', 'user', 'address'])->find($orderId);
+    
+    if (!$order) {
+        return abort(404, 'Order not found');
+    }
+    
+    return view('thank-you.index', compact('order'));
+})->name('test.thank-you');
+
