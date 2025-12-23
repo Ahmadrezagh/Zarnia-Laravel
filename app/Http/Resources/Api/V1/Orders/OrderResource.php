@@ -46,7 +46,7 @@ class OrderResource extends JsonResource
             'payment_url' => $this->payment_urll,
             'items' => OrderItemResource::collection($this->orderItems),
             'transaction_id' => $this->transaction_id,
-            'reference' => $this->reference,
+            'reference' => $this->reference ?? 'مستقیم',
             'print_url' => route('order.print', $this->uuid),
             'created_at' => Jalalian::forge($this->created_at)->format('Y-m-d'),
         ];

@@ -353,10 +353,9 @@ class Order extends Model
             $result .= "<br/><small style='color: #6c757d;'>کد اتیکت: " . e($etiketCodesText) . "</small>";
         }
         
-        // Add reference at the bottom if it exists
-        if ($this->reference) {
-            $result .= "<br/><small style='color: #6c757d;'>منبع: " . e($this->reference) . "</small>";
-        }
+        // Add reference at the bottom (always show, default to "مستقیم" if null)
+        $reference = $this->reference ?? 'مستقیم';
+        $result .= "<br/><small style='color: #6c757d;'>منبع: " . e($reference) . "</small>";
         
         return request()->expectsJson() ?
             $result :
