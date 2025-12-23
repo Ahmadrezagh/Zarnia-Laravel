@@ -55,7 +55,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('index_buttons', [IndexButtonController::class, 'table'])->name('index_buttons');
         Route::get('product_sliders', [ProductSliderController::class, 'table'])->name('product_sliders');
         Route::get('product_slider_buttons/{product_slider}', [ProductSliderButtonController::class, 'table'])->name('product_slider_buttons');
-        Route::get('categories', [CategoryController::class, 'table'])->name('categories');
+        Route::any('categories', [CategoryController::class, 'table'])->name('categories');
         Route::get('pages', [PageController::class, 'table'])->name('pages');
         Route::get('header_links', [HeaderLinkController::class, 'table'])->name('header_links');
         Route::get('footer_titles', [FooterTitleController::class, 'table'])->name('footer_titles');

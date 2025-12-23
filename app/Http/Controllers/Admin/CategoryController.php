@@ -33,17 +33,12 @@ class CategoryController extends Controller
     public function index()
     {
         $attribute_groups = AttributeGroup::query()->orderBy('name')->get(['id','name']);
-        $categories = Category::query()
-            ->select('id','title','slug','parent_id','show_in_nav')
-            ->latest()
-            ->paginate(15);
-
         $allCategories = Category::query()
             ->select('id','title','parent_id')
             ->orderBy('title')
             ->get();
 
-        return view('admin.categories.index', compact('categories', 'attribute_groups', 'allCategories'));
+        return view('admin.categories.index', compact('attribute_groups', 'allCategories'));
     }
 
     /**
@@ -191,27 +186,60 @@ class CategoryController extends Controller
     }
 
 
-    public function table()
+    public function table(Request $request)
     {
-        $categories = Category::query()
-            ->select('id','title','slug')
-            ->latest()
-            ->paginate(15);
+        $query = Category::query()->select('*');
 
-        $slotContent = view('admin.categories.partials.destroy-modals', compact('categories'))->render();
+        // Get total records before applying filters
+        $totalRecords = $query->count();
 
-        return view('components.table', [
-            'id' => 'categories-table',
-            'columns' => [
-                ['label' => 'نام', 'key' => 'title', 'type' => 'text', 'url' => setting('url') . '/product-category/{slug}'],
-            ],
-            'url' => route('table.categories'),
-            'items' => $categories,
-            'actions' => [
-                ['label' => 'ویرایش', 'route' => ['categories.edit', ['category' => '{slug}']]],
-                ['label' => 'حذف', 'type' => 'modal-destroy']
-            ],
-            'slot' => $slotContent
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->input('search.value'))) {
+            $search = $request->input('search.value');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        // Handle pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        if ($length <= 0) {
+            $length = 10;
+        }
+
+        // Apply sorting if provided
+        if ($request->has('order') && !empty($request->input('order'))) {
+            $order = $request->input('order')[0];
+            $columnIndex = $order['column'];
+            $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
+            $column = $request->input("columns.{$columnIndex}.data");
+            if ($column && \Illuminate\Support\Facades\Schema::hasColumn('categories', $column)) {
+                $query->orderBy($column, $direction);
+            }
+        } else {
+            $query->latest('id');
+        }
+
+        // Get filtered records count after search
+        $filteredRecords = $query->count();
+
+        // Fetch paginated data with eager loading
+        $data = $query
+            ->with('parent')
+            ->skip($start)
+            ->take($length)
+            ->get()
+            ->map(function ($item) {
+                return \App\Http\Resources\Admin\Table\AdminCategoryResource::make($item);
+            });
+
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data
         ]);
     }
 

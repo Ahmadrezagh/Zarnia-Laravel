@@ -122,25 +122,21 @@
                 <div style="height: 500px;"></div>
             </x-modal.create>
         </x-slot>
-        <x-table
+        <x-dataTable
             :url="route('table.categories')"
             id="categories-table"
             :columns="[
                             ['label' => '#', 'key' => 'id', 'type' => 'text'],
                             ['label' => 'تصویر', 'key' => 'image', 'type' => 'image'],
                             ['label' => 'نام', 'key' => 'title', 'type' => 'text', 'url' => setting('url') . '/product-category/{slug}'],
+                            ['label' => 'والد', 'key' => 'parent_title', 'type' => 'text'],
                         ]"
-            :items="$categories"
             :actions="[
                             ['label' => 'ویرایش', 'route' => ['categories.edit', ['category' => '{slug}']]],
-                            ['label' => 'حذف', 'type' => 'modal-destroy']
+                            ['label' => 'حذف', 'type' => 'modalDestroy']
                         ]"
         >
-
-            @foreach($categories as $category)
-                <x-modal.destroy id="modal-destroy-{{$category->id}}" title="حذف دسته بندی" action="{{route('categories.destroy', $category->slug)}}" title="{{$category->title}}" />
-            @endforeach
-        </x-table>
+        </x-dataTable>
     </x-page>
 
     <script>
@@ -422,6 +418,65 @@
 
 @endsection
 @section('js')
+    <script>
+        function modalDestroy(id) {
+            // Get category data from the table row
+            const table = $('#categories-table').DataTable();
+            const rowData = table.row(function(idx, data, node) {
+                return data.id == id;
+            }).data();
 
+            if (!rowData) {
+                toastr.error('دسته بندی یافت نشد');
+                return;
+            }
 
+            // Create modal dynamically
+            const modalId = 'modal-destroy-' + id;
+            let modal = $('#' + modalId);
+
+            // Remove existing modal if any
+            if (modal.length) {
+                modal.remove();
+            }
+
+            // Create modal HTML
+            const modalHtml = `
+                <div class="modal fade" id="${modalId}" tabindex="-1" role="dialog">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">حذف دسته بندی</h5>
+                                <button type="button" class="close" data-dismiss="modal">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <form action="/admin/categories/${rowData.slug}" method="POST" class="ajax-form" data-method="DELETE">
+                                @csrf
+                                @method('DELETE')
+                                <div class="modal-body">
+                                    <p>آیا مطمئن هستید که می‌خواهید دسته بندی "<strong>${rowData.title}</strong>" را حذف کنید؟</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                                    <button type="submit" class="btn btn-danger">حذف</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Append modal to body
+            $('body').append(modalHtml);
+
+            // Show modal
+            $('#' + modalId).modal('show');
+
+            // Remove modal from DOM when hidden
+            $('#' + modalId).on('hidden.bs.modal', function() {
+                $(this).remove();
+            });
+        }
+    </script>
 @endsection
