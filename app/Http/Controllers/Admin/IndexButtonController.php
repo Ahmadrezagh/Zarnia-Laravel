@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\IndexButton\StoreIndexButtonRequest;
 use App\Http\Requests\Admin\IndexButton\UpdateIndexButtonRequest;
+use App\Models\Category;
 use App\Models\IndexButton;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
@@ -17,7 +18,8 @@ class IndexButtonController extends Controller
     public function index()
     {
         $index_buttons = IndexButton::query()->latest()->paginate();
-        return view('admin.index_buttons.index', compact('index_buttons'));
+        $categories = Category::query()->select('id','title','parent_id')->orderBy('title')->get();
+        return view('admin.index_buttons.index', compact('index_buttons', 'categories'));
     }
 
     /**
@@ -74,6 +76,7 @@ class IndexButtonController extends Controller
     public function table()
     {
         $index_buttons = IndexButton::query()->latest()->paginate();
+        $categories = Category::query()->select('id','title','parent_id')->orderBy('title')->get();
         $slotContent = '';
 
         // Loop through index buttons and render the Blade string for each
@@ -84,10 +87,13 @@ class IndexButtonController extends Controller
 
                 <x-modal.update id="modal-edit-{{$index_button->id}}" title="ویرایش دکمه" action="{{route('index_buttons.update',$index_button->id)}}" >
                      <x-form.input title="عنوان"  name="title" :value="$index_button->title" />
-                    <x-form.input title="کوئری"  name="query" :value="$index_button->query" />
+                    
+                    <x-query.generator :categories="$categories" targetInputId="query-edit-{{$index_button->id}}" />
+                    
+                    <x-form.input title="کوئری"  name="query" id="query-edit-{{$index_button->id}}" :value="$index_button->query" />
                 </x-modal.update>
             BLADE,
-                ['index_button' => $index_button]
+                ['index_button' => $index_button, 'categories' => $categories]
             );
         }
 
