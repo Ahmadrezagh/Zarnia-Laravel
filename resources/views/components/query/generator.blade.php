@@ -89,7 +89,6 @@
     </div>
 </div>
 
-@push('styles')
 <style>
     .query-generator-container .card {
         border: 1px solid #ddd;
@@ -98,7 +97,7 @@
         background-color: #f8f9fa;
         border-bottom: 1px solid #ddd;
     }
-    #generated-query {
+    .query-generator-container #{{ $instanceId }}-generated-query {
         background-color: #f8f9fa;
     }
     /* Ensure Select2 search box is visible in dropdown */
@@ -117,9 +116,7 @@
         outline: 0 !important;
     }
 </style>
-@endpush
 
-@push('scripts')
 <script>
     (function() {
         const instanceId = '{{ $instanceId }}';
@@ -249,21 +246,29 @@
             $select.off('change.queryGenerator').on('change.queryGenerator', window['generateQuery' + instanceId]);
         }
         
+        // Initialize function that can be called on document ready or modal shown
+        function initializeInstance() {
+            const $container = $('[data-instance-id="' + instanceId + '"]');
+            if ($container.length === 0) return;
+            
+            // Initialize Select2
+            initializeSelect2();
+            
+            // Get all query params in this instance
+            const queryParams = $container.find('.query-param').not('.query-select2-categories');
+            
+            queryParams.off('change.queryGenerator input.queryGenerator')
+                .on('change.queryGenerator input.queryGenerator', window['generateQuery' + instanceId]);
+            
+            // Initial generation
+            window['generateQuery' + instanceId]();
+        }
+        
         // Auto-generate query on input change
         $(document).ready(function() {
             // Wait a bit to ensure Select2 library is loaded
             setTimeout(function() {
-                // Initialize Select2
-                initializeSelect2();
-                
-                // Get all query params in this instance
-                const $container = $('[data-instance-id="' + instanceId + '"]');
-                const queryParams = $container.find('.query-param').not('.query-select2-categories');
-                
-                queryParams.on('change input', window['generateQuery' + instanceId]);
-                
-                // Initial generation
-                window['generateQuery' + instanceId]();
+                initializeInstance();
             }, 100);
         });
         
@@ -271,13 +276,12 @@
         $(document).on('shown.bs.modal', function(e) {
             const $modal = $(e.target);
             const $select = $modal.find('#' + instanceId + '-category-ids');
-            if ($select.length && !$select.hasClass('select2-hidden-accessible')) {
+            if ($select.length) {
                 setTimeout(function() {
-                    initializeSelect2();
-                }, 100);
+                    initializeInstance();
+                }, 150);
             }
         });
     })();
 </script>
-@endpush
 
