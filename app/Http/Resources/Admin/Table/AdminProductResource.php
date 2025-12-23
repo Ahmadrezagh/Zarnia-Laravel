@@ -40,6 +40,7 @@ class AdminProductResource extends JsonResource
             'etiketsCodeAsArray' => [],
             'parent_id' => $this->parent_id,
             'view_count' => $view_count,
+            'visits' => $this->visits ?? 0,
             'frontend_url' => $this->frontend_url
         ];
     }

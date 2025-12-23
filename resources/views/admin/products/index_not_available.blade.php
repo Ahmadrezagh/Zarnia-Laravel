@@ -73,6 +73,7 @@
                             ['label' => 'درصد تخفیف', 'key' => 'discount_percentage', 'type' => 'text'],
                             ['label' => 'دسته بندی ها', 'key' => 'categories_title_truncated', 'type' => 'text'],
                             ['label' => 'تعداد بازدید محصول', 'key' => 'view_count', 'type' => 'text'],
+                            ['label' => 'بازدیدها', 'key' => 'visits', 'type' => 'text', 'sortable' => true],
                         ]"
             :items="$products"
             :actions="[

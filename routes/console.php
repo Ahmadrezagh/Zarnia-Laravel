@@ -12,3 +12,5 @@ Schedule::call(function () {
 })->everyFiveSeconds();
 
 Schedule::command('orders:mark-pending-as-failed')->everyTenMinutes();
+
+Schedule::command('products:update-visits')->daily();
