@@ -12,7 +12,7 @@
             <!-- Categories -->
             <div class="form-group mb-3">
                 <label>دسته بندی‌ها</label>
-                <select class="form-control query-param" id="query-category-ids" multiple style="min-height: 100px;">
+                <select class="form-control query-param query-select2-categories" id="query-category-ids" multiple>
                     @foreach($categories as $category)
                         <option value="{{ $category->id }}">{{ $category->title }}</option>
                     @endforeach
@@ -105,10 +105,8 @@
     function generateQuery() {
         const params = {};
         
-        // Category IDs
-        const categoryIds = Array.from(document.getElementById('query-category-ids').selectedOptions)
-            .map(option => option.value)
-            .filter(id => id);
+        // Category IDs (using Select2)
+        const categoryIds = $('#query-category-ids').val() || [];
         if (categoryIds.length > 0) {
             categoryIds.forEach((id, index) => {
                 params[`category_ids[${index}]`] = id;
@@ -176,8 +174,10 @@
     }
     
     function clearQuery() {
-        // Clear all inputs
-        document.getElementById('query-category-ids').selectedIndex = -1;
+        // Clear Select2 categories
+        $('#query-category-ids').val(null).trigger('change');
+        
+        // Clear all other inputs
         document.getElementById('query-search').value = '';
         document.getElementById('query-from-price').value = '';
         document.getElementById('query-to-price').value = '';
@@ -187,16 +187,65 @@
         document.getElementById('generated-query').value = '';
     }
     
+    // Initialize Select2 for categories
+    function initializeSelect2() {
+        const $select = $('#query-category-ids');
+        
+        // Destroy existing Select2 if any
+        if ($select.hasClass('select2-hidden-accessible')) {
+            $select.select2('destroy');
+        }
+        
+        // Find parent modal if exists
+        const $modal = $select.closest('.modal');
+        const dropdownParent = $modal.length ? $modal : $('body');
+        
+        // Initialize Select2
+        $select.select2({
+            placeholder: 'جستجو و انتخاب دسته بندی‌ها',
+            allowClear: true,
+            dir: 'rtl',
+            width: '100%',
+            dropdownParent: dropdownParent,
+            language: {
+                noResults: function() {
+                    return "نتیجه‌ای یافت نشد";
+                },
+                searching: function() {
+                    return "در حال جستجو...";
+                }
+            }
+        });
+        
+        // Trigger query generation on change
+        $select.off('change.queryGenerator').on('change.queryGenerator', generateQuery);
+    }
+    
     // Auto-generate query on input change
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Select2
+        initializeSelect2();
+        
         const queryParams = document.querySelectorAll('.query-param');
         queryParams.forEach(param => {
-            param.addEventListener('change', generateQuery);
-            param.addEventListener('input', generateQuery);
+            // Skip Select2 elements as they're handled separately
+            if (!$(param).hasClass('query-select2-categories')) {
+                param.addEventListener('change', generateQuery);
+                param.addEventListener('input', generateQuery);
+            }
         });
         
         // Initial generation
         generateQuery();
+    });
+    
+    // Re-initialize Select2 when modal is shown (for modals)
+    $(document).on('shown.bs.modal', function() {
+        setTimeout(function() {
+            if ($('#query-category-ids').length && !$('#query-category-ids').hasClass('select2-hidden-accessible')) {
+                initializeSelect2();
+            }
+        }, 100);
     });
 </script>
 @endpush
