@@ -140,13 +140,13 @@
                 params['search'] = search;
             }
             
-            // Price Range
-            const fromPrice = document.getElementById(instanceId + '-from-price').value.trim();
+            // Price Range (remove commas)
+            const fromPrice = document.getElementById(instanceId + '-from-price').value.trim().replace(/,/g, '');
             if (fromPrice) {
                 params['from_price'] = fromPrice;
             }
             
-            const toPrice = document.getElementById(instanceId + '-to-price').value.trim();
+            const toPrice = document.getElementById(instanceId + '-to-price').value.trim().replace(/,/g, '');
             if (toPrice) {
                 params['to_price'] = toPrice;
             }
