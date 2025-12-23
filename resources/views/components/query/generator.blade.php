@@ -213,46 +213,71 @@
         
         // Initialize Select2 for this instance
         function initializeSelect2() {
+            // Check if jQuery and Select2 are available
+            if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+                console.warn('Select2 is not loaded yet for instance:', instanceId);
+                return false;
+            }
+            
             const $select = $('#' + instanceId + '-category-ids');
+            if ($select.length === 0) {
+                return false;
+            }
             
             // Destroy existing Select2 if any
-            if ($select.hasClass('select2-hidden-accessible')) {
-                $select.select2('destroy');
+            try {
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    $select.select2('destroy');
+                }
+            } catch(e) {
+                // Ignore destroy errors
             }
             
             // Find parent modal if exists
             const $modal = $select.closest('.modal');
             const dropdownParent = $modal.length ? $modal : $('body');
             
-            // Initialize Select2 with search enabled
-            $select.select2({
-                placeholder: 'جستجو و انتخاب دسته بندی‌ها',
-                allowClear: true,
-                dir: 'rtl',
-                width: '100%',
-                dropdownParent: dropdownParent,
-                minimumInputLength: 0, // Show search box immediately
-                language: {
-                    noResults: function() {
-                        return "نتیجه‌ای یافت نشد";
-                    },
-                    searching: function() {
-                        return "در حال جستجو...";
+            try {
+                // Initialize Select2 with search enabled
+                $select.select2({
+                    placeholder: 'جستجو و انتخاب دسته بندی‌ها',
+                    allowClear: true,
+                    dir: 'rtl',
+                    width: '100%',
+                    dropdownParent: dropdownParent,
+                    minimumInputLength: 0, // Show search box immediately
+                    language: {
+                        noResults: function() {
+                            return "نتیجه‌ای یافت نشد";
+                        },
+                        searching: function() {
+                            return "در حال جستجو...";
+                        }
                     }
-                }
-            });
-            
-            // Trigger query generation on change
-            $select.off('change.queryGenerator').on('change.queryGenerator', window['generateQuery' + instanceId]);
+                });
+                
+                // Trigger query generation on change
+                $select.off('change.queryGenerator').on('change.queryGenerator', window['generateQuery' + instanceId]);
+                return true;
+            } catch(e) {
+                console.error('Error initializing Select2:', e);
+                return false;
+            }
         }
         
         // Initialize function that can be called on document ready or modal shown
         function initializeInstance() {
             const $container = $('[data-instance-id="' + instanceId + '"]');
-            if ($container.length === 0) return;
+            if ($container.length === 0) return false;
             
             // Initialize Select2
-            initializeSelect2();
+            const select2Initialized = initializeSelect2();
+            if (!select2Initialized) {
+                // Retry after a short delay if Select2 wasn't ready
+                setTimeout(function() {
+                    initializeSelect2();
+                }, 200);
+            }
             
             // Get all query params in this instance
             const queryParams = $container.find('.query-param').not('.query-select2-categories');
@@ -261,27 +286,71 @@
                 .on('change.queryGenerator input.queryGenerator', window['generateQuery' + instanceId]);
             
             // Initial generation
-            window['generateQuery' + instanceId]();
+            try {
+                window['generateQuery' + instanceId]();
+            } catch(e) {
+                console.error('Error generating initial query:', e);
+            }
+            
+            return true;
         }
         
-        // Auto-generate query on input change
-        $(document).ready(function() {
-            // Wait a bit to ensure Select2 library is loaded
-            setTimeout(function() {
-                initializeInstance();
-            }, 100);
-        });
+        // Wait for jQuery and Select2 to be available, then initialize
+        function waitAndInitialize(maxAttempts) {
+            maxAttempts = maxAttempts || 50;
+            let attempts = 0;
+            
+            function check() {
+                attempts++;
+                if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+                    // Check if element exists
+                    const element = document.getElementById(instanceId + '-category-ids');
+                    if (element) {
+                        setTimeout(function() {
+                            initializeInstance();
+                        }, 100);
+                    }
+                } else if (attempts < maxAttempts) {
+                    setTimeout(check, 100);
+                }
+            }
+            check();
+        }
         
-        // Re-initialize Select2 when modal is shown (for modals)
-        $(document).on('shown.bs.modal', function(e) {
-            const $modal = $(e.target);
-            const $select = $modal.find('#' + instanceId + '-category-ids');
-            if ($select.length) {
+        // Start waiting for libraries and initialize
+        waitAndInitialize();
+        
+        // Also initialize on document ready (for regular page loads)
+        if (typeof jQuery !== 'undefined') {
+            $(document).ready(function() {
                 setTimeout(function() {
                     initializeInstance();
-                }, 150);
-            }
-        });
+                }, 200);
+            });
+        }
+        
+        // Re-initialize Select2 when modal is shown (for dynamically loaded modals)
+        // This is crucial for modals rendered via Blade::render()
+        if (typeof jQuery !== 'undefined') {
+            $(document).on('shown.bs.modal', function(e) {
+                const $modal = $(e.target);
+                const $select = $modal.find('#' + instanceId + '-category-ids');
+                if ($select.length) {
+                    // Destroy any existing Select2 instance first
+                    try {
+                        if ($select.hasClass('select2-hidden-accessible')) {
+                            $select.select2('destroy');
+                        }
+                    } catch(err) {
+                        // Ignore errors
+                    }
+                    
+                    setTimeout(function() {
+                        initializeInstance();
+                    }, 300);
+                }
+            });
+        }
     })();
 </script>
 
