@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\Product\ProductFeedResource;
 use App\Http\Resources\Api\V1\Product\ProductItemCollection;
 use App\Http\Resources\Api\V1\Product\ProductItemResouce;
 use App\Http\Resources\Api\V1\Product\ProductListCollection;
 use App\Http\Resources\Api\V1\Product\ProductListResouce;
+use App\Models\Attribute;
+use App\Models\AttributeValue;
 use App\Models\Category;
 use App\Models\Favorite;
 use App\Models\Product;
+use App\Models\Shipping;
 
 use Illuminate\Http\Request;
 
@@ -121,6 +125,79 @@ class ProductController extends Controller
             'related_products' => \App\Http\Resources\Api\V1\Product\SimpleProductResource::collection($relatedProducts),
             'complementary_products' => \App\Http\Resources\Api\V1\Product\SimpleProductResource::collection($complementaryProducts),
         ]);
+    }
+
+    public function feed(Request $request)
+    {
+        // Get pagination parameters
+        $page = max(1, (int) ($request->input('page', 1)));
+        $perPage = min(100, max(1, (int) ($request->input('per_page', 50)))); // Max 100 per page
+        
+        // Get attribute IDs for brand, GTIN, color
+        $brandAttribute = Attribute::where('name', 'brand')->orWhere('name', 'برند')->first();
+        $gtinAttribute = Attribute::where('name', 'GTIN')->orWhere('name', 'gtin')->first();
+        $colorAttribute = Attribute::where('name', 'color')->orWhere('name', 'رنگ')->first();
+        
+        // Collect attribute IDs
+        $attributeIds = collect([$brandAttribute, $gtinAttribute, $colorAttribute])
+            ->filter()
+            ->pluck('id')
+            ->toArray();
+        
+        // Get shipping information
+        $shipping = Shipping::first();
+        $shippingCost = $shipping ? $shipping->price : null;
+        $deliveryTime = $shipping && $shipping->times()->exists() 
+            ? $shipping->times()->first()->title ?? null 
+            : null;
+        
+        // Get only main products (no children), with count >= 1, and with images
+        $productsQuery = Product::query()
+            ->main() // Only main products (parent_id is null)
+            ->hasCountAndImage() // Has count >= 1 and has image
+            ->with(['categories']);
+        
+        // Get total count before pagination
+        $total = $productsQuery->count();
+        
+        // Apply pagination
+        $products = $productsQuery
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get();
+        
+        // Get all attribute values for these products in one query
+        $attributeValues = collect();
+        if (!empty($attributeIds)) {
+            $attributeValues = AttributeValue::whereIn('product_id', $products->pluck('id'))
+                ->whereIn('attribute_id', $attributeIds)
+                ->with('attribute')
+                ->get()
+                ->groupBy('product_id');
+        }
+        
+        // Attach attribute values to products and add shipping info to request
+        $products->each(function ($product) use ($attributeValues, $shippingCost, $deliveryTime, $request) {
+            $product->attributeValues = $attributeValues->get($product->id, collect());
+            // Add shipping info to request for the resource
+            $request->merge([
+                'shipping' => [
+                    'cost' => $shippingCost,
+                    'time' => $deliveryTime,
+                ]
+            ]);
+        });
+        
+        return response()->json([
+            'success' => true,
+            'data' => ProductFeedResource::collection($products),
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => ceil($total / $perPage),
+            ],
+        ], 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
 }
