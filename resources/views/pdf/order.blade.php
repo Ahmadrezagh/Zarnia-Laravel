@@ -113,8 +113,8 @@
 
     $map = [
         'invoice_id' => $order->id,
-        'receiver_name' => $order->address->receiver_name ?? $order->user->name,
-        'receiver_name2' => $order->address->receiver_name ?? $order->user->name,
+        'receiver_name' => $order->user->name,
+        'receiver_name2' => $order->user->name,
         'purchase_date' => jdate($order->created_at)->format('Y/m/d'),
         'purchase_date2' => jdate($order->created_at)->format('Y/m/d'),
         'gold_price' => $order->gold_price,
@@ -124,7 +124,7 @@
         'previous_purchase_count' => \App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->count(),
         'shipping' => $shipping,
         'gateway_name' => $gatewayName,
-        'receiver_phone' => $order->address->receiver_phone ?? '',
+        'receiver_phone' => $order->user->phone ,
         'postal_code' => $order->address->postal_code ?? '',
         'address' => $address,
         'sum_of_prev_purchase' => number_format(\App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->sum('final_amount')),
