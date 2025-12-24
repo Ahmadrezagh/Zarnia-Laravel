@@ -113,6 +113,9 @@ class ProductController extends Controller
         $validated = $request->validated();
         $validated['discount_percentage'] = $request->input('discount_percentage') ?? 0;
         
+        // Handle orderable_after_out_of_stock checkbox
+        $validated['orderable_after_out_of_stock'] = $request->has('orderable_after_out_of_stock') && $request->input('orderable_after_out_of_stock') == '1';
+        
         // Only allow name change for comprehensive products
         if (!$product->is_comprehensive && isset($validated['name'])) {
             // Remove name from validated data if product is not comprehensive

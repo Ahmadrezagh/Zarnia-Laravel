@@ -51,6 +51,7 @@ class EditProductResource extends JsonResource
                 ];
             })->toArray(),
             'is_comprehensive' => $this->is_comprehensive,
+            'orderable_after_out_of_stock' => $this->orderable_after_out_of_stock ?? false,
             'comprehensive_products' => $this->is_comprehensive ? 
                 $this->products()->get()->map(function ($product) {
                     return [

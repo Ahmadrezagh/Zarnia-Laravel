@@ -39,6 +39,7 @@ class UpdateProductRequest extends FormRequest
             'attribute_group' => 'nullable',
             'attributes' => 'nullable',
             'discount_percentage' => 'nullable',
+            'orderable_after_out_of_stock' => 'nullable|boolean',
         ];
     }
 }

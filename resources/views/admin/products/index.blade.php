@@ -200,6 +200,14 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="orderable_after_out_of_stock" name="orderable_after_out_of_stock" ${product.orderable_after_out_of_stock ? 'checked' : ''}>
+                            <label class="form-check-label mx-3" for="orderable_after_out_of_stock">
+                                قابلیت سفارش پس از اتمام موجودی
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label for="product-description">توضیحات</label>
                         <textarea class="form-control" id="product-description" rows="4">${product.description || ''}</textarea>
                     </div>
@@ -346,6 +354,7 @@
                         formData.append('weight', $('#product-weight').val());
                         formData.append('discount_percentage', $('#discount_percentage').val());
                         formData.append('apply_discount_to_children', $('#apply_discount_to_children').is(':checked') ? '1' : '0');
+                        formData.append('orderable_after_out_of_stock', $('#orderable_after_out_of_stock').is(':checked') ? '1' : '0');
                         formData.append('count', $('#product-count').val());
                         formData.append('description', $('#product-description').val());
                         const categoryIds = $('#product-categories').val() ? $('#product-categories').val().map(Number) : [];
