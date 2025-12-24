@@ -86,6 +86,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::resource('admins', AdminController::class );
         Route::resource('categories', CategoryController::class );
         Route::resource('setting_group.settings', SettingController::class );
+        Route::delete('setting_group/{setting_group}/settings/{setting}/delete-image/{imageIndex}', [SettingController::class, 'deleteImage'])->name('setting_group.settings.deleteImage');
         Route::resource('pages', PageController::class );
         
         // Product routes - specific routes BEFORE resource route

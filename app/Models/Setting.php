@@ -24,6 +24,7 @@ class Setting extends Model
         'tel',
         'textarea',
         'file',
+        'image_array',
     ] ;
 
     public static function getValue($key)
