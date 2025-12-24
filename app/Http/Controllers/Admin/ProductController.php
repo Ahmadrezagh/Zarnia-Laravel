@@ -471,6 +471,7 @@ class ProductController extends Controller
             ->SortMojood($is_mojood_dir)
             ->FilterProduct($request->filter)
             ->categories($request->category_ids)
+            ->main()
             ->get()
             ->map(function ($item) {
                 return AdminProductResource::make($item); // Ensure all necessary fields are included
