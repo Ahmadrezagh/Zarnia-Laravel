@@ -66,55 +66,7 @@
                                         }
                                     @endphp
                                     <div id="image-uploader-{{ $setting->key }}"></div>
-                                    <input type="hidden" name="old_{{ $setting->key }}" value="{{ json_encode($images) }}" id="old-images-{{ $setting->key }}">
-                                    <script>
-                                        $(document).ready(function() {
-                                            var preloadedImages = @json($preloadedImages);
-                                            
-                                            $('#image-uploader-{{ $setting->key }}').imageUploader({
-                                                label: 'تصاویر را انتخاب کنید یا اینجا بکشید و رها کنید (حداکثر ۲ تصویر)',
-                                                imagesInputName: 'settings[{{ $setting->key }}]',
-                                                preloadedInputName: 'old_{{ $setting->key }}',
-                                                maxFiles: 2,
-                                                maxSize: 2 * 1024 * 1024,
-                                                preloaded: preloadedImages,
-                                                extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.JPG', '.JPEG', '.webp', '.WEBP'],
-                                                mimes: ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp']
-                                            });
-                                            
-                                            // Handle image deletion via delete button (for preloaded images)
-                                            $(document).on('click', '#image-uploader-{{ $setting->key }} .uploaded-image[data-preloaded="true"] .delete-image', function(e) {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                var $image = $(this).closest('.uploaded-image');
-                                                // Get image ID from preloaded input
-                                                var $preloadedInput = $image.find('input[name="old_{{ $setting->key }}[]"]');
-                                                var imageId = $preloadedInput.length ? $preloadedInput.val() : $image.index();
-                                                
-                                                if (confirm('آیا از حذف این تصویر اطمینان دارید؟')) {
-                                                    $.ajax({
-                                                        url: '{{ route("setting_group.settings.deleteImage", [$setting_group->id, $setting->id, ":index"]) }}'.replace(':index', imageId),
-                                                        method: 'DELETE',
-                                                        headers: {
-                                                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                                                        },
-                                                        success: function(response) {
-                                                            // Remove image from DOM
-                                                            $image.fadeOut(300, function() {
-                                                                $(this).remove();
-                                                            });
-                                                            // Update hidden input with remaining images
-                                                            $('#old-images-{{ $setting->key }}').val(JSON.stringify(response.images));
-                                                            toastr.success(response.message);
-                                                        },
-                                                        error: function() {
-                                                            toastr.error('خطا در حذف تصویر');
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        });
-                                    </script>
+                                    <input type="hidden" name="old_{{ $setting->key }}" value="{{ json_encode($images) }}" id="old-images-{{ $setting->key }}" data-setting-key="{{ $setting->key }}" data-setting-id="{{ $setting->id }}" data-setting-group-id="{{ $setting_group->id }}" data-preloaded-images="{{ json_encode($preloadedImages) }}">
                                 @endif
 
                             </div>
@@ -130,5 +82,83 @@
         </div>
     </div>
     <!-- End Row -->
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        // Wait a bit to ensure all scripts are loaded
+        setTimeout(function() {
+            // Initialize image uploaders for all image_array settings
+            $('input[data-setting-key]').each(function() {
+                var $hiddenInput = $(this);
+                var settingKey = $hiddenInput.data('setting-key');
+                var settingId = $hiddenInput.data('setting-id');
+                var settingGroupId = $hiddenInput.data('setting-group-id');
+                var preloadedImages = $hiddenInput.data('preloaded-images') || [];
+                
+                var $uploaderContainer = $('#image-uploader-' + settingKey);
+                
+                if ($uploaderContainer.length) {
+                    // Wait for imageUploader plugin to be available
+                    if (typeof $.fn.imageUploader === 'undefined') {
+                        console.error('imageUploader plugin is not loaded for setting:', settingKey);
+                        return;
+                    }
+                    
+                    $uploaderContainer.imageUploader({
+                        label: 'تصاویر را انتخاب کنید یا اینجا بکشید و رها کنید (حداکثر ۲ تصویر)',
+                        imagesInputName: 'settings[' + settingKey + ']',
+                        preloadedInputName: 'old_' + settingKey,
+                        maxFiles: 2,
+                        maxSize: 2 * 1024 * 1024,
+                        preloaded: preloadedImages,
+                        extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.JPG', '.JPEG', '.webp', '.WEBP'],
+                        mimes: ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp']
+                    });
+                    
+                    // Handle image deletion via delete button (for preloaded images)
+                    $(document).on('click', '#image-uploader-' + settingKey + ' .uploaded-image[data-preloaded="true"] .delete-image', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var $image = $(this).closest('.uploaded-image');
+                        // Get image ID from preloaded input
+                        var $preloadedInput = $image.find('input[name="old_' + settingKey + '[]"]');
+                        var imageId = $preloadedInput.length ? $preloadedInput.val() : $image.index();
+                        
+                        if (confirm('آیا از حذف این تصویر اطمینان دارید؟')) {
+                            var deleteUrl = '{{ route("setting_group.settings.deleteImage", [":group_id", ":setting_id", ":index"]) }}'
+                                .replace(':group_id', settingGroupId)
+                                .replace(':setting_id', settingId)
+                                .replace(':index', imageId);
+                                
+                            $.ajax({
+                                url: deleteUrl,
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                },
+                                success: function(response) {
+                                    // Remove image from DOM
+                                    $image.fadeOut(300, function() {
+                                        $(this).remove();
+                                    });
+                                    // Update hidden input with remaining images
+                                    $hiddenInput.val(JSON.stringify(response.images));
+                                    toastr.success(response.message);
+                                },
+                                error: function() {
+                                    toastr.error('خطا در حذف تصویر');
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    console.error('Image uploader container not found for:', settingKey);
+                }
+            });
+        }, 100);
+    });
+</script>
+@endpush
 
 @endsection
