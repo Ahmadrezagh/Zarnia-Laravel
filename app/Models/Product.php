@@ -45,7 +45,8 @@ class Product extends Model implements HasMedia
         'meta_description',
         'meta_keywords',
         'canonical_url',
-        'visits'
+        'visits',
+        'orderable_after_out_of_stock'
     ];
 
     public function setNameAttribute($value)

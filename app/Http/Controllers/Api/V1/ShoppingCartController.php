@@ -20,8 +20,8 @@ class ShoppingCartController extends Controller
                 'message' => 'محصول یافت نشد'
             ], 404);
         }
-        // Check if product is out of stock
-        if ($product->SingleCount <= 0) {
+        // Check if product is out of stock (unless orderable_after_out_of_stock is true)
+        if ($product->SingleCount <= 0 && !($product->orderable_after_out_of_stock ?? false)) {
             return response()->json([
                 'message' => 'این محصول قابل فروش نیست'
             ], 400);
@@ -46,8 +46,8 @@ class ShoppingCartController extends Controller
             );
 
 
-        // Check if adding one more exceeds stock
-        if ($item->count + 1 > $product->SingleCount) {
+        // Check if adding one more exceeds stock (unless orderable_after_out_of_stock is true)
+        if (!$product->orderable_after_out_of_stock && $item->count + 1 > $product->SingleCount) {
             return response()->json([
                 'message' => 'میزان درخواست شما بیشتر از موجودی انبار می باشد'
             ], 400);

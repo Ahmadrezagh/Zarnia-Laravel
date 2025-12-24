@@ -43,7 +43,10 @@ class OrderController extends Controller
         
         foreach ($cartItems as $cartItem) {
             // Check if product is available (has at least one available etiket)
-            if ($cartItem->product->single_count < 1) {
+            // Skip check if orderable_after_out_of_stock is true
+            $isOrderableAfterOutOfStock = $cartItem->product->orderable_after_out_of_stock ?? false;
+            
+            if (!$isOrderableAfterOutOfStock && $cartItem->product->single_count < 1) {
                 // Product is not available, remove from cart and add to error list
                 $unavailableProducts[] = $cartItem->product->name;
                 $cartItem->delete();
@@ -103,8 +106,16 @@ class OrderController extends Controller
 
         // Check availability after cache filtering (reserved etikets)
         // This ensures products have unreserved etikets available
+        // Skip check if orderable_after_out_of_stock is true
         $unavailableProductsAfterCache = [];
         foreach ($cartItems as $cartItem) {
+            $isOrderableAfterOutOfStock = $cartItem->product->orderable_after_out_of_stock ?? false;
+            
+            // Skip availability check if product is orderable after out of stock
+            if ($isOrderableAfterOutOfStock) {
+                continue;
+            }
+            
             // Get all available etikets for this product
             $availableEtikets = Etiket::where('product_id', $cartItem->product_id)
                 ->where('is_mojood', '=', '1')
@@ -165,23 +176,29 @@ class OrderController extends Controller
         $reservedEtiketCodes = [];
         
         foreach ($cartItems as $cartItem) {
-            // Get all available etikets for this product
-            $availableEtikets = Etiket::where('product_id', $cartItem->product_id)
-                ->where('is_mojood', '=', '1')
-                ->get();
+            $isOrderableAfterOutOfStock = $cartItem->product->orderable_after_out_of_stock ?? false;
+            $etiketCode = null;
             
-            // Filter out etikets that are currently reserved (cached)
-            $unreservedEtiket = null;
-            foreach ($availableEtikets as $availableEtiket) {
-                $cacheKey = 'reserved_etiket_' . $availableEtiket->code;
-                // If etiket is not in cache (not reserved), use it
-                if (!Cache::has($cacheKey)) {
-                    $unreservedEtiket = $availableEtiket;
-                    break;
+            // Only try to get etiket if product is not orderable after out of stock
+            if (!$isOrderableAfterOutOfStock) {
+                // Get all available etikets for this product
+                $availableEtikets = Etiket::where('product_id', $cartItem->product_id)
+                    ->where('is_mojood', '=', '1')
+                    ->get();
+                
+                // Filter out etikets that are currently reserved (cached)
+                $unreservedEtiket = null;
+                foreach ($availableEtikets as $availableEtiket) {
+                    $cacheKey = 'reserved_etiket_' . $availableEtiket->code;
+                    // If etiket is not in cache (not reserved), use it
+                    if (!Cache::has($cacheKey)) {
+                        $unreservedEtiket = $availableEtiket;
+                        break;
+                    }
                 }
+                
+                $etiketCode = $unreservedEtiket ? $unreservedEtiket->code : null;
             }
-            
-            $etiketCode = $unreservedEtiket ? $unreservedEtiket->code : null;
 
             OrderItem::create([
                 'order_id' => $order->id,
@@ -192,7 +209,7 @@ class OrderController extends Controller
                 'price' => $cartItem->product->price,
             ]);
             
-            // Collect etiket codes that are being reserved
+            // Collect etiket codes that are being reserved (only if we have an etiket)
             if ($etiketCode) {
                 $reservedEtiketCodes[] = $etiketCode;
             }
