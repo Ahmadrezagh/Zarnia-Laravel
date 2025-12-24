@@ -618,7 +618,7 @@ class Order extends Model
         $this->checkAndGenerateGift();
         
         // Notify admins about new paid order
-        $this->notifyAdminsNewOrder();
+        // $this->notifyAdminsNewOrder();
     }
 
     /**
