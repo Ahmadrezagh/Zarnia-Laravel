@@ -406,7 +406,7 @@ class ProductController extends Controller
     }
     public function not_available_table(Request $request)
     {
-        $query = Product::query()->main()->notAvailable()->select('*'); // Assuming your model is Product
+        $query = Product::query()->notAvailable()->select('*'); // Assuming your model is Product
 
         // Get total records before applying filters
         $totalRecords = $query->count();
@@ -471,7 +471,6 @@ class ProductController extends Controller
             ->SortMojood($is_mojood_dir)
             ->FilterProduct($request->filter)
             ->categories($request->category_ids)
-            ->main()
             ->get()
             ->map(function ($item) {
                 return AdminProductResource::make($item); // Ensure all necessary fields are included
