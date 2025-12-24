@@ -702,6 +702,9 @@ class OrderController extends Controller
         if($request->orderStatus == Order::$STATUSES[3] || $request->orderStatus == Order::$STATUSES[4]){
             return $order->cancelOrder();
         }
+
+        $sms = new Kavehnegar();
+        $sms->send_with_two_token($order->user->phone, $order->user->name, $order->id, $order->status);
         return response()->json();
     }
 
