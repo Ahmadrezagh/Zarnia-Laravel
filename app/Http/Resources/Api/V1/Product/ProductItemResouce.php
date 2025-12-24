@@ -5,6 +5,7 @@ namespace App\Http\Resources\Api\V1\Product;
 use App\Http\Resources\Api\V1\Categories\CategoryResource;
 use App\Models\Favorite;
 use App\Models\Product;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -60,11 +61,13 @@ class ProductItemResouce extends JsonResource
             'image' => $this->image,
             'cover_image' => $this->CoverImageResponsive,
             'gallery_images' => $galleryUrls,
-            'gallery' => $this->getMedia('gallery')->map(function ($media, $index) {
-                $url = $media->getUrl();
-                return $url
-                ;
-            })->toArray(),
+            'gallery' => array_merge(
+                $this->getMedia('gallery')->map(function ($media, $index) {
+                    $url = $media->getUrl();
+                    return $url;
+                })->toArray(),
+                $this->getGalleryEndImages()
+            ),
             'slug' => $this->slug,
             'price' => number_format($this->minimum_available_price),
             'price_without_discount' => number_format($this->price_without_discount),
@@ -112,5 +115,30 @@ class ProductItemResouce extends JsonResource
                 ->sortBy('weight')
                 ->values(),
         ];
+    }
+
+    /**
+     * Get gallery end images from settings
+     *
+     * @return array
+     */
+    private function getGalleryEndImages(): array
+    {
+        $galleryEndImagesJson = Setting::getValue('gallery_end_images');
+        
+        if (empty($galleryEndImagesJson)) {
+            return [];
+        }
+        
+        $galleryEndImages = json_decode($galleryEndImagesJson, true);
+        
+        if (!is_array($galleryEndImages)) {
+            return [];
+        }
+        
+        // Convert image paths to full URLs
+        return array_map(function ($imagePath) {
+            return asset($imagePath);
+        }, $galleryEndImages);
     }
 }
