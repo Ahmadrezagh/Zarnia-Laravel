@@ -87,6 +87,19 @@ class Product extends Model implements HasMedia
         return $price/10;
     }
 
+    public function getTabanGoharPriceAttribute()
+    {
+        $weight = $this->weight ?? 0;
+        $goldPrice = (float) setting('gold_price') ?? 0;
+        $ojrat = $this->ojrat ?? 0;
+        
+        if ($weight > 0 && $goldPrice > 0 && $ojrat > 0) {
+            return $weight * $goldPrice * ($ojrat / 100);
+        }
+        
+        return 0;
+    }
+
     public function parent()
     {
         return $this->belongsTo(self::class, 'parent_id');

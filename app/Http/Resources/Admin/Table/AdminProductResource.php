@@ -33,6 +33,7 @@ class AdminProductResource extends JsonResource
             'ojrat' => $this->ojrat,
             'darsad_kharid' => $this->darsad_kharid,
             'price' => number_format($this->price)." تومان",
+            'taban_gohar_price' => number_format($this->taban_gohar_price)." تومان",
             'categories_title' => $this->categories_title,
             'categories_title_truncated' => $this->getTruncatedCategoriesTitle(30),
             'discount_percentage' => $this->discount_percentage,
