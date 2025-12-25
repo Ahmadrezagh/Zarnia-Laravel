@@ -90,8 +90,11 @@ class Product extends Model implements HasMedia
     public function getTabanGoharPriceAttribute()
     {
         $weight = $this->weight ?? 0;
-        $goldPrice = (float) setting('gold_price') ?? 0;
+        $baseGoldPrice = (float) setting('gold_price') ?? 0;
         $ojrat = $this->ojrat ?? 0;
+        
+        // Add 1% to gold price
+        $goldPrice = $baseGoldPrice * 1.01;
         
         if ($weight > 0 && $goldPrice > 0 && $ojrat > 0) {
             $price = $weight * $goldPrice * (1 + ($ojrat / 100));
