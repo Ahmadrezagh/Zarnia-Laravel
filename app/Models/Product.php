@@ -94,7 +94,7 @@ class Product extends Model implements HasMedia
         $ojrat = $this->ojrat ?? 0;
         
         if ($weight > 0 && $goldPrice > 0 && $ojrat > 0) {
-            return $weight * $goldPrice * ($ojrat / 100);
+            return $weight * $goldPrice * (1 + ($ojrat / 100));
         }
         
         return 0;
