@@ -11,6 +11,11 @@ Schedule::call(function () {
     getUpdatedEtikets();
 })->everyFiveSeconds();
 
+Schedule::call(function () {
+    $tabanGohar = new \App\Services\Api\TabanGohar();
+    $tabanGohar->updateGoldPrice();
+})->everyTenMinutes();
+
 Schedule::command('orders:mark-pending-as-failed')->everyTenMinutes();
 
 Schedule::command('products:update-visits')->daily();
