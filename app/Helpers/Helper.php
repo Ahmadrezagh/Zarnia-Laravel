@@ -58,5 +58,7 @@ function getUpdatedEtikets(){
 }
 
 function get_gold_price(){
-    return Product::query()->whereNotNull('mazaneh')->first() ? Product::query()->whereNotNull('mazaneh')->latest('updated_at')->first()->mazaneh : 0;
+    $baseGoldPrice = (float) setting('gold_price') ?? 0;
+    // Add 1% to gold price
+    return $baseGoldPrice * 1.01;
 }
