@@ -406,30 +406,11 @@ class ProductController extends Controller
     }
     public function not_available_table(Request $request)
     {
-        // Show only parent products that HAVE etikets and ALL etikets have is_mojood == 0
+        // Show only parent products where count > 0, available_count == 0, and parent_id is null
         $query = Product::query()
             ->whereNull('parent_id')
-            ->where(function (Builder $q) {
-                // Product must have etikets (directly or through children)
-                $q->where(function ($hasEtiketsQuery) {
-                    $hasEtiketsQuery->whereHas('etikets')
-                        ->orWhereHas('children.etikets');
-                })
-                // AND product must NOT have any etikets with is_mojood == 1 (directly or through children)
-                ->where(function ($noAvailableEtiketsQuery) {
-                    // No direct etikets with is_mojood == 1
-                    $noAvailableEtiketsQuery->whereDoesntHave('etikets', function ($etiketQuery) {
-                        $etiketQuery->where('is_mojood', 1);
-                    })
-                    // AND no children's etikets with is_mojood == 1
-                    ->where(function ($childrenQuery) {
-                        $childrenQuery->whereDoesntHave('children')
-                            ->orWhereDoesntHave('children.etikets', function ($etiketQuery) {
-                                $etiketQuery->where('is_mojood', 1);
-                            });
-                    });
-                });
-            })
+            ->where('count', '>', 0)
+            ->where('available_count', '=', 0)
             ->select('*');
 
         // Get total records before applying filters
