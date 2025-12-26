@@ -406,7 +406,26 @@ class ProductController extends Controller
     }
     public function not_available_table(Request $request)
     {
-        $query = Product::query()->notAvailable()->whereNull('parent_id')->select('*'); // Assuming your model is Product
+        // Show only parent products that have NO available etikets (neither direct nor from children)
+        $query = Product::query()
+            ->whereNull('parent_id')
+            ->where(function (Builder $q) {
+                // Product itself has no available etikets
+                $q->whereDoesntHave('etikets', function ($etiketQuery) {
+                    $etiketQuery->where('is_mojood', 1);
+                })
+                // AND (product has no children OR none of its children have available etikets)
+                ->where(function ($childQuery) {
+                    $childQuery->whereDoesntHave('children')
+                        ->orWhere(function ($hasChildrenQuery) {
+                            $hasChildrenQuery->whereHas('children')
+                                ->whereDoesntHave('children.etikets', function ($etiketQuery) {
+                                    $etiketQuery->where('is_mojood', 1);
+                                });
+                        });
+                });
+            })
+            ->select('*');
 
         // Get total records before applying filters
         $totalRecords = $query->count();
