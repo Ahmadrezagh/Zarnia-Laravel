@@ -291,9 +291,10 @@ class Product extends Model implements HasMedia
     }
     public function getSingleCountAttribute()
     {
-        // Use the available_count column if it exists (from migration)
-        if ($this->getRawOriginal('available_count') !== null) {
-            return (int) $this->getRawOriginal('available_count');
+        // Use the single_available_count column if it exists (from migration)
+        // This column only counts direct etikets, not children
+        if ($this->getRawOriginal('single_available_count') !== null) {
+            return (int) $this->getRawOriginal('single_available_count');
         }
         
         // Fallback to old calculation if column doesn't exist
@@ -328,7 +329,7 @@ class Product extends Model implements HasMedia
             return $singleCounts->min();
         }
         
-        // For non-comprehensive products, return etiket count
+        // For non-comprehensive products, return etiket count (only direct, not children)
         return $this->etikets()->where('is_mojood', 1)->count();
     }
 
