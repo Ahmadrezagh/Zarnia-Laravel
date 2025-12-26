@@ -116,7 +116,7 @@
                         <label class="form-label">محصولات مرتبط</label>
                         <div class="custom-multiselect"
                              data-ajax-url="{{ route('products.search') }}"
-                             data-preselected='@json($category->relatedProducts->map(fn($item) => ["id" => "Product:{$item->id}", "text" => $item->name]))'>
+                             data-preselected='@json(($category->relatedProducts ?? collect())->map(fn($item) => ["id" => "Product:{$item->id}", "text" => $item->name]))'>
                             <div class="custom-multiselect-display">انتخاب کنید...</div>
                             <div class="custom-multiselect-dropdown">
                                 <input type="text" class="custom-multiselect-search" placeholder="جستجو...">
@@ -132,7 +132,7 @@
                         <label class="form-label">محصولات مکمل</label>
                         <div class="custom-multiselect"
                              data-ajax-url="{{ route('products.search') }}"
-                             data-preselected='@json($category->complementaryProducts->map(fn($item) => ["id" => "Product:{$item->id}", "text" => $item->name]))'>
+                             data-preselected='@json(($category->complementaryProducts ?? collect())->map(fn($item) => ["id" => "Product:{$item->id}", "text" => $item->name]))'>
                             <div class="custom-multiselect-display">انتخاب کنید...</div>
                             <div class="custom-multiselect-dropdown">
                                 <input type="text" class="custom-multiselect-search" placeholder="جستجو...">

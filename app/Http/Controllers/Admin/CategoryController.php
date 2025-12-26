@@ -108,10 +108,12 @@ class CategoryController extends Controller
 
         $category->load([
             'attributeGroups:id',
-            'relatedProducts:id,name',
-            'complementaryProducts:id,name',
             'parent:id,title'
         ]);
+        
+        // Manually load related and complementary products to ensure they're available as collections
+        $category->setRelation('relatedProducts', $category->relatedProducts()->get(['id', 'name']));
+        $category->setRelation('complementaryProducts', $category->complementaryProducts()->get(['id', 'name']));
 
         return view('admin.categories.edit', compact('category','attribute_groups','allCategories'));
     }
