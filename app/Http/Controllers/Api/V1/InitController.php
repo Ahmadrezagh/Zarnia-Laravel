@@ -41,7 +41,7 @@ class InitController extends Controller
             $next_seven_days[] = [
                 'gregorian' => $date->format('Y-m-d'),
                 'jalali' => $jalali->format('Y-m-d'),
-                'day_name' => $jalali->format('D'),
+                'day_name' => $persian_day_names[$day_of_week],
             ];
         }
 
