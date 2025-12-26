@@ -406,7 +406,7 @@ class ProductController extends Controller
     }
     public function not_available_table(Request $request)
     {
-        $query = Product::query()->notAvailable()->select('*'); // Assuming your model is Product
+        $query = Product::query()->notAvailable()->whereNull('parent_id')->select('*'); // Assuming your model is Product
 
         // Get total records before applying filters
         $totalRecords = $query->count();
