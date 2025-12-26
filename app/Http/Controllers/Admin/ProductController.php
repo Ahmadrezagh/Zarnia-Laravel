@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Product\storeComprehensiveProductRequest;
 use App\Http\Requests\Admin\Product\updateComprehensiveProductRequest;
 use App\Http\Requests\Admin\Product\UpdateProductRequest;
+use App\Http\Requests\Admin\Product\StoreProductRequest;
 use App\Http\Resources\Admin\Product\EditProductResource;
 use App\Http\Resources\Admin\Table\AdminProductResource;
 use App\Models\Attribute;
@@ -13,6 +14,7 @@ use App\Models\AttributeGroup;
 use App\Models\AttributeValue;
 use App\Models\Category;
 use App\Models\ComprehensiveProduct;
+use App\Models\Etiket;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -75,11 +77,109 @@ class ProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        // TODO: Implement product creation logic
-        // After creating the product, call:
-        // $this->updateDiscountedPrice($product);
+        try {
+            $validated = $request->validated();
+            
+            // Prepare product data
+            $productData = [
+                'name' => $validated['name'],
+                'weight' => $validated['weight'],
+                'darsad_kharid' => $validated['darsad_kharid'] ?? null,
+                'ojrat' => $validated['ojrat'] ?? null,
+                'discount_percentage' => $validated['discount_percentage'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'parent_id' => $request->input('parent_id') ? (int)$request->input('parent_id') : null,
+            ];
+            
+            // Handle price - multiply by 10 for storage
+            if (isset($validated['price']) && $validated['price'] > 0) {
+                $productData['price'] = $validated['price'] * 10;
+            } else {
+                // Calculate price from taban gohar if not provided
+                $productData['price'] = 0;
+            }
+            
+            // Handle attribute group
+            if (!empty($validated['attribute_group'])) {
+                $attributeGroup = AttributeGroup::firstOrCreate([
+                    'name' => $validated['attribute_group']
+                ]);
+                $productData['attribute_group_id'] = $attributeGroup->id;
+            }
+            
+            // Create the product
+            $product = Product::create($productData);
+            
+            // If price was 0, calculate from taban gohar
+            if ($productData['price'] == 0) {
+                $product->refresh();
+                $tabanGoharPrice = $product->taban_gohar_price;
+                if ($tabanGoharPrice > 0) {
+                    $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
+                }
+            }
+            
+            // Handle cover image
+            if ($request->hasFile('cover_image')) {
+                $product->clearMediaCollection('cover_image');
+                $product->addMedia($request->file('cover_image'))
+                    ->toMediaCollection('cover_image');
+            }
+            
+            // Handle gallery images
+            if ($request->hasFile('gallery')) {
+                foreach ($request->file('gallery') as $image) {
+                    if ($image->isValid()) {
+                        $product->addMedia($image)
+                            ->toMediaCollection('gallery');
+                    }
+                }
+            }
+            
+            // Handle categories
+            if ($request->has('category_ids') && !empty($request->category_ids)) {
+                $product->categories()->sync($request->category_ids);
+            }
+            
+            // Handle etikets
+            if ($request->has('etikets') && is_array($request->etikets)) {
+                foreach ($request->etikets as $etiketData) {
+                    if (!empty($etiketData['code']) || !empty($etiketData['label'])) {
+                        Etiket::create([
+                            'code' => $etiketData['code'] ?? '',
+                            'name' => $product->name,
+                            'weight' => $product->weight,
+                            'price' => $product->getRawOriginal('price'),
+                            'product_id' => $product->id,
+                            'ojrat' => $product->ojrat,
+                            'darsad_kharid' => $product->darsad_kharid,
+                            'is_mojood' => 1,
+                        ]);
+                    }
+                }
+            }
+            
+            // Update discounted price (handled by observer, but ensure it's done)
+            $product->refresh();
+            $this->updateDiscountedPrice($product);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'محصول با موفقیت ایجاد شد',
+                'product' => $product
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error creating product: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در ایجاد محصول: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

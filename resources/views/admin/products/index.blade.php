@@ -10,6 +10,7 @@
 
     <x-page>
         <x-slot name="header">
+            <button class="btn btn-success mb-3"  type="button" onclick="createProduct()" >افزودن محصول</button>
             <button class="btn btn-primary mb-3"  type="button" onclick="createAssembledProduct()" >افزودن محصول جامع</button>
 
             <div class="row mb-3">
@@ -99,7 +100,7 @@
 
     <!-- Dynamic modal -->
     <div class="modal fade" id="dynamic-modal" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-name" id="dynamic-modal-title">ویرایش محصول</h5>
@@ -523,6 +524,411 @@
                 allowClear: true,
                 width: '100%'
             });
+        }
+
+        function createProduct(){
+            eraseModalContent()
+            $('#dynamic-modal-title').text('ایجاد محصول جدید')
+            
+            const categoryOptions = '@foreach($categories as $category) <option value="{{$category->id}}" >{{$category->title}}</option> @endforeach'
+            
+            const modalContent = `
+                <form id="create-product-form" action="{{route('products.store')}}" method="POST" enctype="multipart/form-data">
+                    {{ csrf_field() }}
+                    
+                    <div class="row">
+                        <!-- Left Column: Image Upload Section -->
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">تصویر اصلی محصول</label>
+                                <div class="image-upload-container mb-3">
+                                    <div class="image-preview-large" id="cover-image-preview" style="width: 100%; height: 250px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <div class="text-center">
+                                            <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                                            <p class="text-muted mb-0">برای آپلود تصویر کلیک کنید</p>
+                                        </div>
+                                        <input type="file" id="cover-image-input" name="cover_image" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewCoverImage(this)">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="font-weight-bold">گالری تصاویر</label>
+                                <div class="gallery-preview-container d-flex gap-2 mb-2">
+                                    <div class="gallery-item-preview" id="gallery-preview-1" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <i class="fas fa-plus text-muted"></i>
+                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 1)">
+                                    </div>
+                                    <div class="gallery-item-preview" id="gallery-preview-2" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <i class="fas fa-plus text-muted"></i>
+                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 2)">
+                                    </div>
+                                    <div class="gallery-item-preview" id="gallery-preview-3" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <i class="fas fa-plus text-muted"></i>
+                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 3)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column: Form Fields -->
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="product-name" class="font-weight-bold">نام محصول <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="product-name" name="name" required placeholder="مثال: دستبند طلا دانژه">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="parent-product" class="font-weight-bold">محصول والد (اختیاری)</label>
+                                <select name="parent_id" id="parent-product" class="form-control">
+                                    <option value="">-- انتخاب محصول والد --</option>
+                                </select>
+                                <small class="form-text text-muted">در صورت نیاز به ایجاد محصول زیرمجموعه، محصول والد را انتخاب کنید</small>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="product-weight" class="font-weight-bold">وزن (گرم) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="product-weight" name="weight" step="0.01" required placeholder="وزن را وارد کنید">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">گرم</span>
+                                            </div>
+                                        </div>
+                                        <small class="form-text text-muted">وزن را وارد کنید و با Enter تایید کنید</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="product-price" class="font-weight-bold">قیمت (تومان)</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="product-price" name="price" placeholder="قیمت محصول">
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-primary" id="calculate-price-btn" onclick="calculateTabanGoharPrice()">
+                                                    <i class="fas fa-calculator"></i> محاسبه قیمت
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="darsad-kharid" class="font-weight-bold">اجرت خرید (%)</label>
+                                        <input type="number" class="form-control" id="darsad-kharid" name="darsad_kharid" step="0.01" placeholder="درصد اجرت خرید">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="ojrat" class="font-weight-bold">اجرت فروش (%)</label>
+                                        <input type="number" class="form-control" id="ojrat" name="ojrat" step="0.01" placeholder="درصد اجرت فروش">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="discount-percentage" class="font-weight-bold">درصد تخفیف (%)</label>
+                                        <input type="number" class="form-control" id="discount-percentage" name="discount_percentage" step="0.01" placeholder="درصد تخفیف">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product-categories" class="font-weight-bold">دسته بندی</label>
+                                <select name="category_ids[]" id="product-categories" class="form-control" multiple>
+                                    ${categoryOptions}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="attribute-group" class="font-weight-bold">گروه ویژگی</label>
+                                <input type="text" class="form-control" id="attribute-group" name="attribute_group" placeholder="نام گروه ویژگی را وارد کنید">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product-description" class="font-weight-bold">توضیحات</label>
+                                <textarea class="form-control" id="product-description" name="description" rows="3" placeholder="توضیحات محصول"></textarea>
+                            </div>
+                            
+                            <!-- Etikets Section -->
+                            <div class="form-group mt-4">
+                                <label class="font-weight-bold">اتیکت‌ها</label>
+                                <div id="etikets-list" class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                    <p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-info mt-2" onclick="addEtiket()">
+                                    <i class="fas fa-plus"></i> افزودن اتیکت
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-save"></i> ایجاد محصول
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" data-dismiss="modal">
+                            انصراف
+                        </button>
+                    </div>
+                </form>
+            `;
+            
+            appendToModalContent(modalContent);
+            
+            // Remove any existing event listeners to prevent duplicates
+            $('#dynamic-modal').off('shown.bs.modal.createProduct');
+            
+            // Get gold price for calculation (from PHP setting) - make it global
+            window.goldPrice = parseFloat('{{ (float) setting('gold_price') ?? 0 }}') || 0;
+            
+            // Function to calculate price from Taban Gohar formula (global scope for button onclick)
+            window.calculateTabanGoharPrice = function() {
+                const weight = parseFloat($('#product-weight').val()) || 0;
+                const ojrat = parseFloat($('#ojrat').val()) || 0;
+                const goldPrice = window.goldPrice || 0;
+                
+                if (weight > 0 && goldPrice > 0 && ojrat > 0) {
+                    // Formula: price = weight * (goldPrice * 1.01) * (1 + (ojrat / 100))
+                    const adjustedGoldPrice = goldPrice * 1.01;
+                    let calculatedPrice = weight * adjustedGoldPrice * (1 + (ojrat / 100));
+                    
+                    // Round down to nearest thousand (last three digits become 0)
+                    calculatedPrice = Math.floor(calculatedPrice / 1000) * 1000;
+                    
+                    // Update price field (price is stored divided by 10, so we show the actual price)
+                    $('#product-price').val(calculatedPrice);
+                    
+                    // Show success message
+                    toastr.success('قیمت با موفقیت محاسبه شد: ' + calculatedPrice.toLocaleString('fa-IR') + ' تومان');
+                } else {
+                    // Show error if required fields are missing
+                    if (weight === 0) {
+                        toastr.error('لطفاً وزن محصول را وارد کنید');
+                    } else if (ojrat === 0) {
+                        toastr.error('لطفاً درصد اجرت فروش را وارد کنید');
+                    } else if (goldPrice === 0) {
+                        toastr.error('قیمت طلا تنظیم نشده است');
+                    }
+                }
+            }
+            
+            // Wait for modal to be shown and DOM to be ready
+            $('#dynamic-modal').on('shown.bs.modal.createProduct', function() {
+                // Destroy existing Select2 instances if any
+                if ($('#product-categories').hasClass('select2-hidden-accessible')) {
+                    $('#product-categories').select2('destroy');
+                }
+                if ($('#parent-product').hasClass('select2-hidden-accessible')) {
+                    $('#parent-product').select2('destroy');
+                }
+                
+                // Initialize Select2 for categories
+                $('#product-categories').select2({
+                    placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#dynamic-modal')
+                });
+                
+                // Initialize Select2 for parent product
+                $('#parent-product').select2({
+                    placeholder: 'جستجو و انتخاب محصول والد',
+                    allowClear: true,
+                    width: '100%',
+                    minimumInputLength: 1,
+                    dropdownParent: $('#dynamic-modal'),
+                    language: {
+                        inputTooShort: function() {
+                            return 'حداقل 1 کاراکتر وارد کنید';
+                        },
+                        noResults: function() {
+                            return 'نتیجه‌ای یافت نشد';
+                        },
+                        searching: function() {
+                            return 'در حال جستجو...';
+                        }
+                    },
+                    ajax: {
+                        url: '{{ route("products.ajax.search") }}',
+                        dataType: 'json',
+                        type: 'GET',
+                        delay: 250,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        data: function (params) {
+                            return {
+                                q: params.term || '',
+                                available_only: '0' // Get all products, not just available ones
+                            };
+                        },
+                        processResults: function (data) {
+                            // Handle different response formats
+                            let results = [];
+                            if (data && data.results && Array.isArray(data.results)) {
+                                results = data.results;
+                            } else if (Array.isArray(data)) {
+                                results = data;
+                            } else if (data && data.data && Array.isArray(data.data)) {
+                                results = data.data;
+                            }
+                            
+                            // Filter only products (items with id starting with "Product:")
+                            const products = results.filter(function(item) {
+                                if (!item || !item.id) return false;
+                                const itemId = item.id.toString();
+                                return itemId.startsWith('Product:');
+                            });
+                            
+                            // Format for Select2
+                            return {
+                                results: products.map(function(item) {
+                                    // Extract product ID from "Product:123" format
+                                    const productId = item.id.toString().replace('Product:', '');
+                                    return {
+                                        id: productId,
+                                        text: item.text || item.name || 'محصول'
+                                    };
+                                })
+                            };
+                        },
+                        cache: true
+                    }
+                });
+                
+                // Add event listeners to weight and ojrat inputs for automatic price calculation
+                $('#product-weight, #ojrat').off('input change.calculatePrice').on('input change.calculatePrice', function() {
+                    if (typeof window.calculateTabanGoharPrice === 'function') {
+                        window.calculateTabanGoharPrice();
+                    }
+                });
+                
+                // Handle weight input with Enter key
+                $('#product-weight').off('keypress.weightEnter').on('keypress.weightEnter', function(e) {
+                    if (e.which === 13) {
+                        e.preventDefault();
+                        $(this).blur();
+                        if (typeof window.calculateTabanGoharPrice === 'function') {
+                            window.calculateTabanGoharPrice();
+                        }
+                    }
+                });
+            });
+            
+            // Show modal and trigger the event
+            showDynamicModal();
+            
+            // Trigger the event if modal is already shown
+            setTimeout(function() {
+                if ($('#dynamic-modal').hasClass('show')) {
+                    $('#dynamic-modal').trigger('shown.bs.modal.createProduct');
+                }
+            }, 300);
+            
+            // Handle form submission
+            $('#create-product-form').on('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                $.ajax({
+                    url: $(this).attr('action'),
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        toastr.success('محصول با موفقیت ایجاد شد!');
+                        $('#dynamic-modal').modal('hide');
+                        if (typeof window.refreshTable === 'function') {
+                            window.refreshTable();
+                        }
+                    },
+                    error: function(xhr) {
+                        if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            const errors = xhr.responseJSON.errors;
+                            let errorMessage = 'خطا در ایجاد محصول:\\n';
+                            for (let field in errors) {
+                                errorMessage += errors[field][0] + '\\n';
+                            }
+                            toastr.error(errorMessage);
+                        } else {
+                            toastr.error('خطا در ایجاد محصول');
+                        }
+                    }
+                });
+            });
+            
+            showDynamicModal();
+        }
+        
+        // Helper functions for product creation modal
+        function previewCoverImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#cover-image-preview').html('<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        function previewGalleryImage(input, index) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#gallery-preview-' + index).html('<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;"><button type="button" class="btn btn-sm btn-danger" style="position: absolute; top: 2px; right: 2px; padding: 2px 6px;" onclick="removeGalleryImage(' + index + ')"><i class="fas fa-times"></i></button>');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        function removeGalleryImage(index) {
+            $('#gallery-preview-' + index).html('<i class="fas fa-plus text-muted"></i><input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, ' + index + ')">');
+        }
+        
+        let etiketCounter = 0;
+        function addEtiket() {
+            etiketCounter++;
+            const etiketHtml = '<div class="etiket-item border rounded p-2 mb-2" data-index="' + etiketCounter + '">' +
+                '<div class="row align-items-center">' +
+                    '<div class="col-md-2">' +
+                        '<button type="button" class="btn btn-sm btn-primary" onclick="printEtiket(' + etiketCounter + ')">' +
+                            '<i class="fas fa-print"></i> Print' +
+                        '</button>' +
+                    '</div>' +
+                    '<div class="col-md-2">' +
+                        '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')">' +
+                            '<i class="fas fa-times"></i>' +
+                        '</button>' +
+                    '</div>' +
+                    '<div class="col-md-3">' +
+                        '<input type="text" class="form-control form-control-sm" name="etikets[' + etiketCounter + '][code]" placeholder="کد اتیکت">' +
+                    '</div>' +
+                    '<div class="col-md-5">' +
+                        '<input type="text" class="form-control form-control-sm" name="etikets[' + etiketCounter + '][label]" placeholder="اتیکت">' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+            
+            if ($('#etikets-list p.text-muted').length > 0) {
+                $('#etikets-list').html('');
+            }
+            $('#etikets-list').append(etiketHtml);
+        }
+        
+        function removeEtiket(index) {
+            $('.etiket-item[data-index="' + index + '"]').remove();
+            if ($('#etikets-list .etiket-item').length === 0) {
+                $('#etikets-list').html('<p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>');
+            }
+        }
+        
+        function printEtiket(index) {
+            // Implement print functionality
+            toastr.info('قابلیت چاپ اتیکت به زودی اضافه خواهد شد');
         }
 
         function createAssembledProduct(){

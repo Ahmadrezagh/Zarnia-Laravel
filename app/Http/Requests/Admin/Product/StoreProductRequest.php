@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Http\Requests\Admin\Product;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreProductRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'weight' => 'required|numeric|min:0',
+            'price' => 'nullable|numeric|min:0',
+            'parent_id' => 'nullable|integer|exists:products,id',
+            'darsad_kharid' => 'nullable|numeric|min:0|max:100',
+            'ojrat' => 'nullable|numeric|min:0|max:100',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'description' => 'nullable|string',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'integer|exists:categories,id',
+            'attribute_group' => 'nullable|string|max:255',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'gallery' => 'nullable|array',
+            'gallery.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'etikets' => 'nullable|array',
+            'etikets.*.code' => 'nullable|string|max:255',
+            'etikets.*.label' => 'nullable|string|max:255',
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'نام محصول الزامی است.',
+            'weight.required' => 'وزن محصول الزامی است.',
+            'weight.numeric' => 'وزن باید عدد باشد.',
+            'weight.min' => 'وزن نمی‌تواند منفی باشد.',
+            'cover_image.image' => 'فایل تصویر کاور باید یک تصویر معتبر باشد.',
+            'cover_image.max' => 'حجم تصویر کاور نباید بیشتر از 2 مگابایت باشد.',
+            'gallery.*.image' => 'فایل‌های گالری باید تصویر معتبر باشند.',
+            'gallery.*.max' => 'حجم هر تصویر گالری نباید بیشتر از 2 مگابایت باشد.',
+        ];
+    }
+}
+
