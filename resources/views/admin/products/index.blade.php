@@ -94,6 +94,7 @@
             :actions="[
                             ['label' => 'ویرایش', 'type' => 'modalEdit'],
                             ['label' => 'مشاهده در سایت', 'url' => '{frontend_url}'],
+                            ['label' => 'افزودن اتیکت', 'type' => 'generateEtiket', 'class' => 'btn-info'],
                         ]"
         >
         </x-dataTable>
@@ -533,31 +534,31 @@
             
             return `
                 <form id="create-product-form" action="{{route('products.store')}}" method="POST" enctype="multipart/form-data">
-                    {{ csrf_field() }}
+{{ csrf_field() }}
                     
                     <div class="row">
                         <!-- Left Column: Image Upload Section -->
                         <div class="col-md-4">
-                            <div class="form-group">
+<div class="form-group">
                                 <label class="font-weight-bold">تصویر اصلی محصول</label>
                                 <div class="image-upload-container mb-3">
                                     <div class="image-preview-large" id="cover-image-preview" style="width: 100%; height: 250px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
                                         <div class="text-center">
                                             <i class="fas fa-image fa-3x text-muted mb-2"></i>
                                             <p class="text-muted mb-0">برای آپلود تصویر کلیک کنید</p>
-                                        </div>
+                    </div>
                                         <input type="file" id="cover-image-input" name="cover_image" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewCoverImage(this)">
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="form-group">
+<div class="form-group">
                                 <label class="font-weight-bold">گالری تصاویر</label>
                                 <div class="gallery-preview-container d-flex gap-2 mb-2">
                                     <div class="gallery-item-preview" id="gallery-preview-1" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
                                         <i class="fas fa-plus text-muted"></i>
                                         <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 1)">
-                                    </div>
+                    </div>
                                     <div class="gallery-item-preview" id="gallery-preview-2" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
                                         <i class="fas fa-plus text-muted"></i>
                                         <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 2)">
@@ -572,7 +573,7 @@
                         
                         <!-- Right Column: Form Fields -->
                         <div class="col-md-8">
-                            <div class="form-group">
+                    <div class="form-group">
                                 <label for="product-name" class="font-weight-bold">نام محصول <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="product-name" name="name" required placeholder="مثال: دستبند طلا دانژه">
                             </div>
@@ -642,20 +643,20 @@
                             <div class="form-group">
                                 <label for="product-categories" class="font-weight-bold">دسته بندی <span class="text-danger">*</span></label>
                                 <select name="category_ids[]" id="product-categories" class="form-control" multiple required>
-                                    ${categoryOptions}
-                                </select>
+                            ${categoryOptions}
+                        </select>
                                 <small class="form-text text-muted">حداقل یک دسته بندی باید انتخاب شود</small>
-                            </div>
-                            
+                    </div>
+
                             <div class="form-group">
                                 <label for="attribute-group" class="font-weight-bold">گروه ویژگی</label>
                                 <input type="text" class="form-control" id="attribute-group" name="attribute_group" placeholder="نام گروه ویژگی را وارد کنید">
-                            </div>
+                        </div>
                             
                             <div class="form-group">
                                 <label for="product-description" class="font-weight-bold">توضیحات</label>
                                 <textarea class="form-control" id="product-description" name="description" rows="3" placeholder="توضیحات محصول"></textarea>
-                            </div>
+                    </div>
                             
                             <!-- Etikets Section -->
                             <div class="form-group mt-4">
@@ -669,7 +670,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="form-group mt-4">
                         <button type="submit" class="btn btn-success btn-lg">
                             <i class="fas fa-save"></i> ایجاد محصول
@@ -694,14 +695,14 @@
                     <div class="row">
                         <!-- Left Column: Image Upload Section -->
                         <div class="col-md-4">
-                            <div class="form-group">
+<div class="form-group">
                                 <label class="font-weight-bold">تصویر اصلی محصول</label>
                                 <div class="image-upload-container mb-3">
                                     <div class="image-preview-large" id="cover-image-preview" style="width: 100%; height: 250px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
                                         <div class="text-center">
                                             <i class="fas fa-image fa-3x text-muted mb-2"></i>
                                             <p class="text-muted mb-0">برای آپلود تصویر کلیک کنید</p>
-                                        </div>
+</div>
                                         <input type="file" id="cover-image-input" name="cover_image" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewCoverImage(this)">
                                     </div>
                                 </div>
@@ -794,7 +795,7 @@
                             انصراف
                         </button>
                     </div>
-                </form>
+</form>
             `;
         }
         
@@ -853,7 +854,7 @@
                     placeholder: 'جستجو و انتخاب محصول والد',
                     allowClear: true,
                     width: '100%',
-                    minimumInputLength: 1,
+                minimumInputLength: 1,
                     dropdownParent: $('#dynamic-modal'),
                     language: {
                         inputTooShort: function() {
@@ -1388,6 +1389,240 @@
             // Implement print functionality
             console.log('Print etiket:', index);
         }
+        
+        // Function to generate etikets for a product
+        function generateEtiket(productId) {
+            eraseModalContent();
+            $('#dynamic-modal-title').text('افزودن اتیکت به محصول');
+            
+            // Get product info via AJAX (same as getApiResult)
+            $.ajax({
+                url: `{{route('products.index')}}/${productId}`,
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    // Get product data from response
+                    const product = response.data || response;
+                    const productName = product.name || 'محصول';
+                    
+                    const modalContent = `
+                        <form id="generate-etiket-form">
+                            <div class="alert alert-info">
+                                <strong>محصول:</strong> ${productName}
+                            </div>
+                            
+                            <div class="form-group mt-4">
+                                <label class="font-weight-bold">اتیکت‌ها</label>
+                                <div id="generate-etikets-list" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                                    <p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-info mt-2" onclick="addGenerateEtiket()">
+                                    <i class="fas fa-plus"></i> افزودن اتیکت
+                                </button>
+                            </div>
+                            
+                            <div class="form-group mt-4">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-save"></i> ایجاد اتیکت‌ها
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-lg" data-dismiss="modal">
+                                    انصراف
+                                </button>
+                            </div>
+                        </form>
+                    `;
+                    
+                    appendToModalContent(modalContent);
+                    
+                    // Setup form submission
+                    setupGenerateEtiketFormSubmission(productId);
+                    
+                    // Show modal
+                    showDynamicModal();
+                },
+                error: function() {
+                    // If AJAX fails, still show the form without product name
+                    const modalContent = `
+                        <form id="generate-etiket-form">
+                            <div class="form-group mt-4">
+                                <label class="font-weight-bold">اتیکت‌ها</label>
+                                <div id="generate-etikets-list" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                                    <p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-info mt-2" onclick="addGenerateEtiket()">
+                                    <i class="fas fa-plus"></i> افزودن اتیکت
+                                </button>
+                            </div>
+                            
+                            <div class="form-group mt-4">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-save"></i> ایجاد اتیکت‌ها
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-lg" data-dismiss="modal">
+                                    انصراف
+                                </button>
+                            </div>
+                        </form>
+                    `;
+                    
+                    appendToModalContent(modalContent);
+                    setupGenerateEtiketFormSubmission(productId);
+                    showDynamicModal();
+                }
+            });
+        }
+        
+        let generateEtiketCounter = 0;
+        let generateInsertedEtiketCodes = [];
+        
+        function addGenerateEtiket() {
+            generateEtiketCounter++;
+            const etiketHtml = '<div class="etiket-item border rounded p-2 mb-2" data-index="' + generateEtiketCounter + '">' +
+                '<div class="row align-items-center">' +
+                    '<div class="col-md-2">' +
+                        '<button type="button" class="btn btn-sm btn-danger" onclick="removeGenerateEtiket(' + generateEtiketCounter + ')">' +
+                            '<i class="fas fa-times"></i>' +
+                        '</button>' +
+                    '</div>' +
+                    '<div class="col-md-10">' +
+                        '<input type="text" class="form-control form-control-sm etiket-code-input" name="etikets[' + generateEtiketCounter + '][code]" placeholder="کد اتیکت" data-index="' + generateEtiketCounter + '" onblur="validateGenerateEtiketCode(' + generateEtiketCounter + ')">' +
+                        '<small class="text-danger etiket-error" id="generate-etiket-error-' + generateEtiketCounter + '" style="display:none;"></small>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+            
+            if ($('#generate-etikets-list p.text-muted').length > 0) {
+                $('#generate-etikets-list').html('');
+            }
+            $('#generate-etikets-list').append(etiketHtml);
+        }
+        
+        function removeGenerateEtiket(index) {
+            const etiketItem = $('.etiket-item[data-index="' + index + '"]');
+            const codeInput = etiketItem.find('.etiket-code-input');
+            const code = codeInput.val().trim();
+            
+            // Remove from inserted codes array
+            if (code) {
+                generateInsertedEtiketCodes = generateInsertedEtiketCodes.filter(c => c !== code);
+            }
+            
+            etiketItem.remove();
+            if ($('#generate-etikets-list .etiket-item').length === 0) {
+                $('#generate-etikets-list').html('<p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>');
+            }
+        }
+        
+        function validateGenerateEtiketCode(index) {
+            const codeInput = $('.etiket-item[data-index="' + index + '"] .etiket-code-input');
+            const errorElement = $('#generate-etiket-error-' + index);
+            const code = codeInput.val().trim();
+            
+            if (!code) {
+                errorElement.hide();
+                codeInput.removeClass('is-invalid');
+                return false;
+            }
+            
+            // Check for duplicate in modal
+            const duplicateInModal = generateInsertedEtiketCodes.filter(c => c === code && c !== code).length > 0;
+            if (duplicateInModal) {
+                errorElement.text('این کد در لیست تکراری است').show();
+                codeInput.addClass('is-invalid');
+                return false;
+            }
+            
+            // Check for duplicate in database
+            $.ajax({
+                url: '{{ route("products.search.by.etiket") }}',
+                method: 'GET',
+                data: { code: code },
+                success: function(response) {
+                    if (response && response.exists) {
+                        errorElement.text('این کد در پایگاه داده موجود است').show();
+                        codeInput.addClass('is-invalid');
+                    } else {
+                        generateInsertedEtiketCodes = generateInsertedEtiketCodes.filter(c => c !== code);
+                        generateInsertedEtiketCodes.push(code);
+                        codeInput.removeClass('is-invalid');
+                        errorElement.hide();
+                    }
+                },
+                error: function() {
+                    // On error, assume it's OK (fail open)
+                    generateInsertedEtiketCodes = generateInsertedEtiketCodes.filter(c => c !== code);
+                    generateInsertedEtiketCodes.push(code);
+                    codeInput.removeClass('is-invalid');
+                    errorElement.hide();
+                }
+            });
+            
+            return true;
+        }
+        
+        function setupGenerateEtiketFormSubmission(productId) {
+            $('#generate-etiket-form').off('submit').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Validate at least one etiket
+                const etiketInputs = $('#generate-etikets-list .etiket-code-input');
+                let hasValidEtiket = false;
+                
+                etiketInputs.each(function() {
+                    const code = $(this).val().trim();
+                    if (code && !$(this).hasClass('is-invalid')) {
+                        hasValidEtiket = true;
+                        return false; // break
+                    }
+                });
+                
+                if (!hasValidEtiket) {
+                    alert('لطفاً حداقل یک کد اتیکت معتبر وارد کنید');
+                    return false;
+                }
+                
+                const formData = new FormData();
+                
+                // Collect all etiket codes
+                etiketInputs.each(function() {
+                    const code = $(this).val().trim();
+                    if (code && !$(this).hasClass('is-invalid')) {
+                        formData.append('etikets[][code]', code);
+                    }
+                });
+                
+                // Add CSRF token
+                formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+                
+                $.ajax({
+                    url: '{{ route("products.etikets.store", ":product") }}'.replace(':product', productId),
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#dynamic-modal').modal('hide');
+                        if (typeof window.refreshTable === 'function') {
+                            window.refreshTable();
+                        }
+                        if (response.message) {
+                            // Show success message (you can use toastr here)
+                            console.log(response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Error creating etikets:', xhr);
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            alert(xhr.responseJSON.message);
+                        } else {
+                            alert('خطا در ایجاد اتیکت‌ها');
+                        }
+                    }
+                });
+            });
+        }
 
         // Function to generate comprehensive product creation modal HTML
         function getComprehensiveProductCreationModalHTML() {
@@ -1518,25 +1753,25 @@
                             return 'در حال جستجو...';
                         }
                     },
-                    ajax: {
-                        url: '{{route('etiket_search')}}',
-                        dataType: 'json',
-                        delay: 250,
+                ajax: {
+                    url: '{{route('etiket_search')}}',
+                    dataType: 'json',
+                    delay: 250,
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
-                        data: function (params) {
+                    data: function (params) {
                             return { q: params.term || '' };
-                        },
-                        processResults: function (data) {
+                    },
+                    processResults: function (data) {
                             if (data && data.results && Array.isArray(data.results)) {
-                                return { results: data.results };
+                        return { results: data.results };
                             }
                             return { results: [] };
-                        },
-                        cache: false
-                    }
-                });
+                    },
+                    cache: false
+                }
+            });
             });
         }
         

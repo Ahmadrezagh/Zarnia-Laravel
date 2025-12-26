@@ -97,6 +97,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::post('products/recalculate-discounts', [ProductController::class,'recalculateDiscounts' ])->name('products.recalculate_discounts');
         Route::get('products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
         Route::get('products/search-by-etiket', [ProductController::class, 'searchByEtiketCode'])->name('products.search.by.etiket');
+        Route::post('products/{product}/etikets', [EtiketController::class, 'storeForProduct'])->name('products.etikets.store');
         
         Route::resource('products', ProductController::class );
         Route::resource('admin_orders', OrderController::class );

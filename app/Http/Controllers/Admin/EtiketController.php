@@ -45,4 +45,60 @@ class EtiketController extends Controller
             ]]
         ]);
     }
+
+    public function storeForProduct(Request $request, Product $product)
+    {
+        $request->validate([
+            'etikets' => 'required|array|min:1',
+            'etikets.*.code' => 'required|string|max:255',
+        ]);
+
+        $etiketCodes = [];
+        $created = 0;
+        $skipped = 0;
+
+        foreach ($request->etikets as $etiketData) {
+            $code = trim($etiketData['code'] ?? '');
+            
+            if (empty($code)) {
+                $skipped++;
+                continue;
+            }
+            
+            // Check for duplicate in current batch
+            if (in_array($code, $etiketCodes)) {
+                $skipped++;
+                continue;
+            }
+            
+            // Check for duplicate in database
+            $existingEtiket = Etiket::where('code', $code)->first();
+            if ($existingEtiket) {
+                $skipped++;
+                continue;
+            }
+            
+            // Create etiket with product details
+            Etiket::create([
+                'code' => $code,
+                'name' => $product->name,
+                'weight' => $product->weight ?? 0,
+                'price' => $product->getRawOriginal('price'),
+                'product_id' => $product->id,
+                'ojrat' => $product->ojrat ?? null,
+                'darsad_kharid' => $product->darsad_kharid ?? null,
+                'is_mojood' => 1,
+            ]);
+            
+            $etiketCodes[] = $code;
+            $created++;
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => "تعداد {$created} اتیکت با موفقیت ایجاد شد" . ($skipped > 0 ? " و {$skipped} اتیکت رد شد (تکراری یا خالی)" : ''),
+            'created' => $created,
+            'skipped' => $skipped
+        ]);
+    }
 }
