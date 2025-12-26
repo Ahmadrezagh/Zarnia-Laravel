@@ -29,7 +29,7 @@ class OrderController extends Controller
         $user = auth()->guard('sanctum')->user();
         $validated = $request->validated();
 
-        $cartItems = $user->shoppingCartItems()->with('product')->get();
+        $cartItems = $user->shoppingCartItems()->with(['product', 'etiket'])->get();
 
         if ($cartItems->isEmpty()) {
             return response()->json([
@@ -37,22 +37,38 @@ class OrderController extends Controller
             ], 400);
         }
 
-        // Check all products for availability and remove unavailable items
+        // Check all cart items for etiket availability
         $unavailableProducts = [];
         $availableCartItems = collect();
         
         foreach ($cartItems as $cartItem) {
-            // Check if product is available (has at least one available etiket)
-            // Skip check if orderable_after_out_of_stock is true
             $isOrderableAfterOutOfStock = $cartItem->product->orderable_after_out_of_stock ?? false;
             
-            if (!$isOrderableAfterOutOfStock && $cartItem->product->single_count < 1) {
-                // Product is not available, remove from cart and add to error list
-                $unavailableProducts[] = $cartItem->product->name;
-                $cartItem->delete();
-            } else {
+            // Skip check if product is orderable after out of stock
+            if ($isOrderableAfterOutOfStock) {
                 $availableCartItems->push($cartItem);
+                continue;
             }
+            
+            // Check if cart item has an etiket assigned
+            if (!$cartItem->etiket_id || !$cartItem->etiket) {
+                $unavailableProducts[] = $cartItem->product->name . ' (اتیکت انتخاب نشده)';
+                $cartItem->delete();
+                continue;
+            }
+            
+            // Check if the selected etiket is available
+            $etiket = $cartItem->etiket;
+            $cacheKey = 'reserved_etiket_' . $etiket->code;
+            $isReserved = Cache::has($cacheKey);
+            
+            if ($etiket->is_mojood != 1 || $isReserved) {
+                $unavailableProducts[] = $cartItem->product->name . ' (اتیکت انتخاب شده موجود نیست)';
+                $cartItem->delete();
+                continue;
+            }
+            
+            $availableCartItems->push($cartItem);
         }
 
         // If any products were unavailable, return error
@@ -104,50 +120,7 @@ class OrderController extends Controller
         }
         $finalAmount = ($totalAmount + $shipping_price) - $discountPrice;
 
-        // Check availability after cache filtering (reserved etikets)
-        // This ensures products have unreserved etikets available
-        // Skip check if orderable_after_out_of_stock is true
-        $unavailableProductsAfterCache = [];
-        foreach ($cartItems as $cartItem) {
-            $isOrderableAfterOutOfStock = $cartItem->product->orderable_after_out_of_stock ?? false;
-            
-            // Skip availability check if product is orderable after out of stock
-            if ($isOrderableAfterOutOfStock) {
-                continue;
-            }
-            
-            // Get all available etikets for this product
-            $availableEtikets = Etiket::where('product_id', $cartItem->product_id)
-                ->where('is_mojood', '=', '1')
-                ->get();
-            
-            // Check if there's at least one unreserved etiket
-            $hasUnreservedEtiket = false;
-            foreach ($availableEtikets as $availableEtiket) {
-                $cacheKey = 'reserved_etiket_' . $availableEtiket->code;
-                // If etiket is not in cache (not reserved), product is available
-                if (!Cache::has($cacheKey)) {
-                    $hasUnreservedEtiket = true;
-                    break;
-                }
-            }
-            
-            // If no unreserved etiket found, add to unavailable list
-            if (!$hasUnreservedEtiket) {
-                $unavailableProductsAfterCache[] = $cartItem->product->name;
-            }
-        }
-
-        // If any products are unavailable after cache check, return error
-        if (!empty($unavailableProductsAfterCache)) {
-            $errorMessages = array_map(function ($productName) {
-                return "محصول {$productName} موجود نمی باشد";
-            }, $unavailableProductsAfterCache);
-            
-            return response()->json([
-                'message' => implode('. ', $errorMessages)
-            ], 400);
-        }
+        // Note: Availability check is already done above for each cart item's specific etiket
 
         // Calculate gold price
         $gold_price = number_format(get_gold_price()/10);
@@ -179,25 +152,9 @@ class OrderController extends Controller
             $isOrderableAfterOutOfStock = $cartItem->product->orderable_after_out_of_stock ?? false;
             $etiketCode = null;
             
-            // Only try to get etiket if product is not orderable after out of stock
-            if (!$isOrderableAfterOutOfStock) {
-                // Get all available etikets for this product
-                $availableEtikets = Etiket::where('product_id', $cartItem->product_id)
-                    ->where('is_mojood', '=', '1')
-                    ->get();
-                
-                // Filter out etikets that are currently reserved (cached)
-                $unreservedEtiket = null;
-                foreach ($availableEtikets as $availableEtiket) {
-                    $cacheKey = 'reserved_etiket_' . $availableEtiket->code;
-                    // If etiket is not in cache (not reserved), use it
-                    if (!Cache::has($cacheKey)) {
-                        $unreservedEtiket = $availableEtiket;
-                        break;
-                    }
-                }
-                
-                $etiketCode = $unreservedEtiket ? $unreservedEtiket->code : null;
+            // Use the etiket from the cart item if available
+            if ($cartItem->etiket_id && $cartItem->etiket) {
+                $etiketCode = $cartItem->etiket->code;
             }
 
             OrderItem::create([
