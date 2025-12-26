@@ -21,41 +21,54 @@ return new class extends Migration
 
         // Add available_count column to products table if it doesn't exist
         if (!Schema::hasColumn('products', 'available_count')) {
-            Schema::table('products', function (Blueprint $table) {
+        Schema::table('products', function (Blueprint $table) {
                 $table->integer('available_count')->default(0)->after('count');
             });
         }
 
         // Initialize count for existing products (including children's etikets)
+        // Using a derived table to avoid MySQL error 1093
         DB::statement("
             UPDATE products p
-            SET p.count = COALESCE((
-                SELECT COUNT(*) 
-                FROM etikets e 
-                WHERE e.product_id = p.id
-            ), 0) + COALESCE((
-                SELECT COUNT(*) 
-                FROM products child
-                INNER JOIN etikets e2 ON e2.product_id = child.id
-                WHERE child.parent_id = p.id
-            ), 0)
+            INNER JOIN (
+                SELECT 
+                    p2.id,
+                    COALESCE((
+                        SELECT COUNT(*) 
+                        FROM etikets e 
+                        WHERE e.product_id = p2.id
+                    ), 0) + COALESCE((
+                        SELECT COUNT(*) 
+                        FROM products child
+                        INNER JOIN etikets e2 ON e2.product_id = child.id
+                        WHERE child.parent_id = p2.id
+                    ), 0) as total_count
+                FROM products p2
+            ) as counts ON counts.id = p.id
+            SET p.count = counts.total_count
         ");
 
         // Initialize available_count for existing products (including children's etikets)
         DB::statement("
             UPDATE products p
-            SET p.available_count = COALESCE((
-                SELECT COUNT(*) 
-                FROM etikets e 
-                WHERE e.product_id = p.id 
-                AND e.is_mojood = 1
-            ), 0) + COALESCE((
-                SELECT COUNT(*) 
-                FROM products child
-                INNER JOIN etikets e2 ON e2.product_id = child.id
-                WHERE child.parent_id = p.id
-                AND e2.is_mojood = 1
-            ), 0)
+            INNER JOIN (
+                SELECT 
+                    p2.id,
+                    COALESCE((
+                        SELECT COUNT(*) 
+                        FROM etikets e 
+                        WHERE e.product_id = p2.id 
+                        AND e.is_mojood = 1
+                    ), 0) + COALESCE((
+                        SELECT COUNT(*) 
+                        FROM products child
+                        INNER JOIN etikets e2 ON e2.product_id = child.id
+                        WHERE child.parent_id = p2.id
+                        AND e2.is_mojood = 1
+                    ), 0) as total_available_count
+                FROM products p2
+            ) as available_counts ON available_counts.id = p.id
+            SET p.available_count = available_counts.total_available_count
         ");
 
         // Create trigger to update count and available_count when etikets are inserted
