@@ -60,5 +60,5 @@ function getUpdatedEtikets(){
 function get_gold_price(){
     $baseGoldPrice = (float) setting('gold_price') ?? 0;
     // Add 1% to gold price and multiply by 10 for IRT format
-    return $baseGoldPrice * 1.01 * 10;
+    return $baseGoldPrice * 10;
 }
