@@ -112,8 +112,8 @@ class CategoryController extends Controller
         ]);
         
         // Manually load related and complementary products to ensure they're available as collections
-        $category->setRelation('relatedProducts', $category->relatedProducts()->get(['id', 'name']));
-        $category->setRelation('complementaryProducts', $category->complementaryProducts()->get(['id', 'name']));
+        $category->setRelation('relatedProducts', $category->relatedProducts()->select('products.id', 'products.name')->get());
+        $category->setRelation('complementaryProducts', $category->complementaryProducts()->select('products.id', 'products.name')->get());
 
         return view('admin.categories.edit', compact('category','attribute_groups','allCategories'));
     }
