@@ -406,22 +406,24 @@ class ProductController extends Controller
     }
     public function not_available_table(Request $request)
     {
-        // Show only parent products that have NO available etikets (neither direct nor from children)
+        // Show only parent products that HAVE etikets but NONE are available (is_mojood == 1)
         $query = Product::query()
             ->whereNull('parent_id')
             ->where(function (Builder $q) {
-                // Product itself has no available etikets
-                $q->whereDoesntHave('etikets', function ($etiketQuery) {
-                    $etiketQuery->where('is_mojood', 1);
+                $q->where(function ($hasEtiketsQuery) {
+                    // Product has etikets directly
+                    $hasEtiketsQuery->whereHas('etikets')
+                        // But none of them are available
+                        ->whereDoesntHave('etikets', function ($etiketQuery) {
+                            $etiketQuery->where('is_mojood', 1);
+                        });
                 })
-                // AND (product has no children OR none of its children have available etikets)
-                ->where(function ($childQuery) {
-                    $childQuery->whereDoesntHave('children')
-                        ->orWhere(function ($hasChildrenQuery) {
-                            $hasChildrenQuery->whereHas('children')
-                                ->whereDoesntHave('children.etikets', function ($etiketQuery) {
-                                    $etiketQuery->where('is_mojood', 1);
-                                });
+                // OR product has children with etikets
+                ->orWhere(function ($hasChildrenEtiketsQuery) {
+                    $hasChildrenEtiketsQuery->whereHas('children.etikets')
+                        // But none of children's etikets are available
+                        ->whereDoesntHave('children.etikets', function ($etiketQuery) {
+                            $etiketQuery->where('is_mojood', 1);
                         });
                 });
             })
