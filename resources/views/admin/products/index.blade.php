@@ -1389,108 +1389,365 @@
             console.log('Print etiket:', index);
         }
 
-        function createAssembledProduct(){
-            eraseModalContent()
+        // Function to generate comprehensive product creation modal HTML
+        function getComprehensiveProductCreationModalHTML() {
             const categoryOptions = '@foreach($categories as $category) <option value="{{$category->id}}" >{{$category->title}}</option> @endforeach'
-            appendToModalContent(`
-<form action="{{route("comprehensive_product.store")}}" method="POST" enctype="multipart/form-data" >
-{{ csrf_field() }}
-<x-form.input  title="نام محصول  جامع" name="name" />
-<div class="form-group">
-                        <label for="comprehensive-product-slug">نامک (Slug) (اختیاری)</label>
-                        <input type="text" id="comprehensive-product-slug" name="slug" class="form-control" dir="ltr" placeholder="example-slug">
-                    </div>
-<div class="form-group">
-                        <label for="product-description">توضیحات</label>
-                        <textarea class="form-control" id="product-description" rows="4"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="product-categories">دسته بندی</label>
-                        <select name="categories" id="product-categories" class="form-control" multiple>
-                            ${categoryOptions}
-                        </select>
-                    </div>
-                    <div class="custom-file mt-5 mb-5">
-                        <label for="product-cover-image" class="custom-file-label">تصویر کاور</label>
-                        <input type="file" class="custom-file-input" id="product-cover-image" name="cover_image" accept="image/*" onchange="showImagePreview('product-cover-image', 'image-preview', '')">
-                        <div id="image-preview" class="d-flex justify-content-center mt-2">
-
+            
+            return `
+                <form id="create-comprehensive-product-form" action="{{route('comprehensive_product.store')}}" method="POST" enctype="multipart/form-data">
+                    {{ csrf_field() }}
+                    
+                    <div class="row">
+                        <!-- Left Column: Image Upload Section -->
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">تصویر اصلی محصول</label>
+                                <div class="image-upload-container mb-3">
+                                    <div class="image-preview-large" id="comprehensive-cover-image-preview" style="width: 100%; height: 250px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <div class="text-center">
+                                            <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                                            <p class="text-muted mb-0">برای آپلود تصویر کلیک کنید</p>
+                                        </div>
+                                        <input type="file" id="comprehensive-cover-image-input" name="cover_image" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewComprehensiveCoverImage(this)">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="font-weight-bold">گالری تصاویر</label>
+                                <div class="gallery-preview-container d-flex gap-2 mb-2">
+                                    <div class="gallery-item-preview" id="comprehensive-gallery-preview-1" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <i class="fas fa-plus text-muted"></i>
+                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewComprehensiveGalleryImage(this, 1)">
+                                    </div>
+                                    <div class="gallery-item-preview" id="comprehensive-gallery-preview-2" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <i class="fas fa-plus text-muted"></i>
+                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewComprehensiveGalleryImage(this, 2)">
+                                    </div>
+                                    <div class="gallery-item-preview" id="comprehensive-gallery-preview-3" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <i class="fas fa-plus text-muted"></i>
+                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewComprehensiveGalleryImage(this, 3)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column: Form Fields -->
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="comprehensive-product-name" class="font-weight-bold">نام محصول جامع <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="comprehensive-product-name" name="name" required placeholder="مثال: ست طلا">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="comprehensive-product-slug" class="font-weight-bold">نامک (Slug) (اختیاری)</label>
+                                <input type="text" id="comprehensive-product-slug" name="slug" class="form-control" dir="ltr" placeholder="example-slug">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="comprehensive-product-description" class="font-weight-bold">توضیحات</label>
+                                <textarea class="form-control" id="comprehensive-product-description" name="description" rows="3" placeholder="توضیحات محصول"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="comprehensive-product-categories" class="font-weight-bold">دسته بندی <span class="text-danger">*</span></label>
+                                <select name="categories[]" id="comprehensive-product-categories" class="form-control" multiple required>
+                                    ${categoryOptions}
+                                </select>
+                                <small class="form-text text-muted">حداقل یک دسته بندی باید انتخاب شود</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="comprehensive-etiket-select" class="font-weight-bold">محصولات <span class="text-danger">*</span></label>
+                                <select id="comprehensive-etiket-select" name="product_ids[]" class="form-control" multiple required></select>
+                                <small class="form-text text-muted">محصولاتی که این محصول جامع از آن‌ها تشکیل شده است را انتخاب کنید</small>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group mt-5">
-                        <label for="product-gallery">گالری تصاویر</label>
-                        <div id="product-gallery"></div>
+                    
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-save"></i> ایجاد محصول جامع
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" data-dismiss="modal">
+                            انصراف
+                        </button>
                     </div>
-
-<div class="form-group">
-<label for="">محصولات</label>
-<select id="etiket-select" name="product_ids[]" class="form-control" style="width: 100%" multiple ></select>
-</div>
-<button class="btn btn-success" type="submit">ایجاد</button>
-</form>
-
-`)
-            $('#etiket-select').select2({
-                placeholder: 'Enter exact etiket code',
-                minimumInputLength: 1,
-                ajax: {
-                    url: '{{route('etiket_search')}}',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return { q: params.term };
-                    },
-                    processResults: function (data) {
-                        return { results: data.results };
-                    },
-                    cache: false
+                </form>
+            `;
+        }
+        
+        // Function to initialize comprehensive product creation modal
+        function initializeComprehensiveProductCreationModal() {
+            // Remove any existing event listeners to prevent duplicates
+            $('#dynamic-modal').off('shown.bs.modal.createComprehensiveProduct');
+            
+            // Wait for modal to be shown and DOM to be ready
+            $('#dynamic-modal').on('shown.bs.modal.createComprehensiveProduct', function() {
+                // Destroy existing Select2 instances if any
+                if ($('#comprehensive-product-categories').hasClass('select2-hidden-accessible')) {
+                    $('#comprehensive-product-categories').select2('destroy');
                 }
-            });
-            $('#etiket-select').on('select2:select', function (e) {
-                const product = e.params.data.product;
-                if (product) {
-                    $('#product-info').html(`
-            <h5>Product Found</h5>
-            <p><strong>Name:</strong> ${product.name}</p>
-            <p><strong>ID:</strong> ${product.id}</p>
-        `);
-                } else {
-                    $('#product-info').html(`<p>No product found.</p>`);
+                if ($('#comprehensive-etiket-select').hasClass('select2-hidden-accessible')) {
+                    $('#comprehensive-etiket-select').select2('destroy');
                 }
-            });
-            // Initialize Select2 for categories dropdown
-            $('#product-categories').select2({
-                placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
-                allowClear: true,
-                width: '100%'
-            });
-            // Check if imageUploader is available
-            if (typeof $.fn.imageUploader === 'undefined') {
-                console.error('imageUploader is not defined. Ensure the image-uploader library is loaded.');
-                $('.gallery-preview').before('<p class="text-danger">خطا: کتابخانه آپلود تصاویر بارگذاری نشده است.</p>');
-                return;
-            }
-            // Initialize image-uploader for gallery
-            $('#product-gallery').imageUploader({
-                label: 'تصاویر را انتخاب کنید یا اینجا بکشید و رها کنید',
-                imagesInputName: 'gallery',
-                maxFiles: 10,
-                maxSize: 2 * 1024 * 1024,
-                preloaded: [],
-                extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg','.JPG','.JPEG','.webp','.WEBP'],
-                mimes: ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp']
-            });
-            // Client-side file size validation
-            $('#product-cover-image, #product-gallery').on('change', function() {
-                const maxSize = 2 * 1024 * 1024; // 2MB
-                for (let file of this.files) {
-                    if (file.size > maxSize) {
-                        alert('فایل‌ها باید کمتر از ۲ مگابایت باشند.');
-                        this.value = '';
+                
+                // Initialize Select2 for categories
+                $('#comprehensive-product-categories').select2({
+                    placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#dynamic-modal')
+                });
+                
+                // Initialize Select2 for etiket/product selection
+                $('#comprehensive-etiket-select').select2({
+                    placeholder: 'جستجو و انتخاب محصولات',
+                    allowClear: true,
+                    width: '100%',
+                    minimumInputLength: 1,
+                    dropdownParent: $('#dynamic-modal'),
+                    language: {
+                        inputTooShort: function() {
+                            return 'حداقل 1 کاراکتر وارد کنید';
+                        },
+                        noResults: function() {
+                            return 'نتیجه‌ای یافت نشد';
+                        },
+                        searching: function() {
+                            return 'در حال جستجو...';
+                        }
+                    },
+                    ajax: {
+                        url: '{{route('etiket_search')}}',
+                        dataType: 'json',
+                        delay: 250,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        data: function (params) {
+                            return { q: params.term || '' };
+                        },
+                        processResults: function (data) {
+                            if (data && data.results && Array.isArray(data.results)) {
+                                return { results: data.results };
+                            }
+                            return { results: [] };
+                        },
+                        cache: false
                     }
-                }
+                });
             });
-            showDynamicModal()
+        }
+        
+        // Function to setup comprehensive product form submission
+        function setupComprehensiveProductFormSubmission() {
+            // Remove any existing handlers to prevent duplicates
+            $('#create-comprehensive-product-form').off('submit');
+            
+            // Handle form submission
+            $('#create-comprehensive-product-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Validate category_ids (required)
+                const categoryIds = $('#comprehensive-product-categories').val();
+                if (!categoryIds || categoryIds.length === 0) {
+                    $('#comprehensive-product-categories').addClass('is-invalid');
+                    $('#comprehensive-product-categories').next('.invalid-feedback').remove();
+                    $('#comprehensive-product-categories').after('<div class="invalid-feedback">لطفاً حداقل یک دسته بندی انتخاب کنید</div>');
+                    return false;
+                } else {
+                    $('#comprehensive-product-categories').removeClass('is-invalid');
+                    $('#comprehensive-product-categories').next('.invalid-feedback').remove();
+                }
+                
+                // Validate product_ids (required)
+                const productIds = $('#comprehensive-etiket-select').val();
+                if (!productIds || productIds.length === 0) {
+                    $('#comprehensive-etiket-select').addClass('is-invalid');
+                    $('#comprehensive-etiket-select').next('.invalid-feedback').remove();
+                    $('#comprehensive-etiket-select').after('<div class="invalid-feedback">لطفاً حداقل یک محصول انتخاب کنید</div>');
+                    return false;
+                } else {
+                    $('#comprehensive-etiket-select').removeClass('is-invalid');
+                    $('#comprehensive-etiket-select').next('.invalid-feedback').remove();
+                }
+                
+                const formData = new FormData();
+                
+                // Add all form fields except files
+                $(this).find('input:not([type="file"]), select, textarea').each(function() {
+                    const $field = $(this);
+                    const name = $field.attr('name');
+                    const type = $field.attr('type');
+                    
+                    if (name) {
+                        if (type === 'checkbox' || type === 'radio') {
+                            if ($field.is(':checked')) {
+                                formData.append(name, $field.val());
+                            }
+                        } else if (type !== 'file') {
+                            if ($field.val()) {
+                                formData.append(name, $field.val());
+                            }
+                        }
+                    }
+                });
+                
+                // Handle multiple select fields
+                $(this).find('select[multiple]').each(function() {
+                    const $select = $(this);
+                    const name = $select.attr('name');
+                    if (name && $select.val() && $select.val().length > 0) {
+                        $select.val().forEach(function(value) {
+                            formData.append(name, value);
+                        });
+                    }
+                });
+                
+                // Explicitly add cover image
+                const coverImageInput = document.getElementById('comprehensive-cover-image-input');
+                if (coverImageInput && coverImageInput.files && coverImageInput.files[0]) {
+                    formData.append('cover_image', coverImageInput.files[0]);
+                }
+                
+                // Explicitly add gallery images
+                const galleryInputs = document.querySelectorAll('#create-comprehensive-product-form input[name="gallery[]"]');
+                galleryInputs.forEach(function(input) {
+                    if (input.files && input.files[0]) {
+                        formData.append('gallery[]', input.files[0]);
+                    }
+                });
+                
+                // Add CSRF token
+                formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+                
+                $.ajax({
+                    url: $(this).attr('action'),
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#dynamic-modal').modal('hide');
+                        if (typeof window.refreshTable === 'function') {
+                            window.refreshTable();
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Error creating comprehensive product:', xhr);
+                        if (xhr.responseJSON) {
+                            console.error('Error details:', xhr.responseJSON);
+                        }
+                    }
+                });
+            });
+        }
+        
+        // Helper functions for comprehensive product image preview
+        function previewComprehensiveCoverImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                const $preview = $('#comprehensive-cover-image-preview');
+                const $input = $(input);
+                
+                reader.onload = function(e) {
+                    // Keep the input in DOM, just update the preview
+                    $preview.find('div.text-center, img').remove();
+                    
+                    // Add preview image
+                    $preview.prepend('<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                    
+                    // Ensure input stays in DOM with proper styling
+                    $input.css({
+                        'position': 'absolute',
+                        'width': '100%',
+                        'height': '100%',
+                        'opacity': '0',
+                        'z-index': '10',
+                        'cursor': 'pointer'
+                    });
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        function previewComprehensiveGalleryImage(input, index) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                const $preview = $('#comprehensive-gallery-preview-' + index);
+                const $input = $(input);
+                
+                reader.onload = function(e) {
+                    // Keep the input in DOM, just hide it visually
+                    $input.css({
+                        'position': 'absolute',
+                        'width': '100%',
+                        'height': '100%',
+                        'opacity': '0',
+                        'z-index': '10',
+                        'cursor': 'pointer'
+                    });
+                    
+                    // Remove existing preview if any
+                    $preview.find('img.preview-img, button.remove-gallery-btn').remove();
+                    
+                    // Add preview image
+                    $preview.prepend('<img class="preview-img" src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                    
+                    // Add remove button
+                    $preview.append('<button type="button" class="btn btn-sm btn-danger remove-gallery-btn" style="position: absolute; top: 2px; right: 2px; padding: 2px 6px; z-index: 11;" onclick="removeComprehensiveGalleryImage(' + index + ')"><i class="fas fa-times"></i></button>');
+                    
+                    // Hide the plus icon
+                    $preview.find('i.fa-plus').hide();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        function removeComprehensiveGalleryImage(index) {
+            const $preview = $('#comprehensive-gallery-preview-' + index);
+            // Remove preview image and button
+            $preview.find('img.preview-img, button.remove-gallery-btn').remove();
+            // Reset the file input
+            const $input = $preview.find('input[type="file"]');
+            $input.val('');
+            // Reset input styling
+            $input.css({
+                'position': 'absolute',
+                'width': '100%',
+                'height': '100%',
+                'opacity': '0',
+                'cursor': 'pointer'
+            });
+            // Show the plus icon
+            $preview.find('i.fa-plus').show();
+        }
+        
+        // Main function to create comprehensive product
+        function createAssembledProduct(){
+            eraseModalContent();
+            $('#dynamic-modal-title').text('ایجاد محصول جامع');
+            
+            // Get modal HTML
+            const modalContent = getComprehensiveProductCreationModalHTML();
+            appendToModalContent(modalContent);
+            
+            // Initialize modal
+            initializeComprehensiveProductCreationModal();
+            
+            // Setup form submission
+            setupComprehensiveProductFormSubmission();
+            
+            // Show modal and trigger the event
+            showDynamicModal();
+            
+            // Trigger the event if modal is already shown
+            setTimeout(function() {
+                if ($('#dynamic-modal').hasClass('show')) {
+                    $('#dynamic-modal').trigger('shown.bs.modal.createComprehensiveProduct');
+                }
+            }, 300);
         }
 
     </script>
