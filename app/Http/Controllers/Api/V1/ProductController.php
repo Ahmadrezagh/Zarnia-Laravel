@@ -107,12 +107,12 @@ class ProductController extends Controller
         
         // Get related products - filter by single_count >= 1 and has image
         $relatedProducts = $product->relatedProducts()
-            ->where('single_count','>=',1)
+            ->where('count','>=',1)
             ->take(15);
 
         // Get complementary products - filter by single_count >= 1 and has image
         $complementaryProducts = $product->complementaryProducts()
-            ->where('single_count','>=',1)
+            ->where('count','>=',1)
             ->take(15);
 
         return response()->json([
