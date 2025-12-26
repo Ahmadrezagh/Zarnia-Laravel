@@ -109,7 +109,7 @@ class ProductController extends Controller
         $relatedProducts = $product->relatedProducts()
             ->filter(function($prod) {
                 // Check if product has cover_image media and is available
-                return $prod->count >= 1 && $prod->hasMedia('cover_image');
+                return $prod->count >= 1 ;
             })
             ->take(15);
 
@@ -117,7 +117,7 @@ class ProductController extends Controller
         $complementaryProducts = $product->complementaryProducts()
             ->filter(function($prod) {
                 // Check if product has cover_image media and is available
-                return $prod->count >= 1 && $prod->hasMedia('cover_image');
+                return $prod->count >= 1 ;
             })
             ->take(15);
 
