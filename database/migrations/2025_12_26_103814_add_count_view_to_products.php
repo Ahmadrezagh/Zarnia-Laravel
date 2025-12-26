@@ -26,25 +26,36 @@ return new class extends Migration
             });
         }
 
-        // Initialize count for existing products
+        // Initialize count for existing products (including children's etikets)
         DB::statement("
             UPDATE products p
-            SET p.count = (
+            SET p.count = COALESCE((
                 SELECT COUNT(*) 
                 FROM etikets e 
                 WHERE e.product_id = p.id
-            )
+            ), 0) + COALESCE((
+                SELECT COUNT(*) 
+                FROM products child
+                INNER JOIN etikets e2 ON e2.product_id = child.id
+                WHERE child.parent_id = p.id
+            ), 0)
         ");
 
-        // Initialize available_count for existing products
+        // Initialize available_count for existing products (including children's etikets)
         DB::statement("
             UPDATE products p
-            SET p.available_count = (
+            SET p.available_count = COALESCE((
                 SELECT COUNT(*) 
                 FROM etikets e 
                 WHERE e.product_id = p.id 
                 AND e.is_mojood = 1
-            )
+            ), 0) + COALESCE((
+                SELECT COUNT(*) 
+                FROM products child
+                INNER JOIN etikets e2 ON e2.product_id = child.id
+                WHERE child.parent_id = p.id
+                AND e2.is_mojood = 1
+            ), 0)
         ");
 
         // Create trigger to update count and available_count when etikets are inserted
@@ -56,19 +67,57 @@ return new class extends Migration
             AFTER INSERT ON etikets
             FOR EACH ROW
             BEGIN
+                -- Update the product itself
                 UPDATE products 
-                SET count = (
+                SET count = COALESCE((
                     SELECT COUNT(*) 
                     FROM etikets 
                     WHERE product_id = NEW.product_id
-                ),
-                available_count = (
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = NEW.product_id
+                ), 0),
+                available_count = COALESCE((
                     SELECT COUNT(*) 
                     FROM etikets 
                     WHERE product_id = NEW.product_id 
                     AND is_mojood = 1
-                )
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = NEW.product_id
+                    AND e2.is_mojood = 1
+                ), 0)
                 WHERE id = NEW.product_id;
+                
+                -- Update parent product if this product has a parent
+                UPDATE products parent
+                SET parent.count = COALESCE((
+                    SELECT COUNT(*) 
+                    FROM etikets 
+                    WHERE product_id = parent.id
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = parent.id
+                ), 0),
+                parent.available_count = COALESCE((
+                    SELECT COUNT(*) 
+                    FROM etikets 
+                    WHERE product_id = parent.id 
+                    AND is_mojood = 1
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = parent.id
+                    AND e2.is_mojood = 1
+                ), 0)
+                WHERE parent.id = (SELECT parent_id FROM products WHERE id = NEW.product_id AND parent_id IS NOT NULL);
             END
         ");
 
@@ -81,19 +130,57 @@ return new class extends Migration
             AFTER UPDATE ON etikets
             FOR EACH ROW
             BEGIN
+                -- Update the product itself
                 UPDATE products 
-                SET count = (
+                SET count = COALESCE((
                     SELECT COUNT(*) 
                     FROM etikets 
                     WHERE product_id = NEW.product_id
-                ),
-                available_count = (
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = NEW.product_id
+                ), 0),
+                available_count = COALESCE((
                     SELECT COUNT(*) 
                     FROM etikets 
                     WHERE product_id = NEW.product_id 
                     AND is_mojood = 1
-                )
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = NEW.product_id
+                    AND e2.is_mojood = 1
+                ), 0)
                 WHERE id = NEW.product_id;
+                
+                -- Update parent product if this product has a parent
+                UPDATE products parent
+                SET parent.count = COALESCE((
+                    SELECT COUNT(*) 
+                    FROM etikets 
+                    WHERE product_id = parent.id
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = parent.id
+                ), 0),
+                parent.available_count = COALESCE((
+                    SELECT COUNT(*) 
+                    FROM etikets 
+                    WHERE product_id = parent.id 
+                    AND is_mojood = 1
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = parent.id
+                    AND e2.is_mojood = 1
+                ), 0)
+                WHERE parent.id = (SELECT parent_id FROM products WHERE id = NEW.product_id AND parent_id IS NOT NULL);
             END
         ");
 
@@ -106,19 +193,127 @@ return new class extends Migration
             AFTER DELETE ON etikets
             FOR EACH ROW
             BEGIN
+                -- Update the product itself
                 UPDATE products 
-                SET count = (
+                SET count = COALESCE((
                     SELECT COUNT(*) 
                     FROM etikets 
                     WHERE product_id = OLD.product_id
-                ),
-                available_count = (
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = OLD.product_id
+                ), 0),
+                available_count = COALESCE((
                     SELECT COUNT(*) 
                     FROM etikets 
                     WHERE product_id = OLD.product_id 
                     AND is_mojood = 1
-                )
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = OLD.product_id
+                    AND e2.is_mojood = 1
+                ), 0)
                 WHERE id = OLD.product_id;
+                
+                -- Update parent product if this product has a parent
+                UPDATE products parent
+                SET parent.count = COALESCE((
+                    SELECT COUNT(*) 
+                    FROM etikets 
+                    WHERE product_id = parent.id
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = parent.id
+                ), 0),
+                parent.available_count = COALESCE((
+                    SELECT COUNT(*) 
+                    FROM etikets 
+                    WHERE product_id = parent.id 
+                    AND is_mojood = 1
+                ), 0) + COALESCE((
+                    SELECT COUNT(*) 
+                    FROM products child
+                    INNER JOIN etikets e2 ON e2.product_id = child.id
+                    WHERE child.parent_id = parent.id
+                    AND e2.is_mojood = 1
+                ), 0)
+                WHERE parent.id = (SELECT parent_id FROM products WHERE id = OLD.product_id AND parent_id IS NOT NULL);
+            END
+        ");
+
+        // Create trigger to update parent's count when product's parent_id changes
+        DB::statement("
+            DROP TRIGGER IF EXISTS update_parent_count_after_product_update
+        ");
+        DB::statement("
+            CREATE TRIGGER update_parent_count_after_product_update
+            AFTER UPDATE ON products
+            FOR EACH ROW
+            BEGIN
+                -- If parent_id changed, update old and new parents
+                IF OLD.parent_id != NEW.parent_id OR (OLD.parent_id IS NULL AND NEW.parent_id IS NOT NULL) OR (OLD.parent_id IS NOT NULL AND NEW.parent_id IS NULL) THEN
+                    -- Update old parent if exists
+                    IF OLD.parent_id IS NOT NULL THEN
+                        UPDATE products parent
+                        SET parent.count = COALESCE((
+                            SELECT COUNT(*) 
+                            FROM etikets 
+                            WHERE product_id = parent.id
+                        ), 0) + COALESCE((
+                            SELECT COUNT(*) 
+                            FROM products child
+                            INNER JOIN etikets e2 ON e2.product_id = child.id
+                            WHERE child.parent_id = parent.id
+                        ), 0),
+                        parent.available_count = COALESCE((
+                            SELECT COUNT(*) 
+                            FROM etikets 
+                            WHERE product_id = parent.id 
+                            AND is_mojood = 1
+                        ), 0) + COALESCE((
+                            SELECT COUNT(*) 
+                            FROM products child
+                            INNER JOIN etikets e2 ON e2.product_id = child.id
+                            WHERE child.parent_id = parent.id
+                            AND e2.is_mojood = 1
+                        ), 0)
+                        WHERE parent.id = OLD.parent_id;
+                    END IF;
+                    
+                    -- Update new parent if exists
+                    IF NEW.parent_id IS NOT NULL THEN
+                        UPDATE products parent
+                        SET parent.count = COALESCE((
+                            SELECT COUNT(*) 
+                            FROM etikets 
+                            WHERE product_id = parent.id
+                        ), 0) + COALESCE((
+                            SELECT COUNT(*) 
+                            FROM products child
+                            INNER JOIN etikets e2 ON e2.product_id = child.id
+                            WHERE child.parent_id = parent.id
+                        ), 0),
+                        parent.available_count = COALESCE((
+                            SELECT COUNT(*) 
+                            FROM etikets 
+                            WHERE product_id = parent.id 
+                            AND is_mojood = 1
+                        ), 0) + COALESCE((
+                            SELECT COUNT(*) 
+                            FROM products child
+                            INNER JOIN etikets e2 ON e2.product_id = child.id
+                            WHERE child.parent_id = parent.id
+                            AND e2.is_mojood = 1
+                        ), 0)
+                        WHERE parent.id = NEW.parent_id;
+                    END IF;
+                END IF;
             END
         ");
     }
@@ -132,6 +327,7 @@ return new class extends Migration
         DB::statement('DROP TRIGGER IF EXISTS update_product_count_after_insert');
         DB::statement('DROP TRIGGER IF EXISTS update_product_count_after_update');
         DB::statement('DROP TRIGGER IF EXISTS update_product_count_after_delete');
+        DB::statement('DROP TRIGGER IF EXISTS update_parent_count_after_product_update');
 
         // Drop columns
         Schema::table('products', function (Blueprint $table) {
