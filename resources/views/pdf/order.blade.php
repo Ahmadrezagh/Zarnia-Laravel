@@ -107,7 +107,26 @@
     }
     $shipping = $order->shipping->title ?? 'آنلاین';
     if($order->shipping_time_id){
-        $shipping = $shipping.' - '.$order->shippingTime->title;
+        $shippingTimeTitle = $order->shippingTime->title;
+        
+        // Add shipping_date if it exists
+        if($order->shipping_date){
+            $persian_day_names = [
+                'یکشنبه',
+                'دوشنبه',
+                'سه‌شنبه',
+                'چهارشنبه',
+                'پنج‌شنبه',
+                'جمعه',
+                'شنبه'
+            ];
+            $jalali = \Morilog\Jalali\Jalalian::forge($order->shipping_date);
+            $day_of_week = \Carbon\Carbon::parse($order->shipping_date)->dayOfWeek;
+            $shippingDateText = $jalali->format('Y/m/d') . ' (' . $persian_day_names[$day_of_week] . ')';
+            $shippingTimeTitle = $shippingDateText . ' - ' . $shippingTimeTitle;
+        }
+        
+        $shipping = $shipping.' - '.$shippingTimeTitle;
     }
     $gatewayName = $order->gateway->name ?? ($order->gateway->title ?? '');
 
