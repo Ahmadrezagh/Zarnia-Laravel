@@ -2,6 +2,7 @@
 
 namespace App\Services\Api;
 
+use App\Models\Product;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -69,6 +70,9 @@ class TabanGohar
                 'time_read' => $prices['TimeRead'] ?? null
             ]);
 
+            // Update all products with new gold price
+            $this->updateAllProductsPrices();
+
             return true;
         }
 
@@ -77,6 +81,85 @@ class TabanGohar
         ]);
 
         return false;
+    }
+
+    /**
+     * Update all products' prices based on tabanGoharPrice and update discounted prices
+     */
+    private function updateAllProductsPrices(): void
+    {
+        try {
+            $updatedCount = 0;
+            
+            // Process products in chunks to avoid memory issues
+            Product::query()->chunk(100, function ($products) use (&$updatedCount) {
+                foreach ($products as $product) {
+                    // Refresh to ensure we have latest attributes
+                    $product->refresh();
+                    
+                    // Calculate tabanGoharPrice
+                    $tabanGoharPrice = $product->taban_gohar_price;
+                    
+                    if ($tabanGoharPrice > 0) {
+                        // Update product price (multiply by 10 to match database format)
+                        $product->updateQuietly([
+                            'price' => $tabanGoharPrice * 10
+                        ]);
+                        
+                        // Update discounted price
+                        $this->updateDiscountedPrice($product);
+                        
+                        $updatedCount++;
+                    }
+                }
+            });
+
+            Log::info('All products updated with new gold price', [
+                'updated_count' => $updatedCount
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating products after gold price change', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Calculate and update discounted price for a product
+     */
+    private function updateDiscountedPrice(Product $product): void
+    {
+        // Get raw price value (stored multiplied by 10) and discount percentage
+        $rawPrice = $product->getRawOriginal('price');
+        
+        // If product has parent, use parent's discount_percentage
+        $discountPercentage = 0;
+        if ($product->parent_id) {
+            $parent = Product::find($product->parent_id);
+            if ($parent) {
+                $discountPercentage = $parent->getRawOriginal('discount_percentage') ?? 0;
+            }
+        } else {
+            // Use own discount_percentage
+            $discountPercentage = $product->getRawOriginal('discount_percentage') ?? 0;
+        }
+
+        if ($rawPrice != 0 && $discountPercentage != 0) {
+            // Calculate discounted price
+            // Raw price is stored multiplied by 10, so divide by 10 to get actual price
+            // discounted_price is stored as-is (not multiplied by 10)
+            $discountedPrice = ($rawPrice / 10) * (1 - $discountPercentage / 100);
+
+            // Round to nearest 1000 (last three digits to 000)
+            $discountedPrice = round($discountedPrice, -3);
+
+            $product->discounted_price = $discountedPrice;
+        } else {
+            $product->discounted_price = null;
+        }
+
+        $product->saveQuietly();
     }
 }
 
