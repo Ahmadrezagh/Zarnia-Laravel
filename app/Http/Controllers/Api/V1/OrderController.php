@@ -143,6 +143,7 @@ class OrderController extends Controller
             'shipping_price' => $shipping_price,
             'gold_price' => $gold_price,
             'reference' => $validated['reference'] ?? null,
+            'shipping_date' => $validated['shipping_date'] ?? null,
         ]);
 
         // Create order items from cart and collect reserved etiket codes

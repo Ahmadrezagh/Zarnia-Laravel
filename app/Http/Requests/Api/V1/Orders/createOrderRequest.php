@@ -33,6 +33,7 @@ class createOrderRequest extends FormRequest
             'note' => ['nullable', 'string', 'max:2000'],
             'user_agent' => ['nullable', 'string', 'max:2000'],
             'reference' => ['nullable', 'string', 'max:255'],
+            'shipping_date' => ['nullable', 'date'],
         ];
     }
 }

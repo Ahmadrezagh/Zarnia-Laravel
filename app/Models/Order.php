@@ -39,11 +39,13 @@ class Order extends Model
         'shipping_price',
         'gold_price',
         'reference',
-        'uuid'
+        'uuid',
+        'shipping_date'
     ];
 
     protected $casts = [
         'paid_at' => 'datetime',
+        'shipping_date' => 'datetime',
         'deleted_at' => 'datetime',
     ];
 
