@@ -31,6 +31,7 @@ class ShoppingCartItemResource extends JsonResource
                 'name' => $this->etiket->name,
                 'weight' => $this->etiket->weight,
             ] : null,
+            'etiket_code' => $this->etiket ? $this->etiket->code : null,
         ];
     }
 }
