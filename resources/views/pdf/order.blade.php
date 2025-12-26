@@ -123,9 +123,9 @@
             $jalali = \Morilog\Jalali\Jalalian::forge($order->shipping_date);
             $day_of_week = \Carbon\Carbon::parse($order->shipping_date)->dayOfWeek;
             $shippingDateText = $jalali->format('Y/m/d') . ' (' . $persian_day_names[$day_of_week] . ')';
-            $shipping = $shipping . "\n" . $shippingDateText . "\n" . $shippingTimeTitle;
+            $shipping = $shipping . '<br>' . $shippingDateText . '<br>' . $shippingTimeTitle;
         } else {
-            $shipping = $shipping . "\n" . $shippingTimeTitle;
+            $shipping = $shipping . '<br>' . $shippingTimeTitle;
         }
     }
     $gatewayName = $order->gateway->name ?? ($order->gateway->title ?? '');
@@ -180,7 +180,7 @@
                     font-family: 'IRANSans';
                     font-size: 14px;
                     color: {{ $pos->color ?? '#000' }};
-                    white-space: nowrap;
+                    white-space: {{ $pos->key === 'shipping' ? 'normal' : 'nowrap' }};
                     direction: rtl;
                     --x-pos: {{ $pos->x }}px;
                     --y-pos: {{ $pos->y }}px;
