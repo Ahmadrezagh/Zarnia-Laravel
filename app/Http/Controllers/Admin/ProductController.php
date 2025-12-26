@@ -406,25 +406,28 @@ class ProductController extends Controller
     }
     public function not_available_table(Request $request)
     {
-        // Show only parent products that HAVE etikets but NONE are available (is_mojood == 1)
+        // Show only parent products that HAVE etikets and ALL etikets have is_mojood == 0
         $query = Product::query()
             ->whereNull('parent_id')
             ->where(function (Builder $q) {
+                // Product must have etikets (directly or through children)
                 $q->where(function ($hasEtiketsQuery) {
-                    // Product has etikets directly
                     $hasEtiketsQuery->whereHas('etikets')
-                        // But none of them are available
-                        ->whereDoesntHave('etikets', function ($etiketQuery) {
-                            $etiketQuery->where('is_mojood', 1);
-                        });
+                        ->orWhereHas('children.etikets');
                 })
-                // OR product has children with etikets
-                ->orWhere(function ($hasChildrenEtiketsQuery) {
-                    $hasChildrenEtiketsQuery->whereHas('children.etikets')
-                        // But none of children's etikets are available
-                        ->whereDoesntHave('children.etikets', function ($etiketQuery) {
-                            $etiketQuery->where('is_mojood', 1);
-                        });
+                // AND product must NOT have any etikets with is_mojood == 1 (directly or through children)
+                ->where(function ($noAvailableEtiketsQuery) {
+                    // No direct etikets with is_mojood == 1
+                    $noAvailableEtiketsQuery->whereDoesntHave('etikets', function ($etiketQuery) {
+                        $etiketQuery->where('is_mojood', 1);
+                    })
+                    // AND no children's etikets with is_mojood == 1
+                    ->where(function ($childrenQuery) {
+                        $childrenQuery->whereDoesntHave('children')
+                            ->orWhereDoesntHave('children.etikets', function ($etiketQuery) {
+                                $etiketQuery->where('is_mojood', 1);
+                            });
+                    });
                 });
             })
             ->select('*');
