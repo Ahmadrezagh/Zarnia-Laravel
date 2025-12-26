@@ -159,7 +159,9 @@ class Category extends Model implements HasMedia
             'complementary_products',
             'source_id',
             'target_id'
-        )->wherePivot('target_type', Product::class);
+        )
+            ->wherePivot('source_type', self::class)
+            ->wherePivot('target_type', Product::class);
     }
 
     // Category → categories (optional, if you also want category-category)
@@ -171,7 +173,9 @@ class Category extends Model implements HasMedia
             'complementary_products',
             'source_id',
             'target_id'
-        )->wherePivot('target_type', Category::class);
+        )
+            ->wherePivot('source_type', self::class)
+            ->wherePivot('target_type', Category::class);
     } public function relatedProducts(): MorphToMany
     {
         return $this->morphToMany(
@@ -180,7 +184,9 @@ class Category extends Model implements HasMedia
             'related_products',
             'source_id',
             'target_id'
-        )->wherePivot('target_type', Product::class);
+        )
+            ->wherePivot('source_type', self::class)
+            ->wherePivot('target_type', Product::class);
     }
 
     // Category → categories (optional, if you also want category-category)
@@ -192,7 +198,9 @@ class Category extends Model implements HasMedia
             'related_products',
             'source_id',
             'target_id'
-        )->wherePivot('target_type', Category::class);
+        )
+            ->wherePivot('source_type', self::class)
+            ->wherePivot('target_type', Category::class);
     }
 
 
@@ -204,7 +212,9 @@ class Category extends Model implements HasMedia
             'related_products',
             'source_id',
             'target_id'
-        )->wherePivot('target_type', Product::class);
+        )
+            ->wherePivot('source_type', self::class)
+            ->wherePivot('target_type', Product::class);
     }
     
     /**
@@ -284,7 +294,9 @@ class Category extends Model implements HasMedia
             'complementary_products',
             'source_id',
             'target_id'
-        )->wherePivot('target_type', Product::class);
+        )
+            ->wherePivot('source_type', self::class)
+            ->wherePivot('target_type', Product::class);
     }
 
     // Related products via category links
@@ -296,7 +308,9 @@ class Category extends Model implements HasMedia
             'complementary_products',
             'source_id',
             'target_id'
-        )->wherePivot('target_type', Category::class)
+        )
+            ->wherePivot('source_type', self::class)
+            ->wherePivot('target_type', Category::class)
             ->with('products'); // Eager load category → products
     }
 
