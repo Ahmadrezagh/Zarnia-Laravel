@@ -107,7 +107,7 @@ class ProductController extends Controller
         
         // Get related products - filter by single_count >= 1 and has image
         $relatedProducts = $product->relatedProducts()
-            ->where('count','>=',1)
+            ->where('single_count','>=',1)
             ->take(15);
 
         // Get complementary products - filter by single_count >= 1 and has image
