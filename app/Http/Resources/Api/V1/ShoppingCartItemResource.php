@@ -15,6 +15,7 @@ class ShoppingCartItemResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'product' => $this->product->name,
             'product_slug' => $this->product->slug,
             'product_weight' => $this->product->weight ?? 0,
@@ -24,6 +25,12 @@ class ShoppingCartItemResource extends JsonResource
             'total_price' => ($this->product->price * $this->count),
             'item_price_formatted' => number_format($this->product->price),
             'total_price_formatted' => number_format($this->product->price * $this->count),
+            'etiket' => $this->etiket ? [
+                'id' => $this->etiket->id,
+                'code' => $this->etiket->code,
+                'name' => $this->etiket->name,
+                'weight' => $this->etiket->weight,
+            ] : null,
         ];
     }
 }

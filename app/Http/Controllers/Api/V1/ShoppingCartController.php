@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\ShoppingCartResource;
+use App\Models\Etiket;
 use App\Models\Product;
 use App\Models\ShoppingCartItem;
 use Illuminate\Http\Request;
@@ -14,12 +15,13 @@ class ShoppingCartController extends Controller
     {
         $user = auth()->user();
 
-        $product = Product::findBySlug($product_slug);
+        $product = Product::where('slug', $product_slug)->first();
         if (!$product) {
             return response()->json([
                 'message' => 'محصول یافت نشد'
             ], 404);
         }
+
         // Check if product is out of stock (unless orderable_after_out_of_stock is true)
         if ($product->SingleCount <= 0 && !($product->orderable_after_out_of_stock ?? false)) {
             return response()->json([
@@ -27,76 +29,70 @@ class ShoppingCartController extends Controller
             ], 400);
         }
 
-        // Check if user already has a shopping cart item with a different product
-        $existingItem = ShoppingCartItem::query()
+        // Get all etiket IDs already in user's cart for this product
+        $cartEtiketIds = ShoppingCartItem::query()
             ->where('user_id', $user->id)
-            ->where('product_id', '!=', $product->id)
+            ->where('product_id', $product->id)
+            ->whereNotNull('etiket_id')
+            ->pluck('etiket_id')
+            ->toArray();
+
+        // Find an available etiket that is not already in cart
+        // First check direct etikets, then check children's etikets
+        $availableEtiket = Etiket::query()
+            ->where('product_id', $product->id)
+            ->where('is_mojood', 1)
+            ->whereNotIn('id', $cartEtiketIds)
             ->first();
 
+        // If no direct etiket found and product has children, check children's etikets
+        if (!$availableEtiket && $product->children()->exists()) {
+            $childrenProductIds = $product->children()->pluck('id')->toArray();
+            $availableEtiket = Etiket::query()
+                ->whereIn('product_id', $childrenProductIds)
+                ->where('is_mojood', 1)
+                ->whereNotIn('id', $cartEtiketIds)
+                ->first();
+        }
 
-        $item = ShoppingCartItem::query()
-            ->firstOrCreate(
-                [
-                    'product_id' => $product->id,
-                    'user_id' => $user->id,
-                ],
-                [
-                    'count' => 0 // applies only on creation
-                ]
-            );
-
-
-        // Check if adding one more exceeds stock (unless orderable_after_out_of_stock is true)
-        if (!$product->orderable_after_out_of_stock && $item->count + 1 > $product->SingleCount) {
+        if (!$availableEtiket) {
             return response()->json([
-                'message' => 'میزان درخواست شما بیشتر از موجودی انبار می باشد'
+                'message' => 'هیچ اتیکت موجودی برای این محصول یافت نشد'
             ], 400);
         }
 
-        $item->increment('count');
+        // Create a new cart item for this etiket (each etiket gets a separate row)
+        ShoppingCartItem::create([
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'etiket_id' => $availableEtiket->id,
+            'count' => 1
+        ]);
 
-        return ShoppingCartResource::make([], $user->shoppingCartItems);
+        return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiket')->get());
     }
 
 
-    public function minus(Product $product)
+    public function remove($id)
     {
         $user = auth()->user();
 
+        // Remove by cart item ID
         $item = ShoppingCartItem::query()
             ->where('user_id', $user->id)
-            ->where('product_id', $product->id)
-            ->first();
-
-        if ($item) {
-            if ($item->count > 1) {
-                $item->decrement('count');
-            } else {
-                $item->delete();
-            }
-        }
-
-        return ShoppingCartResource::make([],$user->shoppingCartItems);
-    }
-    public function remove(Product $product)
-    {
-        $user = auth()->user();
-
-        $item = ShoppingCartItem::query()
-            ->where('user_id', $user->id)
-            ->where('product_id', $product->id)
+            ->where('id', $id)
             ->first();
 
         if ($item) {
             $item->delete();
         }
 
-        return ShoppingCartResource::make([],$user->shoppingCartItems);
+        return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiket')->get());
     }
 
     public function index()
     {
         $user = auth()->user();
-        return ShoppingCartResource::make([],$user->shoppingCartItems);
+        return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiket')->get());
     }
 }

@@ -36,7 +36,8 @@ class ShoppingCartResource extends JsonResource
     {
         $price = 0;
         foreach ($this->items as $item) {
-            $price = $price + ( $item->product->price * $item->count );
+            // Since each cart item now represents one etiket, count is always 1
+            $price = $price + $item->product->price;
         }
         return $price;
     }

@@ -13,6 +13,7 @@ class ShoppingCartItem extends Model
     protected $fillable = [
         'user_id',
         'product_id',
+        'etiket_id',
         'count'
     ];
 
@@ -24,5 +25,10 @@ class ShoppingCartItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function etiket()
+    {
+        return $this->belongsTo(Etiket::class);
     }
 }
