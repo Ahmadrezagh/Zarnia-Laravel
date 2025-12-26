@@ -1010,11 +1010,13 @@ class Product extends Model implements HasMedia
         $related = $related->concat($this->complementaryProductsDirect()->get());
 
         // 2️⃣ Products from complementary categories
-        $related = $related->concat(
-            $this->complementaryProductsViaCategories()
-                ->get()
-                ->flatMap(fn ($category) => $category->products)
-        );
+        $complementaryCategories = $this->complementaryProductsViaCategories()->get();
+        foreach ($complementaryCategories as $category) {
+            if (!$category->relationLoaded('products')) {
+                $category->load('products');
+            }
+            $related = $related->concat($category->products);
+        }
 
         // 3️⃣ Products from this product's categories → direct complementary products
         $related = $related->concat(
@@ -1025,14 +1027,15 @@ class Product extends Model implements HasMedia
         );
 
         // 4️⃣ Products from this product's categories → complementary categories → products
-        $related = $related->concat(
-            $this->categories()
-                ->with('complementaryProductsViaCategories.products')
-                ->get()
-                ->flatMap(fn ($category) =>
-                $category->complementaryProductsViaCategories->flatMap(fn ($cat) => $cat->products)
-                )
-        );
+        $categories = $this->categories()->with('complementaryProductsViaCategories')->get();
+        foreach ($categories as $category) {
+            foreach ($category->complementaryProductsViaCategories as $complementaryCat) {
+                if (!$complementaryCat->relationLoaded('products')) {
+                    $complementaryCat->load('products');
+                }
+                $related = $related->concat($complementaryCat->products);
+            }
+        }
 
         // Remove duplicates & keep order
         return $related->unique('id')->values();
