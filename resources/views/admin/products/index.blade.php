@@ -10,7 +10,8 @@
 
     <x-page>
         <x-slot name="header">
-            <button class="btn btn-success mb-3"  type="button" onclick="createProduct()" >افزودن محصول</button>
+            <button class="btn btn-warning mb-3"  type="button" onclick="createGoldProduct()" >افزودن محصول طلا</button>
+            <button class="btn btn-info mb-3"  type="button" onclick="createNonGoldProduct()" >افزودن محصول غیر طلا</button>
             <button class="btn btn-primary mb-3"  type="button" onclick="createAssembledProduct()" >افزودن محصول جامع</button>
 
             <div class="row mb-3">
@@ -526,13 +527,11 @@
             });
         }
 
-        function createProduct(){
-            eraseModalContent()
-            $('#dynamic-modal-title').text('ایجاد محصول جدید')
-            
+        // Function to generate gold product creation modal HTML
+        function getGoldProductCreationModalHTML() {
             const categoryOptions = '@foreach($categories as $category) <option value="{{$category->id}}" >{{$category->title}}</option> @endforeach'
             
-            const modalContent = `
+            return `
                 <form id="create-product-form" action="{{route('products.store')}}" method="POST" enctype="multipart/form-data">
                     {{ csrf_field() }}
                     
@@ -586,48 +585,53 @@
                                 <small class="form-text text-muted">در صورت نیاز به ایجاد محصول زیرمجموعه، محصول والد را انتخاب کنید</small>
                             </div>
                             
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="product-weight" class="font-weight-bold">وزن (گرم) <span class="text-danger">*</span></label>
-                                        <div class="input-group">
-                                            <input type="number" class="form-control" id="product-weight" name="weight" step="0.01" required placeholder="وزن را وارد کنید">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text">گرم</span>
+                            <div id="gold-product-fields">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="product-weight" class="font-weight-bold">وزن (گرم) <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="product-weight" name="weight" step="0.01" placeholder="وزن را وارد کنید">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text">گرم</span>
+                                                </div>
+                                            </div>
+                                            <small class="form-text text-muted">وزن را وارد کنید و با Enter تایید کنید</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="product-price" class="font-weight-bold">قیمت (تومان)</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="product-price" name="price" placeholder="قیمت محصول">
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-primary" id="calculate-price-btn" onclick="calculateTabanGoharPrice()">
+                                                        <i class="fas fa-calculator"></i> محاسبه قیمت
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                        <small class="form-text text-muted">وزن را وارد کنید و با Enter تایید کنید</small>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="product-price" class="font-weight-bold">قیمت (تومان)</label>
-                                        <div class="input-group">
-                                            <input type="number" class="form-control" id="product-price" name="price" placeholder="قیمت محصول">
-                                            <div class="input-group-append">
-                                                <button type="button" class="btn btn-primary" id="calculate-price-btn" onclick="calculateTabanGoharPrice()">
-                                                    <i class="fas fa-calculator"></i> محاسبه قیمت
-                                                </button>
-                                            </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="darsad-kharid" class="font-weight-bold">اجرت خرید (%)</label>
+                                            <input type="number" class="form-control" id="darsad-kharid" name="darsad_kharid" step="0.01" placeholder="درصد اجرت خرید">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="ojrat" class="font-weight-bold">اجرت فروش (%)</label>
+                                            <input type="number" class="form-control" id="ojrat" name="ojrat" step="0.01" placeholder="درصد اجرت فروش">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="darsad-kharid" class="font-weight-bold">اجرت خرید (%)</label>
-                                        <input type="number" class="form-control" id="darsad-kharid" name="darsad_kharid" step="0.01" placeholder="درصد اجرت خرید">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="ojrat" class="font-weight-bold">اجرت فروش (%)</label>
-                                        <input type="number" class="form-control" id="ojrat" name="ojrat" step="0.01" placeholder="درصد اجرت فروش">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
+                                <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="discount-percentage" class="font-weight-bold">درصد تخفیف (%)</label>
                                         <input type="number" class="form-control" id="discount-percentage" name="discount_percentage" step="0.01" placeholder="درصد تخفیف">
@@ -676,9 +680,126 @@
                     </div>
                 </form>
             `;
+        }
+        
+        // Function to generate non-gold product creation modal HTML
+        function getNonGoldProductCreationModalHTML() {
+            const categoryOptions = '@foreach($categories as $category) <option value="{{$category->id}}" >{{$category->title}}</option> @endforeach'
             
-            appendToModalContent(modalContent);
-            
+            return `
+                <form id="create-product-form" action="{{route('products.store')}}" method="POST" enctype="multipart/form-data">
+                    {{ csrf_field() }}
+                    <input type="hidden" name="is_not_gold_product" value="1">
+                    
+                    <div class="row">
+                        <!-- Left Column: Image Upload Section -->
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">تصویر اصلی محصول</label>
+                                <div class="image-upload-container mb-3">
+                                    <div class="image-preview-large" id="cover-image-preview" style="width: 100%; height: 250px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <div class="text-center">
+                                            <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                                            <p class="text-muted mb-0">برای آپلود تصویر کلیک کنید</p>
+                                        </div>
+                                        <input type="file" id="cover-image-input" name="cover_image" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewCoverImage(this)">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="font-weight-bold">گالری تصاویر</label>
+                                <div class="gallery-preview-container d-flex gap-2 mb-2">
+                                    <div class="gallery-item-preview" id="gallery-preview-1" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <i class="fas fa-plus text-muted"></i>
+                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 1)">
+                                    </div>
+                                    <div class="gallery-item-preview" id="gallery-preview-2" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <i class="fas fa-plus text-muted"></i>
+                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 2)">
+                                    </div>
+                                    <div class="gallery-item-preview" id="gallery-preview-3" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
+                                        <i class="fas fa-plus text-muted"></i>
+                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 3)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column: Form Fields -->
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="product-name" class="font-weight-bold">نام محصول <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="product-name" name="name" required placeholder="مثال: جعبه طلا">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="parent-product" class="font-weight-bold">محصول والد (اختیاری)</label>
+                                <select name="parent_id" id="parent-product" class="form-control">
+                                    <option value="">-- انتخاب محصول والد --</option>
+                                </select>
+                                <small class="form-text text-muted">در صورت نیاز به ایجاد محصول زیرمجموعه، محصول والد را انتخاب کنید</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product-price-non-gold" class="font-weight-bold">قیمت (تومان) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="product-price-non-gold" name="price" placeholder="قیمت محصول" step="0.01" required>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="discount-percentage" class="font-weight-bold">درصد تخفیف (%)</label>
+                                        <input type="number" class="form-control" id="discount-percentage" name="discount_percentage" step="0.01" placeholder="درصد تخفیف">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product-categories" class="font-weight-bold">دسته بندی <span class="text-danger">*</span></label>
+                                <select name="category_ids[]" id="product-categories" class="form-control" multiple required>
+                                    ${categoryOptions}
+                                </select>
+                                <small class="form-text text-muted">حداقل یک دسته بندی باید انتخاب شود</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="attribute-group" class="font-weight-bold">گروه ویژگی</label>
+                                <input type="text" class="form-control" id="attribute-group" name="attribute_group" placeholder="نام گروه ویژگی را وارد کنید">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product-description" class="font-weight-bold">توضیحات</label>
+                                <textarea class="form-control" id="product-description" name="description" rows="3" placeholder="توضیحات محصول"></textarea>
+                            </div>
+                            
+                            <!-- Etikets Section -->
+                            <div class="form-group mt-4">
+                                <label class="font-weight-bold">اتیکت‌ها</label>
+                                <div id="etikets-list" class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                    <p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-info mt-2" onclick="addEtiket()">
+                                    <i class="fas fa-plus"></i> افزودن اتیکت
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-save"></i> ایجاد محصول
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" data-dismiss="modal">
+                            انصراف
+                        </button>
+                    </div>
+                </form>
+            `;
+        }
+        
+        // Function to initialize gold product creation modal
+        function initializeGoldProductCreationModal() {
             // Remove any existing event listeners to prevent duplicates
             $('#dynamic-modal').off('shown.bs.modal.createProduct');
             
@@ -811,16 +932,99 @@
                     }
                 });
             });
+        }
+        
+        // Function to initialize non-gold product creation modal
+        function initializeNonGoldProductCreationModal() {
+            // Remove any existing event listeners to prevent duplicates
+            $('#dynamic-modal').off('shown.bs.modal.createNonGoldProduct');
             
-            // Show modal and trigger the event
-            showDynamicModal();
-            
-            // Trigger the event if modal is already shown
-            setTimeout(function() {
-                if ($('#dynamic-modal').hasClass('show')) {
-                    $('#dynamic-modal').trigger('shown.bs.modal.createProduct');
+            // Wait for modal to be shown and DOM to be ready
+            $('#dynamic-modal').on('shown.bs.modal.createNonGoldProduct', function() {
+                // Destroy existing Select2 instances if any
+                if ($('#product-categories').hasClass('select2-hidden-accessible')) {
+                    $('#product-categories').select2('destroy');
                 }
-            }, 300);
+                if ($('#parent-product').hasClass('select2-hidden-accessible')) {
+                    $('#parent-product').select2('destroy');
+                }
+                
+                // Initialize Select2 for categories
+                $('#product-categories').select2({
+                    placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#dynamic-modal')
+                });
+                
+                // Initialize Select2 for parent product
+                $('#parent-product').select2({
+                    placeholder: 'جستجو و انتخاب محصول والد',
+                    allowClear: true,
+                    width: '100%',
+                    minimumInputLength: 1,
+                    dropdownParent: $('#dynamic-modal'),
+                    language: {
+                        inputTooShort: function() {
+                            return 'حداقل 1 کاراکتر وارد کنید';
+                        },
+                        noResults: function() {
+                            return 'نتیجه‌ای یافت نشد';
+                        },
+                        searching: function() {
+                            return 'در حال جستجو...';
+                        }
+                    },
+                    ajax: {
+                        url: '{{ route("products.ajax.search") }}',
+                        dataType: 'json',
+                        type: 'GET',
+                        delay: 250,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        data: function (params) {
+                            return {
+                                q: params.term || '',
+                                available_only: '0'
+                            };
+                        },
+                        processResults: function (data) {
+                            let results = [];
+                            if (data && data.results && Array.isArray(data.results)) {
+                                results = data.results;
+                            } else if (Array.isArray(data)) {
+                                results = data;
+                            } else if (data && data.data && Array.isArray(data.data)) {
+                                results = data.data;
+                            }
+                            
+                            const products = results.filter(function(item) {
+                                if (!item || !item.id) return false;
+                                const itemId = item.id.toString();
+                                return itemId.startsWith('Product:');
+                            });
+                            
+                            return {
+                                results: products.map(function(item) {
+                                    const productId = item.id.toString().replace('Product:', '');
+                                    return {
+                                        id: productId,
+                                        text: item.text || item.name || 'محصول'
+                                    };
+                                })
+                            };
+                        },
+                        cache: true
+                    }
+                });
+            });
+        }
+        
+        // Function to setup product creation form submission
+        function setupProductCreationFormSubmission() {
+            // Remove any existing handlers to prevent duplicates
+            $('#create-product-form').off('submit');
             
             // Handle form submission
             $('#create-product-form').on('submit', function(e) {
@@ -838,6 +1042,34 @@
                     $('#product-categories').next('.invalid-feedback').remove();
                 }
                 
+                // Validate weight for gold products (if weight field exists)
+                if ($('#product-weight').length > 0) {
+                    const weight = $('#product-weight').val();
+                    if (!weight || parseFloat(weight) <= 0) {
+                        $('#product-weight').addClass('is-invalid');
+                        $('#product-weight').next('.invalid-feedback').remove();
+                        $('#product-weight').after('<div class="invalid-feedback">وزن برای محصولات طلایی الزامی است</div>');
+                        return false;
+                    } else {
+                        $('#product-weight').removeClass('is-invalid');
+                        $('#product-weight').next('.invalid-feedback').remove();
+                    }
+                }
+                
+                // Validate price for non-gold products (if non-gold price field exists)
+                if ($('#product-price-non-gold').length > 0) {
+                    const nonGoldPrice = $('#product-price-non-gold').val();
+                    if (!nonGoldPrice || parseFloat(nonGoldPrice) <= 0) {
+                        $('#product-price-non-gold').addClass('is-invalid');
+                        $('#product-price-non-gold').next('.invalid-feedback').remove();
+                        $('#product-price-non-gold').after('<div class="invalid-feedback">قیمت برای محصولات غیر طلایی الزامی است</div>');
+                        return false;
+                    } else {
+                        $('#product-price-non-gold').removeClass('is-invalid');
+                        $('#product-price-non-gold').next('.invalid-feedback').remove();
+                    }
+                }
+                
                 const formData = new FormData();
                 
                 // Add all form fields except files
@@ -852,7 +1084,11 @@
                                 formData.append(name, $field.val());
                             }
                         } else if (type !== 'file') {
-                            if ($field.val()) {
+                            const id = $field.attr('id');
+                            // Handle price field - use non-gold price if it exists
+                            if (id === 'product-price-non-gold') {
+                                formData.append('price', $field.val());
+                            } else if (id !== 'product-price-non-gold' && $field.val()) {
                                 formData.append(name, $field.val());
                             }
                         }
@@ -911,8 +1147,58 @@
                     }
                 });
             });
+        }
+        
+        // Function to create gold product
+        function createGoldProduct(){
+            eraseModalContent();
+            $('#dynamic-modal-title').text('ایجاد محصول طلا');
             
+            // Get modal HTML
+            const modalContent = getGoldProductCreationModalHTML();
+            appendToModalContent(modalContent);
+            
+            // Initialize modal
+            initializeGoldProductCreationModal();
+            
+            // Setup form submission
+            setupProductCreationFormSubmission();
+            
+            // Show modal and trigger the event
             showDynamicModal();
+            
+            // Trigger the event if modal is already shown
+            setTimeout(function() {
+                if ($('#dynamic-modal').hasClass('show')) {
+                    $('#dynamic-modal').trigger('shown.bs.modal.createProduct');
+                }
+            }, 300);
+        }
+        
+        // Function to create non-gold product
+        function createNonGoldProduct(){
+            eraseModalContent();
+            $('#dynamic-modal-title').text('ایجاد محصول غیر طلا');
+            
+            // Get modal HTML
+            const modalContent = getNonGoldProductCreationModalHTML();
+            appendToModalContent(modalContent);
+            
+            // Initialize modal
+            initializeNonGoldProductCreationModal();
+            
+            // Setup form submission
+            setupProductCreationFormSubmission();
+            
+            // Show modal and trigger the event
+            showDynamicModal();
+            
+            // Trigger the event if modal is already shown
+            setTimeout(function() {
+                if ($('#dynamic-modal').hasClass('show')) {
+                    $('#dynamic-modal').trigger('shown.bs.modal.createNonGoldProduct');
+                }
+            }, 300);
         }
         
         // Helper functions for product creation modal

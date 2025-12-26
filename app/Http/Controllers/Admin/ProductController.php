@@ -82,12 +82,15 @@ class ProductController extends Controller
         try {
             $validated = $request->validated();
             
+            // Check if it's a non-gold product
+            $isNotGoldProduct = $request->input('is_not_gold_product') == '1';
+            
             // Prepare product data
             $productData = [
                 'name' => $validated['name'],
-                'weight' => $validated['weight'],
-                'darsad_kharid' => $validated['darsad_kharid'] ?? null,
-                'ojrat' => $validated['ojrat'] ?? null,
+                'weight' => $isNotGoldProduct ? null : ($validated['weight'] ?? null),
+                'darsad_kharid' => $isNotGoldProduct ? null : ($validated['darsad_kharid'] ?? null),
+                'ojrat' => $isNotGoldProduct ? null : ($validated['ojrat'] ?? null),
                 'discount_percentage' => $validated['discount_percentage'] ?? 0, // Set to 0 if null
                 'description' => $validated['description'] ?? null,
                 'parent_id' => $request->input('parent_id') ? (int)$request->input('parent_id') : null,
@@ -97,8 +100,16 @@ class ProductController extends Controller
             if (isset($validated['price']) && $validated['price'] > 0) {
                 $productData['price'] = $validated['price'] * 10;
             } else {
-                // Calculate price from taban gohar if not provided
-                $productData['price'] = 0;
+                if ($isNotGoldProduct) {
+                    // Non-gold products must have a price
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'قیمت برای محصولات غیر طلایی الزامی است'
+                    ], 422);
+                } else {
+                    // Calculate price from taban gohar if not provided (for gold products)
+                    $productData['price'] = 0;
+                }
             }
             
             // Handle attribute group
@@ -112,8 +123,8 @@ class ProductController extends Controller
             // Create the product
             $product = Product::create($productData);
             
-            // If price was 0, calculate from taban gohar
-            if ($productData['price'] == 0) {
+            // If price was 0 and it's a gold product, calculate from taban gohar
+            if ($productData['price'] == 0 && !$isNotGoldProduct) {
                 $product->refresh();
                 $tabanGoharPrice = $product->taban_gohar_price;
                 if ($tabanGoharPrice > 0) {
@@ -168,7 +179,7 @@ class ProductController extends Controller
                     Etiket::create([
                         'code' => $code,
                         'name' => $product->name,
-                        'weight' => $product->weight,
+                        'weight' => $product->weight ?? 0, // Use 0 for non-gold products
                         'price' => $product->getRawOriginal('price'),
                         'product_id' => $product->id,
                         'ojrat' => $product->ojrat ?? null,
