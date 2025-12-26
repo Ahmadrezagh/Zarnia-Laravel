@@ -123,10 +123,10 @@
             $jalali = \Morilog\Jalali\Jalalian::forge($order->shipping_date);
             $day_of_week = \Carbon\Carbon::parse($order->shipping_date)->dayOfWeek;
             $shippingDateText = $jalali->format('Y/m/d') . ' (' . $persian_day_names[$day_of_week] . ')';
-            $shippingTimeTitle = $shippingDateText . ' - ' . $shippingTimeTitle;
+            $shipping = $shipping . "\n" . $shippingDateText . "\n" . $shippingTimeTitle;
+        } else {
+            $shipping = $shipping . "\n" . $shippingTimeTitle;
         }
-        
-        $shipping = $shipping.' - '.$shippingTimeTitle;
     }
     $gatewayName = $order->gateway->name ?? ($order->gateway->title ?? '');
 
