@@ -78,12 +78,18 @@ class EtiketObserver
                 $product = Product::create([
                     'name' => $etiket->name,
                     'weight' => $etiket->weight,
-                    'price' => $etiket->price,
                     'ojrat' => $etiket->ojrat,
                     'darsad_kharid' => $etiket->darsad_kharid,
                     'mazaneh' => $etiket->mazaneh,
                     'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
                 ]);
+
+                // Update price with tabanGoharPrice after creation
+                $product->refresh();
+                $tabanGoharPrice = $product->taban_gohar_price;
+                if ($tabanGoharPrice > 0) {
+                    $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
+                }
 
                 $etiket->updateQuietly([
                     'product_id' => $product->id,
@@ -128,8 +134,14 @@ class EtiketObserver
                 'darsad_kharid' => $etiket->darsad_kharid,
                 'mazaneh' => $etiket->mazaneh,
                 'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
-                'price' => $etiket->price
             ]);
+
+            // Update price with tabanGoharPrice after update
+            $product->refresh();
+            $tabanGoharPrice = $product->taban_gohar_price;
+            if ($tabanGoharPrice > 0) {
+                $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
+            }
 
             $etiket->updateQuietly([
                 'product_id' => $product->id,
@@ -159,8 +171,14 @@ class EtiketObserver
                 $product->darsad_kharid = $etiket->darsad_kharid;
                 $product->mazaneh = $etiket->mazaneh;
                 $product->darsad_vazn_foroosh = $etiket->darsad_vazn_foroosh;
-                $product->price = $etiket->price;
                 $product->save();
+
+                // Update price with tabanGoharPrice after creation
+                $product->refresh();
+                $tabanGoharPrice = $product->taban_gohar_price;
+                if ($tabanGoharPrice > 0) {
+                    $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
+                }
 
                 $etiket->updateQuietly([
                     'product_id' => $product->id,
@@ -180,12 +198,18 @@ class EtiketObserver
                 $newProduct = Product::create([
                     'name' => $etiket->name,
                     'weight' => $etiket->weight,
-                    'price' => $etiket->price,
                     'ojrat' => $etiket->ojrat,
                     'darsad_kharid' => $etiket->darsad_kharid,
                     'mazaneh' => $etiket->mazaneh,
                     'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
                 ]);
+
+                // Update price with tabanGoharPrice after creation
+                $newProduct->refresh();
+                $tabanGoharPrice = $newProduct->taban_gohar_price;
+                if ($tabanGoharPrice > 0) {
+                    $newProduct->updateQuietly(['price' => $tabanGoharPrice * 10]);
+                }
 
                 $etiket->updateQuietly([
                     'product_id' => $newProduct->id,
