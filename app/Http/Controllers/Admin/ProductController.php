@@ -88,7 +88,7 @@ class ProductController extends Controller
                 'weight' => $validated['weight'],
                 'darsad_kharid' => $validated['darsad_kharid'] ?? null,
                 'ojrat' => $validated['ojrat'] ?? null,
-                'discount_percentage' => $validated['discount_percentage'] ?? null,
+                'discount_percentage' => $validated['discount_percentage'] ?? 0, // Set to 0 if null
                 'description' => $validated['description'] ?? null,
                 'parent_id' => $request->input('parent_id') ? (int)$request->input('parent_id') : null,
             ];
@@ -143,21 +143,40 @@ class ProductController extends Controller
                 $product->categories()->sync($request->category_ids);
             }
             
-            // Handle etikets
+            // Handle etikets - auto-generate with product details
             if ($request->has('etikets') && is_array($request->etikets)) {
+                $etiketCodes = [];
                 foreach ($request->etikets as $etiketData) {
-                    if (!empty($etiketData['code']) || !empty($etiketData['label'])) {
-                        Etiket::create([
-                            'code' => $etiketData['code'] ?? '',
-                            'name' => $product->name,
-                            'weight' => $product->weight,
-                            'price' => $product->getRawOriginal('price'),
-                            'product_id' => $product->id,
-                            'ojrat' => $product->ojrat,
-                            'darsad_kharid' => $product->darsad_kharid,
-                            'is_mojood' => 1,
-                        ]);
+                    $code = trim($etiketData['code'] ?? '');
+                    
+                    if (empty($code)) {
+                        continue; // Skip empty codes
                     }
+                    
+                    // Check for duplicate in current batch
+                    if (in_array($code, $etiketCodes)) {
+                        continue; // Skip duplicates in same batch
+                    }
+                    
+                    // Check for duplicate in database
+                    $existingEtiket = Etiket::where('code', $code)->first();
+                    if ($existingEtiket) {
+                        continue; // Skip if code already exists in database
+                    }
+                    
+                    // Create etiket with product details
+                    Etiket::create([
+                        'code' => $code,
+                        'name' => $product->name,
+                        'weight' => $product->weight,
+                        'price' => $product->getRawOriginal('price'),
+                        'product_id' => $product->id,
+                        'ojrat' => $product->ojrat ?? null,
+                        'darsad_kharid' => $product->darsad_kharid ?? null,
+                        'is_mojood' => 1,
+                    ]);
+                    
+                    $etiketCodes[] = $code; // Track added codes
                 }
             }
             
@@ -1300,46 +1319,31 @@ class ProductController extends Controller
      */
     public function searchByEtiketCode(Request $request)
     {
-        $etiketCode = $request->input('etiket_code');
+        $etiketCode = $request->input('etiket_code') ?? $request->input('code');
         
         if (empty($etiketCode)) {
             return response()->json([
                 'success' => false,
+                'exists' => false,
                 'message' => 'کد اتیکت الزامی است'
             ], 400);
         }
 
-        // Find etiket by code
-        $etiket = \App\Models\Etiket::where('code', $etiketCode)
-            ->where('is_mojood', 1)
-            ->with('product')
-            ->first();
+        // Check if etiket code exists
+        $etiket = \App\Models\Etiket::where('code', $etiketCode)->first();
 
-        if (!$etiket || !$etiket->product) {
+        if ($etiket) {
             return response()->json([
-                'success' => false,
-                'message' => 'محصولی با این کد اتیکت یافت نشد'
-            ], 404);
+                'success' => true,
+                'exists' => true,
+                'message' => 'این کد اتیکت در پایگاه داده موجود است'
+            ]);
         }
-
-        $product = $etiket->product;
-        $singleCount = $product->single_count;
-        $finalPrice = (int) $product->price;
-        $originalPrice = (int) $product->originalPrice;
-        $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
 
         return response()->json([
             'success' => true,
-            'product' => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $finalPrice,
-                'discounted_price' => $discountedPrice,
-                'original_price' => $originalPrice,
-                'single_count' => $singleCount,
-                'weight' => $product->weight,
-                'etiket_code' => $etiketCode
-            ]
+            'exists' => false,
+            'message' => 'کد اتیکت موجود نیست'
         ]);
     }
 

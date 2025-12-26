@@ -636,10 +636,11 @@
                             </div>
                             
                             <div class="form-group">
-                                <label for="product-categories" class="font-weight-bold">دسته بندی</label>
-                                <select name="category_ids[]" id="product-categories" class="form-control" multiple>
+                                <label for="product-categories" class="font-weight-bold">دسته بندی <span class="text-danger">*</span></label>
+                                <select name="category_ids[]" id="product-categories" class="form-control" multiple required>
                                     ${categoryOptions}
                                 </select>
+                                <small class="form-text text-muted">حداقل یک دسته بندی باید انتخاب شود</small>
                             </div>
                             
                             <div class="form-group">
@@ -700,17 +701,10 @@
                     
                     // Update price field (price is stored divided by 10, so we show the actual price)
                     $('#product-price').val(calculatedPrice);
-                    
-                    // Show success message
-                    toastr.success('قیمت با موفقیت محاسبه شد: ' + calculatedPrice.toLocaleString('fa-IR') + ' تومان');
                 } else {
-                    // Show error if required fields are missing
-                    if (weight === 0) {
-                        toastr.error('لطفاً وزن محصول را وارد کنید');
-                    } else if (ojrat === 0) {
-                        toastr.error('لطفاً درصد اجرت فروش را وارد کنید');
-                    } else if (goldPrice === 0) {
-                        toastr.error('قیمت طلا تنظیم نشده است');
+                    // Clear price if required fields are missing
+                    if (weight === 0 || ojrat === 0) {
+                        $('#product-price').val('');
                     }
                 }
             }
@@ -831,7 +825,70 @@
             // Handle form submission
             $('#create-product-form').on('submit', function(e) {
                 e.preventDefault();
-                const formData = new FormData(this);
+                
+                // Validate category_ids (required)
+                const categoryIds = $('#product-categories').val();
+                if (!categoryIds || categoryIds.length === 0) {
+                    $('#product-categories').addClass('is-invalid');
+                    $('#product-categories').next('.invalid-feedback').remove();
+                    $('#product-categories').after('<div class="invalid-feedback">لطفاً حداقل یک دسته بندی انتخاب کنید</div>');
+                    return false;
+                } else {
+                    $('#product-categories').removeClass('is-invalid');
+                    $('#product-categories').next('.invalid-feedback').remove();
+                }
+                
+                const formData = new FormData();
+                
+                // Add all form fields except files
+                $(this).find('input:not([type="file"]), select, textarea').each(function() {
+                    const $field = $(this);
+                    const name = $field.attr('name');
+                    const type = $field.attr('type');
+                    
+                    if (name) {
+                        if (type === 'checkbox' || type === 'radio') {
+                            if ($field.is(':checked')) {
+                                formData.append(name, $field.val());
+                            }
+                        } else if (type !== 'file') {
+                            if ($field.val()) {
+                                formData.append(name, $field.val());
+                            }
+                        }
+                    }
+                });
+                
+                // Handle multiple select fields (categories - required)
+                $(this).find('select[multiple]').each(function() {
+                    const $select = $(this);
+                    const name = $select.attr('name');
+                    if (name) {
+                        const values = $select.val();
+                        if (values && values.length > 0) {
+                            values.forEach(function(value) {
+                                formData.append(name, value);
+                            });
+                        }
+                    }
+                });
+                
+                // Explicitly add cover image
+                const coverImageInput = document.getElementById('cover-image-input');
+                if (coverImageInput && coverImageInput.files && coverImageInput.files[0]) {
+                    formData.append('cover_image', coverImageInput.files[0]);
+                }
+                
+                // Explicitly add gallery images
+                const galleryInputs = document.querySelectorAll('#create-product-form input[name="gallery[]"]');
+                galleryInputs.forEach(function(input) {
+                    if (input.files && input.files[0]) {
+                        formData.append('gallery[]', input.files[0]);
+                    }
+                });
+                
+                // Add CSRF token
+                formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
                 
                 $.ajax({
                     url: $(this).attr('action'),
@@ -840,22 +897,16 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        toastr.success('محصول با موفقیت ایجاد شد!');
                         $('#dynamic-modal').modal('hide');
                         if (typeof window.refreshTable === 'function') {
                             window.refreshTable();
                         }
                     },
                     error: function(xhr) {
-                        if (xhr.responseJSON && xhr.responseJSON.errors) {
-                            const errors = xhr.responseJSON.errors;
-                            let errorMessage = 'خطا در ایجاد محصول:\\n';
-                            for (let field in errors) {
-                                errorMessage += errors[field][0] + '\\n';
-                            }
-                            toastr.error(errorMessage);
-                        } else {
-                            toastr.error('خطا در ایجاد محصول');
+                        // Silent error handling - no alerts
+                        console.error('Error creating product:', xhr);
+                        if (xhr.responseJSON) {
+                            console.error('Error details:', xhr.responseJSON);
                         }
                     }
                 });
@@ -868,8 +919,26 @@
         function previewCoverImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
+                const $preview = $('#cover-image-preview');
+                const $input = $(input);
+                
                 reader.onload = function(e) {
-                    $('#cover-image-preview').html('<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">');
+                    // Keep the input in DOM, just update the preview
+                    // Remove existing preview content but keep the input
+                    $preview.find('div.text-center, img').remove();
+                    
+                    // Add preview image
+                    $preview.prepend('<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                    
+                    // Ensure input stays in DOM with proper styling
+                    $input.css({
+                        'position': 'absolute',
+                        'width': '100%',
+                        'height': '100%',
+                        'opacity': '0',
+                        'z-index': '10',
+                        'cursor': 'pointer'
+                    });
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -878,18 +947,58 @@
         function previewGalleryImage(input, index) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
+                const $preview = $('#gallery-preview-' + index);
+                const $input = $(input);
+                
                 reader.onload = function(e) {
-                    $('#gallery-preview-' + index).html('<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;"><button type="button" class="btn btn-sm btn-danger" style="position: absolute; top: 2px; right: 2px; padding: 2px 6px;" onclick="removeGalleryImage(' + index + ')"><i class="fas fa-times"></i></button>');
+                    // Keep the input in DOM, just hide it visually
+                    $input.css({
+                        'position': 'absolute',
+                        'width': '100%',
+                        'height': '100%',
+                        'opacity': '0',
+                        'z-index': '10',
+                        'cursor': 'pointer'
+                    });
+                    
+                    // Remove existing preview if any
+                    $preview.find('img.preview-img, button.remove-gallery-btn').remove();
+                    
+                    // Add preview image
+                    $preview.prepend('<img class="preview-img" src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                    
+                    // Add remove button
+                    $preview.append('<button type="button" class="btn btn-sm btn-danger remove-gallery-btn" style="position: absolute; top: 2px; right: 2px; padding: 2px 6px; z-index: 11;" onclick="removeGalleryImage(' + index + ')"><i class="fas fa-times"></i></button>');
+                    
+                    // Hide the plus icon
+                    $preview.find('i.fa-plus').hide();
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
         
         function removeGalleryImage(index) {
-            $('#gallery-preview-' + index).html('<i class="fas fa-plus text-muted"></i><input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, ' + index + ')">');
+            const $preview = $('#gallery-preview-' + index);
+            // Remove preview image and button
+            $preview.find('img.preview-img, button.remove-gallery-btn').remove();
+            // Reset the file input
+            const $input = $preview.find('input[type="file"]');
+            $input.val('');
+            // Reset input styling
+            $input.css({
+                'position': 'absolute',
+                'width': '100%',
+                'height': '100%',
+                'opacity': '0',
+                'cursor': 'pointer'
+            });
+            // Show the plus icon
+            $preview.find('i.fa-plus').show();
         }
         
         let etiketCounter = 0;
+        let insertedEtiketCodes = []; // Track codes in modal
+        
         function addEtiket() {
             etiketCounter++;
             const etiketHtml = '<div class="etiket-item border rounded p-2 mb-2" data-index="' + etiketCounter + '">' +
@@ -904,11 +1013,9 @@
                             '<i class="fas fa-times"></i>' +
                         '</button>' +
                     '</div>' +
-                    '<div class="col-md-3">' +
-                        '<input type="text" class="form-control form-control-sm" name="etikets[' + etiketCounter + '][code]" placeholder="کد اتیکت">' +
-                    '</div>' +
-                    '<div class="col-md-5">' +
-                        '<input type="text" class="form-control form-control-sm" name="etikets[' + etiketCounter + '][label]" placeholder="اتیکت">' +
+                    '<div class="col-md-8">' +
+                        '<input type="text" class="form-control form-control-sm etiket-code-input" name="etikets[' + etiketCounter + '][code]" placeholder="کد اتیکت" data-index="' + etiketCounter + '" onblur="validateEtiketCode(' + etiketCounter + ')">' +
+                        '<small class="text-danger etiket-error" id="etiket-error-' + etiketCounter + '" style="display:none;"></small>' +
                     '</div>' +
                 '</div>' +
             '</div>';
@@ -920,15 +1027,80 @@
         }
         
         function removeEtiket(index) {
-            $('.etiket-item[data-index="' + index + '"]').remove();
+            const etiketItem = $('.etiket-item[data-index="' + index + '"]');
+            const codeInput = etiketItem.find('.etiket-code-input');
+            const code = codeInput.val().trim();
+            
+            // Remove from inserted codes array
+            if (code) {
+                insertedEtiketCodes = insertedEtiketCodes.filter(c => c !== code);
+            }
+            
+            etiketItem.remove();
             if ($('#etikets-list .etiket-item').length === 0) {
                 $('#etikets-list').html('<p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>');
             }
         }
         
+        function validateEtiketCode(index) {
+            const codeInput = $('.etiket-item[data-index="' + index + '"] .etiket-code-input');
+            const errorElement = $('#etiket-error-' + index);
+            const code = codeInput.val().trim();
+            
+            // Clear previous error
+            errorElement.hide().text('');
+            codeInput.removeClass('is-invalid');
+            
+            if (!code) {
+                return true; // Empty is OK
+            }
+            
+            // Check for duplicate in modal
+            let duplicateInModal = false;
+            $('.etiket-code-input').each(function() {
+                const otherIndex = $(this).data('index');
+                if (otherIndex !== index && $(this).val().trim() === code) {
+                    duplicateInModal = true;
+                    return false;
+                }
+            });
+            
+            if (duplicateInModal) {
+                errorElement.text('این کد قبلاً در فرم وارد شده است').show();
+                codeInput.addClass('is-invalid');
+                return false;
+            }
+            
+            // Check for duplicate in database
+            $.ajax({
+                url: '{{ route("products.search.by.etiket") }}',
+                method: 'GET',
+                data: { code: code },
+                success: function(response) {
+                    if (response && response.exists) {
+                        errorElement.text('این کد در پایگاه داده موجود است').show();
+                        codeInput.addClass('is-invalid');
+                    } else {
+                        // Code is valid, add to tracking array
+                        insertedEtiketCodes = insertedEtiketCodes.filter(c => c !== code);
+                        insertedEtiketCodes.push(code);
+                        codeInput.removeClass('is-invalid');
+                    }
+                },
+                error: function() {
+                    // On error, assume it's OK (fail open)
+                    insertedEtiketCodes = insertedEtiketCodes.filter(c => c !== code);
+                    insertedEtiketCodes.push(code);
+                    codeInput.removeClass('is-invalid');
+                }
+            });
+            
+            return true;
+        }
+        
         function printEtiket(index) {
             // Implement print functionality
-            toastr.info('قابلیت چاپ اتیکت به زودی اضافه خواهد شد');
+            console.log('Print etiket:', index);
         }
 
         function createAssembledProduct(){

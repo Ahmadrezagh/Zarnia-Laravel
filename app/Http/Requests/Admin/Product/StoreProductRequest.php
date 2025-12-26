@@ -30,7 +30,7 @@ class StoreProductRequest extends FormRequest
             'ojrat' => 'nullable|numeric|min:0|max:100',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'description' => 'nullable|string',
-            'category_ids' => 'nullable|array',
+            'category_ids' => 'required|array|min:1',
             'category_ids.*' => 'integer|exists:categories,id',
             'attribute_group' => 'nullable|string|max:255',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -38,7 +38,6 @@ class StoreProductRequest extends FormRequest
             'gallery.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'etikets' => 'nullable|array',
             'etikets.*.code' => 'nullable|string|max:255',
-            'etikets.*.label' => 'nullable|string|max:255',
         ];
     }
 
@@ -54,6 +53,9 @@ class StoreProductRequest extends FormRequest
             'weight.required' => 'وزن محصول الزامی است.',
             'weight.numeric' => 'وزن باید عدد باشد.',
             'weight.min' => 'وزن نمی‌تواند منفی باشد.',
+            'category_ids.required' => 'انتخاب دسته بندی الزامی است.',
+            'category_ids.array' => 'دسته بندی باید به صورت آرایه ارسال شود.',
+            'category_ids.min' => 'حداقل یک دسته بندی باید انتخاب شود.',
             'cover_image.image' => 'فایل تصویر کاور باید یک تصویر معتبر باشد.',
             'cover_image.max' => 'حجم تصویر کاور نباید بیشتر از 2 مگابایت باشد.',
             'gallery.*.image' => 'فایل‌های گالری باید تصویر معتبر باشند.',
