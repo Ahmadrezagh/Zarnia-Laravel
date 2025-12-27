@@ -31,7 +31,12 @@ class NajvaService
                 'Name' => $name,
             ];
 
-            $response = Http::post(self::NAJVA_WEBHOOK_URL, $body);
+            // Add Basic Authentication
+            $basicAuth = base64_encode(self::NAJVA_USER . ':' . self::NAJVA_PASS);
+            
+            $response = Http::withHeaders([
+                'Authorization' => 'Basic ' . $basicAuth,
+            ])->post(self::NAJVA_WEBHOOK_URL, $body);
 
             // Log the request and response
             Log::info('Najva webhook sent', [
@@ -73,7 +78,12 @@ class NajvaService
                 'Name' => $name,
             ];
 
-            $response = Http::post(self::NAJVA_WEBHOOK_URL, $body);
+            // Add Basic Authentication
+            $basicAuth = base64_encode(self::NAJVA_USER . ':' . self::NAJVA_PASS);
+            
+            $response = Http::withHeaders([
+                'Authorization' => 'Basic ' . $basicAuth,
+            ])->post(self::NAJVA_WEBHOOK_URL, $body);
 
             Log::info('Najva webhook sent', [
                 'url' => self::NAJVA_WEBHOOK_URL,
