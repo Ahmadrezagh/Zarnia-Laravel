@@ -1340,21 +1340,49 @@ class ProductController extends Controller
             ], 400);
         }
 
-        // Check if etiket code exists
-        $etiket = \App\Models\Etiket::where('code', $etiketCode)->first();
+        // Check if etiket code exists and get product
+        $etiket = \App\Models\Etiket::where('code', $etiketCode)
+            ->with('product')
+            ->first();
 
-        if ($etiket) {
+        if ($etiket && $etiket->product) {
+            $product = $etiket->product;
+            
+            // Check if product is available (single_count >= 1)
+            if ($product->single_count < 1) {
+                return response()->json([
+                    'success' => false,
+                    'exists' => true,
+                    'message' => 'این کد اتیکت موجود است اما محصول در دسترس نیست (موجودی صفر)'
+                ]);
+            }
+            
+            // Get product price (stored multiplied by 10)
+            $rawPrice = $product->getRawOriginal('price') ?? 0;
+            $basePrice = $rawPrice / 10;
+            $discountedPrice = $product->discounted_price ?? null;
+            $originalPrice = $product->originalPrice ?? null;
+            
             return response()->json([
                 'success' => true,
                 'exists' => true,
-                'message' => 'این کد اتیکت در پایگاه داده موجود است'
+                'message' => 'این کد اتیکت در پایگاه داده موجود است',
+                'product' => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => (int) $basePrice,
+                    'discounted_price' => $discountedPrice ? (int) $discountedPrice : null,
+                    'original_price' => $originalPrice ? (int) $originalPrice : null,
+                    'weight' => $product->weight ?? null,
+                    'etiket_code' => $etiketCode
+                ]
             ]);
         }
 
         return response()->json([
-            'success' => true,
+            'success' => false,
             'exists' => false,
-            'message' => 'کد اتیکت موجود نیست'
+            'message' => 'کد اتیکت در پایگاه داده موجود نیست'
         ]);
     }
 
