@@ -711,6 +711,7 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
+                    
                 ]);
             }
         }
