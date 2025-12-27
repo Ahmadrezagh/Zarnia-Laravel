@@ -700,7 +700,19 @@ class OrderController extends Controller
             $order->submitInAccountingApp();
             $order->notifyAdminsNewOrder();
             // Send Najva notifications when order status is updated to paid
-            $order->sendNajvaNotifications();
+            try {
+                \Log::info('Admin OrderController: Calling sendNajvaNotifications', [
+                    'order_id' => $order->id,
+                    'status' => $order->status,
+                ]);
+                $order->sendNajvaNotifications();
+            } catch (\Exception $e) {
+                \Log::error('Admin OrderController: Error calling sendNajvaNotifications', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
         }
         if($request->orderStatus == Order::$STATUSES[3] || $request->orderStatus == Order::$STATUSES[4]){
             return $order->cancelOrder();

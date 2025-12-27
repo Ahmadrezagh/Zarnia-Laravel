@@ -839,61 +839,92 @@ class Order extends Model
      */
     public function sendNajvaNotifications(): void
     {
-        // Load order items with product and user relationships
-        $this->loadMissing('orderItems.product', 'user');
-
-        if (!$this->user || !$this->orderItems || $this->orderItems->isEmpty()) {
-            Log::info('Najva notifications skipped: No user or order items', [
+        try {
+            Log::info('Najva notifications: Starting', [
                 'order_id' => $this->id,
-                'has_user' => !is_null($this->user),
-                'order_items_count' => $this->orderItems ? $this->orderItems->count() : 0,
+                'status' => $this->status,
             ]);
-            return;
-        }
 
-        $najvaService = new NajvaService();
-        $userName = $this->user->name ?? '';
-        $userPhone = $this->user->phone ?? '';
+            // Load order items with product and user relationships
+            $this->loadMissing('orderItems.product', 'user');
 
-        if (empty($userPhone)) {
-            Log::info('Najva notifications skipped: Empty user phone', [
-                'order_id' => $this->id,
-                'user_id' => $this->user_id,
-            ]);
-            return;
-        }
-
-        // Send notification for each product in the order
-        foreach ($this->orderItems as $orderItem) {
-            if ($orderItem->product) {
-                // Build request array
-                $request = [
+            if (!$this->user || !$this->orderItems || $this->orderItems->isEmpty()) {
+                Log::info('Najva notifications skipped: No user or order items', [
                     'order_id' => $this->id,
-                    'order_item_id' => $orderItem->id,
-                    'product_id' => $orderItem->product_id,
-                    'product_name' => $orderItem->product->name ?? null,
-                    'phone_number' => $userPhone,
-                    'user_name' => $userName,
-                    'event' => 'Buy Product',
-                ];
-
-                // Send notification and capture response
-                $response = $najvaService->sendBuyProductNotification(
-                    $userPhone,
-                    $userName,
-                    $orderItem->product_id
-                );
-
-                // Log request and response
-                Log::info('Najva notification sent', [
-                    'request' => $request,
-                    'response' => $response ? [
-                        'status' => $response->status(),
-                        'body' => $response->body(),
-                        'json' => $response->json(),
-                    ] : null,
+                    'has_user' => !is_null($this->user),
+                    'user_id' => $this->user_id,
+                    'order_items_count' => $this->orderItems ? $this->orderItems->count() : 0,
                 ]);
+                return;
             }
+
+            $najvaService = new NajvaService();
+            $userName = $this->user->name ?? '';
+            $userPhone = $this->user->phone ?? '';
+
+            if (empty($userPhone)) {
+                Log::info('Najva notifications skipped: Empty user phone', [
+                    'order_id' => $this->id,
+                    'user_id' => $this->user_id,
+                ]);
+                return;
+            }
+
+            Log::info('Najva notifications: Processing order items', [
+                'order_id' => $this->id,
+                'order_items_count' => $this->orderItems->count(),
+                'user_phone' => $userPhone,
+                'user_name' => $userName,
+            ]);
+
+            // Send notification for each product in the order
+            foreach ($this->orderItems as $orderItem) {
+                if ($orderItem->product) {
+                    // Build request array
+                    $request = [
+                        'order_id' => $this->id,
+                        'order_item_id' => $orderItem->id,
+                        'product_id' => $orderItem->product_id,
+                        'product_name' => $orderItem->product->name ?? null,
+                        'phone_number' => $userPhone,
+                        'user_name' => $userName,
+                        'event' => 'Buy Product',
+                    ];
+
+                    // Send notification and capture response
+                    $response = $najvaService->sendBuyProductNotification(
+                        $userPhone,
+                        $userName,
+                        $orderItem->product_id
+                    );
+
+                    // Log request and response
+                    Log::info('Najva notification sent', [
+                        'request' => $request,
+                        'response' => $response ? [
+                            'status' => $response->status(),
+                            'body' => $response->body(),
+                            'json' => $response->json(),
+                        ] : null,
+                    ]);
+                } else {
+                    Log::warning('Najva notifications: Order item has no product', [
+                        'order_id' => $this->id,
+                        'order_item_id' => $orderItem->id,
+                        'product_id' => $orderItem->product_id,
+                    ]);
+                }
+            }
+
+            Log::info('Najva notifications: Completed', [
+                'order_id' => $this->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Najva notifications: Error occurred', [
+                'order_id' => $this->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 
