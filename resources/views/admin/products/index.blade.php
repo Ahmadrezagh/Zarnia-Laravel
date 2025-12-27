@@ -1873,7 +1873,7 @@
                         console.error('Error creating comprehensive product:', xhr);
                         if (xhr.responseJSON) {
                             console.error('Error details:', xhr.responseJSON);
-                        }
+            }
                     }
                 });
             });
