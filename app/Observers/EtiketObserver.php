@@ -59,7 +59,15 @@ class EtiketObserver
                 $product->darsad_kharid = $etiket->darsad_kharid;
                 $product->mazaneh = $etiket->mazaneh;
                 $product->darsad_vazn_foroosh = $etiket->darsad_vazn_foroosh;
+                $product->price = 0; // Set to 0 initially, will be updated after
                 $product->save();
+
+                // Update price with tabanGoharPrice after creation
+                $product->refresh();
+                $tabanGoharPrice = $product->taban_gohar_price;
+                if ($tabanGoharPrice > 0) {
+                    $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
+                }
 
                 $etiket->updateQuietly([
                     'product_id' => $product->id,
@@ -82,6 +90,7 @@ class EtiketObserver
                     'darsad_kharid' => $etiket->darsad_kharid,
                     'mazaneh' => $etiket->mazaneh,
                     'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
+                    'price' => 0, // Set to 0 initially, will be updated after
                 ]);
 
                 // Update price with tabanGoharPrice after creation
@@ -202,6 +211,7 @@ class EtiketObserver
                     'darsad_kharid' => $etiket->darsad_kharid,
                     'mazaneh' => $etiket->mazaneh,
                     'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
+                    'price' => 0, // Set to 0 initially, will be updated after
                 ]);
 
                 // Update price with tabanGoharPrice after creation
