@@ -49,7 +49,7 @@ class TorobController extends Controller
         $productsQuery = Product::query()
             ->main() // Only main products (parent_id is null)
             ->hasCountAndImage() // Has count >= 1 and has image
-            ->with(['categories', 'etikets']);
+            ->with(['categories', 'etikets', 'children']); // Load children for minimum_available_price
         
         // Get total count before pagination
         $total = $productsQuery->count();
@@ -78,12 +78,15 @@ class TorobController extends Controller
                 $imageUrl = null;
             }
             
+            // Get minimum available price (minimum weight price) like single product resource
+            $minimumPrice = $product->minimum_available_price ?? $product->price;
+            
             // Build product data
             $productData = [
                 'id' => (string) $product->id,
                 'title' => $product->name,
                 'link' => $baseUrl . '/products/' . $product->slug,
-                'price' => (int) $product->price,
+                'price' => (int) ($minimumPrice * 10), // Convert to integer (price is stored * 10 in DB)
                 'availability' => $product->single_count > 0 ? 'in_stock' : 'out_of_stock',
             ];
             
@@ -92,9 +95,10 @@ class TorobController extends Controller
                 $productData['image'] = $imageUrl;
             }
             
-            // Add original price if there's a discount
-            if ($product->discounted_price && $product->originalPrice) {
-                $productData['original_price'] = (int) $product->originalPrice;
+            // Add original price if there's a discount (use price_without_discount_minimum_available_product)
+            $priceWithoutDiscount = $product->price_without_discount_minimum_available_product ?? $product->price_without_discount;
+            if ($product->discounted_price && $priceWithoutDiscount) {
+                $productData['original_price'] = (int) ($priceWithoutDiscount * 10); // Convert to integer
             }
             
             // Add category

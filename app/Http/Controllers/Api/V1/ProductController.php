@@ -155,7 +155,7 @@ class ProductController extends Controller
         $productsQuery = Product::query()
             ->main() // Only main products (parent_id is null)
             ->hasCountAndImage() // Has count >= 1 and has image
-            ->with(['categories']);
+            ->with(['categories', 'children']); // Load children for minimum_available_price
         
         // Get total count before pagination
         $total = $productsQuery->count();

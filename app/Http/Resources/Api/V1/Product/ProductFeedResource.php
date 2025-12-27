@@ -44,14 +44,13 @@ class ProductFeedResource extends JsonResource
             $imageUrl = null;
         }
         
-        // Get prices
-        $regularPrice = $this->getRawOriginal('price') / 10; // Convert from stored format
-        $salePrice = $this->discounted_price ? $this->discounted_price : null;
+        // Get minimum available price (minimum weight price) like single product resource
+        $minimumPrice = $this->minimum_available_price ?? ($this->getRawOriginal('price') / 10);
+        $priceWithoutDiscount = $this->price_without_discount_minimum_available_product ?? $this->price_without_discount;
         
-        // If sale_price is null, use regular_price
-        if ($salePrice === null) {
-            $salePrice = $regularPrice;
-        }
+        // Get prices - use minimum available price
+        $regularPrice = $priceWithoutDiscount ?: ($this->getRawOriginal('price') / 10); // Convert from stored format
+        $salePrice = $minimumPrice; // Use minimum available price (already includes discount if applicable)
         
         // Get availability
         $availability = $this->single_count > 0 ? 'in_stock' : 'out_of_stock';
