@@ -9,7 +9,6 @@ use App\Models\Order;
 use App\Services\PaymentGateways\SamanGateway;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
-use App\Services\NajvaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -108,9 +107,8 @@ class GatewayController extends Controller
                 $order->notifyAdminsNewOrder();
                 $verified = $order->verify();
                 if($verified){
-                // Send Najva notifications when payment is successfully verified
-                $this->sendNajvaNotifications($order);
-                
+                    // Send Najva notifications when payment is successfully verified
+                    $order->sendNajvaNotifications();
                 }
             }
         }
@@ -134,7 +132,7 @@ class GatewayController extends Controller
                             if ($order->status == Order::$STATUSES[0]) {
                                 $order->markAsPaid();
                                 // Send Najva notifications when payment is successfully verified
-                                $this->sendNajvaNotifications($order);
+                                $order->sendNajvaNotifications();
                                 $order->notifyAdminsNewOrder();
                             }
                         } else {
@@ -177,37 +175,5 @@ class GatewayController extends Controller
             return redirect(setting('url') . '/cart');
         }
         return abort(404);
-    }
-
-    /**
-     * Send Najva notifications for all products in the order
-     */
-    private function sendNajvaNotifications(Order $order): void
-    {
-        // Load order items with product and user relationships
-        $order->load('orderItems.product', 'user');
-
-        if (!$order->user || !$order->orderItems || $order->orderItems->isEmpty()) {
-            return;
-        }
-
-        $najvaService = new NajvaService();
-        $userName = $order->user->name ?? '';
-        $userPhone = $order->user->phone ?? '';
-
-        if (empty($userPhone)) {
-            return;
-        }
-
-        // Send notification for each product in the order
-        foreach ($order->orderItems as $orderItem) {
-            if ($orderItem->product) {
-                $najvaService->sendBuyProductNotification(
-                    $userPhone,
-                    $userName,
-                    $orderItem->product_id
-                );
-            }
-        }
     }
 }

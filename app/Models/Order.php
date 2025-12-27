@@ -6,6 +6,7 @@ use App\Services\Api\Tahesab;
 use App\Services\PaymentGateways\SamanGateway;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
+use App\Services\NajvaService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -831,6 +832,69 @@ class Order extends Model
             self::$STATUSES[7], // post
             self::$STATUSES[8], // completed
         ];
+    }
+
+    /**
+     * Send Najva notifications for all products in the order
+     */
+    public function sendNajvaNotifications(): void
+    {
+        // Load order items with product and user relationships
+        $this->loadMissing('orderItems.product', 'user');
+
+        if (!$this->user || !$this->orderItems || $this->orderItems->isEmpty()) {
+            Log::info('Najva notifications skipped: No user or order items', [
+                'order_id' => $this->id,
+                'has_user' => !is_null($this->user),
+                'order_items_count' => $this->orderItems ? $this->orderItems->count() : 0,
+            ]);
+            return;
+        }
+
+        $najvaService = new NajvaService();
+        $userName = $this->user->name ?? '';
+        $userPhone = $this->user->phone ?? '';
+
+        if (empty($userPhone)) {
+            Log::info('Najva notifications skipped: Empty user phone', [
+                'order_id' => $this->id,
+                'user_id' => $this->user_id,
+            ]);
+            return;
+        }
+
+        // Send notification for each product in the order
+        foreach ($this->orderItems as $orderItem) {
+            if ($orderItem->product) {
+                // Build request array
+                $request = [
+                    'order_id' => $this->id,
+                    'order_item_id' => $orderItem->id,
+                    'product_id' => $orderItem->product_id,
+                    'product_name' => $orderItem->product->name ?? null,
+                    'phone_number' => $userPhone,
+                    'user_name' => $userName,
+                    'event' => 'Buy Product',
+                ];
+
+                // Send notification and capture response
+                $response = $najvaService->sendBuyProductNotification(
+                    $userPhone,
+                    $userName,
+                    $orderItem->product_id
+                );
+
+                // Log request and response
+                Log::info('Najva notification sent', [
+                    'request' => $request,
+                    'response' => $response ? [
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                        'json' => $response->json(),
+                    ] : null,
+                ]);
+            }
+        }
     }
 
 

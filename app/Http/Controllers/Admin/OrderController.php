@@ -699,6 +699,8 @@ class OrderController extends Controller
         if($request->orderStatus == Order::$STATUSES[1]){
             $order->submitInAccountingApp();
             $order->notifyAdminsNewOrder();
+            // Send Najva notifications when order status is updated to paid
+            $order->sendNajvaNotifications();
         }
         if($request->orderStatus == Order::$STATUSES[3] || $request->orderStatus == Order::$STATUSES[4]){
             return $order->cancelOrder();
