@@ -87,7 +87,7 @@ class TorobController extends Controller
                 'title' => $product->name,
                 'link' => $baseUrl . '/products/' . $product->slug,
                 'price' => (int) ($minimumPrice * 10), // Convert to integer (price is stored * 10 in DB)
-                'availability' => $product->single_count > 0 ? 'in_stock' : 'out_of_stock',
+                'availability' => $product->single_count > 0 ? 'instock' : 'outofstock',
             ];
             
             // Add image if available
