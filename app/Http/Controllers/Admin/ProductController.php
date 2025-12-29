@@ -1531,11 +1531,7 @@ class ProductController extends Controller
         $products = $productsQuery->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
             ->distinct() // Prevent duplicates
             ->limit(50) // Limit results for performance
-            ->get()
-            ->filter(function ($product) {
-                // Filter by single_count >= 1
-                return $product->single_count >= 1;
-            });
+            ->get();
         
         $products = $products->map(function ($product) {
             // Calculate single_count using the accessor after loading the product
