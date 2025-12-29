@@ -151,7 +151,6 @@
 
 @push('scripts')
 <script>
-    let insertedEtiketCodes = [];
     let etiketCounter = 0;
     let goldPrice = 0;
 
@@ -519,14 +518,11 @@
         etiketCounter++;
         const etiketHtml = '<div class="etiket-item border rounded p-2 mb-2" data-index="' + etiketCounter + '">' +
             '<div class="row align-items-center mb-2">' +
-                '<div class="col-md-1">' +
+                '<div class="col-md-12 d-flex justify-content-between align-items-center">' +
+                    '<h6 class="mb-0">اتیکت ' + etiketCounter + '</h6>' +
                     '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')">' +
-                        '<i class="fas fa-times"></i>' +
+                        '<i class="fas fa-times"></i> حذف' +
                     '</button>' +
-                '</div>' +
-                '<div class="col-md-11">' +
-                    '<input type="text" class="form-control form-control-sm etiket-code-input" name="etikets[' + etiketCounter + '][code]" placeholder="کد اتیکت" data-index="' + etiketCounter + '" onblur="validateEtiketCode(' + etiketCounter + ')">' +
-                    '<small class="text-danger etiket-error" id="etiket-error-' + etiketCounter + '" style="display:none;"></small>' +
                 '</div>' +
             '</div>' +
             '<div class="row">' +
@@ -554,71 +550,10 @@
     // Remove etiket
     function removeEtiket(index) {
         const etiketItem = $('.etiket-item[data-index="' + index + '"]');
-        const codeInput = etiketItem.find('.etiket-code-input');
-        const code = codeInput.val().trim();
-        
-        if (code) {
-            insertedEtiketCodes = insertedEtiketCodes.filter(c => c !== code);
-        }
-        
         etiketItem.remove();
         if ($('#etikets-list .etiket-item').length === 0) {
             $('#etikets-list').html('<p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>');
         }
-    }
-    
-    // Validate etiket code
-    function validateEtiketCode(index) {
-        const codeInput = $('.etiket-item[data-index="' + index + '"] .etiket-code-input');
-        const errorElement = $('#etiket-error-' + index);
-        const code = codeInput.val().trim();
-        
-        errorElement.hide().text('');
-        codeInput.removeClass('is-invalid');
-        
-        if (!code) {
-            return true;
-        }
-        
-        // Check for duplicate in form
-        let duplicateInForm = false;
-        $('.etiket-code-input').each(function() {
-            const otherIndex = $(this).data('index');
-            if (otherIndex !== index && $(this).val().trim() === code) {
-                duplicateInForm = true;
-                return false;
-            }
-        });
-        
-        if (duplicateInForm) {
-            errorElement.text('این کد قبلاً در فرم وارد شده است').show();
-            codeInput.addClass('is-invalid');
-            return false;
-        }
-        
-        // Check for duplicate in database
-        $.ajax({
-            url: '{{ route("products.search.by.etiket") }}',
-            method: 'GET',
-            data: { code: code },
-            success: function(response) {
-                if (response && response.exists) {
-                    errorElement.text('این کد در پایگاه داده موجود است').show();
-                    codeInput.addClass('is-invalid');
-                } else {
-                    insertedEtiketCodes = insertedEtiketCodes.filter(c => c !== code);
-                    insertedEtiketCodes.push(code);
-                    codeInput.removeClass('is-invalid');
-                }
-            },
-            error: function() {
-                insertedEtiketCodes = insertedEtiketCodes.filter(c => c !== code);
-                insertedEtiketCodes.push(code);
-                codeInput.removeClass('is-invalid');
-            }
-        });
-        
-        return true;
     }
 
     // Calculate etiket price based on weight and ojrat

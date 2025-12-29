@@ -167,38 +167,30 @@ class ProductController extends Controller
             // Handle etikets - auto-generate with product details
             if ($request->has('etikets') && is_array($request->etikets)) {
                 $etiketCodes = [];
-                foreach ($request->etikets as $etiketData) {
-                    $code = trim($etiketData['code'] ?? '');
-                    
-                    if (empty($code)) {
-                        continue; // Skip empty codes
-                    }
-                    
+                foreach ($request->etikets as $etiketIndex => $etiketData) {
                     // Get count, weight, and price from etiket data
                     $count = isset($etiketData['count']) && $etiketData['count'] > 0 ? (int)$etiketData['count'] : 1;
                     $weight = isset($etiketData['weight']) && $etiketData['weight'] > 0 ? (float)$etiketData['weight'] : ($product->weight ?? 0);
                     $price = isset($etiketData['price']) && $etiketData['price'] > 0 ? (int)($etiketData['price'] * 10) : $product->getRawOriginal('price'); // Multiply by 10 for storage
                     
-                    // Check for duplicate in database (only check base code, not with index)
-                    $existingEtiket = Etiket::where('code', $code)->orWhere('code', 'like', $code . '-%')->first();
-                    if ($existingEtiket) {
-                        continue; // Skip if code already exists in database
-                    }
+                    // Generate base code using product ID and timestamp
+                    $baseCode = $product->id . '-' . time() . '-' . ($etiketIndex + 1);
                     
                     // Create multiple etikets based on count
                     for ($i = 0; $i < $count; $i++) {
-                        // For multiple etikets with same code, append index to make unique codes
-                        $etiketCode = $count > 1 ? $code . '-' . ($i + 1) : $code;
+                        // Generate unique code for each etiket
+                        $etiketCode = $count > 1 ? $baseCode . '-' . ($i + 1) : $baseCode;
+                        
+                        // Ensure code is unique (check in database)
+                        $attempts = 0;
+                        while (Etiket::where('code', $etiketCode)->exists() && $attempts < 10) {
+                            $etiketCode = $baseCode . '-' . ($i + 1) . '-' . mt_rand(1000, 9999);
+                            $attempts++;
+                        }
                         
                         // Check for duplicate in current batch
                         if (in_array($etiketCode, $etiketCodes)) {
                             continue; // Skip duplicates in same batch
-                        }
-                        
-                        // Check for duplicate in database
-                        $existingEtiketWithCode = Etiket::where('code', $etiketCode)->first();
-                        if ($existingEtiketWithCode) {
-                            continue; // Skip if code already exists in database
                         }
                         
                         // Create etiket with provided details
