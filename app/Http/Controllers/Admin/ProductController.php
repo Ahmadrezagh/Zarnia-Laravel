@@ -799,6 +799,15 @@ class ProductController extends Controller
             $query = $query->latest('id');
         }
 
+        // Apply weight filters
+        if ($request->has('weight_from') && !empty($request->input('weight_from'))) {
+            $query->where('weight', '>=', $request->input('weight_from'));
+        }
+
+        if ($request->has('weight_to') && !empty($request->input('weight_to'))) {
+            $query->where('weight', '<=', $request->input('weight_to'));
+        }
+
         // Fetch paginated data
         $data = $query
 

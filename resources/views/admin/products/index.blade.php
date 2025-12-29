@@ -45,6 +45,8 @@
                             <option value="etiket_code" @if(request('searchKey')  == 'etiket_code' ) selected @endif >اتیکت</option>
                         </x-form.select-option>
                         <x-form.input title="جستجو" name="searchVal" value="{{request('searchVal')}}" />
+                        <x-form.input title="از وزن" name="weight_from" value="{{request('weight_from')}}" type="number" step="0.01" col="col-3 mb-3" />
+                        <x-form.input title="تا وزن" name="weight_to" value="{{request('weight_to')}}" type="number" step="0.01" col="col-3 mb-3" />
                         <div class="col-12">
                             <button type="button" onclick="filterProducts('filterForm')" class="btn btn-success" style="width:100%">فیلتر</button>
                         </div>
