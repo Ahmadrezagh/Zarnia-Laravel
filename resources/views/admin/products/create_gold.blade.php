@@ -124,7 +124,7 @@
                             <!-- Etikets Section -->
                             <div class="form-group mt-4">
                                 <label class="font-weight-bold">اتیکت‌ها</label>
-                                <div id="etikets-list" class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                <div id="etikets-list" class="border rounded p-3" style="width: 100%; min-height: 400px; height: auto; overflow-y: visible;">
                                     <p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-info mt-2" onclick="addEtiket()">
@@ -516,27 +516,27 @@
     // Add etiket
     function addEtiket() {
         etiketCounter++;
-        const etiketHtml = '<div class="etiket-item border rounded p-2 mb-2" data-index="' + etiketCounter + '">' +
-            '<div class="row align-items-center mb-2">' +
-                '<div class="col-md-12 d-flex justify-content-between align-items-center">' +
-                    '<h6 class="mb-0">اتیکت ' + etiketCounter + '</h6>' +
-                    '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')">' +
-                        '<i class="fas fa-times"></i> حذف' +
-                    '</button>' +
-                '</div>' +
+        const etiketHtml = '<div class="card etiket-item mb-3" data-index="' + etiketCounter + '" style="width: 100%;">' +
+            '<div class="card-header d-flex justify-content-between align-items-center bg-light">' +
+                '<h6 class="mb-0">اتیکت ' + etiketCounter + '</h6>' +
+                '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')">' +
+                    '<i class="fas fa-times"></i> حذف' +
+                '</button>' +
             '</div>' +
-            '<div class="row">' +
-                '<div class="col-md-4">' +
-                    '<label class="small font-weight-bold">تعداد</label>' +
-                    '<input type="number" class="form-control form-control-sm etiket-count-input" name="etikets[' + etiketCounter + '][count]" placeholder="تعداد" min="1" value="1" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')">' +
-                '</div>' +
-                '<div class="col-md-4">' +
-                    '<label class="small font-weight-bold">وزن (گرم)</label>' +
-                    '<input type="number" class="form-control form-control-sm etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')">' +
-                '</div>' +
-                '<div class="col-md-4">' +
-                    '<label class="small font-weight-bold">قیمت (تومان)</label>' +
-                    '<input type="number" class="form-control form-control-sm etiket-price-input" name="etikets[' + etiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + etiketCounter + '">' +
+            '<div class="card-body">' +
+                '<div class="row">' +
+                    '<div class="col-md-4">' +
+                        '<label class="small font-weight-bold">تعداد</label>' +
+                        '<input type="number" class="form-control etiket-count-input" name="etikets[' + etiketCounter + '][count]" placeholder="تعداد" min="1" value="1" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')">' +
+                    '</div>' +
+                    '<div class="col-md-4">' +
+                        '<label class="small font-weight-bold">وزن (گرم)</label>' +
+                        '<input type="number" class="form-control etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')">' +
+                    '</div>' +
+                    '<div class="col-md-4">' +
+                        '<label class="small font-weight-bold">قیمت (تومان)</label>' +
+                        '<input type="number" class="form-control etiket-price-input" name="etikets[' + etiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + etiketCounter + '">' +
+                    '</div>' +
                 '</div>' +
             '</div>' +
         '</div>';
