@@ -95,8 +95,10 @@ class ProductController extends Controller
             // Check if it's a non-gold product
             $isNotGoldProduct = $request->input('is_not_gold_product') == '1';
             
-            // If it's a gold product and has etikets, use new logic
-            if (!$isNotGoldProduct && $request->has('etikets') && is_array($request->etikets) && !empty($request->etikets)) {
+            // If it's a gold product and has etikets or orderable_etikets, use new logic
+            $hasEtikets = $request->has('etikets') && is_array($request->etikets) && !empty($request->etikets);
+            $hasOrderableEtikets = $request->has('orderable_etikets') && is_array($request->orderable_etikets) && !empty($request->orderable_etikets);
+            if (!$isNotGoldProduct && ($hasEtikets || $hasOrderableEtikets)) {
                 return $this->storeGoldProductWithEtikets($request, $validated);
             }
             
@@ -265,8 +267,32 @@ class ProductController extends Controller
             $attributeGroupId = $attributeGroup->id;
         }
         
-        // Loop through each etiket card
-        foreach ($request->etikets as $etiketIndex => $etiketData) {
+        // Process regular etikets
+        $etiketsToProcess = [];
+        if ($request->has('etikets') && is_array($request->etikets)) {
+            foreach ($request->etikets as $etiketIndex => $etiketData) {
+                $etiketsToProcess[] = [
+                    'data' => $etiketData,
+                    'orderable_after_out_of_stock' => false
+                ];
+            }
+        }
+        
+        // Process orderable etikets
+        if ($request->has('orderable_etikets') && is_array($request->orderable_etikets)) {
+            foreach ($request->orderable_etikets as $etiketIndex => $etiketData) {
+                $etiketsToProcess[] = [
+                    'data' => $etiketData,
+                    'orderable_after_out_of_stock' => true
+                ];
+            }
+        }
+        
+        // Loop through each etiket card (both regular and orderable)
+        foreach ($etiketsToProcess as $etiketEntry) {
+            $etiketData = $etiketEntry['data'];
+            $isOrderable = $etiketEntry['orderable_after_out_of_stock'];
+            
             $etiketWeight = isset($etiketData['weight']) && $etiketData['weight'] > 0 ? (float)$etiketData['weight'] : null;
             $etiketPrice = isset($etiketData['price']) && $etiketData['price'] > 0 ? (int)($etiketData['price'] * 10) : null;
             $etiketCount = isset($etiketData['count']) && $etiketData['count'] > 0 ? (int)$etiketData['count'] : 1;
@@ -367,6 +393,7 @@ class ProductController extends Controller
                     'ojrat' => $product->ojrat ?? null,
                     'darsad_kharid' => $product->darsad_kharid ?? null,
                     'is_mojood' => 1,
+                    'orderable_after_out_of_stock' => $isOrderable ? 1 : 0,
                 ]);
                 
                 $etiketCodes[] = $etiketCode;
