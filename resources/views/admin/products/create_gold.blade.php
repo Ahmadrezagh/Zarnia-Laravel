@@ -287,6 +287,11 @@
                 success: function(response) {
                     const product = response.data || response;
                     
+                    // Fill name
+                    if (product.name) {
+                        $('#product-name').val(product.name);
+                    }
+                    
                     // Fill weight
                     if (product.weight) {
                         $('#product-weight').val(product.weight);
