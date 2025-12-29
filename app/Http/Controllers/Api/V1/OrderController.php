@@ -42,14 +42,6 @@ class OrderController extends Controller
         $availableCartItems = collect();
         
         foreach ($cartItems as $cartItem) {
-            $isOrderableAfterOutOfStock = $cartItem->product->orderable_after_out_of_stock ?? false;
-            
-            // Skip check if product is orderable after out of stock
-            if ($isOrderableAfterOutOfStock) {
-                $availableCartItems->push($cartItem);
-                continue;
-            }
-            
             // Check if cart item has an etiket assigned
             if (!$cartItem->etiket_id || !$cartItem->etiket) {
                 $unavailableProducts[] = $cartItem->product->name . ' (اتیکت انتخاب نشده)';
@@ -59,8 +51,15 @@ class OrderController extends Controller
             
             // Check if the selected etiket is available
             $etiket = $cartItem->etiket;
+            $isOrderableAfterOutOfStock = $etiket->orderable_after_out_of_stock ?? false;
             $cacheKey = 'reserved_etiket_' . $etiket->code;
             $isReserved = Cache::has($cacheKey);
+            
+            // Skip availability check if etiket is orderable after out of stock
+            if ($isOrderableAfterOutOfStock) {
+                $availableCartItems->push($cartItem);
+                continue;
+            }
             
             if ($etiket->is_mojood != 1 || $isReserved) {
                 $unavailableProducts[] = $cartItem->product->name . ' (اتیکت انتخاب شده موجود نیست)';
@@ -150,12 +149,13 @@ class OrderController extends Controller
         $reservedEtiketCodes = [];
         
         foreach ($cartItems as $cartItem) {
-            $isOrderableAfterOutOfStock = $cartItem->product->orderable_after_out_of_stock ?? false;
             $etiketCode = null;
+            $isOrderableAfterOutOfStock = false;
             
             // Use the etiket from the cart item if available
             if ($cartItem->etiket_id && $cartItem->etiket) {
                 $etiketCode = $cartItem->etiket->code;
+                $isOrderableAfterOutOfStock = $cartItem->etiket->orderable_after_out_of_stock ?? false;
             }
 
             OrderItem::create([

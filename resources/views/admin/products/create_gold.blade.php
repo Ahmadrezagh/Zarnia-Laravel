@@ -79,14 +79,14 @@
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="darsad-kharid" class="font-weight-bold">اجرت خرید (%)</label>
-                                            <input type="number" class="form-control" id="darsad-kharid" name="darsad_kharid" step="0.01" placeholder="درصد اجرت خرید">
+                                            <label for="darsad-kharid" class="font-weight-bold">اجرت خرید (%) <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="darsad-kharid" name="darsad_kharid" step="0.01" placeholder="درصد اجرت خرید" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="ojrat" class="font-weight-bold">اجرت فروش (%)</label>
-                                            <input type="number" class="form-control" id="ojrat" name="ojrat" step="0.01" placeholder="درصد اجرت فروش">
+                                            <label for="ojrat" class="font-weight-bold">اجرت فروش (%) <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="ojrat" name="ojrat" step="0.01" placeholder="درصد اجرت فروش" required>
                                         </div>
                                     </div>
                                 </div>
@@ -158,18 +158,11 @@
 
     // Fetch gold price on page load
     $(document).ready(function() {
-        // Get gold price from API or global variable
-        $.ajax({
-            url: '{{ route("products.ajax.search") }}',
-            method: 'GET',
-            data: { q: '', available_only: '0' },
-            success: function(data) {
-                // Try to get gold price from response or use default
-                if (data && data.gold_price) {
-                    goldPrice = parseFloat(data.gold_price);
-                }
-            }
-        });
+        // Get gold price from PHP setting
+        goldPrice = parseFloat('{{ (float) setting("gold_price") ?? 0 }}') || 0;
+        window.goldPrice = goldPrice;
+        
+        console.log('Gold price loaded:', goldPrice);
 
         // Initialize Select2 for categories
         $('#product-categories').select2({
@@ -389,6 +382,56 @@
                 $('#product-categories').next('.invalid-feedback').remove();
             }
             
+            // Validate darsad_kharid (required)
+            const darsadKharid = $('#darsad-kharid').val();
+            if (!darsadKharid || parseFloat(darsadKharid) < 0) {
+                $('#darsad-kharid').addClass('is-invalid');
+                $('#darsad-kharid').next('.invalid-feedback').remove();
+                $('#darsad-kharid').after('<div class="invalid-feedback">اجرت خرید الزامی است</div>');
+                return false;
+            } else {
+                $('#darsad-kharid').removeClass('is-invalid');
+                $('#darsad-kharid').next('.invalid-feedback').remove();
+            }
+            
+            // Validate ojrat (required)
+            const ojrat = $('#ojrat').val();
+            if (!ojrat || parseFloat(ojrat) < 0) {
+                $('#ojrat').addClass('is-invalid');
+                $('#ojrat').next('.invalid-feedback').remove();
+                $('#ojrat').after('<div class="invalid-feedback">اجرت فروش الزامی است</div>');
+                return false;
+            } else {
+                $('#ojrat').removeClass('is-invalid');
+                $('#ojrat').next('.invalid-feedback').remove();
+            }
+            
+            // Validate at least one etiket exists
+            const etiketCount = $('#etikets-row .etiket-item').length;
+            if (etiketCount === 0) {
+                alert('حداقل یک اتیکت باید اضافه شود');
+                return false;
+            }
+            
+            // Validate each etiket has weight
+            let hasInvalidEtiket = false;
+            $('#etikets-row .etiket-item').each(function() {
+                const $etiketItem = $(this);
+                const weight = parseFloat($etiketItem.find('.etiket-weight-input').val()) || 0;
+                if (weight <= 0) {
+                    hasInvalidEtiket = true;
+                    $etiketItem.find('.etiket-weight-input').addClass('is-invalid');
+                    return false; // break
+                } else {
+                    $etiketItem.find('.etiket-weight-input').removeClass('is-invalid');
+                }
+            });
+            
+            if (hasInvalidEtiket) {
+                alert('تمام اتیکت‌ها باید وزن داشته باشند');
+                return false;
+            }
+            
             const formData = new FormData();
             
             // Add all form fields except files
@@ -396,6 +439,7 @@
                 const $field = $(this);
                 const name = $field.attr('name');
                 const type = $field.attr('type');
+                const isRequired = $field.prop('required');
                 
                 if (name) {
                     if (type === 'checkbox' || type === 'radio') {
@@ -403,8 +447,9 @@
                             formData.append(name, $field.val());
                         }
                     } else if (type !== 'file') {
-                        if ($field.val()) {
-                            formData.append(name, $field.val());
+                        // Always include required fields, even if empty
+                        if (isRequired || $field.val()) {
+                            formData.append(name, $field.val() || '');
                         }
                     }
                 }
@@ -533,7 +578,7 @@
                     '</div>' +
                     '<div class="form-group">' +
                         '<label class="small font-weight-bold">وزن (گرم)</label>' +
-                        '<input type="number" class="form-control etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')">' +
+                        '<input type="number" class="form-control etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')" onkeypress="handleWeightEnter(event, ' + etiketCounter + ')">' +
                     '</div>' +
                     '<div class="form-group">' +
                         '<label class="small font-weight-bold">قیمت (تومان)</label>' +
@@ -547,6 +592,27 @@
             $('#etikets-row').html('');
         }
         $('#etikets-row').append(etiketHtml);
+        
+        // Calculate price if weight and ojrat are available
+        setTimeout(function() {
+            calculateEtiketPrice(etiketCounter);
+        }, 100);
+        
+        // Return the new index for focusing
+        return etiketCounter;
+    }
+    
+    // Handle Enter key press in weight field
+    function handleWeightEnter(event, currentIndex) {
+        if (event.which === 13 || event.keyCode === 13) {
+            event.preventDefault();
+            // Add new etiket card
+            const newIndex = addEtiket();
+            // Focus on the weight field of the new card
+            setTimeout(function() {
+                $('.etiket-weight-input[data-index="' + newIndex + '"]').focus();
+            }, 100);
+        }
     }
     
     // Remove etiket
@@ -565,14 +631,18 @@
         const ojrat = parseFloat($('#ojrat').val()) || 0;
         const $priceInput = $etiketItem.find('.etiket-price-input');
         
-        // Try to get gold price from global variable
-        if (!goldPrice || goldPrice === 0) {
-            goldPrice = window.goldPrice || 0;
-        }
+        // Get gold price from global variable or setting
+        let currentGoldPrice = goldPrice || window.goldPrice || parseFloat('{{ (float) setting("gold_price") ?? 0 }}') || 0;
         
-        if (weight > 0 && goldPrice > 0 && ojrat > 0) {
+        console.log('Calculating price for etiket', index, {
+            weight: weight,
+            ojrat: ojrat,
+            goldPrice: currentGoldPrice
+        });
+        
+        if (weight > 0 && currentGoldPrice > 0 && ojrat > 0) {
             // Formula: price = weight * (goldPrice * 1.01) * (1 + (ojrat / 100))
-            const adjustedGoldPrice = goldPrice * 1.01;
+            const adjustedGoldPrice = currentGoldPrice * 1.01;
             let calculatedPrice = weight * adjustedGoldPrice * (1 + (ojrat / 100));
             
             // Round down to nearest thousand (last three digits become 0)
@@ -580,20 +650,38 @@
             
             // Update price field
             $priceInput.val(calculatedPrice);
+            console.log('Price calculated:', calculatedPrice);
         } else {
             // Clear price if required fields are missing
             $priceInput.val('');
+            if (weight === 0) {
+                console.log('Weight is 0');
+            }
+            if (currentGoldPrice === 0) {
+                console.log('Gold price is 0');
+            }
+            if (ojrat === 0) {
+                console.log('Ojrat is 0');
+            }
         }
     }
 
     // Recalculate all etiket prices when ojrat changes
-    $('#ojrat').on('input change', function() {
+    $(document).on('input change', '#ojrat', function() {
         $('.etiket-item').each(function() {
             const index = $(this).data('index');
             if (index) {
                 calculateEtiketPrice(index);
             }
         });
+    });
+    
+    // Use event delegation for weight and count inputs in dynamically added cards
+    $(document).on('input change', '.etiket-weight-input, .etiket-count-input', function() {
+        const index = $(this).data('index');
+        if (index) {
+            calculateEtiketPrice(index);
+        }
     });
 </script>
 @endpush

@@ -17,7 +17,8 @@ class Etiket extends Model
         'is_mojood',
         'darsad_kharid',
         'mazaneh',
-        'darsad_vazn_foroosh'
+        'darsad_vazn_foroosh',
+        'orderable_after_out_of_stock'
     ];
 
     public function setNameAttribute($value)

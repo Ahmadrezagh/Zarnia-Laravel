@@ -817,9 +817,19 @@ class Order extends Model
                 continue;
             }
 
-            Etiket::where('product_id', $item->product_id)
+            // Find the etiket
+            $etiket = Etiket::where('product_id', $item->product_id)
                 ->where('code', $item->etiket)
-                ->update(['is_mojood' => 0]);
+                ->first();
+            
+            if (!$etiket) {
+                continue;
+            }
+            
+            // Only set is_mojood to 0 if orderable_after_out_of_stock is not 1
+            if (!($etiket->orderable_after_out_of_stock ?? false)) {
+                $etiket->update(['is_mojood' => 0]);
+            }
         }
     }
 

@@ -22,13 +22,6 @@ class ShoppingCartController extends Controller
             ], 404);
         }
 
-        // Check if product is out of stock (unless orderable_after_out_of_stock is true)
-        if ($product->SingleCount <= 0 && !($product->orderable_after_out_of_stock ?? false)) {
-            return response()->json([
-                'message' => 'این محصول قابل فروش نیست'
-            ], 400);
-        }
-
         // Get all etiket IDs already in user's cart for this product
         $cartEtiketIds = ShoppingCartItem::query()
             ->where('user_id', $user->id)
@@ -39,9 +32,13 @@ class ShoppingCartController extends Controller
 
         // Find an available etiket that is not already in cart
         // First check direct etikets, then check children's etikets
+        // Include etikets that are orderable_after_out_of_stock even if is_mojood = 0
         $availableEtiket = Etiket::query()
             ->where('product_id', $product->id)
-            ->where('is_mojood', 1)
+            ->where(function($query) {
+                $query->where('is_mojood', 1)
+                      ->orWhere('orderable_after_out_of_stock', 1);
+            })
             ->whereNotIn('id', $cartEtiketIds)
             ->first();
 
@@ -50,14 +47,25 @@ class ShoppingCartController extends Controller
             $childrenProductIds = $product->children()->pluck('id')->toArray();
             $availableEtiket = Etiket::query()
                 ->whereIn('product_id', $childrenProductIds)
-                ->where('is_mojood', 1)
+                ->where(function($query) {
+                    $query->where('is_mojood', 1)
+                          ->orWhere('orderable_after_out_of_stock', 1);
+                })
                 ->whereNotIn('id', $cartEtiketIds)
                 ->first();
         }
 
+        // Check if product is out of stock (unless we found an orderable_after_out_of_stock etiket)
         if (!$availableEtiket) {
             return response()->json([
                 'message' => 'هیچ اتیکت موجودی برای این محصول یافت نشد'
+            ], 400);
+        }
+        
+        // If product is out of stock and etiket is not orderable_after_out_of_stock, check availability
+        if ($product->SingleCount <= 0 && !($availableEtiket->orderable_after_out_of_stock ?? false)) {
+            return response()->json([
+                'message' => 'این محصول قابل فروش نیست'
             ], 400);
         }
 

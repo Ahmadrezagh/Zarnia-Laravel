@@ -95,6 +95,12 @@ class ProductController extends Controller
             // Check if it's a non-gold product
             $isNotGoldProduct = $request->input('is_not_gold_product') == '1';
             
+            // If it's a gold product and has etikets, use new logic
+            if (!$isNotGoldProduct && $request->has('etikets') && is_array($request->etikets) && !empty($request->etikets)) {
+                return $this->storeGoldProductWithEtikets($request, $validated);
+            }
+            
+            // Original logic for non-gold products or products without etikets
             // Prepare product data
             $productData = [
                 'name' => $validated['name'],
@@ -230,6 +236,185 @@ class ProductController extends Controller
             ], 500);
         }
     }
+    
+    /**
+     * Store gold product with etikets - each etiket creates or assigns to a product
+     */
+    private function storeGoldProductWithEtikets($request, $validated)
+    {
+        $productName = $validated['name'];
+        $enteredParentId = $request->input('parent_id') ? (int)$request->input('parent_id') : null;
+        $firstProductId = null;
+        $createdProducts = [];
+        $etiketCodes = [];
+        
+        // Common product data from form
+        $commonProductData = [
+            'darsad_kharid' => $validated['darsad_kharid'] ?? null,
+            'ojrat' => $validated['ojrat'] ?? null,
+            'discount_percentage' => $validated['discount_percentage'] ?? 0,
+            'description' => $validated['description'] ?? null,
+        ];
+        
+        // Handle attribute group
+        $attributeGroupId = null;
+        if (!empty($validated['attribute_group'])) {
+            $attributeGroup = AttributeGroup::firstOrCreate([
+                'name' => $validated['attribute_group']
+            ]);
+            $attributeGroupId = $attributeGroup->id;
+        }
+        
+        // Loop through each etiket card
+        foreach ($request->etikets as $etiketIndex => $etiketData) {
+            $etiketWeight = isset($etiketData['weight']) && $etiketData['weight'] > 0 ? (float)$etiketData['weight'] : null;
+            $etiketPrice = isset($etiketData['price']) && $etiketData['price'] > 0 ? (int)($etiketData['price'] * 10) : null;
+            $etiketCount = isset($etiketData['count']) && $etiketData['count'] > 0 ? (int)$etiketData['count'] : 1;
+            
+            if (!$etiketWeight || $etiketWeight <= 0) {
+                continue; // Skip etikets without valid weight
+            }
+            
+            // Check if product with same name and weight exists
+            $existingProduct = Product::where('name', $productName)
+                ->where('weight', $etiketWeight)
+                ->whereNull('parent_id') // Only check main products
+                ->first();
+            
+            if ($existingProduct) {
+                // Use existing product
+                $product = $existingProduct;
+            } else {
+                // Create new product
+                $productData = array_merge($commonProductData, [
+                    'name' => $productName,
+                    'weight' => $etiketWeight,
+                    'price' => $etiketPrice ?? 0,
+                    'attribute_group_id' => $attributeGroupId,
+                ]);
+                
+                // Determine parent_id
+                if ($enteredParentId) {
+                    $productData['parent_id'] = $enteredParentId;
+                } elseif ($firstProductId) {
+                    // Use first created product as parent for subsequent products
+                    $productData['parent_id'] = $firstProductId;
+                } else {
+                    // First product has no parent
+                    $productData['parent_id'] = null;
+                }
+                
+                // Create the product
+                $product = Product::create($productData);
+                
+                // If price was 0, calculate from taban gohar
+                if ($productData['price'] == 0) {
+                    $product->refresh();
+                    $tabanGoharPrice = $product->taban_gohar_price;
+                    if ($tabanGoharPrice > 0) {
+                        $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
+                    }
+                }
+                
+                // Store first product ID
+                if (!$firstProductId) {
+                    $firstProductId = $product->id;
+                    
+                    // Handle cover image for first product
+                    if ($request->hasFile('cover_image')) {
+                        $product->clearMediaCollection('cover_image');
+                        $product->addMedia($request->file('cover_image'))
+                            ->toMediaCollection('cover_image');
+                    }
+                    
+                    // Handle gallery images for first product
+                    if ($request->hasFile('gallery')) {
+                        foreach ($request->file('gallery') as $image) {
+                            if ($image->isValid()) {
+                                $product->addMedia($image)
+                                    ->toMediaCollection('gallery');
+                            }
+                        }
+                    }
+                    
+                    // Handle categories for first product
+                    if ($request->has('category_ids') && !empty($request->category_ids)) {
+                        $product->categories()->sync($request->category_ids);
+                    }
+                } else {
+                    // For subsequent products, sync categories without images
+                    if ($request->has('category_ids') && !empty($request->category_ids)) {
+                        $product->categories()->sync($request->category_ids);
+                    }
+                }
+                
+                $createdProducts[] = $product;
+                $this->updateDiscountedPrice($product);
+            }
+            
+            // Create etikets for this product based on count
+            for ($i = 0; $i < $etiketCount; $i++) {
+                // Generate unique 5-digit code in format: zr-12345
+                $etiketCode = $this->generateUniqueEtiketCode($etiketCodes);
+                
+                // Create etiket
+                Etiket::create([
+                    'code' => $etiketCode,
+                    'name' => $productName,
+                    'weight' => $etiketWeight,
+                    'price' => $etiketPrice ?? $product->getRawOriginal('price'),
+                    'product_id' => $product->id,
+                    'ojrat' => $product->ojrat ?? null,
+                    'darsad_kharid' => $product->darsad_kharid ?? null,
+                    'is_mojood' => 1,
+                ]);
+                
+                $etiketCodes[] = $etiketCode;
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => count($createdProducts) . ' محصول با موفقیت ایجاد شد',
+            'products' => $createdProducts,
+            'first_product_id' => $firstProductId
+        ]);
+    }
+    
+    /**
+     * Generate unique etiket code in format: zr-{number} starting from 7000
+     */
+    private function generateUniqueEtiketCode(array $existingCodes = []): string
+    {
+        $startNumber = 7000;
+        $highestNumber = $startNumber - 1;
+        
+        // Find the highest existing code number in database that matches zr-{number} pattern
+        $etikets = Etiket::where('code', 'like', 'zr-%')->get();
+        foreach ($etikets as $etiket) {
+            if (preg_match('/^zr-(\d+)$/', $etiket->code, $matches)) {
+                $codeNumber = (int)$matches[1];
+                if ($codeNumber >= $highestNumber) {
+                    $highestNumber = $codeNumber;
+                }
+            }
+        }
+        
+        // Check for codes in current batch and find the highest
+        foreach ($existingCodes as $code) {
+            if (preg_match('/^zr-(\d+)$/', $code, $matches)) {
+                $codeNumber = (int)$matches[1];
+                if ($codeNumber >= $highestNumber) {
+                    $highestNumber = $codeNumber;
+                }
+            }
+        }
+        
+        // Start from the highest number found + 1, or 7000 if no codes exist
+        $nextNumber = max($startNumber, $highestNumber + 1);
+        
+        return 'zr-' . $nextNumber;
+    }
 
     /**
      * Display the specified resource.
@@ -262,8 +447,6 @@ class ProductController extends Controller
         $validated = $request->validated();
         $validated['discount_percentage'] = $request->input('discount_percentage') ?? 0;
         
-        // Handle orderable_after_out_of_stock checkbox
-        $validated['orderable_after_out_of_stock'] = $request->has('orderable_after_out_of_stock') && $request->input('orderable_after_out_of_stock') == '1';
         
         // Only allow name change for comprehensive products
         if (!$product->is_comprehensive && isset($validated['name'])) {

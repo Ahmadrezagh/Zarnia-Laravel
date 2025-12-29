@@ -22,6 +22,7 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         $isNotGoldProduct = $this->input('is_not_gold_product') == '1';
+        $hasEtikets = $this->has('etikets') && is_array($this->input('etikets')) && !empty($this->input('etikets'));
         
         $rules = [
             'name' => 'required|string|max:255',
@@ -44,9 +45,18 @@ class StoreProductRequest extends FormRequest
         
         // Add gold-related fields validation only if it's a gold product
         if (!$isNotGoldProduct) {
-            $rules['weight'] = 'required|numeric|min:0';
-            $rules['darsad_kharid'] = 'nullable|numeric|min:0|max:100';
-            $rules['ojrat'] = 'nullable|numeric|min:0|max:100';
+            // Weight is only required if no etikets are provided (for regular gold product creation)
+            // If etikets are provided, weight comes from etiket cards
+            if (!$hasEtikets) {
+                $rules['weight'] = 'required|numeric|min:0';
+            } else {
+                $rules['weight'] = 'nullable|numeric|min:0';
+                // Require at least one etiket with weight when etikets are provided
+                $rules['etikets'] = 'required|array|min:1';
+                $rules['etikets.*.weight'] = 'required_with:etikets|numeric|min:0';
+            }
+            $rules['darsad_kharid'] = 'required|numeric|min:0|max:100';
+            $rules['ojrat'] = 'required|numeric|min:0|max:100';
         }
         
         return $rules;
@@ -74,6 +84,17 @@ class StoreProductRequest extends FormRequest
             'cover_image.max' => 'حجم تصویر کاور نباید بیشتر از 2 مگابایت باشد.',
             'gallery.*.image' => 'فایل‌های گالری باید تصویر معتبر باشند.',
             'gallery.*.max' => 'حجم هر تصویر گالری نباید بیشتر از 2 مگابایت باشد.',
+            'darsad_kharid.required' => 'اجرت خرید الزامی است.',
+            'darsad_kharid.numeric' => 'اجرت خرید باید عدد باشد.',
+            'darsad_kharid.min' => 'اجرت خرید نمی‌تواند منفی باشد.',
+            'darsad_kharid.max' => 'اجرت خرید نمی‌تواند بیشتر از 100 باشد.',
+            'ojrat.required' => 'اجرت فروش الزامی است.',
+            'ojrat.numeric' => 'اجرت فروش باید عدد باشد.',
+            'ojrat.min' => 'اجرت فروش نمی‌تواند منفی باشد.',
+            'ojrat.max' => 'اجرت فروش نمی‌تواند بیشتر از 100 باشد.',
+            'etikets.required' => 'حداقل یک اتیکت باید اضافه شود.',
+            'etikets.min' => 'حداقل یک اتیکت باید اضافه شود.',
+            'etikets.*.weight.required_with' => 'وزن اتیکت الزامی است.',
         ];
     }
 }

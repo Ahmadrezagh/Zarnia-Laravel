@@ -82,7 +82,6 @@ class ProductItemResouce extends JsonResource
             'purity' => '18',
             'gold_price' => get_gold_price()/10,
             'options' => $this->options,
-            'orderable_after_out_of_stock' => $this->orderable_after_out_of_stock ?? false,
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             'meta_keywords' => $this->meta_keywords,
@@ -109,6 +108,7 @@ class ProductItemResouce extends JsonResource
                             'code' => $etiket->code,
                             'weight' => $etiket->weight,
                             'price' => $etiket->price,
+                            'orderable_after_out_of_stock' => $etiket->orderable_after_out_of_stock ?? false,
                         ])->values(),
                     ];
                 })
