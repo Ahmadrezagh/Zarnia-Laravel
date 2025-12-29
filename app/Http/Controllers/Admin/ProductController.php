@@ -747,7 +747,7 @@ class ProductController extends Controller
 
     public function table(Request $request)
     {
-        $query = Product::query()->available()->main()->withoutTrashed()->select('*'); // Assuming your model is Product
+        $query = Product::query()->available()->main()->select('*'); // Assuming your model is Product
 
         // Get total records before applying filters
         $totalRecords = $query->count();
