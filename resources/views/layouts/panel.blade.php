@@ -361,7 +361,10 @@
                                 <a class="nav-sub-link" href="{{route('products.deleted')}}">محصولات حذف شده</a>
                             </li>
                             <li class="nav-sub-item">
-                                <a class="nav-sub-link" href="{{route('etikets.index')}}">اتیکت‌ها</a>
+                                <a class="nav-sub-link" href="{{route('etikets.available')}}">اتیکت‌های موجود</a>
+                            </li>
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('etikets.not_available')}}">اتیکت‌های ناموجود</a>
                             </li>
                         </ul>
                     </li>

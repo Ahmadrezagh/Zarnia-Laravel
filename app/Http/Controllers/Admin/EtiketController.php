@@ -13,12 +13,21 @@ use Illuminate\Support\Facades\Schema;
 class EtiketController extends Controller
 {
     /**
-     * Display a listing of etikets.
+     * Display a listing of available etikets.
      */
-    public function index()
+    public function indexAvailable()
     {
         $categories = Category::query()->get();
-        return view('admin.etikets.index', compact('categories'));
+        return view('admin.etikets.index_available', compact('categories'));
+    }
+
+    /**
+     * Display a listing of unavailable etikets.
+     */
+    public function indexNotAvailable()
+    {
+        $categories = Category::query()->get();
+        return view('admin.etikets.index_not_available', compact('categories'));
     }
 
     /**
@@ -27,6 +36,16 @@ class EtiketController extends Controller
     public function table(Request $request)
     {
         $query = Etiket::query()->with('product.categories')->select('etikets.*');
+        
+        // Filter by availability if specified
+        if ($request->has('is_mojood')) {
+            $isMojood = $request->input('is_mojood');
+            if ($isMojood === '1' || $isMojood === 1) {
+                $query->where('etikets.is_mojood', 1);
+            } elseif ($isMojood === '0' || $isMojood === 0) {
+                $query->where('etikets.is_mojood', 0);
+            }
+        }
 
         // Get total records before applying filters
         $totalRecords = $query->count();

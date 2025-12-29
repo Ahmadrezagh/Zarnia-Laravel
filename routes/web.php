@@ -81,7 +81,8 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('etikets/{product}', [EtiketController::class, 'getEtiketsOfProduct'])->name('etikets');
     });
     Route::middleware(['auth'])->group(function () {
-        Route::get('etikets', [EtiketController::class, 'index'])->name('etikets.index');
+        Route::get('etikets/available', [EtiketController::class, 'indexAvailable'])->name('etikets.available');
+        Route::get('etikets/not-available', [EtiketController::class, 'indexNotAvailable'])->name('etikets.not_available');
     });
     Route::middleware(['auth'])->prefix('admin')-> group(function (){
         Route::resource('roles', RoleController::class );
