@@ -91,6 +91,12 @@ class ProductController extends Controller
         return view('admin.products.create_non_gold', compact('categories', 'products'));
     }
 
+    public function createComprehensive()
+    {
+        $categories = Category::query()->get();
+        return view('admin.products.create_comprehensive', compact('categories'));
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -1640,6 +1646,119 @@ class ProductController extends Controller
                     'single_count' => $singleCount,
                     'count' => $count,
                     'weight' => $product->weight
+                ];
+            });
+
+        return response()->json([
+            'results' => $products,
+            'pagination' => ['more' => false]
+        ]);
+    }
+
+    /**
+     * AJAX search for products with single_count > 0 (for comprehensive products)
+     * Includes both parent and child products
+     * Supports searching by product name or etiket code
+     */
+    public function ajaxSearchForComprehensive(Request $request)
+    {
+        $query = $request->input('q');
+        $productIds = collect();
+
+        // First, search by product name - products with single_count > 0
+        // Exclude comprehensive products (they don't have direct etikets)
+        // Include both parent and child products (no parent_id filter)
+        $productsByName = Product::where('name', 'LIKE', "%{$query}%")
+            ->where(function ($q) {
+                $q->whereNull('is_comprehensive')
+                    ->orWhere('is_comprehensive', 0);
+            })
+            ->whereHas('etikets', function ($q) {
+                $q->where('is_mojood', 1);
+            })
+            ->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
+            ->distinct()
+            ->limit(50)
+            ->get()
+            ->filter(function ($product) {
+                // Double-check single_count > 0
+                return $product->single_count > 0;
+            });
+        
+        $productIds = $productIds->merge($productsByName->pluck('id'));
+
+        // Also search by etiket code
+        $etikets = \App\Models\Etiket::where('code', '=', $query)
+            ->where('is_mojood', 1) // Only available etikets
+            ->with('product:id,name,price,discounted_price,weight,parent_id,is_comprehensive')
+            ->get();
+
+        foreach ($etikets as $etiket) {
+            if ($etiket->product) {
+                $product = $etiket->product;
+                // Exclude comprehensive products
+                if ($product->is_comprehensive == 1) {
+                    continue;
+                }
+                // Check if product has single_count > 0 (has available etikets)
+                if ($product->single_count > 0) {
+                    $productIds->push($product->id);
+                }
+            }
+        }
+
+        // Get unique products with single_count > 0
+        $uniqueProductIds = $productIds->unique()->take(50);
+        
+        if ($uniqueProductIds->isEmpty()) {
+            return response()->json([
+                'results' => [],
+                'pagination' => ['more' => false]
+            ]);
+        }
+        
+        $products = Product::whereIn('id', $uniqueProductIds)
+            ->whereHas('etikets', function ($q) {
+                $q->where('is_mojood', 1);
+            })
+            ->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
+            ->get()
+            ->filter(function ($product) {
+                // Final check: single_count > 0
+                return $product->single_count > 0;
+            })
+            ->map(function ($product) {
+                // Calculate counts for display
+                $singleCount = $product->single_count;
+                $count = $product->count;
+                $finalPrice = (int) $product->price;
+                $originalPrice = (int) $product->originalPrice;
+                $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
+
+                // Build display text
+                $text = $product->name;
+                if ($product->weight) {
+                    $text .= ' (' . $product->weight . 'g)';
+                }
+                $text .= ' (موجودی: ' . $singleCount . ')';
+                
+                // Add parent/child indicator if needed
+                if ($product->parent_id) {
+                    $text .= ' [فرزند]';
+                } else {
+                    $text .= ' [اصلی]';
+                }
+
+                return [
+                    'id' => $product->id,
+                    'text' => $text,
+                    'price' => $finalPrice,
+                    'discounted_price' => $discountedPrice,
+                    'original_price' => $originalPrice,
+                    'single_count' => $singleCount,
+                    'count' => $count,
+                    'weight' => $product->weight,
+                    'parent_id' => $product->parent_id
                 ];
             });
 

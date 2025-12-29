@@ -12,7 +12,7 @@
         <x-slot name="header">
             <a href="{{ route('products.create.gold') }}" class="btn btn-warning mb-3">افزودن محصول طلا</a>
             <a href="{{ route('products.create.non.gold') }}" class="btn btn-info mb-3">افزودن محصول غیر طلا</a>
-            <button class="btn btn-primary mb-3"  type="button" onclick="createAssembledProduct()" >افزودن محصول جامع</button>
+            <a href="{{ route('products.create.comprehensive') }}" class="btn btn-primary mb-3">افزودن محصول جامع</a>
 
             <div class="row mb-3">
                 <form id="filterForm" action="" class="col-12 ">

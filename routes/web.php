@@ -93,12 +93,14 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('products/export', [ProductController::class,'export' ])->name('products.export');
         Route::get('products/create-gold', [ProductController::class, 'createGold'])->name('products.create.gold');
         Route::get('products/create-non-gold', [ProductController::class, 'createNonGold'])->name('products.create.non.gold');
+        Route::get('products/create-comprehensive', [ProductController::class, 'createComprehensive'])->name('products.create.comprehensive');
         Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
         Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
         Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');
         Route::post('products/recalculate-discounts', [ProductController::class,'recalculateDiscounts' ])->name('products.recalculate_discounts');
         Route::get('products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
         Route::get('products/ajax/search-parents', [ProductController::class, 'ajaxSearchParents'])->name('products.ajax.search.parents');
+        Route::get('products/ajax/search-comprehensive', [ProductController::class, 'ajaxSearchForComprehensive'])->name('products.ajax.search.comprehensive');
         Route::get('products/search-by-etiket', [ProductController::class, 'searchByEtiketCode'])->name('products.search.by.etiket');
         Route::post('products/{product}/etikets', [EtiketController::class, 'storeForProduct'])->name('products.etikets.store');
         
