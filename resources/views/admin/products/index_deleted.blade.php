@@ -18,10 +18,10 @@
 
         <x-dataTable
             :title="'محصولات حذف شده'"
-            :route="route('table.products')"
+            :url="route('table.products.deleted')"
             :columns="[
                             ['label' => 'شناسه', 'key' => 'id', 'type' => 'text'],
-                            ['label' => 'نام محصول', 'key' => 'name', 'type' => 'text', 'sortable' => true],
+                            ['label' => 'نام محصول', 'key' => 'nameUrl', 'type' => 'text', 'sortable' => true],
                             ['label' => 'قیمت', 'key' => 'price', 'type' => 'text'],
                             ['label' => 'قیمت تخفیف', 'key' => 'discounted_price', 'type' => 'text'],
                             ['label' => 'موجودی', 'key' => 'count', 'type' => 'text'],
@@ -30,8 +30,7 @@
                         ]"
             :items="$products"
             :actions="[
-                            ['label' => 'بازیابی', 'type' => 'restore', 'class' => 'btn-success', 'url' => '{id}'],
-                            ['label' => 'حذف دائمی', 'type' => 'forceDelete', 'class' => 'btn-danger', 'url' => '{id}'],
+                            ['label' => 'بازیابی', 'type' => 'restore', 'class' => 'btn-success'],
                         ]"
         >
         </x-dataTable>
