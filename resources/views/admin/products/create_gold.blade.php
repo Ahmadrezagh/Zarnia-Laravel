@@ -261,6 +261,84 @@
                 cache: true
             }
         });
+
+        // When parent product is selected, fill form with parent data
+        $('#parent-product').on('select2:select', function (e) {
+            const parentId = e.params.data.id;
+            if (parentId) {
+                loadParentProductData(parentId);
+            }
+        });
+
+        // When parent product is cleared, optionally clear form or keep data
+        $('#parent-product').on('select2:clear', function (e) {
+            // Optionally clear form fields or keep them filled
+            // For now, we'll keep the data filled even if parent is cleared
+        });
+
+        // Function to load parent product data and fill form
+        function loadParentProductData(productId) {
+            $.ajax({
+                url: '{{ route("products.index") }}/' + productId,
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    const product = response.data || response;
+                    
+                    // Fill weight
+                    if (product.weight) {
+                        $('#product-weight').val(product.weight);
+                    }
+                    
+                    // Fill price (originalPrice is already divided by 10)
+                    if (product.price) {
+                        $('#product-price').val(product.price);
+                    }
+                    
+                    // Fill darsad_kharid (execution purchase percentage)
+                    if (product.darsad_kharid !== null && product.darsad_kharid !== undefined) {
+                        $('#darsad-kharid').val(product.darsad_kharid);
+                    }
+                    
+                    // Fill ojrat (execution sale percentage)
+                    if (product.ojrat !== null && product.ojrat !== undefined) {
+                        $('#ojrat').val(product.ojrat);
+                    }
+                    
+                    // Fill discount_percentage
+                    if (product.discount_percentage !== null && product.discount_percentage !== undefined) {
+                        $('#discount-percentage').val(product.discount_percentage);
+                    }
+                    
+                    // Fill description
+                    if (product.description) {
+                        $('#product-description').val(product.description);
+                    }
+                    
+                    // Fill attribute group
+                    if (product.attribute_group_str) {
+                        $('#attribute-group').val(product.attribute_group_str);
+                    }
+                    
+                    // Fill categories
+                    if (product.category_ids && product.category_ids.length > 0) {
+                        $('#product-categories').val(product.category_ids).trigger('change');
+                    }
+                    
+                    // Recalculate price if weight and ojrat are available
+                    if (product.weight && product.ojrat) {
+                        setTimeout(function() {
+                            calculateTabanGoharPrice();
+                        }, 100);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error loading parent product data:', xhr);
+                }
+            });
+        }
         
         // Add event listeners to weight and ojrat inputs for automatic price calculation
         $('#product-weight, #ojrat').on('input change', function() {

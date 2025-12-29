@@ -35,6 +35,7 @@ class EditProductResource extends JsonResource
             'image' => $this->image,
             'weight' => $this->weight,
             'ojrat' => $this->ojrat,
+            'darsad_kharid' => $this->darsad_kharid,
             'categories_title' => $this->categories_title,
             'category_ids' => $this->categories()->pluck('category_id')->toArray(),
             'discount_percentage' => $this->discount_percentage,
