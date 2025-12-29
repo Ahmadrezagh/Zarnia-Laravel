@@ -84,6 +84,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('etikets/available', [EtiketController::class, 'indexAvailable'])->name('etikets.available');
         Route::get('etikets/not-available', [EtiketController::class, 'indexNotAvailable'])->name('etikets.not_available');
         Route::post('etikets/bulk-update', [EtiketController::class, 'bulkUpdate'])->name('etikets.bulk_update');
+        Route::post('etikets/bulk-update-for-products', [EtiketController::class, 'bulkUpdateForProducts'])->name('etikets.bulk_update_for_products');
     });
     Route::middleware(['auth'])->prefix('admin')-> group(function (){
         Route::resource('roles', RoleController::class );
@@ -101,6 +102,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('products/create-non-gold', [ProductController::class, 'createNonGold'])->name('products.create.non.gold');
         Route::get('products/create-comprehensive', [ProductController::class, 'createComprehensive'])->name('products.create.comprehensive');
         Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
+        Route::post('products/bulk-update-products-and-etikets', [ProductController::class, 'bulkUpdateProductsAndEtikets'])->name('products.bulk_update_products_and_etikets');
         Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
         Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');
         Route::post('products/recalculate-discounts', [ProductController::class,'recalculateDiscounts' ])->name('products.recalculate_discounts');

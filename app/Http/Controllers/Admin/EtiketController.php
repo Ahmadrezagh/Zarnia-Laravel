@@ -268,4 +268,60 @@ class EtiketController extends Controller
             'updated' => $updated
         ]);
     }
+
+    /**
+     * Bulk update etikets for selected products
+     */
+    public function bulkUpdateForProducts(Request $request)
+    {
+        if (is_string($request->product_ids)) {
+            $productIds = json_decode($request->product_ids, true);
+            $request->merge(['product_ids' => $productIds]);
+        }
+
+        $request->validate([
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'exists:products,id',
+            'ojrat' => 'nullable|string',
+            'darsad_kharid' => 'nullable|string',
+            'weight' => 'nullable|numeric|min:0',
+        ]);
+
+        $products = Product::whereIn('id', $request->product_ids)->get();
+        $updated = 0;
+        $totalEtikets = 0;
+
+        foreach ($products as $product) {
+            $etikets = $product->etikets;
+            $totalEtikets += $etikets->count();
+            
+            foreach ($etikets as $etiket) {
+                $updateData = [];
+                
+                if ($request->filled('ojrat')) {
+                    $updateData['ojrat'] = $request->ojrat;
+                }
+                
+                if ($request->filled('darsad_kharid')) {
+                    $updateData['darsad_kharid'] = $request->darsad_kharid;
+                }
+                
+                if ($request->filled('weight')) {
+                    $updateData['weight'] = $request->weight;
+                }
+                
+                if (!empty($updateData)) {
+                    $etiket->update($updateData);
+                    $updated++;
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "تعداد {$updated} اتیکت از {$totalEtikets} اتیکت با موفقیت به‌روزرسانی شد",
+            'updated' => $updated,
+            'total' => $totalEtikets
+        ]);
+    }
 }

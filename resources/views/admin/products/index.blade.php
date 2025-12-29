@@ -54,6 +54,9 @@
                     <button type="button" class="btn btn-primary" onclick="showBulkUpdateModal()">ویرایش دسته جمعی </button>
                 </div>
                 <div class="col-3">
+                    <button type="button" id="bulk-update-etikets-btn" class="btn btn-info" onclick="showBulkUpdateEtiketsModal()" >ویرایش دسته جمعی اتیکت‌ها</button>
+                </div>
+                <div class="col-3">
                     <button type="button" class="btn btn-primary" onclick="showAssignCategoryModal()">ویرایش دسته بندی </button>
                 </div>
                 <div class="col-3">
@@ -2019,6 +2022,138 @@
                 }
             });
         }
+
+        // Show/hide bulk update etikets button based on selected products
+        function updateBulkUpdateEtiketsButton() {
+            const selectedIds = window.showArray ? window.showArray() : [];
+            const btn = $('#bulk-update-etikets-btn');
+            if (selectedIds.length > 0) {
+                btn.fadeIn();
+            } else {
+                btn.fadeOut();
+            }
+        }
+
+        // Show bulk update etikets modal
+        function showBulkUpdateEtiketsModal() {
+            const selectedIds = window.showArray ? window.showArray() : [];
+            
+            if (selectedIds.length === 0) {
+                alert('لطفا حداقل یک محصول را انتخاب کنید');
+                return;
+            }
+
+            eraseModalContent();
+
+            const formHtml = `
+        <form id="bulkUpdateEtiketsForm">
+            <input type="hidden" name="product_ids" id="product_ids_for_etikets">
+            
+            <div class="alert alert-info">
+                <strong>تعداد محصولات انتخاب شده: ${selectedIds.length}</strong>
+                <br><small>محصولات انتخاب شده، محصولات فرزند آنها و تمام اتیکت‌های مربوطه به‌روزرسانی خواهند شد</small>
+            </div>
+
+            <div class="form-group">
+                <label>اجرت خرید (درصد خرید)</label>
+                <input type="text" name="darsad_kharid" class="form-control" placeholder="مثال: 10">
+                <small class="form-text text-muted">فقط در صورت نیاز به تغییر پر کنید</small>
+            </div>
+
+            <div class="form-group">
+                <label>اجرت فروش (درصد اجرت)</label>
+                <input type="text" name="ojrat" class="form-control" placeholder="مثال: 5">
+                <small class="form-text text-muted">فقط در صورت نیاز به تغییر پر کنید</small>
+            </div>
+
+            <div class="form-group">
+                <label>وزن (گرم)</label>
+                <input type="number" name="weight" class="form-control" step="0.01" placeholder="مثال: 5.5">
+                <small class="form-text text-muted">فقط در صورت نیاز به تغییر پر کنید</small>
+            </div>
+
+            <button type="button" onclick="submitBulkUpdateEtikets(this)" class="btn btn-primary">ویرایش</button>
+        </form>
+    `;
+
+            appendToModalContent(formHtml);
+
+            // Set the selected product IDs
+            $('#product_ids_for_etikets').val(JSON.stringify(selectedIds));
+
+            showDynamicModal();
+        }
+
+        // Submit bulk update etikets
+        function submitBulkUpdateEtikets(button) {
+            const form = $(button).closest('form')[0];
+            const formData = new FormData(form);
+            formData.append('_token', '{{ csrf_token() }}');
+
+            $.ajax({
+                url: '{{ route('products.bulk_update_products_and_etikets') }}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(res.message);
+                        } else {
+                            alert(res.message);
+                        }
+                        $('#dynamic-modal').modal('hide');
+                        window.refreshTable();
+                        // Hide button after update
+                        setTimeout(function() {
+                            $('#bulk-update-etikets-btn').hide();
+                        }, 500);
+                    }
+                },
+                error: function (xhr) {
+                    const response = xhr.responseJSON;
+                    const errorMessage = response?.message || 'خطا در به‌روزرسانی اتیکت‌ها';
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(errorMessage);
+                    } else {
+                        alert(errorMessage);
+                    }
+                }
+            });
+        }
+
+        // Listen to checkbox changes for etikets button
+        $(document).ready(function() {
+            // Use event delegation for dynamically created checkboxes
+            $(document).on('change', '#products-table .custom-select-option, #products-table #selectAll', function() {
+                setTimeout(updateBulkUpdateEtiketsButton, 100);
+            });
+            
+            // Listen to DataTable initialization and draw events
+            if ($.fn.DataTable && $('#products-table').length) {
+                $('#products-table').on('init.dt', function() {
+                    updateBulkUpdateEtiketsButton();
+                });
+                
+                $('#products-table').on('draw.dt', function() {
+                    setTimeout(updateBulkUpdateEtiketsButton, 100);
+                });
+            }
+            
+            // Poll for changes to selectedValues (reliable fallback)
+            let lastSelectedValues = '';
+            setInterval(function() {
+                const currentValue = $('#selectedValues').val() || '[]';
+                if (currentValue !== lastSelectedValues) {
+                    lastSelectedValues = currentValue;
+                    updateBulkUpdateEtiketsButton();
+                }
+            }, 300);
+            
+            // Initial check after a delay
+            setTimeout(updateBulkUpdateEtiketsButton, 1000);
+        });
         function submitAssignCategory(button) {
             const form = $(button).closest('form')[0];
             const formData = new FormData(form);

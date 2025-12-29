@@ -1330,6 +1330,95 @@ class ProductController extends Controller
         return response()->json(['status' => 'success']);
     }
 
+    /**
+     * Bulk update products and their etikets
+     */
+    public function bulkUpdateProductsAndEtikets(Request $request)
+    {
+        if (is_string($request->product_ids)) {
+            $productIds = json_decode($request->product_ids, true);
+            $request->merge(['product_ids' => $productIds]);
+        }
+
+        $request->validate([
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'exists:products,id',
+            'ojrat' => 'nullable|string',
+            'darsad_kharid' => 'nullable|string',
+            'weight' => 'nullable|numeric|min:0',
+        ]);
+
+        $products = Product::whereIn('id', $request->product_ids)->with('children')->get();
+        $updatedProducts = 0;
+        $updatedChildren = 0;
+        $updatedEtikets = 0;
+
+        // Prepare update data
+        $productUpdateData = [];
+        $etiketUpdateData = [];
+        
+        if ($request->filled('ojrat')) {
+            $productUpdateData['ojrat'] = $request->ojrat;
+            $etiketUpdateData['ojrat'] = $request->ojrat;
+        }
+        
+        if ($request->filled('darsad_kharid')) {
+            $productUpdateData['darsad_kharid'] = $request->darsad_kharid;
+            $etiketUpdateData['darsad_kharid'] = $request->darsad_kharid;
+        }
+        
+        if ($request->filled('weight')) {
+            $productUpdateData['weight'] = $request->weight;
+            $etiketUpdateData['weight'] = $request->weight;
+        }
+
+        if (empty($productUpdateData)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لطفا حداقل یک فیلد را برای به‌روزرسانی وارد کنید'
+            ], 400);
+        }
+
+        foreach ($products as $product) {
+            // Update the product itself
+            $product->update($productUpdateData);
+            $updatedProducts++;
+            
+            // Update all etikets belonging to this product
+            if (!empty($etiketUpdateData)) {
+                $etiketCount = $product->etikets()->update($etiketUpdateData);
+                $updatedEtikets += $etiketCount;
+            }
+            
+            // Get and update all children products
+            $children = $product->children;
+            foreach ($children as $child) {
+                // Update child product
+                $child->update($productUpdateData);
+                $updatedChildren++;
+                
+                // Update all etikets belonging to this child product
+                if (!empty($etiketUpdateData)) {
+                    $childEtiketCount = $child->etikets()->update($etiketUpdateData);
+                    $updatedEtikets += $childEtiketCount;
+                }
+            }
+        }
+
+        $message = "تعداد {$updatedProducts} محصول";
+        if ($updatedChildren > 0) {
+            $message .= " و {$updatedChildren} محصول فرزند";
+        }
+        $message .= " و {$updatedEtikets} اتیکت با موفقیت به‌روزرسانی شد";
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'updated_products' => $updatedProducts,
+            'updated_children' => $updatedChildren,
+            'updated_etikets' => $updatedEtikets
+        ]);
+    }
 
     public function assignCategory(Request $request)
     {
