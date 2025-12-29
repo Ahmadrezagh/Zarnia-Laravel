@@ -97,6 +97,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');
         Route::post('products/recalculate-discounts', [ProductController::class,'recalculateDiscounts' ])->name('products.recalculate_discounts');
         Route::get('products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
+        Route::get('products/ajax/search-parents', [ProductController::class, 'ajaxSearchParents'])->name('products.ajax.search.parents');
         Route::get('products/search-by-etiket', [ProductController::class, 'searchByEtiketCode'])->name('products.search.by.etiket');
         Route::post('products/{product}/etikets', [EtiketController::class, 'storeForProduct'])->name('products.etikets.store');
         

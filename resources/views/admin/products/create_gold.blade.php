@@ -211,7 +211,7 @@
                 }
             },
             ajax: {
-                url: '{{ route("products.ajax.search") }}',
+                url: '{{ route("products.ajax.search.parents") }}',
                 dataType: 'json',
                 type: 'GET',
                 delay: 250,
@@ -220,9 +220,7 @@
                 },
                 data: function (params) {
                     return {
-                        q: params.term || '',
-                        available_only: '0',
-                        parent_only: '1' // Only show parent products
+                        q: params.term || ''
                     };
                 },
                 processResults: function (data) {

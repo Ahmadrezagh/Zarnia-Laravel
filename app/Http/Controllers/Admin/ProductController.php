@@ -1502,7 +1502,6 @@ class ProductController extends Controller
     {
         $query = $request->input('q');
         $availableOnly = $request->has('available_only') && $request->available_only == '1';
-        $parentOnly = $request->has('parent_only') && $request->parent_only == '1';
 
         // Search products by name OR exact etiket code - only show products with count >= 1
         $productsQuery = Product::where(function($q) use ($query) {
@@ -1518,11 +1517,6 @@ class ProductController extends Controller
                 $q->where('is_mojood', 1); // Only products with available etikets
             });
 
-        // If parent_only is requested, only show main products (parent_id = null)
-        if ($parentOnly) {
-            $productsQuery->whereNull('parent_id');
-        }
-
         // Filter unavailable products if requested - use available() scope instead of single_count
         if ($availableOnly) {
             $productsQuery->available();
@@ -1531,7 +1525,11 @@ class ProductController extends Controller
         $products = $productsQuery->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
             ->distinct() // Prevent duplicates
             ->limit(50) // Limit results for performance
-            ->get();
+            ->get()
+            ->filter(function ($product) {
+                // Filter by single_count >= 1
+                return $product->single_count >= 1;
+            });
         
         $products = $products->map(function ($product) {
             // Calculate single_count using the accessor after loading the product
@@ -1566,6 +1564,48 @@ class ProductController extends Controller
 
         return response()->json([
             'results' => $results,
+            'pagination' => ['more' => false]
+        ]);
+    }
+
+    /**
+     * AJAX search for parent products only (main products with parent_id = null)
+     * Does not filter by count or single_count
+     */
+    public function ajaxSearchParents(Request $request)
+    {
+        $query = $request->input('q');
+
+        // Search only main products (parent_id = null) by name
+        $productsQuery = Product::where('name', 'LIKE', "%{$query}%")
+            ->whereNull('parent_id'); // Only main products
+
+        $products = $productsQuery->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
+            ->distinct()
+            ->limit(50)
+            ->get()
+            ->map(function ($product) {
+                // Calculate counts for display (but don't filter by them)
+                $singleCount = $product->single_count;
+                $count = $product->count;
+                $finalPrice = (int) $product->price;
+                $originalPrice = (int) $product->originalPrice;
+                $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
+
+                return [
+                    'id' => "Product:{$product->id}",
+                    'text' => $product->name . (($product->weight) ? ' (' . $product->weight . 'g)' : '') . ' (موجودی: ' . $count . ')',
+                    'price' => $finalPrice,
+                    'discounted_price' => $discountedPrice,
+                    'original_price' => $originalPrice,
+                    'single_count' => $singleCount,
+                    'count' => $count,
+                    'weight' => $product->weight
+                ];
+            });
+
+        return response()->json([
+            'results' => $products,
             'pagination' => ['more' => false]
         ]);
     }
