@@ -332,6 +332,31 @@
                         $('#product-categories').val(product.category_ids).trigger('change');
                     }
                     
+                    // Load cover image
+                    if (product.image) {
+                        const $preview = $('#cover-image-preview');
+                        $preview.find('div.text-center, img').remove();
+                        $preview.prepend('<img src="' + product.image + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                        // Store image URL for potential use (though file input can't be set)
+                        $preview.data('parent-image-url', product.image);
+                    }
+                    
+                    // Load gallery images
+                    if (product.gallery && product.gallery.length > 0) {
+                        product.gallery.forEach(function(galleryItem, index) {
+                            const galleryIndex = index + 1;
+                            if (galleryIndex <= 3) { // We only have 3 gallery preview slots
+                                const $galleryPreview = $('#gallery-preview-' + galleryIndex);
+                                $galleryPreview.find('i.fas.fa-plus, img').remove();
+                                if (galleryItem.src) {
+                                    $galleryPreview.prepend('<img src="' + galleryItem.src + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                                    // Store image URL
+                                    $galleryPreview.data('parent-image-url', galleryItem.src);
+                                }
+                            }
+                        });
+                    }
+                    
                     // Recalculate price if weight and ojrat are available
                     if (product.weight && product.ojrat) {
                         setTimeout(function() {
