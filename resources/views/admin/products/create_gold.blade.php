@@ -342,19 +342,51 @@
                     }
                     
                     // Load gallery images
-                    if (product.gallery && product.gallery.length > 0) {
+                    if (product.gallery && Array.isArray(product.gallery) && product.gallery.length > 0) {
+                        console.log('Loading gallery images:', product.gallery);
                         product.gallery.forEach(function(galleryItem, index) {
                             const galleryIndex = index + 1;
                             if (galleryIndex <= 3) { // We only have 3 gallery preview slots
                                 const $galleryPreview = $('#gallery-preview-' + galleryIndex);
+                                
+                                if ($galleryPreview.length === 0) {
+                                    console.warn('Gallery preview element not found for index:', galleryIndex);
+                                    return;
+                                }
+                                
+                                const $input = $galleryPreview.find('input[type="file"]');
+                                
+                                // Remove existing preview content but keep input
                                 $galleryPreview.find('i.fas.fa-plus, img').remove();
-                                if (galleryItem.src) {
-                                    $galleryPreview.prepend('<img src="' + galleryItem.src + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                                
+                                // Get image URL - check both src and url properties
+                                const imageUrl = galleryItem.src || galleryItem.url || (typeof galleryItem === 'string' ? galleryItem : null);
+                                
+                                if (imageUrl) {
+                                    // Ensure input stays in DOM with proper styling
+                                    if ($input.length > 0) {
+                                        $input.css({
+                                            'position': 'absolute',
+                                            'width': '100%',
+                                            'height': '100%',
+                                            'opacity': '0',
+                                            'z-index': '10',
+                                            'cursor': 'pointer'
+                                        });
+                                    }
+                                    
+                                    // Add preview image
+                                    $galleryPreview.prepend('<img src="' + imageUrl + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                                    
                                     // Store image URL
-                                    $galleryPreview.data('parent-image-url', galleryItem.src);
+                                    $galleryPreview.data('parent-image-url', imageUrl);
+                                } else {
+                                    console.warn('No image URL found for gallery item:', galleryItem);
                                 }
                             }
                         });
+                    } else {
+                        console.log('No gallery images found or gallery is not an array:', product.gallery);
                     }
                     
                     // Recalculate price if weight and ojrat are available
