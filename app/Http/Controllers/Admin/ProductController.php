@@ -1571,18 +1571,50 @@ class ProductController extends Controller
     /**
      * AJAX search for parent products only (main products with parent_id = null)
      * Does not filter by count or single_count
+     * Can search by product name or etiket code
      */
     public function ajaxSearchParents(Request $request)
     {
         $query = $request->input('q');
+        $parentProductIds = collect();
 
-        // Search only main products (parent_id = null) by name
-        $productsQuery = Product::where('name', 'LIKE', "%{$query}%")
-            ->whereNull('parent_id'); // Only main products
-
-        $products = $productsQuery->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
+        // First, search by product name - only main products (parent_id = null)
+        $productsByName = Product::where('name', 'LIKE', "%{$query}%")
+            ->whereNull('parent_id')
+            ->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
             ->distinct()
             ->limit(50)
+            ->get();
+        
+        $parentProductIds = $parentProductIds->merge($productsByName->pluck('id'));
+
+        // Also search by etiket code
+        $etikets = \App\Models\Etiket::where('code', '=', $query)
+            ->with('product:id,parent_id,name,price,discounted_price,weight')
+            ->get();
+
+        foreach ($etikets as $etiket) {
+            if ($etiket->product) {
+                $product = $etiket->product;
+                // If product has a parent, get the parent; otherwise use the product itself
+                if ($product->parent_id) {
+                    $parent = Product::find($product->parent_id);
+                    if ($parent && $parent->parent_id === null) {
+                        // Only add if it's a main product (parent_id = null)
+                        $parentProductIds->push($parent->id);
+                    }
+                } else {
+                    // Product is already a parent
+                    $parentProductIds->push($product->id);
+                }
+            }
+        }
+
+        // Get unique parent products
+        $uniqueParentIds = $parentProductIds->unique()->take(50);
+        
+        $products = Product::whereIn('id', $uniqueParentIds)
+            ->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
             ->get()
             ->map(function ($product) {
                 // Calculate counts for display (but don't filter by them)
