@@ -518,15 +518,29 @@
     function addEtiket() {
         etiketCounter++;
         const etiketHtml = '<div class="etiket-item border rounded p-2 mb-2" data-index="' + etiketCounter + '">' +
-            '<div class="row align-items-center">' +
-                '<div class="col-md-2">' +
+            '<div class="row align-items-center mb-2">' +
+                '<div class="col-md-1">' +
                     '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')">' +
                         '<i class="fas fa-times"></i>' +
                     '</button>' +
                 '</div>' +
-                '<div class="col-md-8">' +
+                '<div class="col-md-11">' +
                     '<input type="text" class="form-control form-control-sm etiket-code-input" name="etikets[' + etiketCounter + '][code]" placeholder="کد اتیکت" data-index="' + etiketCounter + '" onblur="validateEtiketCode(' + etiketCounter + ')">' +
                     '<small class="text-danger etiket-error" id="etiket-error-' + etiketCounter + '" style="display:none;"></small>' +
+                '</div>' +
+            '</div>' +
+            '<div class="row">' +
+                '<div class="col-md-4">' +
+                    '<label class="small font-weight-bold">تعداد</label>' +
+                    '<input type="number" class="form-control form-control-sm etiket-count-input" name="etikets[' + etiketCounter + '][count]" placeholder="تعداد" min="1" value="1" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')">' +
+                '</div>' +
+                '<div class="col-md-4">' +
+                    '<label class="small font-weight-bold">وزن (گرم)</label>' +
+                    '<input type="number" class="form-control form-control-sm etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')">' +
+                '</div>' +
+                '<div class="col-md-4">' +
+                    '<label class="small font-weight-bold">قیمت (تومان)</label>' +
+                    '<input type="number" class="form-control form-control-sm etiket-price-input" name="etikets[' + etiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + etiketCounter + '">' +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -606,6 +620,44 @@
         
         return true;
     }
+
+    // Calculate etiket price based on weight and ojrat
+    function calculateEtiketPrice(index) {
+        const $etiketItem = $('.etiket-item[data-index="' + index + '"]');
+        const weight = parseFloat($etiketItem.find('.etiket-weight-input').val()) || 0;
+        const ojrat = parseFloat($('#ojrat').val()) || 0;
+        const $priceInput = $etiketItem.find('.etiket-price-input');
+        
+        // Try to get gold price from global variable
+        if (!goldPrice || goldPrice === 0) {
+            goldPrice = window.goldPrice || 0;
+        }
+        
+        if (weight > 0 && goldPrice > 0 && ojrat > 0) {
+            // Formula: price = weight * (goldPrice * 1.01) * (1 + (ojrat / 100))
+            const adjustedGoldPrice = goldPrice * 1.01;
+            let calculatedPrice = weight * adjustedGoldPrice * (1 + (ojrat / 100));
+            
+            // Round down to nearest thousand (last three digits become 0)
+            calculatedPrice = Math.floor(calculatedPrice / 1000) * 1000;
+            
+            // Update price field
+            $priceInput.val(calculatedPrice);
+        } else {
+            // Clear price if required fields are missing
+            $priceInput.val('');
+        }
+    }
+
+    // Recalculate all etiket prices when ojrat changes
+    $('#ojrat').on('input change', function() {
+        $('.etiket-item').each(function() {
+            const index = $(this).data('index');
+            if (index) {
+                calculateEtiketPrice(index);
+            }
+        });
+    });
 </script>
 @endpush
 

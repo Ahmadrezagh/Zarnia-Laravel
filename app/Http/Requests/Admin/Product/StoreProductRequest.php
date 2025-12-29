@@ -37,6 +37,9 @@ class StoreProductRequest extends FormRequest
             'gallery.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'etikets' => 'nullable|array',
             'etikets.*.code' => 'nullable|string|max:255',
+            'etikets.*.count' => 'nullable|integer|min:1',
+            'etikets.*.weight' => 'nullable|numeric|min:0',
+            'etikets.*.price' => 'nullable|numeric|min:0',
             'is_not_gold_product' => 'nullable|boolean',
         ];
         

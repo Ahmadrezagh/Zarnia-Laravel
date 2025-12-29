@@ -174,30 +174,47 @@ class ProductController extends Controller
                         continue; // Skip empty codes
                     }
                     
-                    // Check for duplicate in current batch
-                    if (in_array($code, $etiketCodes)) {
-                        continue; // Skip duplicates in same batch
-                    }
+                    // Get count, weight, and price from etiket data
+                    $count = isset($etiketData['count']) && $etiketData['count'] > 0 ? (int)$etiketData['count'] : 1;
+                    $weight = isset($etiketData['weight']) && $etiketData['weight'] > 0 ? (float)$etiketData['weight'] : ($product->weight ?? 0);
+                    $price = isset($etiketData['price']) && $etiketData['price'] > 0 ? (int)($etiketData['price'] * 10) : $product->getRawOriginal('price'); // Multiply by 10 for storage
                     
-                    // Check for duplicate in database
-                    $existingEtiket = Etiket::where('code', $code)->first();
+                    // Check for duplicate in database (only check base code, not with index)
+                    $existingEtiket = Etiket::where('code', $code)->orWhere('code', 'like', $code . '-%')->first();
                     if ($existingEtiket) {
                         continue; // Skip if code already exists in database
                     }
                     
-                    // Create etiket with product details
-                    Etiket::create([
-                        'code' => $code,
-                        'name' => $product->name,
-                        'weight' => $product->weight ?? 0, // Use 0 for non-gold products
-                        'price' => $product->getRawOriginal('price'),
-                        'product_id' => $product->id,
-                        'ojrat' => $product->ojrat ?? null,
-                        'darsad_kharid' => $product->darsad_kharid ?? null,
-                        'is_mojood' => 1,
-                    ]);
-                    
-                    $etiketCodes[] = $code; // Track added codes
+                    // Create multiple etikets based on count
+                    for ($i = 0; $i < $count; $i++) {
+                        // For multiple etikets with same code, append index to make unique codes
+                        $etiketCode = $count > 1 ? $code . '-' . ($i + 1) : $code;
+                        
+                        // Check for duplicate in current batch
+                        if (in_array($etiketCode, $etiketCodes)) {
+                            continue; // Skip duplicates in same batch
+                        }
+                        
+                        // Check for duplicate in database
+                        $existingEtiketWithCode = Etiket::where('code', $etiketCode)->first();
+                        if ($existingEtiketWithCode) {
+                            continue; // Skip if code already exists in database
+                        }
+                        
+                        // Create etiket with provided details
+                        Etiket::create([
+                            'code' => $etiketCode,
+                            'name' => $product->name,
+                            'weight' => $weight,
+                            'price' => $price,
+                            'product_id' => $product->id,
+                            'ojrat' => $product->ojrat ?? null,
+                            'darsad_kharid' => $product->darsad_kharid ?? null,
+                            'is_mojood' => 1,
+                        ]);
+                        
+                        $etiketCodes[] = $etiketCode; // Track added codes
+                    }
                 }
             }
             
