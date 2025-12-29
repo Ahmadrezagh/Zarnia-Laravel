@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'panel.ip' => \App\Http\Middleware\CheckPanelIpAccess::class,
+            'api.domain' => \App\Http\Middleware\CheckApiDomain::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
