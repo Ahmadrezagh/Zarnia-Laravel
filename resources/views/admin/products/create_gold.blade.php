@@ -125,7 +125,9 @@
                             <div class="form-group mt-4">
                                 <label class="font-weight-bold">اتیکت‌ها</label>
                                 <div id="etikets-list" class="border rounded p-3" style="width: 100%; min-height: 400px; height: auto; overflow-y: visible;">
-                                    <p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>
+                                    <div class="row" id="etikets-row">
+                                        <p class="text-muted text-center mb-0 col-12">هیچ اتیکتی اضافه نشده است</p>
+                                    </div>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-info mt-2" onclick="addEtiket()">
                                     <i class="fas fa-plus"></i> افزودن اتیکت
@@ -516,24 +518,24 @@
     // Add etiket
     function addEtiket() {
         etiketCounter++;
-        const etiketHtml = '<div class="card etiket-item mb-3" data-index="' + etiketCounter + '" style="width: 100%;">' +
-            '<div class="card-header d-flex justify-content-between align-items-center bg-light">' +
-                '<h6 class="mb-0">اتیکت ' + etiketCounter + '</h6>' +
-                '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')">' +
-                    '<i class="fas fa-times"></i> حذف' +
-                '</button>' +
-            '</div>' +
-            '<div class="card-body">' +
-                '<div class="row">' +
-                    '<div class="col-md-4">' +
+        const etiketHtml = '<div class="col-md-3 mb-3">' +
+            '<div class="card etiket-item h-100" data-index="' + etiketCounter + '">' +
+                '<div class="card-header d-flex justify-content-between align-items-center bg-light">' +
+                    '<h6 class="mb-0">اتیکت ' + etiketCounter + '</h6>' +
+                    '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')">' +
+                        '<i class="fas fa-times"></i>' +
+                    '</button>' +
+                '</div>' +
+                '<div class="card-body">' +
+                    '<div class="form-group">' +
                         '<label class="small font-weight-bold">تعداد</label>' +
                         '<input type="number" class="form-control etiket-count-input" name="etikets[' + etiketCounter + '][count]" placeholder="تعداد" min="1" value="1" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')">' +
                     '</div>' +
-                    '<div class="col-md-4">' +
+                    '<div class="form-group">' +
                         '<label class="small font-weight-bold">وزن (گرم)</label>' +
                         '<input type="number" class="form-control etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')">' +
                     '</div>' +
-                    '<div class="col-md-4">' +
+                    '<div class="form-group">' +
                         '<label class="small font-weight-bold">قیمت (تومان)</label>' +
                         '<input type="number" class="form-control etiket-price-input" name="etikets[' + etiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + etiketCounter + '">' +
                     '</div>' +
@@ -541,18 +543,18 @@
             '</div>' +
         '</div>';
         
-        if ($('#etikets-list p.text-muted').length > 0) {
-            $('#etikets-list').html('');
+        if ($('#etikets-row p.text-muted').length > 0) {
+            $('#etikets-row').html('');
         }
-        $('#etikets-list').append(etiketHtml);
+        $('#etikets-row').append(etiketHtml);
     }
     
     // Remove etiket
     function removeEtiket(index) {
-        const etiketItem = $('.etiket-item[data-index="' + index + '"]');
+        const etiketItem = $('.etiket-item[data-index="' + index + '"]').closest('.col-md-3');
         etiketItem.remove();
-        if ($('#etikets-list .etiket-item').length === 0) {
-            $('#etikets-list').html('<p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>');
+        if ($('#etikets-row .etiket-item').length === 0) {
+            $('#etikets-row').html('<p class="text-muted text-center mb-0 col-12">هیچ اتیکتی اضافه نشده است</p>');
         }
     }
 
