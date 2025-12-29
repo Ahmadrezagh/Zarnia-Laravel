@@ -75,9 +75,13 @@ Route::middleware('panel.ip')->group(function () {
         Route::any('shippings', [ShippingController::class, 'table'])->name('shippings');
         Route::any('shipping_times/{shipping}', [ShippingController::class, 'timesTable'])->name('shipping_times');
         Route::any('gold_summary', [GoldSummaryController::class, 'table'])->name('gold_summary');
+        Route::any('etikets', [EtiketController::class, 'table'])->name('etikets');
     });
     Route::middleware(['auth'])->prefix('product')->name('product.')->group(function () {
         Route::get('etikets/{product}', [EtiketController::class, 'getEtiketsOfProduct'])->name('etikets');
+    });
+    Route::middleware(['auth'])->group(function () {
+        Route::get('etikets', [EtiketController::class, 'index'])->name('etikets.index');
     });
     Route::middleware(['auth'])->prefix('admin')-> group(function (){
         Route::resource('roles', RoleController::class );
