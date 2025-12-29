@@ -293,8 +293,8 @@
                     const product = response.data || response;
                     
                     // Display parent product URL
-                    if (product.urlOfProduct) {
-                        $('#parent-product-url-link').attr('href', product.urlOfProduct).text(product.urlOfProduct);
+                    if (product.frontend_url) {
+                        $('#parent-product-url-link').attr('href', product.frontend_url).text(product.frontend_url);
                         $('#parent-product-url').show();
                     } else {
                         $('#parent-product-url').hide();
