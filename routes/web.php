@@ -91,6 +91,7 @@ Route::middleware('panel.ip')->group(function () {
         
         // Product routes - specific routes BEFORE resource route
         Route::get('products/export', [ProductController::class,'export' ])->name('products.export');
+        Route::get('products/create-gold', [ProductController::class, 'createGold'])->name('products.create.gold');
         Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
         Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
         Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');

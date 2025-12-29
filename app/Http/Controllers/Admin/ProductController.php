@@ -75,6 +75,16 @@ class ProductController extends Controller
     }
 
     /**
+     * Show the form for creating a new gold product.
+     */
+    public function createGold()
+    {
+        $categories = Category::query()->get();
+        $products = Product::query()->main()->get(); // For parent product selection
+        return view('admin.products.create_gold', compact('categories', 'products'));
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(StoreProductRequest $request)
