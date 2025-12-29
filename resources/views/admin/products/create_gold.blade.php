@@ -221,7 +221,8 @@
                 data: function (params) {
                     return {
                         q: params.term || '',
-                        available_only: '0'
+                        available_only: '0',
+                        parent_only: '1' // Only show parent products
                     };
                 },
                 processResults: function (data) {

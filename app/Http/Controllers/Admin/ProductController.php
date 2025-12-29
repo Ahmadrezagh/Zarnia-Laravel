@@ -1502,6 +1502,7 @@ class ProductController extends Controller
     {
         $query = $request->input('q');
         $availableOnly = $request->has('available_only') && $request->available_only == '1';
+        $parentOnly = $request->has('parent_only') && $request->parent_only == '1';
 
         // Search products by name OR exact etiket code - only show products with count >= 1
         $productsQuery = Product::where(function($q) use ($query) {
@@ -1522,31 +1523,55 @@ class ProductController extends Controller
             $productsQuery->available();
         }
 
-        $products = $productsQuery->select('id', 'name', 'price', 'discounted_price', 'weight')
+        $products = $productsQuery->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
             ->distinct() // Prevent duplicates
             ->limit(50) // Limit results for performance
             ->get()
             ->filter(function ($product) {
                 // Filter by single_count >= 1
                 return $product->single_count >= 1;
-            })
-            ->map(function ($product) {
-                // Calculate single_count using the accessor after loading the product
-                $singleCount = $product->single_count;
-                $finalPrice = (int) $product->price;
-                $originalPrice = (int) $product->originalPrice;
-                $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
-
-                return [
-                    'id' => "Product:{$product->id}",
-                    'text' => $product->name . (($product->weight) ? ' (' . $product->weight . 'g)' : '') . ' (موجودی: ' . $singleCount . ')',
-                    'price' => $finalPrice,
-                    'discounted_price' => $discountedPrice,
-                    'original_price' => $originalPrice,
-                    'single_count' => $singleCount,
-                    'weight' => $product->weight
-                ];
             });
+        
+        // If parent_only is requested, replace children with their parents
+        if ($parentOnly) {
+            // Collect all parent IDs that need to be loaded
+            $parentIds = $products->pluck('parent_id')->filter()->unique();
+            
+            // Load all parents at once
+            $parents = Product::whereIn('id', $parentIds)
+                ->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
+                ->get()
+                ->keyBy('id');
+            
+            // Replace children with their parents
+            $products = $products->map(function ($product) use ($parents) {
+                if ($product->parent_id && isset($parents[$product->parent_id])) {
+                    return $parents[$product->parent_id];
+                }
+                return $product;
+            })->filter(function ($product) {
+                // Only keep products with parent_id = null (main products)
+                return $product->parent_id === null;
+            })->unique('id');
+        }
+        
+        $products = $products->map(function ($product) {
+            // Calculate single_count using the accessor after loading the product
+            $singleCount = $product->single_count;
+            $finalPrice = (int) $product->price;
+            $originalPrice = (int) $product->originalPrice;
+            $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
+
+            return [
+                'id' => "Product:{$product->id}",
+                'text' => $product->name . (($product->weight) ? ' (' . $product->weight . 'g)' : '') . ' (موجودی: ' . $singleCount . ')',
+                'price' => $finalPrice,
+                'discounted_price' => $discountedPrice,
+                'original_price' => $originalPrice,
+                'single_count' => $singleCount,
+                'weight' => $product->weight
+            ];
+        });
 
         // Search categories
         $categories = Category::where('title', 'LIKE', "%{$query}%")
