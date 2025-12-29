@@ -69,6 +69,10 @@
                                     <option value="">-- انتخاب محصول والد --</option>
                                 </select>
                                 <small class="form-text text-muted">در صورت نیاز به ایجاد محصول زیرمجموعه، محصول والد را انتخاب کنید</small>
+                                <div id="parent-product-url" class="mt-2" style="display: none;">
+                                    <small class="text-muted">لینک محصول والد: </small>
+                                    <a href="#" id="parent-product-url-link" target="_blank" class="text-primary"></a>
+                                </div>
                             </div>
                             
                             <div id="gold-product-fields">
@@ -272,8 +276,9 @@
 
         // When parent product is cleared, optionally clear form or keep data
         $('#parent-product').on('select2:clear', function (e) {
-            // Optionally clear form fields or keep them filled
-            // For now, we'll keep the data filled even if parent is cleared
+            // Hide parent product URL
+            $('#parent-product-url').hide();
+            $('#parent-product-url-link').attr('href', '#').text('');
         });
 
         // Function to load parent product data and fill form
@@ -286,6 +291,14 @@
                 },
                 success: function(response) {
                     const product = response.data || response;
+                    
+                    // Display parent product URL
+                    if (product.urlOfProduct) {
+                        $('#parent-product-url-link').attr('href', product.urlOfProduct).text(product.urlOfProduct);
+                        $('#parent-product-url').show();
+                    } else {
+                        $('#parent-product-url').hide();
+                    }
                     
                     // Fill name
                     if (product.name) {
