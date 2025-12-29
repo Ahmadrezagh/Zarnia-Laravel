@@ -1518,6 +1518,11 @@ class ProductController extends Controller
                 $q->where('is_mojood', 1); // Only products with available etikets
             });
 
+        // If parent_only is requested, only show main products (parent_id = null)
+        if ($parentOnly) {
+            $productsQuery->whereNull('parent_id');
+        }
+
         // Filter unavailable products if requested - use available() scope instead of single_count
         if ($availableOnly) {
             $productsQuery->available();
@@ -1531,29 +1536,6 @@ class ProductController extends Controller
                 // Filter by single_count >= 1
                 return $product->single_count >= 1;
             });
-        
-        // If parent_only is requested, replace children with their parents
-        if ($parentOnly) {
-            // Collect all parent IDs that need to be loaded
-            $parentIds = $products->pluck('parent_id')->filter()->unique();
-            
-            // Load all parents at once
-            $parents = Product::whereIn('id', $parentIds)
-                ->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
-                ->get()
-                ->keyBy('id');
-            
-            // Replace children with their parents
-            $products = $products->map(function ($product) use ($parents) {
-                if ($product->parent_id && isset($parents[$product->parent_id])) {
-                    return $parents[$product->parent_id];
-                }
-                return $product;
-            })->filter(function ($product) {
-                // Only keep products with parent_id = null (main products)
-                return $product->parent_id === null;
-            })->unique('id');
-        }
         
         $products = $products->map(function ($product) {
             // Calculate single_count using the accessor after loading the product
