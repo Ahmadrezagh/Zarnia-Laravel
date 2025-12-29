@@ -602,6 +602,50 @@ class ProductController extends Controller
         try {
             $product = Product::findOrFail($id);
             
+            // Soft delete the product (don't delete related records, just mark as deleted)
+            $product->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'محصول با موفقیت حذف شد'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در حذف محصول: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Restore a soft deleted product
+     */
+    public function restore(string $id)
+    {
+        try {
+            $product = Product::withTrashed()->findOrFail($id);
+            $product->restore();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'محصول با موفقیت بازیابی شد'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در بازیابی محصول: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Permanently delete a product
+     */
+    public function forceDelete(string $id)
+    {
+        try {
+            $product = Product::withTrashed()->findOrFail($id);
+            
             // If it's a comprehensive product, delete related ComprehensiveProduct records
             if ($product->is_comprehensive) {
                 ComprehensiveProduct::where('comprehensive_product_id', $product->id)->delete();
@@ -617,29 +661,93 @@ class ProductController extends Controller
             // Delete category relationships
             $product->categories()->detach();
             
-            // Delete the product
-            $product->delete();
+            // Permanently delete the product
+            $product->forceDelete();
             
             return response()->json([
                 'success' => true,
-                'message' => 'محصول با موفقیت حذف شد'
+                'message' => 'محصول به صورت دائمی حذف شد'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error deleting product: ' . $e->getMessage(), [
-                'product_id' => $id,
-                'trace' => $e->getTraceAsString()
-            ]);
-            
             return response()->json([
                 'success' => false,
-                'message' => 'خطا در حذف محصول: ' . $e->getMessage()
+                'message' => 'خطا در حذف دائمی محصول: ' . $e->getMessage()
             ], 500);
         }
     }
 
+    /**
+     * Display a listing of soft deleted products
+     */
+    public function deletedProducts()
+    {
+        $products = Product::onlyTrashed()->paginate();
+        $categories = Category::query()->get();
+        return view('admin.products.index_deleted', compact('products', 'categories'));
+    }
+
+    /**
+     * Table data for deleted products
+     */
+    public function deletedProductsTable(Request $request)
+    {
+        $query = Product::query()->onlyTrashed()->select('*');
+
+        // Get total records before applying filters
+        $totalRecords = $query->count();
+
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->input('search.value'))) {
+            $search = $request->input('search.value');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('etikets', function ($q2) use ($search) {
+                        $q2->where('code', '=', "{$search}");
+                    });
+            });
+        }
+
+        // Handle pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        if ($length <= 0) {
+            $length = 10;
+        }
+
+        // Apply sorting if provided
+        if ($request->has('order') && !empty($request->input('order'))) {
+            $order = $request->input('order')[0];
+            $columnIndex = $order['column'];
+            $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
+            $column = $request->input("columns.{$columnIndex}.data");
+            if ($column && Schema::hasColumn('products', $column)) {
+                $query->orderBy($column, $direction);
+            }
+        } else {
+            $query = $query->latest('deleted_at');
+        }
+
+        // Get filtered records count after search
+        $filteredRecords = $query->count();
+
+        $data = $query->skip($start)
+            ->take($length)
+            ->get()
+            ->map(function ($item) {
+                return AdminProductResource::make($item);
+            });
+
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data
+        ]);
+    }
+
     public function table(Request $request)
     {
-        $query = Product::query()->available()->main()->select('*'); // Assuming your model is Product
+        $query = Product::query()->available()->main()->withoutTrashed()->select('*'); // Assuming your model is Product
 
         // Get total records before applying filters
         $totalRecords = $query->count();
@@ -1545,22 +1653,22 @@ class ProductController extends Controller
             });
         
         $products = $products->map(function ($product) {
-            // Calculate single_count using the accessor after loading the product
-            $singleCount = $product->single_count;
-            $finalPrice = (int) $product->price;
-            $originalPrice = (int) $product->originalPrice;
-            $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
+                // Calculate single_count using the accessor after loading the product
+                $singleCount = $product->single_count;
+                $finalPrice = (int) $product->price;
+                $originalPrice = (int) $product->originalPrice;
+                $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
 
-            return [
-                'id' => "Product:{$product->id}",
-                'text' => $product->name . (($product->weight) ? ' (' . $product->weight . 'g)' : '') . ' (موجودی: ' . $singleCount . ')',
-                'price' => $finalPrice,
-                'discounted_price' => $discountedPrice,
-                'original_price' => $originalPrice,
-                'single_count' => $singleCount,
-                'weight' => $product->weight
-            ];
-        });
+                return [
+                    'id' => "Product:{$product->id}",
+                    'text' => $product->name . (($product->weight) ? ' (' . $product->weight . 'g)' : '') . ' (موجودی: ' . $singleCount . ')',
+                    'price' => $finalPrice,
+                    'discounted_price' => $discountedPrice,
+                    'original_price' => $originalPrice,
+                    'single_count' => $singleCount,
+                    'weight' => $product->weight
+                ];
+            });
 
         // Search categories
         $categories = Category::where('title', 'LIKE', "%{$query}%")
@@ -1793,8 +1901,8 @@ class ProductController extends Controller
             
             // Check if product is available (single_count >= 1)
             if ($product->single_count < 1) {
-                return response()->json([
-                    'success' => false,
+            return response()->json([
+                'success' => false,
                     'exists' => true,
                     'message' => 'این کد اتیکت موجود است اما محصول در دسترس نیست (موجودی صفر)'
                 ]);
@@ -1805,20 +1913,20 @@ class ProductController extends Controller
             $basePrice = $rawPrice / 10;
             $discountedPrice = $product->discounted_price ?? null;
             $originalPrice = $product->originalPrice ?? null;
-            
-            return response()->json([
-                'success' => true,
+
+        return response()->json([
+            'success' => true,
                 'exists' => true,
                 'message' => 'این کد اتیکت در پایگاه داده موجود است',
-                'product' => [
-                    'id' => $product->id,
-                    'name' => $product->name,
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
                     'price' => (int) $basePrice,
                     'discounted_price' => $discountedPrice ? (int) $discountedPrice : null,
                     'original_price' => $originalPrice ? (int) $originalPrice : null,
                     'weight' => $product->weight ?? null,
-                    'etiket_code' => $etiketCode
-                ]
+                'etiket_code' => $etiketCode
+            ]
             ]);
         }
 

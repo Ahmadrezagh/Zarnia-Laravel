@@ -357,6 +357,9 @@
                             <li class="nav-sub-item">
                                 <a class="nav-sub-link" href="{{route('products.products_comprehensive_not_available')}}">محصولات جامع ناموجود</a>
                             </li>
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('products.deleted')}}">محصولات حذف شده</a>
+                            </li>
                         </ul>
                     </li>
                 @endif

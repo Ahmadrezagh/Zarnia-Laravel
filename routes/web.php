@@ -105,6 +105,10 @@ Route::middleware('panel.ip')->group(function () {
         Route::post('products/{product}/etikets', [EtiketController::class, 'storeForProduct'])->name('products.etikets.store');
         
         Route::resource('products', ProductController::class );
+        Route::get('products_deleted', [ProductController::class, 'deletedProducts'])->name('products.deleted');
+        Route::any('table/products_deleted', [ProductController::class, 'deletedProductsTable'])->name('table.products.deleted');
+        Route::post('products/{id}/restore', [ProductController::class, 'restore'])->name('products.restore');
+        Route::delete('products/{id}/force-delete', [ProductController::class, 'forceDelete'])->name('products.force-delete');
         Route::resource('admin_orders', OrderController::class );
         Route::get('admin_order/print/{order:uuid}', [OrderController::class, 'print'])->name('admin_order.print');
         Route::get('admin_order/cancel/{order}', [OrderController::class, 'cancel'])->name('admin_order.cancel');

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Pishran\LaravelPersianSlug\HasPersianSlug;
 use Spatie\Image\Enums\CropPosition;
@@ -24,6 +25,7 @@ class Product extends Model implements HasMedia
 {
     use InteractsWithMedia;
     use HasPersianSlug;
+    use SoftDeletes;
     use Search,HasDiscount,MaxPrice,MinPrice,PriceRange;
     use HasComplementaryProducts,HasRelatedProducts;
     protected $fillable = [

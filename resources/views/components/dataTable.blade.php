@@ -215,6 +215,15 @@
                                 url = url.replace(`{${key}}`, row[key] || '');
                             }
                             actionsHtml += `<a href="${url}" class="dropdown-item" target="_blank">{{ $action['label'] }}</a>`;
+                            @elseif(isset($action['type']) && ($action['type'] === 'delete' || $action['type'] === 'restore' || $action['type'] === 'forceDelete'))
+                            const actionType = '{{ $action['type'] }}';
+                            const actionUrl = actionType === 'delete' 
+                                ? '{{ route("products.destroy", ":id") }}'.replace(':id', row.id)
+                                : actionType === 'restore'
+                                ? '{{ route("products.restore", ":id") }}'.replace(':id', row.id)
+                                : '{{ route("products.force-delete", ":id") }}'.replace(':id', row.id);
+                            const actionMethod = actionType === 'delete' || actionType === 'forceDelete' ? 'DELETE' : 'POST';
+                            actionsHtml += `<button class="dropdown-item {{ $action['class'] ?? '' }}" data-action="${actionType}" data-id="${row.id}" data-url="${actionUrl}" data-method="${actionMethod}">{{ $action['label'] }}</button>`;
                             @else
                                 actionsHtml += `<button class="dropdown-item" data-toggle="modal" data-target="#{{ $action['type'] }}-${row.id}" onClick="{{ $action['type'] }}(${row.id})">{{ $action['label'] }}</button>`;
                             @endif
@@ -396,6 +405,59 @@
         $('#{{ $id }}').on('change', '.table-select-option', function () {
             applySelectColors();
             // your AJAX save code here...
+        });
+
+        // Handle delete, restore, and forceDelete actions
+        $(document).on('click', '[data-action="delete"], [data-action="restore"], [data-action="forceDelete"]', function(e) {
+            e.preventDefault();
+            const action = $(this).data('action');
+            const productId = $(this).data('id');
+            const url = $(this).data('url');
+            const method = $(this).data('method') || 'DELETE';
+            
+            let confirmMessage = '';
+            if (action === 'delete') {
+                confirmMessage = 'آیا از حذف این محصول اطمینان دارید؟';
+            } else if (action === 'restore') {
+                confirmMessage = 'آیا از بازیابی این محصول اطمینان دارید؟';
+            } else if (action === 'forceDelete') {
+                confirmMessage = 'آیا از حذف دائمی این محصول اطمینان دارید؟ این عمل قابل بازگشت نیست!';
+            }
+            
+            if (confirm(confirmMessage)) {
+                $.ajax({
+                    url: url,
+                    method: method,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(response.message);
+                            } else {
+                                alert(response.message);
+                            }
+                            if (typeof window.refreshTable === 'function') {
+                                window.refreshTable();
+                            } else if ($('#{{ $id }}').length) {
+                                $('#{{ $id }}').DataTable().ajax.reload();
+                            } else {
+                                location.reload();
+                            }
+                        }
+                    },
+                    error: function(xhr) {
+                        const response = xhr.responseJSON;
+                        const errorMessage = response?.message || 'خطا در انجام عملیات';
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(errorMessage);
+                        } else {
+                            alert(errorMessage);
+                        }
+                    }
+                });
+            }
         });
     </script>
 @endsection

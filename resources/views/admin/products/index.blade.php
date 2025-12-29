@@ -95,6 +95,7 @@
                             ['label' => 'ویرایش', 'type' => 'modalEdit'],
                             ['label' => 'مشاهده در سایت', 'url' => '{frontend_url}'],
                             ['label' => 'افزودن اتیکت', 'type' => 'generateEtiket', 'class' => 'btn-info'],
+                            ['label' => 'حذف', 'type' => 'delete', 'class' => 'btn-danger', 'url' => '{id}'],
                         ]"
         >
         </x-dataTable>
