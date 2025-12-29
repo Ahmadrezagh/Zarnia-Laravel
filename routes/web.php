@@ -83,6 +83,7 @@ Route::middleware('panel.ip')->group(function () {
     Route::middleware(['auth'])->group(function () {
         Route::get('etikets/available', [EtiketController::class, 'indexAvailable'])->name('etikets.available');
         Route::get('etikets/not-available', [EtiketController::class, 'indexNotAvailable'])->name('etikets.not_available');
+        Route::post('etikets/bulk-update', [EtiketController::class, 'bulkUpdate'])->name('etikets.bulk_update');
     });
     Route::middleware(['auth'])->prefix('admin')-> group(function (){
         Route::resource('roles', RoleController::class );

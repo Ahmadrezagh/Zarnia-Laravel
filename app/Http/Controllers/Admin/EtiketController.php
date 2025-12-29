@@ -219,4 +219,53 @@ class EtiketController extends Controller
             'skipped' => $skipped
         ]);
     }
+
+    /**
+     * Bulk update etikets
+     */
+    public function bulkUpdate(Request $request)
+    {
+        if (is_string($request->etiket_ids)) {
+            $etiketIds = json_decode($request->etiket_ids, true);
+            $request->merge(['etiket_ids' => $etiketIds]);
+        }
+
+        $request->validate([
+            'etiket_ids' => 'required|array',
+            'etiket_ids.*' => 'exists:etikets,id',
+            'ojrat' => 'nullable|string',
+            'darsad_kharid' => 'nullable|string',
+            'weight' => 'nullable|numeric|min:0',
+        ]);
+
+        $etikets = Etiket::whereIn('id', $request->etiket_ids)->get();
+        $updated = 0;
+
+        foreach ($etikets as $etiket) {
+            $updateData = [];
+            
+            if ($request->filled('ojrat')) {
+                $updateData['ojrat'] = $request->ojrat;
+            }
+            
+            if ($request->filled('darsad_kharid')) {
+                $updateData['darsad_kharid'] = $request->darsad_kharid;
+            }
+            
+            if ($request->filled('weight')) {
+                $updateData['weight'] = $request->weight;
+            }
+            
+            if (!empty($updateData)) {
+                $etiket->update($updateData);
+                $updated++;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "تعداد {$updated} اتیکت با موفقیت به‌روزرسانی شد",
+            'updated' => $updated
+        ]);
+    }
 }
