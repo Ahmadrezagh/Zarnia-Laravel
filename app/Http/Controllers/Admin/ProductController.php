@@ -248,7 +248,8 @@ class ProductController extends Controller
         $enteredParentId = $request->input('parent_id') ? (int)$request->input('parent_id') : null;
         $firstProductId = null;
         $createdProducts = [];
-        $etiketCodes = [];
+        $etiketCodes = []; // For zr- codes
+        $orderableEtiketCodes = []; // For s- codes
         
         // Common product data from form
         $commonProductData = [
@@ -380,8 +381,10 @@ class ProductController extends Controller
             
             // Create etikets for this product based on count
             for ($i = 0; $i < $etiketCount; $i++) {
-                // Generate unique 5-digit code in format: zr-12345
-                $etiketCode = $this->generateUniqueEtiketCode($etiketCodes);
+                // Generate unique code: zr-{number} for regular, s-{number} for orderable
+                $prefix = $isOrderable ? 's' : 'zr';
+                $existingCodesForPrefix = $isOrderable ? $orderableEtiketCodes : $etiketCodes;
+                $etiketCode = $this->generateUniqueEtiketCode($existingCodesForPrefix, $prefix);
                 
                 // Create etiket
                 Etiket::create([
@@ -396,7 +399,12 @@ class ProductController extends Controller
                     'orderable_after_out_of_stock' => $isOrderable ? 1 : 0,
                 ]);
                 
-                $etiketCodes[] = $etiketCode;
+                // Track code in appropriate array
+                if ($isOrderable) {
+                    $orderableEtiketCodes[] = $etiketCode;
+                } else {
+                    $etiketCodes[] = $etiketCode;
+                }
             }
         }
         
@@ -409,17 +417,21 @@ class ProductController extends Controller
     }
     
     /**
-     * Generate unique etiket code in format: zr-{number} starting from 7000
+     * Generate unique etiket code in format: {prefix}-{number} starting from 7000
+     * @param array $existingCodes Existing codes in current batch
+     * @param string $prefix Code prefix ('zr' for regular, 's' for orderable)
+     * @return string
      */
-    private function generateUniqueEtiketCode(array $existingCodes = []): string
+    private function generateUniqueEtiketCode(array $existingCodes = [], string $prefix = 'zr'): string
     {
         $startNumber = 7000;
         $highestNumber = $startNumber - 1;
         
-        // Find the highest existing code number in database that matches zr-{number} pattern
-        $etikets = Etiket::where('code', 'like', 'zr-%')->get();
+        // Find the highest existing code number in database that matches {prefix}-{number} pattern
+        $etikets = Etiket::where('code', 'like', $prefix . '-%')->get();
         foreach ($etikets as $etiket) {
-            if (preg_match('/^zr-(\d+)$/', $etiket->code, $matches)) {
+            $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
+            if (preg_match($pattern, $etiket->code, $matches)) {
                 $codeNumber = (int)$matches[1];
                 if ($codeNumber >= $highestNumber) {
                     $highestNumber = $codeNumber;
@@ -429,7 +441,8 @@ class ProductController extends Controller
         
         // Check for codes in current batch and find the highest
         foreach ($existingCodes as $code) {
-            if (preg_match('/^zr-(\d+)$/', $code, $matches)) {
+            $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
+            if (preg_match($pattern, $code, $matches)) {
                 $codeNumber = (int)$matches[1];
                 if ($codeNumber >= $highestNumber) {
                     $highestNumber = $codeNumber;
@@ -440,7 +453,7 @@ class ProductController extends Controller
         // Start from the highest number found + 1, or 7000 if no codes exist
         $nextNumber = max($startNumber, $highestNumber + 1);
         
-        return 'zr-' . $nextNumber;
+        return $prefix . '-' . $nextNumber;
     }
 
     /**

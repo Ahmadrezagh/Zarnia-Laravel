@@ -23,6 +23,8 @@ class StoreProductRequest extends FormRequest
     {
         $isNotGoldProduct = $this->input('is_not_gold_product') == '1';
         $hasEtikets = $this->has('etikets') && is_array($this->input('etikets')) && !empty($this->input('etikets'));
+        $hasOrderableEtikets = $this->has('orderable_etikets') && is_array($this->input('orderable_etikets')) && !empty($this->input('orderable_etikets'));
+        $hasAnyEtikets = $hasEtikets || $hasOrderableEtikets;
         
         $rules = [
             'name' => 'required|string|max:255',
@@ -40,20 +42,31 @@ class StoreProductRequest extends FormRequest
             'etikets.*.count' => 'nullable|integer|min:1',
             'etikets.*.weight' => 'nullable|numeric|min:0',
             'etikets.*.price' => 'nullable|numeric|min:0',
+            'orderable_etikets' => 'nullable|array',
+            'orderable_etikets.*.count' => 'nullable|integer|min:1',
+            'orderable_etikets.*.weight' => 'nullable|numeric|min:0',
+            'orderable_etikets.*.price' => 'nullable|numeric|min:0',
             'is_not_gold_product' => 'nullable|boolean',
         ];
         
         // Add gold-related fields validation only if it's a gold product
         if (!$isNotGoldProduct) {
             // Weight is only required if no etikets are provided (for regular gold product creation)
-            // If etikets are provided, weight comes from etiket cards
-            if (!$hasEtikets) {
+            // If etikets or orderable_etikets are provided, weight comes from etiket cards
+            if (!$hasAnyEtikets) {
                 $rules['weight'] = 'required|numeric|min:0';
             } else {
+                // Weight is not required when etikets are provided - it will be calculated from etiket weights
                 $rules['weight'] = 'nullable|numeric|min:0';
                 // Require at least one etiket with weight when etikets are provided
-                $rules['etikets'] = 'required|array|min:1';
-                $rules['etikets.*.weight'] = 'required_with:etikets|numeric|min:0';
+                if ($hasEtikets) {
+                    $rules['etikets'] = 'required|array|min:1';
+                    $rules['etikets.*.weight'] = 'required_with:etikets|numeric|min:0';
+                }
+                if ($hasOrderableEtikets) {
+                    $rules['orderable_etikets'] = 'required|array|min:1';
+                    $rules['orderable_etikets.*.weight'] = 'required_with:orderable_etikets|numeric|min:0';
+                }
             }
             $rules['darsad_kharid'] = 'required|numeric|min:0|max:100';
             $rules['ojrat'] = 'required|numeric|min:0|max:100';

@@ -27,32 +27,27 @@
                             <div class="form-group">
                                 <label class="font-weight-bold">تصویر اصلی محصول</label>
                                 <div class="image-upload-container mb-3">
-                                    <div class="image-preview-large" id="cover-image-preview" style="width: 100%; height: 250px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
-                                        <div class="text-center">
+                                    <div class="image-preview-large" id="cover-image-preview" style="width: 100%; height: 250px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative; overflow: hidden;">
+                                        <div class="text-center" id="cover-image-placeholder">
                                             <i class="fas fa-image fa-3x text-muted mb-2"></i>
                                             <p class="text-muted mb-0">برای آپلود تصویر کلیک کنید</p>
                                         </div>
-                                        <input type="file" id="cover-image-input" name="cover_image" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewCoverImage(this)">
+                                        <div id="cover-image-actions" style="display: none; position: absolute; top: 10px; right: 10px; z-index: 20;">
+                                            <button type="button" class="btn btn-sm btn-primary mr-1" onclick="editCoverImage()" title="ویرایش تصویر">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteCoverImage()" title="حذف تصویر">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        <input type="file" id="cover-image-input" name="cover_image" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 15;" onchange="previewCoverImage(this)">
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="form-group">
                                 <label class="font-weight-bold">گالری تصاویر</label>
-                                <div class="gallery-preview-container d-flex gap-2 mb-2">
-                                    <div class="gallery-item-preview" id="gallery-preview-1" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
-                                        <i class="fas fa-plus text-muted"></i>
-                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 1)">
-                                    </div>
-                                    <div class="gallery-item-preview" id="gallery-preview-2" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
-                                        <i class="fas fa-plus text-muted"></i>
-                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 2)">
-                                    </div>
-                                    <div class="gallery-item-preview" id="gallery-preview-3" style="width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; cursor: pointer; position: relative;">
-                                        <i class="fas fa-plus text-muted"></i>
-                                        <input type="file" name="gallery[]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewGalleryImage(this, 3)">
-                                    </div>
-                                </div>
+                                <div id="gallery-uploader"></div>
                             </div>
                         </div>
                         
@@ -273,6 +268,41 @@
             $('#parent-product-url').hide();
             $('#parent-product-url-link').attr('href', '#').text('');
         });
+        
+        // Initialize image-uploader for gallery only
+        // Use a function that retries if plugin is not ready
+        function initializeGalleryUploader() {
+            if (typeof $.fn.imageUploader !== 'undefined') {
+                // Check if container exists
+                if ($('#gallery-uploader').length === 0) {
+                    console.error('Gallery uploader container not found');
+                    return;
+                }
+                
+                // Initialize gallery uploader
+                try {
+                    $('#gallery-uploader').imageUploader({
+                        label: 'تصاویر گالری را انتخاب کنید یا اینجا بکشید و رها کنید',
+                        imagesInputName: 'gallery',
+                        maxFiles: 10,
+                        maxSize: 2 * 1024 * 1024,
+                        preloaded: [],
+                        extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.JPG', '.JPEG', '.webp', '.WEBP'],
+                        mimes: ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp']
+                    });
+                    console.log('Gallery uploader initialized');
+                } catch (e) {
+                    console.error('Error initializing gallery uploader:', e);
+                }
+            } else {
+                console.warn('imageUploader plugin not yet loaded, retrying...');
+                // Retry after a short delay
+                setTimeout(initializeGalleryUploader, 200);
+            }
+        }
+        
+        // Start initialization
+        setTimeout(initializeGalleryUploader, 100);
 
         // Function to load parent product data and fill form
         function loadParentProductData(productId) {
@@ -331,58 +361,48 @@
                     // Load cover image
                     if (product.image) {
                         const $preview = $('#cover-image-preview');
-                        $preview.find('div.text-center, img').remove();
+                        $('#cover-image-placeholder').remove();
+                        $preview.find('img').remove();
                         $preview.prepend('<img src="' + product.image + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                        $('#cover-image-actions').show();
                         // Store image URL for potential use (though file input can't be set)
                         $preview.data('parent-image-url', product.image);
                     }
                     
                     // Load gallery images
-                    if (product.gallery && Array.isArray(product.gallery) && product.gallery.length > 0) {
+                    if (typeof $.fn.imageUploader !== 'undefined') {
                         console.log('Loading gallery images:', product.gallery);
-                        product.gallery.forEach(function(galleryItem, index) {
-                            const galleryIndex = index + 1;
-                            if (galleryIndex <= 3) { // We only have 3 gallery preview slots
-                                const $galleryPreview = $('#gallery-preview-' + galleryIndex);
-                                
-                                if ($galleryPreview.length === 0) {
-                                    console.warn('Gallery preview element not found for index:', galleryIndex);
-                                    return;
+                        // Prepare preloaded images array
+                        let preloadedGallery = [];
+                        if (product.gallery && Array.isArray(product.gallery) && product.gallery.length > 0) {
+                            preloadedGallery = product.gallery.map(function(galleryItem) {
+                                // Handle different gallery item structures
+                                let imageUrl = null;
+                                if (typeof galleryItem === 'string') {
+                                    imageUrl = galleryItem;
+                                } else if (galleryItem && typeof galleryItem === 'object') {
+                                    imageUrl = galleryItem.src || galleryItem.url || galleryItem;
                                 }
-                                
-                                const $input = $galleryPreview.find('input[type="file"]');
-                                
-                                // Remove existing preview content but keep input
-                                $galleryPreview.find('i.fas.fa-plus, img').remove();
-                                
-                                // Get image URL - check both src and url properties
-                                const imageUrl = galleryItem.src || galleryItem.url || (typeof galleryItem === 'string' ? galleryItem : null);
-                                
-                                if (imageUrl) {
-                                    // Ensure input stays in DOM with proper styling
-                                    if ($input.length > 0) {
-                                        $input.css({
-                                            'position': 'absolute',
-                                            'width': '100%',
-                                            'height': '100%',
-                                            'opacity': '0',
-                                            'z-index': '10',
-                                            'cursor': 'pointer'
-                                        });
-                                    }
-                                    
-                                    // Add preview image
-                                    $galleryPreview.prepend('<img src="' + imageUrl + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
-                                    
-                                    // Store image URL
-                                    $galleryPreview.data('parent-image-url', imageUrl);
-                                } else {
-                                    console.warn('No image URL found for gallery item:', galleryItem);
-                                }
-                            }
+                                return imageUrl ? { src: imageUrl } : null;
+                            }).filter(function(item) { return item !== null; });
+                        }
+                        
+                        console.log('Prepared gallery images:', preloadedGallery);
+                        
+                        // Destroy existing uploader and recreate with preloaded images
+                        $('#gallery-uploader').empty();
+                        $('#gallery-uploader').imageUploader({
+                            label: 'تصاویر گالری را انتخاب کنید یا اینجا بکشید و رها کنید',
+                            imagesInputName: 'gallery',
+                            maxFiles: 10,
+                            maxSize: 2 * 1024 * 1024,
+                            preloaded: preloadedGallery,
+                            extensions: ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.JPG', '.JPEG', '.webp', '.WEBP'],
+                            mimes: ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp']
                         });
+                        console.log('Gallery uploader reinitialized with', preloadedGallery.length, 'images');
                     } else {
-                        console.log('No gallery images found or gallery is not an array:', product.gallery);
+                        console.warn('imageUploader plugin not available for gallery update');
                     }
                     
                 },
@@ -510,19 +530,33 @@
                 }
             });
             
-            // Explicitly add cover image
+            // Get cover image from file input
             const coverImageInput = document.getElementById('cover-image-input');
             if (coverImageInput && coverImageInput.files && coverImageInput.files[0]) {
                 formData.append('cover_image', coverImageInput.files[0]);
             }
             
-            // Explicitly add gallery images
-            const galleryInputs = document.querySelectorAll('#create-product-form input[name="gallery[]"]');
-            galleryInputs.forEach(function(input) {
-                if (input.files && input.files[0]) {
-                    formData.append('gallery[]', input.files[0]);
+            // Get gallery images from image-uploader
+            const $galleryInput = $('#gallery-uploader').find('input[name="gallery[]"]');
+            if ($galleryInput.length > 0 && $galleryInput[0].files && $galleryInput[0].files.length > 0) {
+                for (let i = 0; i < $galleryInput[0].files.length; i++) {
+                    formData.append('gallery[]', $galleryInput[0].files[i]);
+                }
+            }
+            
+            // Handle preloaded gallery images (existing images that weren't deleted)
+            const $galleryUploadedImages = $('#gallery-uploader').find('.uploaded-image');
+            const existingGalleryUrls = [];
+            $galleryUploadedImages.each(function() {
+                const $img = $(this).find('img');
+                const src = $img.attr('src');
+                if (src && !src.startsWith('blob:') && !src.startsWith('data:')) {
+                    existingGalleryUrls.push(src);
                 }
             });
+            if (existingGalleryUrls.length > 0) {
+                formData.append('existing_gallery', JSON.stringify(existingGalleryUrls));
+            }
             
             // Add CSRF token
             formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
@@ -554,52 +588,76 @@
         });
     });
 
-
-    // Preview cover image
-    function previewCoverImage(input) {
-        if (input.files && input.files[0]) {
+    // Preview cover image - must be global function
+    window.previewCoverImage = function(input) {
+        console.log('previewCoverImage called', input);
+        if (input && input.files && input.files[0]) {
             const reader = new FileReader();
             const $preview = $('#cover-image-preview');
             const $input = $(input);
             
-            reader.onload = function(e) {
-                $preview.find('div.text-center, img').remove();
-                $preview.prepend('<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
-                $input.css({
-                    'position': 'absolute',
-                    'width': '100%',
-                    'height': '100%',
-                    'opacity': '0',
-                    'z-index': '10',
-                    'cursor': 'pointer'
-                });
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-    
-    // Preview gallery image
-    function previewGalleryImage(input, index) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            const $preview = $('#gallery-preview-' + index);
-            const $input = $(input);
+            console.log('File selected:', input.files[0].name);
             
             reader.onload = function(e) {
+                console.log('File loaded, creating preview');
+                // Remove placeholder
+                $('#cover-image-placeholder').remove();
+                // Remove existing image if any
+                $preview.find('img').remove();
+                // Add new image with proper styling using jQuery
+                const $img = $('<img>').attr('src', e.target.result).css({
+                    'width': '100%',
+                    'height': '100%',
+                    'object-fit': 'cover',
+                    'border-radius': '6px',
+                    'position': 'absolute',
+                    'top': '0',
+                    'left': '0',
+                    'z-index': '1'
+                });
+                $preview.prepend($img);
+                // Show action buttons
+                $('#cover-image-actions').show();
+                // Ensure input stays on top for future clicks
                 $input.css({
                     'position': 'absolute',
                     'width': '100%',
                     'height': '100%',
                     'opacity': '0',
-                    'z-index': '10',
+                    'z-index': '15',
                     'cursor': 'pointer'
                 });
-                $preview.find('i.fas.fa-plus').remove();
-                $preview.prepend('<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; position: absolute; top: 0; left: 0; z-index: 1;">');
+                console.log('Preview created successfully');
             };
+            
+            reader.onerror = function(error) {
+                console.error('Error reading file:', error);
+                alert('خطا در خواندن فایل تصویر');
+            };
+            
             reader.readAsDataURL(input.files[0]);
+        } else {
+            console.warn('No file selected or input is invalid');
         }
-    }
+    };
+    
+    // Edit cover image - must be global function
+    window.editCoverImage = function() {
+        $('#cover-image-input').click();
+    };
+    
+    // Delete cover image - must be global function
+    window.deleteCoverImage = function() {
+        if (confirm('آیا از حذف تصویر کاور اطمینان دارید؟')) {
+            $('#cover-image-preview').find('img').remove();
+            $('#cover-image-actions').hide();
+            $('#cover-image-input').val('');
+            // Restore placeholder
+            if ($('#cover-image-placeholder').length === 0) {
+                $('#cover-image-preview').prepend('<div class="text-center" id="cover-image-placeholder"><i class="fas fa-image fa-3x text-muted mb-2"></i><p class="text-muted mb-0">برای آپلود تصویر کلیک کنید</p></div>');
+            }
+        }
+    };
 
     // Add etiket
     function addEtiket() {
