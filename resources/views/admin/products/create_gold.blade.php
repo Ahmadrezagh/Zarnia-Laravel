@@ -76,34 +76,6 @@
                             </div>
                             
                             <div id="gold-product-fields">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="product-weight" class="font-weight-bold">وزن (گرم) <span class="text-danger">*</span></label>
-                                            <div class="input-group">
-                                                <input type="number" class="form-control" id="product-weight" name="weight" step="0.01" placeholder="وزن را وارد کنید" required>
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text">گرم</span>
-                                                </div>
-                                            </div>
-                                            <small class="form-text text-muted">وزن را وارد کنید و با Enter تایید کنید</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="product-price" class="font-weight-bold">قیمت (تومان)</label>
-                                            <div class="input-group">
-                                                <input type="number" class="form-control" id="product-price" name="price" placeholder="قیمت محصول">
-                                                <div class="input-group-append">
-                                                    <button type="button" class="btn btn-primary" id="calculate-price-btn" onclick="calculateTabanGoharPrice()">
-                                                        <i class="fas fa-calculator"></i> محاسبه قیمت
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <div class="form-group">
@@ -305,16 +277,6 @@
                         $('#product-name').val(product.name);
                     }
                     
-                    // Fill weight
-                    if (product.weight) {
-                        $('#product-weight').val(product.weight);
-                    }
-                    
-                    // Fill price (originalPrice is already divided by 10)
-                    if (product.price) {
-                        $('#product-price').val(product.price);
-                    }
-                    
                     // Fill darsad_kharid (execution purchase percentage)
                     if (product.darsad_kharid !== null && product.darsad_kharid !== undefined) {
                         $('#darsad-kharid').val(product.darsad_kharid);
@@ -402,12 +364,6 @@
                         console.log('No gallery images found or gallery is not an array:', product.gallery);
                     }
                     
-                    // Recalculate price if weight and ojrat are available
-                    if (product.weight && product.ojrat) {
-                        setTimeout(function() {
-                            calculateTabanGoharPrice();
-                        }, 100);
-                    }
                 },
                 error: function(xhr) {
                     console.error('Error loading parent product data:', xhr);
@@ -415,19 +371,6 @@
             });
         }
         
-        // Add event listeners to weight and ojrat inputs for automatic price calculation
-        $('#product-weight, #ojrat').on('input change', function() {
-            calculateTabanGoharPrice();
-        });
-        
-        // Handle weight input with Enter key
-        $('#product-weight').on('keypress', function(e) {
-            if (e.which === 13) {
-                e.preventDefault();
-                $(this).blur();
-                calculateTabanGoharPrice();
-            }
-        });
 
         // Setup form submission
         $('#create-product-form').on('submit', function(e) {
@@ -443,18 +386,6 @@
             } else {
                 $('#product-categories').removeClass('is-invalid');
                 $('#product-categories').next('.invalid-feedback').remove();
-            }
-            
-            // Validate weight for gold products
-            const weight = $('#product-weight').val();
-            if (!weight || parseFloat(weight) <= 0) {
-                $('#product-weight').addClass('is-invalid');
-                $('#product-weight').next('.invalid-feedback').remove();
-                $('#product-weight').after('<div class="invalid-feedback">وزن برای محصولات طلایی الزامی است</div>');
-                return false;
-            } else {
-                $('#product-weight').removeClass('is-invalid');
-                $('#product-weight').next('.invalid-feedback').remove();
             }
             
             const formData = new FormData();
@@ -536,35 +467,6 @@
         });
     });
 
-    // Function to calculate price from Taban Gohar formula
-    function calculateTabanGoharPrice() {
-        const weight = parseFloat($('#product-weight').val()) || 0;
-        const ojrat = parseFloat($('#ojrat').val()) || 0;
-        
-        // Try to get gold price from global variable or fetch it
-        if (!goldPrice || goldPrice === 0) {
-            // You may need to fetch this from an API endpoint
-            // For now, using a placeholder - you should replace this with actual gold price
-            goldPrice = window.goldPrice || 0;
-        }
-        
-        if (weight > 0 && goldPrice > 0 && ojrat > 0) {
-            // Formula: price = weight * (goldPrice * 1.01) * (1 + (ojrat / 100))
-            const adjustedGoldPrice = goldPrice * 1.01;
-            let calculatedPrice = weight * adjustedGoldPrice * (1 + (ojrat / 100));
-            
-            // Round down to nearest thousand (last three digits become 0)
-            calculatedPrice = Math.floor(calculatedPrice / 1000) * 1000;
-            
-            // Update price field
-            $('#product-price').val(calculatedPrice);
-        } else {
-            // Clear price if required fields are missing
-            if (weight === 0 || ojrat === 0) {
-                $('#product-price').val('');
-            }
-        }
-    }
 
     // Preview cover image
     function previewCoverImage(input) {
