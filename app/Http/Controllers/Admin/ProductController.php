@@ -84,6 +84,13 @@ class ProductController extends Controller
         return view('admin.products.create_gold', compact('categories', 'products'));
     }
 
+    public function createNonGold()
+    {
+        $categories = Category::query()->get();
+        $products = Product::query()->main()->get(); // For parent product selection
+        return view('admin.products.create_non_gold', compact('categories', 'products'));
+    }
+
     /**
      * Store a newly created resource in storage.
      */
