@@ -106,6 +106,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
         Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');
         Route::post('products/recalculate-discounts', [ProductController::class,'recalculateDiscounts' ])->name('products.recalculate_discounts');
+        Route::post('products/reorganize-groups', [ProductController::class,'reorganizeProductGroups' ])->name('products.reorganize_groups');
         Route::get('products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
         Route::get('products/ajax/search-parents', [ProductController::class, 'ajaxSearchParents'])->name('products.ajax.search.parents');
         Route::get('products/ajax/search-comprehensive', [ProductController::class, 'ajaxSearchForComprehensive'])->name('products.ajax.search.comprehensive');

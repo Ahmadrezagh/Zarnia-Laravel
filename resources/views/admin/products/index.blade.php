@@ -71,6 +71,11 @@
                         <i class="fas fa-calculator"></i> محاسبه مجدد تخفیف ها
                     </button>
                 </div>
+                <div class="col-3">
+                    <button type="button" class="btn btn-secondary" onclick="reorganizeProductGroups()">
+                        <i class="fas fa-sitemap"></i> بازسازی گروه‌های محصول
+                    </button>
+                </div>
             </div>
         </x-slot>
         <x-dataTable
@@ -2451,6 +2456,48 @@
                 error: function(xhr) {
                     console.error('Error recalculating discounts:', xhr);
                     let errorMessage = 'خطا در محاسبه مجدد تخفیف ها';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    toastr.error(errorMessage);
+                }
+            });
+        }
+
+        /**
+         * Reorganize product groups: make product with cover image the parent
+         */
+        function reorganizeProductGroups() {
+            if (!confirm('آیا از بازسازی گروه‌های محصول مطمئن هستید؟ این عمل محصولاتی که دارای تصویر کاور هستند را به عنوان والد گروه قرار می‌دهد.')) {
+                return;
+            }
+
+            // Show loading message
+            toastr.info('در حال بازسازی گروه‌های محصول...', 'لطفا صبر کنید');
+
+            $.ajax({
+                url: '{{ route('products.reorganize_groups') }}',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        
+                        // Refresh the table
+                        if (typeof window.refreshTable === 'function') {
+                            window.refreshTable();
+                        } else if (typeof window.loadDataWithNewUrl === 'function') {
+                            window.loadDataWithNewUrl('{{ route('table.products') }}');
+                        }
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error reorganizing product groups:', xhr);
+                    let errorMessage = 'خطا در بازسازی گروه‌های محصول';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }

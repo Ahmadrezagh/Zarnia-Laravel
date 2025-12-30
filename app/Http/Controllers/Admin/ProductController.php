@@ -2130,4 +2130,84 @@ class ProductController extends Controller
 
         $product->saveQuietly();
     }
+
+    /**
+     * Reorganize product groups: make product with cover image the parent
+     */
+    public function reorganizeProductGroups(Request $request)
+    {
+        try {
+            $reorganizedCount = 0;
+            $processedProductIds = [];
+
+            // Get all products that are parents (have children)
+            $parentProducts = Product::whereHas('children')->with('children')->get();
+
+            foreach ($parentProducts as $parent) {
+                // Skip if this parent was already processed
+                if (in_array($parent->id, $processedProductIds)) {
+                    continue;
+                }
+
+                // Check if current parent already has a cover image
+                $parentCoverImage = $parent->getFirstMedia('cover_image');
+                if ($parentCoverImage) {
+                    // Parent already has image, mark all products in group as processed and skip
+                    $groupProductIds = collect([$parent->id])->merge($parent->children->pluck('id'))->toArray();
+                    $processedProductIds = array_merge($processedProductIds, $groupProductIds);
+                    continue;
+                }
+
+                // Get all products in this group (parent + children)
+                $groupProducts = collect([$parent])->merge($parent->children);
+                $groupProductIds = $groupProducts->pluck('id')->toArray();
+
+                // Find product with cover image in this group (check children)
+                $productWithImage = null;
+                foreach ($groupProducts as $product) {
+                    // Skip the current parent (we already checked it)
+                    if ($product->id === $parent->id) {
+                        continue;
+                    }
+                    
+                    $coverImage = $product->getFirstMedia('cover_image');
+                    if ($coverImage) {
+                        $productWithImage = $product;
+                        break;
+                    }
+                }
+
+                // If a child with cover image is found, reorganize the group
+                if ($productWithImage) {
+                    // Make the product with image the new parent
+                    $productWithImage->parent_id = null;
+                    $productWithImage->save();
+
+                    // Set all other products in the group as children of the new parent
+                    foreach ($groupProducts as $product) {
+                        if ($product->id !== $productWithImage->id) {
+                            $product->parent_id = $productWithImage->id;
+                            $product->save();
+                        }
+                    }
+
+                    $reorganizedCount++;
+                }
+
+                // Mark all products in this group as processed
+                $processedProductIds = array_merge($processedProductIds, $groupProductIds);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "تعداد {$reorganizedCount} گروه محصول با موفقیت بازسازی شد",
+                'reorganized_count' => $reorganizedCount
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در بازسازی گروه‌های محصول: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
