@@ -264,6 +264,56 @@
             $('#etikets-not-available-table').DataTable().ajax.url(url).load();
         }
     }
+
+    function bulkDeleteEtikets() {
+        // Get selected etiket IDs
+        const selectedIds = window.showArray ? window.showArray() : [];
+        
+        if (selectedIds.length === 0) {
+            alert('لطفا حداقل یک اتیکت را انتخاب کنید');
+            return;
+        }
+
+        if (!confirm(`آیا از حذف ${selectedIds.length} اتیکت انتخاب شده مطمئن هستید؟ این عمل قابل بازگشت نیست.`)) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('etiket_ids', JSON.stringify(selectedIds));
+        formData.append('_token', '{{ csrf_token() }}');
+
+        $.ajax({
+            url: '{{ route('etikets.bulk_delete') }}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (res) {
+                if (res.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(res.message);
+                    } else {
+                        alert(res.message);
+                    }
+                    window.refreshTable();
+                    // Hide buttons after delete
+                    setTimeout(function() {
+                        $('#bulk-update-btn').hide();
+                        $('#bulk-delete-btn').hide();
+                    }, 500);
+                }
+            },
+            error: function (xhr) {
+                const response = xhr.responseJSON;
+                const errorMessage = response?.message || 'خطا در حذف اتیکت‌ها';
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(errorMessage);
+                } else {
+                    alert(errorMessage);
+                }
+            }
+        });
+    }
 </script>
 @endpush
 
