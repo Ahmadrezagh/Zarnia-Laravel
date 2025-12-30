@@ -585,6 +585,7 @@ class Order extends Model
         
         $sms = new Kavehnegar();
         $userName = $this->user->name ?? 'کاربر';
+        $userName = str_replace(' ', '_', $userName);
         $orderAmount = number_format($this->final_amount);
         
         foreach ($adminNumbers as $phone) {
