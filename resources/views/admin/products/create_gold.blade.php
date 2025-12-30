@@ -328,13 +328,15 @@
                     }
                     
                     // Fill darsad_kharid (execution purchase percentage)
+                    // Allow 0 as a valid value, so only check for null/undefined
                     if (product.darsad_kharid !== null && product.darsad_kharid !== undefined) {
-                        $('#darsad-kharid').val(product.darsad_kharid);
+                        $('#darsad-kharid').val(product.darsad_kharid).trigger('change');
                     }
                     
                     // Fill ojrat (execution sale percentage)
+                    // Allow 0 as a valid value, so only check for null/undefined
                     if (product.ojrat !== null && product.ojrat !== undefined) {
-                        $('#ojrat').val(product.ojrat);
+                        $('#ojrat').val(product.ojrat).trigger('change');
                     }
                     
                     // Fill discount_percentage
@@ -430,7 +432,8 @@
             
             // Validate darsad_kharid (required)
             const darsadKharid = $('#darsad-kharid').val();
-            if (!darsadKharid || parseFloat(darsadKharid) < 0) {
+            const darsadKharidNum = parseFloat(darsadKharid);
+            if (darsadKharid === '' || darsadKharid === null || darsadKharid === undefined || isNaN(darsadKharidNum) || darsadKharidNum < 0) {
                 $('#darsad-kharid').addClass('is-invalid');
                 $('#darsad-kharid').next('.invalid-feedback').remove();
                 $('#darsad-kharid').after('<div class="invalid-feedback">اجرت خرید الزامی است</div>');
@@ -442,7 +445,8 @@
             
             // Validate ojrat (required)
             const ojrat = $('#ojrat').val();
-            if (!ojrat || parseFloat(ojrat) < 0) {
+            const ojratNum = parseFloat(ojrat);
+            if (ojrat === '' || ojrat === null || ojrat === undefined || isNaN(ojratNum) || ojratNum < 0) {
                 $('#ojrat').addClass('is-invalid');
                 $('#ojrat').next('.invalid-feedback').remove();
                 $('#ojrat').after('<div class="invalid-feedback">اجرت فروش الزامی است</div>');
