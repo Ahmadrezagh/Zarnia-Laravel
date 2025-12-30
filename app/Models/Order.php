@@ -845,11 +845,19 @@ class Order extends Model
         ];
     }
 
+    public function sendSmsNotifications(): void
+    {
+        $sms = new Kavehnegar();
+        $userName = $this->user->name ?? 'کاربر';
+        $userName = str_replace(' ', '_', $userName);
+        $sms->send_with_two_token($this->user->phone, $userName, $this->id, $this->status);
+    }
     /**
      * Send Najva notifications for all products in the order
      */
     public function sendNajvaNotifications(): void
     {
+        $order->sendSmsNotifications();
         try {
             Log::info('Najva notifications: Starting', [
                 'order_id' => $this->id,
