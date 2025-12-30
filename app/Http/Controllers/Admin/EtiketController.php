@@ -412,4 +412,28 @@ class EtiketController extends Controller
             'total' => $totalEtikets
         ]);
     }
+
+    /**
+     * Bulk delete etikets
+     */
+    public function bulkDelete(Request $request)
+    {
+        if (is_string($request->etiket_ids)) {
+            $etiketIds = json_decode($request->etiket_ids, true);
+            $request->merge(['etiket_ids' => $etiketIds]);
+        }
+
+        $request->validate([
+            'etiket_ids' => 'required|array',
+            'etiket_ids.*' => 'exists:etikets,id',
+        ]);
+
+        $deleted = Etiket::whereIn('id', $request->etiket_ids)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "تعداد {$deleted} اتیکت با موفقیت حذف شد",
+            'deleted' => $deleted
+        ]);
+    }
 }

@@ -11,8 +11,11 @@
     <x-page>
         <x-slot name="header">
             <div class="row mb-3">
-                <div class="col-12 mb-3">
+                <div class="col-6 mb-3">
                     <button type="button" id="bulk-update-btn" class="btn btn-primary" onclick="showBulkUpdateModal()" style="display: none;">ویرایش دسته جمعی</button>
+                </div>
+                <div class="col-6 mb-3">
+                    <button type="button" id="bulk-delete-btn" class="btn btn-danger" onclick="bulkDeleteEtikets()" style="display: none;">حذف دسته جمعی</button>
                 </div>
             </div>
             <div class="row mb-3">
@@ -92,14 +95,17 @@
         $("#modal-body-content").append(content)
     }
 
-    // Show/hide bulk update button based on selected rows
+    // Show/hide bulk update and delete buttons based on selected rows
     function updateBulkUpdateButton() {
         const selectedIds = window.showArray ? window.showArray() : [];
-        const btn = $('#bulk-update-btn');
+        const updateBtn = $('#bulk-update-btn');
+        const deleteBtn = $('#bulk-delete-btn');
         if (selectedIds.length > 0) {
-            btn.fadeIn();
+            updateBtn.fadeIn();
+            deleteBtn.fadeIn();
         } else {
-            btn.fadeOut();
+            updateBtn.fadeOut();
+            deleteBtn.fadeOut();
         }
     }
 
