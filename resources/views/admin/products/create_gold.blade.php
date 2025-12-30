@@ -75,13 +75,15 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="darsad-kharid" class="font-weight-bold">اجرت خرید (%) <span class="text-danger">*</span></label>
-                                            <input type="number" class="form-control" id="darsad-kharid" name="darsad_kharid" step="0.01" placeholder="درصد اجرت خرید" required>
+                                            <input type="number" class="form-control" id="darsad-kharid" step="0.01" placeholder="درصد اجرت خرید" required>
+                                            <input type="hidden" name="darsad_kharid" id="darsad-kharid-hidden">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="ojrat" class="font-weight-bold">اجرت فروش (%) <span class="text-danger">*</span></label>
-                                            <input type="number" class="form-control" id="ojrat" name="ojrat" step="0.01" placeholder="درصد اجرت فروش" required>
+                                            <input type="number" class="form-control" id="ojrat" step="0.01" placeholder="درصد اجرت فروش" required>
+                                            <input type="hidden" name="ojrat" id="ojrat-hidden">
                                         </div>
                                     </div>
                                 </div>
@@ -330,13 +332,17 @@
                     // Fill darsad_kharid (execution purchase percentage)
                     // Allow 0 as a valid value, so only check for null/undefined
                     if (product.darsad_kharid !== null && product.darsad_kharid !== undefined) {
-                        $('#darsad-kharid').val(product.darsad_kharid).trigger('change');
+                        $('#darsad-kharid').val(product.darsad_kharid);
+                        $('#darsad-kharid-hidden').val(product.darsad_kharid);
+                        $('#darsad-kharid').trigger('change');
                     }
                     
                     // Fill ojrat (execution sale percentage)
                     // Allow 0 as a valid value, so only check for null/undefined
                     if (product.ojrat !== null && product.ojrat !== undefined) {
-                        $('#ojrat').val(product.ojrat).trigger('change');
+                        $('#ojrat').val(product.ojrat);
+                        $('#ojrat-hidden').val(product.ojrat);
+                        $('#ojrat').trigger('change');
                     }
                     
                     // Fill discount_percentage
@@ -498,6 +504,16 @@
             
             const formData = new FormData();
             
+            // Sync numeric values to hidden inputs before submission
+            const darsadKharidVal = $('#darsad-kharid').val();
+            const ojratVal = $('#ojrat').val();
+            if (darsadKharidVal !== '' && darsadKharidVal !== null && darsadKharidVal !== undefined) {
+                $('#darsad-kharid-hidden').val(darsadKharidVal);
+            }
+            if (ojratVal !== '' && ojratVal !== null && ojratVal !== undefined) {
+                $('#ojrat-hidden').val(ojratVal);
+            }
+            
             // Add all form fields except files
             $(this).find('input:not([type="file"]), select, textarea').each(function() {
                 const $field = $(this);
@@ -511,9 +527,17 @@
                             formData.append(name, $field.val());
                         }
                     } else if (type !== 'file') {
-                        // Always include required fields, even if empty
-                        if (isRequired || $field.val()) {
-                            formData.append(name, $field.val() || '');
+                        // For hidden inputs with numeric values, always include them (even if 0)
+                        if (type === 'hidden' && (name === 'darsad_kharid' || name === 'ojrat')) {
+                            const val = $field.val();
+                            if (val !== '' && val !== null && val !== undefined) {
+                                formData.append(name, val);
+                            }
+                        } else if (type !== 'file') {
+                            // Always include required fields, even if empty
+                            if (isRequired || $field.val()) {
+                                formData.append(name, $field.val() || '');
+                            }
                         }
                     }
                 }
@@ -770,8 +794,21 @@
         }
     }
 
-    // Recalculate all etiket prices when ojrat changes
+    // Sync numeric values to hidden inputs when they change
+    $(document).on('input change', '#darsad-kharid', function() {
+        const val = $(this).val();
+        if (val !== '' && val !== null && val !== undefined) {
+            $('#darsad-kharid-hidden').val(val);
+        }
+    });
+    
+    // Recalculate all etiket prices when ojrat changes and sync to hidden input
     $(document).on('input change', '#ojrat', function() {
+        const val = $(this).val();
+        if (val !== '' && val !== null && val !== undefined) {
+            $('#ojrat-hidden').val(val);
+        }
+        
         $('#etikets-row .etiket-item').each(function() {
             const index = $(this).data('index');
             if (index) {
