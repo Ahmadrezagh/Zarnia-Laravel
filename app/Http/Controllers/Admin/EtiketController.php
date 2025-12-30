@@ -164,52 +164,70 @@ class EtiketController extends Controller
         ]);
     }
 
+    /**
+     * Show assign etiket page for a product
+     */
+    public function assignEtiket(Product $product)
+    {
+        return view('admin.etikets.assign', compact('product'));
+    }
+
     public function storeForProduct(Request $request, Product $product)
     {
         $request->validate([
             'etikets' => 'required|array|min:1',
-            'etikets.*.code' => 'required|string|max:255',
+            'etikets.*.count' => 'required|integer|min:1',
+            'etikets.*.weight' => 'required|numeric|min:0',
         ]);
 
         $etiketCodes = [];
         $created = 0;
         $skipped = 0;
 
+        // Get existing zr- codes to avoid duplicates
+        $existingZrCodes = Etiket::where('code', 'like', 'zr-%')->pluck('code')->toArray();
+        
         foreach ($request->etikets as $etiketData) {
-            $code = trim($etiketData['code'] ?? '');
+            $count = (int)($etiketData['count'] ?? 1);
+            $weight = (float)($etiketData['weight'] ?? 0);
             
-            if (empty($code)) {
-                $skipped++;
+            if ($count <= 0 || $weight <= 0) {
+                $skipped += $count;
                 continue;
             }
             
-            // Check for duplicate in current batch
-            if (in_array($code, $etiketCodes)) {
-                $skipped++;
-                continue;
+            // Generate unique zr- codes for each etiket
+            for ($i = 0; $i < $count; $i++) {
+                $etiketCode = $this->generateUniqueEtiketCode(
+                    array_merge($etiketCodes, $existingZrCodes),
+                    'zr'
+                );
+                
+                // Check for duplicate in database
+                $existingEtiket = Etiket::where('code', $etiketCode)->first();
+                if ($existingEtiket) {
+                    $skipped++;
+                    continue;
+                }
+                
+                // Calculate price based on weight, ojrat, and darsad_kharid
+                $price = $this->calculateEtiketPrice($product, $weight);
+                
+                // Create etiket with product details
+                Etiket::create([
+                    'code' => $etiketCode,
+                    'name' => $product->name,
+                    'weight' => $weight,
+                    'price' => $price,
+                    'product_id' => $product->id,
+                    'ojrat' => $product->ojrat ?? null,
+                    'darsad_kharid' => $product->darsad_kharid ?? null,
+                    'is_mojood' => 1,
+                ]);
+                
+                $etiketCodes[] = $etiketCode;
+                $created++;
             }
-            
-            // Check for duplicate in database
-            $existingEtiket = Etiket::where('code', $code)->first();
-            if ($existingEtiket) {
-                $skipped++;
-                continue;
-            }
-            
-            // Create etiket with product details
-            Etiket::create([
-                'code' => $code,
-                'name' => $product->name,
-                'weight' => $product->weight ?? 0,
-                'price' => $product->getRawOriginal('price'),
-                'product_id' => $product->id,
-                'ojrat' => $product->ojrat ?? null,
-                'darsad_kharid' => $product->darsad_kharid ?? null,
-                'is_mojood' => 1,
-            ]);
-            
-            $etiketCodes[] = $code;
-            $created++;
         }
         
         return response()->json([
@@ -218,6 +236,62 @@ class EtiketController extends Controller
             'created' => $created,
             'skipped' => $skipped
         ]);
+    }
+    
+    /**
+     * Generate unique etiket code in format: {prefix}-{number}
+     */
+    private function generateUniqueEtiketCode(array $existingCodes = [], string $prefix = 'zr'): string
+    {
+        $startNumber = 7000;
+        $highestNumber = $startNumber - 1;
+        
+        // Find the highest existing code number in database that matches {prefix}-{number} pattern
+        $etikets = Etiket::where('code', 'like', $prefix . '-%')->get();
+        foreach ($etikets as $etiket) {
+            $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
+            if (preg_match($pattern, $etiket->code, $matches)) {
+                $codeNumber = (int)$matches[1];
+                if ($codeNumber >= $highestNumber) {
+                    $highestNumber = $codeNumber;
+                }
+            }
+        }
+        
+        // Check for codes in current batch and find the highest
+        foreach ($existingCodes as $code) {
+            $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
+            if (preg_match($pattern, $code, $matches)) {
+                $codeNumber = (int)$matches[1];
+                if ($codeNumber >= $highestNumber) {
+                    $highestNumber = $codeNumber;
+                }
+            }
+        }
+        
+        // Generate next code
+        $nextNumber = max($highestNumber + 1, $startNumber);
+        return $prefix . '-' . $nextNumber;
+    }
+    
+    /**
+     * Calculate etiket price based on product and weight
+     */
+    private function calculateEtiketPrice(Product $product, float $weight): float
+    {
+        $goldPrice = (float) setting('gold_price') ?? 0;
+        $ojrat = $product->ojrat ?? 0;
+        
+        if ($weight > 0 && $goldPrice > 0 && $ojrat > 0) {
+            // Formula: price = weight * (goldPrice * 1.01) * (1 + (ojrat / 100))
+            $adjustedGoldPrice = $goldPrice * 1.01;
+            $calculatedPrice = $weight * $adjustedGoldPrice * (1 + ($ojrat / 100));
+            
+            // Round down to nearest thousand (last three digits become 0)
+            return floor($calculatedPrice / 1000) * 1000;
+        }
+        
+        return 0;
     }
 
     /**

@@ -1401,88 +1401,9 @@
             console.log('Print etiket:', index);
         }
         
-        // Function to generate etikets for a product
+        // Function to generate etikets for a product - redirect to assign page
         function generateEtiket(productId) {
-            eraseModalContent();
-            $('#dynamic-modal-title').text('افزودن اتیکت به محصول');
-            
-            // Get product info via AJAX (same as getApiResult)
-            $.ajax({
-                url: `{{route('products.index')}}/${productId}`,
-                method: 'GET',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    // Get product data from response
-                    const product = response.data || response;
-                    const productName = product.name || 'محصول';
-                    
-                    const modalContent = `
-                        <form id="generate-etiket-form">
-                            <div class="alert alert-info">
-                                <strong>محصول:</strong> ${productName}
-                            </div>
-                            
-                            <div class="form-group mt-4">
-                                <label class="font-weight-bold">اتیکت‌ها</label>
-                                <div id="generate-etikets-list" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-                                    <p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-info mt-2" onclick="addGenerateEtiket()">
-                                    <i class="fas fa-plus"></i> افزودن اتیکت
-                                </button>
-                            </div>
-                            
-                            <div class="form-group mt-4">
-                                <button type="submit" class="btn btn-success btn-lg">
-                                    <i class="fas fa-save"></i> ایجاد اتیکت‌ها
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-lg" data-dismiss="modal">
-                                    انصراف
-                                </button>
-                            </div>
-                        </form>
-                    `;
-                    
-                    appendToModalContent(modalContent);
-                    
-                    // Setup form submission
-                    setupGenerateEtiketFormSubmission(productId);
-                    
-                    // Show modal
-                    showDynamicModal();
-                },
-                error: function() {
-                    // If AJAX fails, still show the form without product name
-                    const modalContent = `
-                        <form id="generate-etiket-form">
-                            <div class="form-group mt-4">
-                                <label class="font-weight-bold">اتیکت‌ها</label>
-                                <div id="generate-etikets-list" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-                                    <p class="text-muted text-center mb-0">هیچ اتیکتی اضافه نشده است</p>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-info mt-2" onclick="addGenerateEtiket()">
-                                    <i class="fas fa-plus"></i> افزودن اتیکت
-                                </button>
-                            </div>
-                            
-                            <div class="form-group mt-4">
-                                <button type="submit" class="btn btn-success btn-lg">
-                                    <i class="fas fa-save"></i> ایجاد اتیکت‌ها
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-lg" data-dismiss="modal">
-                                    انصراف
-                                </button>
-                            </div>
-                        </form>
-                    `;
-                    
-                    appendToModalContent(modalContent);
-                    setupGenerateEtiketFormSubmission(productId);
-                    showDynamicModal();
-                }
-            });
+            window.location.href = '{{ route("products.assign_etiket", ":product") }}'.replace(':product', productId);
         }
         
         let generateEtiketCounter = 0;

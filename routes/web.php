@@ -111,6 +111,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('products/ajax/search-parents', [ProductController::class, 'ajaxSearchParents'])->name('products.ajax.search.parents');
         Route::get('products/ajax/search-comprehensive', [ProductController::class, 'ajaxSearchForComprehensive'])->name('products.ajax.search.comprehensive');
         Route::get('products/search-by-etiket', [ProductController::class, 'searchByEtiketCode'])->name('products.search.by.etiket');
+        Route::get('products/{product}/assign-etiket', [EtiketController::class, 'assignEtiket'])->name('products.assign_etiket');
         Route::post('products/{product}/etikets', [EtiketController::class, 'storeForProduct'])->name('products.etikets.store');
         
         Route::resource('products', ProductController::class );
