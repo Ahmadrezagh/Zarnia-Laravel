@@ -167,13 +167,27 @@ class EtiketController extends Controller
     /**
      * Show assign etiket page for a product
      */
-    public function assignEtiket(Product $product)
+    public function assignEtiket($product)
     {
-        return view('admin.etikets.assign', compact('product'));
+        // Try to find by ID if numeric, otherwise by slug
+        if (is_numeric($product)) {
+            $productModel = Product::findOrFail($product);
+        } else {
+            $productModel = Product::where('slug', $product)->firstOrFail();
+        }
+        
+        return view('admin.etikets.assign', ['product' => $productModel]);
     }
 
-    public function storeForProduct(Request $request, Product $product)
+    public function storeForProduct(Request $request, $product)
     {
+        // Find product by ID if numeric, otherwise by slug
+        if (is_numeric($product)) {
+            $productModel = Product::findOrFail($product);
+        } else {
+            $productModel = Product::where('slug', $product)->firstOrFail();
+        }
+        
         $request->validate([
             'etikets' => 'required|array|min:1',
             'etikets.*.count' => 'required|integer|min:1',
@@ -211,17 +225,17 @@ class EtiketController extends Controller
                 }
                 
                 // Calculate price based on weight, ojrat, and darsad_kharid
-                $price = $this->calculateEtiketPrice($product, $weight);
+                $price = $this->calculateEtiketPrice($productModel, $weight);
                 
                 // Create etiket with product details
                 Etiket::create([
                     'code' => $etiketCode,
-                    'name' => $product->name,
+                    'name' => $productModel->name,
                     'weight' => $weight,
                     'price' => $price,
-                    'product_id' => $product->id,
-                    'ojrat' => $product->ojrat ?? null,
-                    'darsad_kharid' => $product->darsad_kharid ?? null,
+                    'product_id' => $productModel->id,
+                    'ojrat' => $productModel->ojrat ?? null,
+                    'darsad_kharid' => $productModel->darsad_kharid ?? null,
                     'is_mojood' => 1,
                 ]);
                 
