@@ -61,7 +61,7 @@ class ProductListResouce extends JsonResource
             'discount_percentage' => $this->discount_percentage,
             'snapp_pay_each_installment' => number_format($this->price/4),
             'is_favorite' => $is_favorite,
-            'available_count' => $this->available_count,
+            'available_count' => $this->count,
             'available_count_orderable_after_out_of_stock' => $availableCountOrderableAfterOutOfStock,
         ];
     }
