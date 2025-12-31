@@ -359,6 +359,10 @@ class Product extends Model implements HasMedia
         return $ownCount + $childrenCount;
     }
 
+    public function getAvailableCountAttribute()
+    {
+        return $this->etikets()->where('is_mojood', 1)->count();
+    }
 
     public function scopeHasCount(Builder $query): Builder
     {
