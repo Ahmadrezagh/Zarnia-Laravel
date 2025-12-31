@@ -38,8 +38,6 @@ class ProductListResouce extends JsonResource
             return $media->getUrl();
         })->toArray();
         
-        // Count available etikets
-        $availableCount = $product->etikets()->where('is_mojood', 1)->count();
         
         // Count available etikets with orderable_after_out_of_stock = 1
         $availableCountOrderableAfterOutOfStock = $product->etikets()
@@ -63,7 +61,7 @@ class ProductListResouce extends JsonResource
             'discount_percentage' => $this->discount_percentage,
             'snapp_pay_each_installment' => number_format($this->price/4),
             'is_favorite' => $is_favorite,
-            'available_count' => $availableCount,
+            'available_count' => $this->available_count,
             'available_count_orderable_after_out_of_stock' => $availableCountOrderableAfterOutOfStock,
         ];
     }
