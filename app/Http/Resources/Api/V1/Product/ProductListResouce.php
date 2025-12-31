@@ -37,6 +37,16 @@ class ProductListResouce extends JsonResource
         $galleryUrls = $galleryImages->map(function ($media) {
             return $media->getUrl();
         })->toArray();
+        
+        // Count available etikets
+        $availableCount = $product->etikets()->where('is_mojood', 1)->count();
+        
+        // Count available etikets with orderable_after_out_of_stock = 1
+        $availableCountOrderableAfterOutOfStock = $product->etikets()
+            ->where('is_mojood', 1)
+            ->where('orderable_after_out_of_stock', 1)
+            ->count();
+        
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -53,6 +63,8 @@ class ProductListResouce extends JsonResource
             'discount_percentage' => $this->discount_percentage,
             'snapp_pay_each_installment' => number_format($this->price/4),
             'is_favorite' => $is_favorite,
+            'available_count' => $availableCount,
+            'available_count_orderable_after_out_of_stock' => $availableCountOrderableAfterOutOfStock,
         ];
     }
 }
