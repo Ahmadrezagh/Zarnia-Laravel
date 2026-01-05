@@ -170,8 +170,7 @@
                     <input type="hidden" id="productId" value="${product.id}">
                     <div class="form-group">
                         <label for="product-name">نام محصول</label>
-                        <input type="text" class="form-control" id="product-name" value="${product.name || ''}" ${product.is_comprehensive ? '' : 'disabled'}>
-                        ${!product.is_comprehensive ? '<small class="text-muted د-block mt-1"><i class="fas fa-info-circle"></i> فقط محصولات جامع می‌توانند نام خود را تغییر دهند.</small>' : ''}
+                        <input type="text" class="form-control" id="product-name" value="${product.name || ''}">
                     </div>
                     <div class="form-group">
                         <label for="product-slug">نامک (Slug)</label>

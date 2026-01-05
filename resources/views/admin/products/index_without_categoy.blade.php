@@ -160,7 +160,7 @@
                     <input type="hidden" id="productId" value="${product.id}">
                     <div class="form-group">
                         <label for="product-name">نام محصول</label>
-                        <input type="text" class="form-control" id="product-name" value="${product.name || ''}" disabled>
+                        <input type="text" class="form-control" id="product-name" value="${product.name || ''}">
                     </div>
                     <div class="form-group">
                         <label for="product-slug">نامک (Slug)</label>
