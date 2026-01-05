@@ -366,6 +366,8 @@ class EtiketController extends Controller
         $request->validate([
             'etiket_ids' => 'required|array',
             'etiket_ids.*' => 'exists:etikets,id',
+            'name' => 'nullable|string|max:255',
+            'product_id' => 'nullable|integer|exists:products,id',
             'ojrat' => 'nullable|string',
             'darsad_kharid' => 'nullable|string',
             'weight' => 'nullable|numeric|min:0',
@@ -376,6 +378,14 @@ class EtiketController extends Controller
 
         foreach ($etikets as $etiket) {
             $updateData = [];
+            
+            if ($request->filled('name')) {
+                $updateData['name'] = $request->name;
+            }
+            
+            if ($request->filled('product_id')) {
+                $updateData['product_id'] = $request->product_id;
+            }
             
             if ($request->filled('ojrat')) {
                 $updateData['ojrat'] = $request->ojrat;

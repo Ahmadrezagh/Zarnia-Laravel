@@ -176,6 +176,20 @@
             </div>
 
             <div class="form-group">
+                <label>نام</label>
+                <input type="text" name="name" id="bulk-update-name" class="form-control" placeholder="مثال: دستبند طلا">
+                <small class="form-text text-muted">فقط در صورت نیاز به تغییر پر کنید</small>
+            </div>
+
+            <div class="form-group">
+                <label>محصول</label>
+                <select name="product_id" id="bulk-update-product" class="form-control">
+                    <option value="">-- انتخاب کنید --</option>
+                </select>
+                <small class="form-text text-muted">فقط در صورت نیاز به تغییر پر کنید</small>
+            </div>
+
+            <div class="form-group">
                 <label>اجرت خرید (درصد خرید)</label>
                 <input type="text" name="darsad_kharid" class="form-control" placeholder="مثال: 10">
                 <small class="form-text text-muted">فقط در صورت نیاز به تغییر پر کنید</small>
@@ -203,6 +217,65 @@
         $('#etiket_ids').val(JSON.stringify(selectedIds));
 
         showDynamicModal();
+        
+        // Initialize Select2 for product dropdown after modal is shown
+        $('#dynamic-modal').on('shown.bs.modal', function() {
+            // Destroy existing Select2 instance if it exists
+            if ($('#bulk-update-product').hasClass('select2-hidden-accessible')) {
+                $('#bulk-update-product').select2('destroy');
+            }
+            
+            if ($('#bulk-update-product').length) {
+                $('#bulk-update-product').select2({
+                    placeholder: 'جستجو و انتخاب محصول',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#dynamic-modal'),
+                    minimumInputLength: 1,
+                    ajax: {
+                        url: '{{ route("products.ajax.search.parents") }}',
+                        dataType: 'json',
+                        type: 'GET',
+                        delay: 250,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        data: function (params) {
+                            return {
+                                q: params.term || ''
+                            };
+                        },
+                        processResults: function (data) {
+                            let results = [];
+                            if (data && data.results && Array.isArray(data.results)) {
+                                results = data.results;
+                            } else if (Array.isArray(data)) {
+                                results = data;
+                            } else if (data && data.data && Array.isArray(data.data)) {
+                                results = data.data;
+                            }
+                            
+                            const products = results.filter(function(item) {
+                                if (!item || !item.id) return false;
+                                const itemId = item.id.toString();
+                                return itemId.startsWith('Product:');
+                            });
+                            
+                            return {
+                                results: products.map(function(item) {
+                                    const productId = item.id.toString().replace('Product:', '');
+                                    return {
+                                        id: productId,
+                                        text: item.text || item.name || 'محصول'
+                                    };
+                                })
+                            };
+                        },
+                        cache: true
+                    }
+                });
+            }
+        });
     }
 
     function submitBulkUpdate(button) {
