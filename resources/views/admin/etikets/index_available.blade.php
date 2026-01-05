@@ -39,6 +39,19 @@
                                 </option>
                             @endforeach
                         </x-form.select-option>
+                        <x-form.select-option title="مرتب‌سازی بر اساس" id="sort_column" name="sort_column" col="col-3 mb-3">
+                            <option value="">-- انتخاب کنید --</option>
+                            <option value="code" @if(request('sort_column') == 'code') selected @endif>کد</option>
+                            <option value="name" @if(request('sort_column') == 'name') selected @endif>اسم</option>
+                            <option value="weight" @if(request('sort_column') == 'weight') selected @endif>وزن</option>
+                            <option value="price" @if(request('sort_column') == 'price') selected @endif>قیمت</option>
+                            <option value="darsad_vazn_foroosh" @if(request('sort_column') == 'darsad_vazn_foroosh') selected @endif>درصد وزن فروش</option>
+                            <option value="ojrat" @if(request('sort_column') == 'ojrat') selected @endif>درصد اجرت</option>
+                        </x-form.select-option>
+                        <x-form.select-option title="ترتیب" id="sort_direction" name="sort_direction" col="col-3 mb-3">
+                            <option value="asc" @if(request('sort_direction') == 'asc') selected @endif>صعودی</option>
+                            <option value="desc" @if(request('sort_direction') == 'desc' || !request('sort_direction')) selected @endif>نزولی</option>
+                        </x-form.select-option>
                         <div class="col-12">
                             <button type="button" onclick="filterEtikets()" class="btn btn-success" style="width:100%">فیلتر</button>
                         </div>
@@ -246,6 +259,8 @@
         const weight = formData.get('weight') || '';
         const weightFrom = formData.get('weight_from') || '';
         const weightTo = formData.get('weight_to') || '';
+        const sortColumn = formData.get('sort_column') || '';
+        const sortDirection = formData.get('sort_direction') || 'desc';
         
         // Get all selected categories
         const categorySelect = document.getElementById('category_ids');
@@ -257,6 +272,8 @@
         if (weight) params.append('weight', weight);
         if (weightFrom) params.append('weight_from', weightFrom);
         if (weightTo) params.append('weight_to', weightTo);
+        if (sortColumn) params.append('sort_column', sortColumn);
+        if (sortDirection) params.append('sort_direction', sortDirection);
         selectedCategories.forEach(catId => {
             params.append('category_ids[]', catId);
         });
@@ -351,20 +368,29 @@
             params.append('category_ids[]', catId);
         });
         
-        // Get current sorting from DataTable
-        if ($.fn.DataTable && $('#etikets-available-table').length) {
-            const table = $('#etikets-available-table').DataTable();
-            if (table) {
-                const order = table.order();
-                if (order.length > 0 && order[0].length >= 2) {
-                    const columnIndex = order[0][0];
-                    const direction = order[0][1];
-                    // Get column data source
-                    const column = table.column(columnIndex);
-                    const dataSrc = column.dataSrc();
-                    if (dataSrc) {
-                        params.append('sort_column', dataSrc);
-                        params.append('sort_direction', direction);
+        // Get sort from form (select dropdown) - this takes priority
+        const sortColumn = formData.get('sort_column') || '';
+        const sortDirection = formData.get('sort_direction') || 'desc';
+        
+        if (sortColumn) {
+            params.append('sort_column', sortColumn);
+            params.append('sort_direction', sortDirection);
+        } else {
+            // Fallback to DataTable sorting if no form sort is selected
+            if ($.fn.DataTable && $('#etikets-available-table').length) {
+                const table = $('#etikets-available-table').DataTable();
+                if (table) {
+                    const order = table.order();
+                    if (order.length > 0 && order[0].length >= 2) {
+                        const columnIndex = order[0][0];
+                        const direction = order[0][1];
+                        // Get column data source
+                        const column = table.column(columnIndex);
+                        const dataSrc = column.dataSrc();
+                        if (dataSrc) {
+                            params.append('sort_column', dataSrc);
+                            params.append('sort_direction', direction);
+                        }
                     }
                 }
             }

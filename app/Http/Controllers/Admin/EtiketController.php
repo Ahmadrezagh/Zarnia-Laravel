@@ -101,48 +101,57 @@ class EtiketController extends Controller
             $length = 10;
         }
 
-        // Apply sorting if provided
-        if ($request->has('order') && !empty($request->input('order'))) {
+        // Apply sorting - check query parameters first (from select dropdown), then DataTable order
+        $sortColumn = null;
+        $sortDirection = 'desc';
+        
+        // Check if sort is provided via query parameters (from select dropdown)
+        if ($request->has('sort_column') && !empty($request->input('sort_column'))) {
+            $sortColumn = $request->input('sort_column');
+            $sortDirection = $request->input('sort_direction', 'desc');
+        } 
+        // Otherwise check DataTable order parameter
+        elseif ($request->has('order') && !empty($request->input('order'))) {
             $order = $request->input('order')[0];
             $columnIndex = $order['column'];
-            $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
-            $column = $request->input("columns.{$columnIndex}.data");
-            
-            if ($column) {
-                switch ($column) {
-                    case 'code':
-                        // Sort by numeric part of code (extract numbers after removing prefixes like s- or zr-)
-                        // Use SUBSTRING_INDEX to get part after last dash, then cast to number
-                        // Handle cases where code might not have a dash
-                        $query->orderByRaw("CAST(
-                            CASE 
-                                WHEN etikets.code LIKE '%-%' 
-                                THEN SUBSTRING_INDEX(etikets.code, '-', -1)
-                                ELSE etikets.code
-                            END AS UNSIGNED
-                        ) {$direction}");
-                        break;
-                    case 'name':
-                        $query->orderBy('etikets.name', $direction);
-                        break;
-                    case 'weight':
-                        $query->orderBy('etikets.weight', $direction);
-                        break;
-                    case 'price':
-                        $query->orderBy('etikets.price', $direction);
-                        break;
-                    case 'darsad_vazn_foroosh':
-                        $query->orderBy('etikets.darsad_vazn_foroosh', $direction);
-                        break;
-                    case 'ojrat':
-                        $query->orderBy('etikets.ojrat', $direction);
-                        break;
-                    default:
-                        if (Schema::hasColumn('etikets', $column)) {
-                            $query->orderBy('etikets.' . $column, $direction);
-                        }
-                        break;
-                }
+            $sortDirection = $order['dir'] === 'asc' ? 'asc' : 'desc';
+            $sortColumn = $request->input("columns.{$columnIndex}.data");
+        }
+        
+        if ($sortColumn) {
+            switch ($sortColumn) {
+                case 'code':
+                    // Sort by numeric part of code (extract numbers after removing prefixes like s- or zr-)
+                    // Use SUBSTRING_INDEX to get part after last dash, then cast to number
+                    // Handle cases where code might not have a dash
+                    $query->orderByRaw("CAST(
+                        CASE 
+                            WHEN etikets.code LIKE '%-%' 
+                            THEN SUBSTRING_INDEX(etikets.code, '-', -1)
+                            ELSE etikets.code
+                        END AS UNSIGNED
+                    ) {$sortDirection}");
+                    break;
+                case 'name':
+                    $query->orderBy('etikets.name', $sortDirection);
+                    break;
+                case 'weight':
+                    $query->orderBy('etikets.weight', $sortDirection);
+                    break;
+                case 'price':
+                    $query->orderBy('etikets.price', $sortDirection);
+                    break;
+                case 'darsad_vazn_foroosh':
+                    $query->orderBy('etikets.darsad_vazn_foroosh', $sortDirection);
+                    break;
+                case 'ojrat':
+                    $query->orderBy('etikets.ojrat', $sortDirection);
+                    break;
+                default:
+                    if (Schema::hasColumn('etikets', $sortColumn)) {
+                        $query->orderBy('etikets.' . $sortColumn, $sortDirection);
+                    }
+                    break;
             }
         } else {
             $query->latest('etikets.id');
