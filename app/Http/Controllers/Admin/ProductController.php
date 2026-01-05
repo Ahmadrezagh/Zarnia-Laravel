@@ -830,11 +830,14 @@ class ProductController extends Controller
     }
     public function products_children_of_table(Request $request,Product $product)
     {
-        $query = Product::query()->childrenOf($product->id)->orWhere('id','=',$product->id)->select('*'); // Assuming your model is Product
+        $query = Product::query()
+            ->where(function($q) use ($product) {
+                $q->childrenOf($product->id)
+                  ->orWhere('id', '=', $product->id);
+            })
+            ->whereHas('etikets') // Filter out products that don't have any etikets
+            ->select('*'); // Assuming your model is Product
 //        return $query->get();
-        
-        // Filter out products that don't have any etikets
-        $query->whereHas('etikets');
         
         // Get total records before applying filters
         $totalRecords = $query->count();
