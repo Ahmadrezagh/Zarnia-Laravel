@@ -73,7 +73,6 @@
                             ['label' => 'دسته بندی ها', 'key' => 'categories', 'type' => 'text'],
                             ['label' => 'موجودی', 'key' => 'is_mojood', 'type' => 'text'],
                             ['label' => 'درصد اجرت', 'key' => 'ojrat', 'type' => 'text', 'sortable' => true],
-                            ['label' => 'درصد خرید', 'key' => 'darsad_kharid', 'type' => 'text'],
                             ['label' => 'درصد وزن فروش', 'key' => 'darsad_vazn_foroosh', 'type' => 'text', 'sortable' => true],
                             ['label' => 'تاریخ ایجاد', 'key' => 'created_at', 'type' => 'text', 'sortable' => true],
                         ]"
