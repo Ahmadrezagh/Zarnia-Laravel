@@ -22,7 +22,7 @@ class AdminEtiketResource extends JsonResource
             'code' => $this->code,
             'name' => $this->name,
             'weight' => $this->weight,
-            'price' => number_format($this->price) . ' تومان',
+            'price' => number_format($this->price / 10) . ' تومان',
             'product_name' => $product ? $product->name : '-',
             'product_id' => $this->product_id,
             'categories' => $categories,

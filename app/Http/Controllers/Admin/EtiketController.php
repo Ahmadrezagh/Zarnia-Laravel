@@ -200,7 +200,7 @@ class EtiketController extends Controller
 
         // Get existing zr- codes to avoid duplicates
         $existingZrCodes = Etiket::where('code', 'like', 'zr-%')->pluck('code')->toArray();
-        
+
         foreach ($request->etikets as $etiketData) {
             $count = (int)($etiketData['count'] ?? 1);
             $weight = (float)($etiketData['weight'] ?? 0);
@@ -216,19 +216,19 @@ class EtiketController extends Controller
                     array_merge($etiketCodes, $existingZrCodes),
                     'zr'
                 );
-                
-                // Check for duplicate in database
+            
+            // Check for duplicate in database
                 $existingEtiket = Etiket::where('code', $etiketCode)->first();
-                if ($existingEtiket) {
-                    $skipped++;
-                    continue;
-                }
+            if ($existingEtiket) {
+                $skipped++;
+                continue;
+            }
                 
                 // Calculate price based on weight, ojrat, and darsad_kharid
                 $price = $this->calculateEtiketPrice($productModel, $weight);
-                
-                // Create etiket with product details
-                Etiket::create([
+            
+            // Create etiket with product details
+            Etiket::create([
                     'code' => $etiketCode,
                     'name' => $productModel->name,
                     'weight' => $weight,
@@ -236,11 +236,11 @@ class EtiketController extends Controller
                     'product_id' => $productModel->id,
                     'ojrat' => $productModel->ojrat ?? null,
                     'darsad_kharid' => $productModel->darsad_kharid ?? null,
-                    'is_mojood' => 1,
-                ]);
-                
+                'is_mojood' => 1,
+            ]);
+            
                 $etiketCodes[] = $etiketCode;
-                $created++;
+            $created++;
             }
         }
         

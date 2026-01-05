@@ -532,11 +532,11 @@
                             const val = $field.val();
                             if (val !== '' && val !== null && val !== undefined) {
                                 formData.append(name, val);
-                            }
-                        } else if (type !== 'file') {
-                            // Always include required fields, even if empty
-                            if (isRequired || $field.val()) {
-                                formData.append(name, $field.val() || '');
+                        }
+                    } else if (type !== 'file') {
+                        // Always include required fields, even if empty
+                        if (isRequired || $field.val()) {
+                            formData.append(name, $field.val() || '');
                             }
                         }
                     }
