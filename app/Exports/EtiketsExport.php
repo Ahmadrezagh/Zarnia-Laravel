@@ -122,6 +122,7 @@ class EtiketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
             'موجودی',
             'درصد اجرت',
             'درصد خرید',
+            'درصد وزن فروش',
             'تاریخ ایجاد',
         ];
     }
@@ -144,6 +145,7 @@ class EtiketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
             $etiket->is_mojood ? 'موجود' : 'ناموجود',
             $etiket->ojrat ?? '-',
             $etiket->darsad_kharid ?? '-',
+            $etiket->darsad_vazn_foroosh ?? '-',
             $etiket->created_at ? $etiket->created_at->format('Y/m/d H:i') : '-',
         ];
     }
