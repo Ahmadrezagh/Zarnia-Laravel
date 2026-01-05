@@ -91,7 +91,6 @@
                             ['label' => 'نام محصول', 'key' => 'nameUrl', 'type' => 'text'],
                             ['label' => 'وزن', 'key' => 'weight', 'type' => 'text', 'url' => '{frontend_url}'],
                             ['label' => 'قیمت', 'key' => 'price', 'type' => 'text'],
-                            ['label' => 'قیمت طبق طلای تابان گوهر', 'key' => 'taban_gohar_price', 'type' => 'text'],
                             ['label' => 'درصد خرید', 'key' => 'darsad_kharid', 'type' => 'text'],
                             ['label' => 'درصد اجرت', 'key' => 'ojrat', 'type' => 'text'],
                             ['label' => 'موجودی', 'key' => 'count', 'type' => 'text'],
