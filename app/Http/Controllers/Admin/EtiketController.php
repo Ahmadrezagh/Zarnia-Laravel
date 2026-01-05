@@ -141,8 +141,8 @@ class EtiketController extends Controller
                 case 'price':
                     $query->orderBy('etikets.price', $sortDirection);
                     break;
-                case 'darsad_vazn_foroosh':
-                    $query->orderBy('etikets.darsad_vazn_foroosh', $sortDirection);
+                case 'darsad_kharid':
+                    $query->orderBy('etikets.darsad_kharid', $sortDirection);
                     break;
                 case 'ojrat':
                     $query->orderBy('etikets.ojrat', $sortDirection);

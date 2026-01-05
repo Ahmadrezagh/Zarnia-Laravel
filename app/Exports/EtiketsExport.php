@@ -90,8 +90,8 @@ class EtiketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
                 case 'price':
                     $query->orderBy('etikets.price', $direction);
                     break;
-                case 'darsad_vazn_foroosh':
-                    $query->orderBy('etikets.darsad_vazn_foroosh', $direction);
+                case 'darsad_kharid':
+                    $query->orderBy('etikets.darsad_kharid', $direction);
                     break;
                 case 'ojrat':
                     $query->orderBy('etikets.ojrat', $direction);

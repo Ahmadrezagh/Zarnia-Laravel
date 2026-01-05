@@ -45,7 +45,7 @@
                             <option value="name" @if(request('sort_column') == 'name') selected @endif>اسم</option>
                             <option value="weight" @if(request('sort_column') == 'weight') selected @endif>وزن</option>
                             <option value="price" @if(request('sort_column') == 'price') selected @endif>قیمت</option>
-                            <option value="darsad_vazn_foroosh" @if(request('sort_column') == 'darsad_vazn_foroosh') selected @endif>درصد وزن فروش</option>
+                            <option value="darsad_kharid" @if(request('sort_column') == 'darsad_kharid') selected @endif>درصد خرید</option>
                             <option value="ojrat" @if(request('sort_column') == 'ojrat') selected @endif>درصد اجرت</option>
                         </x-form.select-option>
                         <x-form.select-option title="ترتیب" id="sort_direction" name="sort_direction" col="col-3 mb-3">
