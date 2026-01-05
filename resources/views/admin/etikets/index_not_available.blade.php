@@ -17,6 +17,11 @@
                 <div class="col-6 mb-3">
                     <button type="button" id="bulk-delete-btn" class="btn btn-danger" onclick="bulkDeleteEtikets()" style="display: none;">حذف دسته جمعی</button>
                 </div>
+                <div class="col-12 mb-3">
+                    <button type="button" class="btn btn-success" onclick="exportEtikets()">
+                        <i class="fas fa-file-excel"></i> خروجی اکسل
+                    </button>
+                </div>
             </div>
             <div class="row mb-3">
                 <form id="filterForm" action="" class="col-12">
@@ -313,6 +318,47 @@
                 }
             }
         });
+    }
+
+    function exportEtikets() {
+        // Get current filter values
+        const form = document.getElementById('filterForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        // Add is_mojood filter
+        params.append('is_mojood', '0');
+        
+        // Get all form values
+        const name = formData.get('name') || '';
+        const code = formData.get('code') || '';
+        const weight = formData.get('weight') || '';
+        const weightFrom = formData.get('weight_from') || '';
+        const weightTo = formData.get('weight_to') || '';
+        
+        // Get all selected categories
+        const categorySelect = document.getElementById('category_ids');
+        const selectedCategories = Array.from(categorySelect.selectedOptions).map(option => option.value);
+        
+        // Build query string
+        if (name) params.append('name', name);
+        if (code) params.append('code', code);
+        if (weight) params.append('weight', weight);
+        if (weightFrom) params.append('weight_from', weightFrom);
+        if (weightTo) params.append('weight_to', weightTo);
+        selectedCategories.forEach(catId => {
+            params.append('category_ids[]', catId);
+        });
+        
+        // Construct export URL
+        const exportUrl = '{{ route('etikets.export') }}' + '?' + params.toString();
+        
+        // Download the file
+        window.location.href = exportUrl;
+        
+        if (typeof toastr !== 'undefined') {
+            toastr.success('در حال تهیه فایل اکسل...');
+        }
     }
 </script>
 @endpush

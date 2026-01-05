@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\EtiketsExport;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\Table\AdminEtiketResource;
 use App\Models\Category;
@@ -9,6 +10,7 @@ use App\Models\Etiket;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EtiketController extends Controller
 {
@@ -435,5 +437,33 @@ class EtiketController extends Controller
             'message' => "تعداد {$deleted} اتیکت با موفقیت حذف شد",
             'deleted' => $deleted
         ]);
+    }
+
+    /**
+     * Export etikets to Excel
+     */
+    public function export(Request $request)
+    {
+        $filters = [
+            'is_mojood' => $request->get('is_mojood'),
+            'name' => $request->get('name'),
+            'code' => $request->get('code'),
+            'weight' => $request->get('weight'),
+            'weight_from' => $request->get('weight_from'),
+            'weight_to' => $request->get('weight_to'),
+            'category_ids' => $request->get('category_ids'),
+        ];
+
+        $fileName = 'etikets_' . date('Y-m-d_H-i-s') . '.xlsx';
+        if (isset($filters['is_mojood']) && $filters['is_mojood'] == 1) {
+            $fileName = 'etikets_available_' . date('Y-m-d_H-i-s') . '.xlsx';
+        } elseif (isset($filters['is_mojood']) && $filters['is_mojood'] == 0) {
+            $fileName = 'etikets_not_available_' . date('Y-m-d_H-i-s') . '.xlsx';
+        }
+
+        return Excel::download(
+            new EtiketsExport($filters), 
+            $fileName
+        );
     }
 }
