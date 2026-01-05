@@ -839,6 +839,10 @@ class ProductController extends Controller
     {
         $query = Product::query()->childrenOf($product->id)->orWhere('id','=',$product->id)->select('*'); // Assuming your model is Product
 //        return $query->get();
+        
+        // Filter out products that don't have any etikets
+        $query->whereHas('etikets');
+        
         // Get total records before applying filters
         $totalRecords = $query->count();
 
