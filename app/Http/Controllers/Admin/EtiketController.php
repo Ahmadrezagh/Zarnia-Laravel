@@ -378,9 +378,11 @@ class EtiketController extends Controller
 
         foreach ($etikets as $etiket) {
             $updateData = [];
+            $hasUpdates = false;
             
             if ($request->filled('name')) {
                 $updateData['name'] = $request->name;
+                $hasUpdates = true;
             }
             
             // Update product_id if it's provided and has a valid value
@@ -389,25 +391,34 @@ class EtiketController extends Controller
                 $productId = (int) $request->input('product_id');
                 // Only update if product_id is a valid positive integer
                 if ($productId > 0) {
-                    $updateData['product_id'] = $productId;
+                    // Force update by explicitly setting the attribute
+                    $etiket->product_id = $productId;
+                    $hasUpdates = true;
                 }
             }
             
             if ($request->filled('ojrat')) {
                 $updateData['ojrat'] = $request->ojrat;
+                $hasUpdates = true;
             }
             
             if ($request->filled('darsad_kharid')) {
                 $updateData['darsad_kharid'] = $request->darsad_kharid;
+                $hasUpdates = true;
             }
             
             if ($request->filled('weight')) {
                 $updateData['weight'] = $request->weight;
+                $hasUpdates = true;
             }
             
-            if (!empty($updateData)) {
-                // Force update even if product_id is being changed from null
-                $etiket->update($updateData);
+            // Force update - use save() to ensure product_id is updated even if it's the only change
+            if ($hasUpdates) {
+                if (!empty($updateData)) {
+                    $etiket->fill($updateData);
+                }
+                // Save will update product_id if it was set above, and any other fields in updateData
+                $etiket->save();
                 $updated++;
             }
         }
