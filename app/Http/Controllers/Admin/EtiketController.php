@@ -383,7 +383,8 @@ class EtiketController extends Controller
                 $updateData['name'] = $request->name;
             }
             
-            if ($request->filled('product_id')) {
+            // Only update product_id if it's provided and not empty/null
+            if ($request->has('product_id') && $request->product_id !== null && $request->product_id !== '') {
                 $updateData['product_id'] = $request->product_id;
             }
             
