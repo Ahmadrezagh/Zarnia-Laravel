@@ -285,7 +285,13 @@
         
         // Get Select2 value for product_id - always set it (even if empty)
         const productId = $('#bulk-update-product').val();
-        formData.set('product_id', productId || '');
+        // Ensure we send the product_id value, even if it's null/empty
+        if (productId && productId !== '' && productId !== null) {
+            formData.set('product_id', productId);
+        } else {
+            // Don't send product_id if it's empty - we only want to update when a product is selected
+            formData.delete('product_id');
+        }
 
         $.ajax({
             url: '{{ route('etikets.bulk_update') }}',

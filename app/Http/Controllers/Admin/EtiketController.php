@@ -385,15 +385,11 @@ class EtiketController extends Controller
             
             // Update product_id if it's provided and has a valid value
             // This allows assigning product_id to etikets that don't have one (product_id = null)
-            if ($request->has('product_id')) {
-                $productId = $request->input('product_id');
-                // Convert empty string to null for comparison
-                if ($productId === '') {
-                    $productId = null;
-                }
-                // Only update if product_id is not null and not '0'
-                if ($productId !== null && $productId !== '0' && $productId !== 0) {
-                    $updateData['product_id'] = (int) $productId;
+            if ($request->has('product_id') && $request->product_id !== null && $request->product_id !== '') {
+                $productId = (int) $request->input('product_id');
+                // Only update if product_id is a valid positive integer
+                if ($productId > 0) {
+                    $updateData['product_id'] = $productId;
                 }
             }
             
@@ -410,6 +406,7 @@ class EtiketController extends Controller
             }
             
             if (!empty($updateData)) {
+                // Force update even if product_id is being changed from null
                 $etiket->update($updateData);
                 $updated++;
             }
