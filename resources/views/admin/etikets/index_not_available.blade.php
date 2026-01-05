@@ -282,6 +282,12 @@
         const form = $(button).closest('form')[0];
         const formData = new FormData(form);
         formData.append('_token', '{{ csrf_token() }}');
+        
+        // Get Select2 value for product_id if it exists
+        const productId = $('#bulk-update-product').val();
+        if (productId) {
+            formData.set('product_id', productId);
+        }
 
         $.ajax({
             url: '{{ route('etikets.bulk_update') }}',
