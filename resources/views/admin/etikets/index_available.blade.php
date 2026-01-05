@@ -55,12 +55,13 @@
                             ['label' => 'کد', 'key' => 'code', 'type' => 'text', 'sortable' => true],
                             ['label' => 'اسم', 'key' => 'name', 'type' => 'text', 'sortable' => true],
                             ['label' => 'وزن', 'key' => 'weight', 'type' => 'text', 'sortable' => true],
-                            ['label' => 'قیمت', 'key' => 'price', 'type' => 'text'],
+                            ['label' => 'قیمت', 'key' => 'price', 'type' => 'text', 'sortable' => true],
                             ['label' => 'محصول', 'key' => 'product_name', 'type' => 'text'],
                             ['label' => 'دسته بندی ها', 'key' => 'categories', 'type' => 'text'],
                             ['label' => 'موجودی', 'key' => 'is_mojood', 'type' => 'text'],
-                            ['label' => 'درصد اجرت', 'key' => 'ojrat', 'type' => 'text'],
+                            ['label' => 'درصد اجرت', 'key' => 'ojrat', 'type' => 'text', 'sortable' => true],
                             ['label' => 'درصد خرید', 'key' => 'darsad_kharid', 'type' => 'text'],
+                            ['label' => 'درصد وزن فروش', 'key' => 'darsad_vazn_foroosh', 'type' => 'text', 'sortable' => true],
                             ['label' => 'تاریخ ایجاد', 'key' => 'created_at', 'type' => 'text', 'sortable' => true],
                         ]"
         >
@@ -349,6 +350,25 @@
         selectedCategories.forEach(catId => {
             params.append('category_ids[]', catId);
         });
+        
+        // Get current sorting from DataTable
+        if ($.fn.DataTable && $('#etikets-available-table').length) {
+            const table = $('#etikets-available-table').DataTable();
+            if (table) {
+                const order = table.order();
+                if (order.length > 0 && order[0].length >= 2) {
+                    const columnIndex = order[0][0];
+                    const direction = order[0][1];
+                    // Get column data source
+                    const column = table.column(columnIndex);
+                    const dataSrc = column.dataSrc();
+                    if (dataSrc) {
+                        params.append('sort_column', dataSrc);
+                        params.append('sort_direction', direction);
+                    }
+                }
+            }
+        }
         
         // Construct export URL
         const exportUrl = '{{ route('etikets.export') }}' + '?' + params.toString();

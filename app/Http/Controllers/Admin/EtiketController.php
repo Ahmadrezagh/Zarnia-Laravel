@@ -107,8 +107,42 @@ class EtiketController extends Controller
             $columnIndex = $order['column'];
             $direction = $order['dir'] === 'asc' ? 'asc' : 'desc';
             $column = $request->input("columns.{$columnIndex}.data");
-            if ($column && Schema::hasColumn('etikets', $column)) {
-                $query->orderBy('etikets.' . $column, $direction);
+            
+            if ($column) {
+                switch ($column) {
+                    case 'code':
+                        // Sort by numeric part of code (extract numbers after removing prefixes like s- or zr-)
+                        // Use SUBSTRING_INDEX to get part after last dash, then cast to number
+                        // Handle cases where code might not have a dash
+                        $query->orderByRaw("CAST(
+                            CASE 
+                                WHEN etikets.code LIKE '%-%' 
+                                THEN SUBSTRING_INDEX(etikets.code, '-', -1)
+                                ELSE etikets.code
+                            END AS UNSIGNED
+                        ) {$direction}");
+                        break;
+                    case 'name':
+                        $query->orderBy('etikets.name', $direction);
+                        break;
+                    case 'weight':
+                        $query->orderBy('etikets.weight', $direction);
+                        break;
+                    case 'price':
+                        $query->orderBy('etikets.price', $direction);
+                        break;
+                    case 'darsad_vazn_foroosh':
+                        $query->orderBy('etikets.darsad_vazn_foroosh', $direction);
+                        break;
+                    case 'ojrat':
+                        $query->orderBy('etikets.ojrat', $direction);
+                        break;
+                    default:
+                        if (Schema::hasColumn('etikets', $column)) {
+                            $query->orderBy('etikets.' . $column, $direction);
+                        }
+                        break;
+                }
             }
         } else {
             $query->latest('etikets.id');
@@ -453,6 +487,13 @@ class EtiketController extends Controller
             'weight_to' => $request->get('weight_to'),
             'category_ids' => $request->get('category_ids'),
         ];
+
+        // Get sorting parameters from request (same as DataTable)
+        $sortColumn = $request->get('sort_column');
+        $sortDirection = $request->get('sort_direction', 'desc');
+        
+        $filters['sort_column'] = $sortColumn;
+        $filters['sort_direction'] = $sortDirection;
 
         $fileName = 'etikets_' . date('Y-m-d_H-i-s') . '.xlsx';
         if (isset($filters['is_mojood']) && $filters['is_mojood'] == 1) {

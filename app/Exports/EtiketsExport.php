@@ -65,7 +65,46 @@ class EtiketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
             });
         }
 
-        return $query->orderBy('etikets.id', 'desc')->get();
+        // Apply sorting if provided (same logic as table method)
+        if (!empty($this->filters['sort_column'])) {
+            $column = $this->filters['sort_column'];
+            $direction = $this->filters['sort_direction'] ?? 'desc';
+            
+            switch ($column) {
+                case 'code':
+                    // Sort by numeric part of code (extract numbers after removing prefixes like s- or zr-)
+                    $query->orderByRaw("CAST(
+                        CASE 
+                            WHEN etikets.code LIKE '%-%' 
+                            THEN SUBSTRING_INDEX(etikets.code, '-', -1)
+                            ELSE etikets.code
+                        END AS UNSIGNED
+                    ) {$direction}");
+                    break;
+                case 'name':
+                    $query->orderBy('etikets.name', $direction);
+                    break;
+                case 'weight':
+                    $query->orderBy('etikets.weight', $direction);
+                    break;
+                case 'price':
+                    $query->orderBy('etikets.price', $direction);
+                    break;
+                case 'darsad_vazn_foroosh':
+                    $query->orderBy('etikets.darsad_vazn_foroosh', $direction);
+                    break;
+                case 'ojrat':
+                    $query->orderBy('etikets.ojrat', $direction);
+                    break;
+                default:
+                    $query->orderBy('etikets.id', $direction);
+                    break;
+            }
+        } else {
+            $query->orderBy('etikets.id', 'desc');
+        }
+
+        return $query->get();
     }
 
     /**
