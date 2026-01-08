@@ -1393,10 +1393,34 @@ class ProductController extends Controller
             $product->update($productUpdateData);
             $updatedProducts++;
             
+            // Recalculate price from TabanGoharPrice if ojrat or weight changed
+            if ($request->filled('ojrat') || $request->filled('weight')) {
+                $product->refresh(); // Refresh to get updated attributes
+                $tabanGoharPrice = $product->taban_gohar_price;
+                if ($tabanGoharPrice > 0) {
+                    $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
+                }
+                
+                // Recalculate discounted price if discount_percentage exists
+                $this->updateDiscountedPrice($product);
+            }
+            
             // Update all etikets belonging to this product
             if (!empty($etiketUpdateData)) {
-                $etiketCount = $product->etikets()->update($etiketUpdateData);
-                $updatedEtikets += $etiketCount;
+                $etikets = $product->etikets;
+                foreach ($etikets as $etiket) {
+                    $etiket->update($etiketUpdateData);
+                    $updatedEtikets++;
+                    
+                    // Recalculate etiket price if ojrat or weight changed
+                    if ($request->filled('ojrat') || $request->filled('weight')) {
+                        $etiket->refresh();
+                        $etiketPrice = $this->calculateEtiketPrice($product, $etiket->weight);
+                        if ($etiketPrice > 0) {
+                            $etiket->updateQuietly(['price' => $etiketPrice]);
+                        }
+                    }
+                }
             }
             
             // Get and update all children products
@@ -1406,10 +1430,34 @@ class ProductController extends Controller
                 $child->update($productUpdateData);
                 $updatedChildren++;
                 
+                // Recalculate child price from TabanGoharPrice if ojrat or weight changed
+                if ($request->filled('ojrat') || $request->filled('weight')) {
+                    $child->refresh();
+                    $tabanGoharPrice = $child->taban_gohar_price;
+                    if ($tabanGoharPrice > 0) {
+                        $child->updateQuietly(['price' => $tabanGoharPrice * 10]);
+                    }
+                    
+                    // Recalculate child's discounted price (uses parent's discount_percentage)
+                    $this->updateDiscountedPrice($child);
+                }
+                
                 // Update all etikets belonging to this child product
                 if (!empty($etiketUpdateData)) {
-                    $childEtiketCount = $child->etikets()->update($etiketUpdateData);
-                    $updatedEtikets += $childEtiketCount;
+                    $childEtikets = $child->etikets;
+                    foreach ($childEtikets as $childEtiket) {
+                        $childEtiket->update($etiketUpdateData);
+                        $updatedEtikets++;
+                        
+                        // Recalculate child etiket price if ojrat or weight changed
+                        if ($request->filled('ojrat') || $request->filled('weight')) {
+                            $childEtiket->refresh();
+                            $childEtiketPrice = $this->calculateEtiketPrice($child, $childEtiket->weight);
+                            if ($childEtiketPrice > 0) {
+                                $childEtiket->updateQuietly(['price' => $childEtiketPrice]);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -2111,7 +2159,18 @@ class ProductController extends Controller
     {
         // Get raw price value (stored multiplied by 10) and discount percentage
         $rawPrice = $product->getRawOriginal('price');
-        $discountPercentage = $product->discount_percentage;
+        
+        // If product has parent, use parent's discount_percentage
+        $discountPercentage = 0;
+        if ($product->parent_id) {
+            $parent = Product::find($product->parent_id);
+            if ($parent) {
+                $discountPercentage = $parent->getRawOriginal('discount_percentage') ?? 0;
+            }
+        } else {
+            // Use own discount_percentage
+            $discountPercentage = $product->getRawOriginal('discount_percentage') ?? 0;
+        }
 
         if ($rawPrice != 0 && $discountPercentage != 0) {
             // Calculate discounted price
@@ -2125,10 +2184,29 @@ class ProductController extends Controller
             $product->discounted_price = $discountedPrice;
         } else {
             $product->discounted_price = null;
-            $product->discount_percentage = 0;
         }
 
         $product->saveQuietly();
+    }
+    
+    /**
+     * Calculate etiket price based on product and weight
+     */
+    private function calculateEtiketPrice(Product $product, float $weight): float
+    {
+        $goldPrice = (float) setting('gold_price') ?? 0;
+        $ojrat = $product->ojrat ?? 0;
+        
+        if ($weight > 0 && $goldPrice > 0 && $ojrat > 0) {
+            // Formula: price = weight * (goldPrice * 1.01) * (1 + (ojrat / 100))
+            $adjustedGoldPrice = $goldPrice * 1.01;
+            $calculatedPrice = $weight * $adjustedGoldPrice * (1 + ($ojrat / 100));
+            
+            // Round down to nearest thousand (last three digits become 0)
+            return floor($calculatedPrice / 1000) * 1000;
+        }
+        
+        return 0;
     }
 
     /**
