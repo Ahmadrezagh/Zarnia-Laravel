@@ -366,6 +366,9 @@
                             <li class="nav-sub-item">
                                 <a class="nav-sub-link" href="{{route('etikets.not_available')}}">اتیکت‌های ناموجود</a>
                             </li>
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('etikets.deleted')}}">اتیکت‌های حذف شده</a>
+                            </li>
                         </ul>
                     </li>
                 @endif

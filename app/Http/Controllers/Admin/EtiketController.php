@@ -33,11 +33,25 @@ class EtiketController extends Controller
     }
 
     /**
+     * Show deleted etikets
+     */
+    public function indexDeleted()
+    {
+        $categories = Category::query()->get();
+        return view('admin.etikets.index_deleted', compact('categories'));
+    }
+
+    /**
      * Get etikets table data for DataTables
      */
     public function table(Request $request)
     {
         $query = Etiket::query()->with('product.categories')->select('etikets.*');
+        
+        // Handle deleted filter
+        if ($request->has('deleted') && ($request->input('deleted') == '1' || $request->input('deleted') == 1)) {
+            $query->onlyTrashed();
+        }
         
         // Filter by availability if specified
         if ($request->has('is_mojood')) {
@@ -507,6 +521,60 @@ class EtiketController extends Controller
         return response()->json([
             'success' => true,
             'message' => "تعداد {$deleted} اتیکت با موفقیت حذف شد",
+            'deleted' => $deleted
+        ]);
+    }
+
+    /**
+     * Bulk restore deleted etikets
+     */
+    public function bulkRestore(Request $request)
+    {
+        if (is_string($request->etiket_ids)) {
+            $etiketIds = json_decode($request->etiket_ids, true);
+            $request->merge(['etiket_ids' => $etiketIds]);
+        }
+
+        $request->validate([
+            'etiket_ids' => 'required|array',
+            'etiket_ids.*' => 'integer',
+        ]);
+
+        // Restore soft deleted etikets
+        $restored = Etiket::onlyTrashed()
+            ->whereIn('id', $request->etiket_ids)
+            ->restore();
+
+        return response()->json([
+            'success' => true,
+            'message' => "تعداد {$restored} اتیکت با موفقیت بازیابی شد",
+            'restored' => $restored
+        ]);
+    }
+
+    /**
+     * Bulk force delete etikets (permanent delete)
+     */
+    public function bulkForceDelete(Request $request)
+    {
+        if (is_string($request->etiket_ids)) {
+            $etiketIds = json_decode($request->etiket_ids, true);
+            $request->merge(['etiket_ids' => $etiketIds]);
+        }
+
+        $request->validate([
+            'etiket_ids' => 'required|array',
+            'etiket_ids.*' => 'integer',
+        ]);
+
+        // Permanently delete etikets
+        $deleted = Etiket::onlyTrashed()
+            ->whereIn('id', $request->etiket_ids)
+            ->forceDelete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "تعداد {$deleted} اتیکت به صورت دائمی حذف شد",
             'deleted' => $deleted
         ]);
     }

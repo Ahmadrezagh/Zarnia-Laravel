@@ -83,9 +83,12 @@ Route::middleware('panel.ip')->group(function () {
     Route::middleware(['auth'])->group(function () {
         Route::get('etikets/available', [EtiketController::class, 'indexAvailable'])->name('etikets.available');
         Route::get('etikets/not-available', [EtiketController::class, 'indexNotAvailable'])->name('etikets.not_available');
+        Route::get('etikets/deleted', [EtiketController::class, 'indexDeleted'])->name('etikets.deleted');
         Route::get('etikets/export', [EtiketController::class, 'export'])->name('etikets.export');
         Route::post('etikets/bulk-update', [EtiketController::class, 'bulkUpdate'])->name('etikets.bulk_update');
         Route::post('etikets/bulk-delete', [EtiketController::class, 'bulkDelete'])->name('etikets.bulk_delete');
+        Route::post('etikets/bulk-restore', [EtiketController::class, 'bulkRestore'])->name('etikets.bulk_restore');
+        Route::post('etikets/bulk-force-delete', [EtiketController::class, 'bulkForceDelete'])->name('etikets.bulk_force_delete');
         Route::post('etikets/bulk-update-for-products', [EtiketController::class, 'bulkUpdateForProducts'])->name('etikets.bulk_update_for_products');
     });
     Route::middleware(['auth'])->prefix('admin')-> group(function (){
