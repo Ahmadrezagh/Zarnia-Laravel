@@ -89,6 +89,8 @@ Route::middleware('panel.ip')->group(function () {
         Route::post('etikets/bulk-delete', [EtiketController::class, 'bulkDelete'])->name('etikets.bulk_delete');
         Route::post('etikets/bulk-restore', [EtiketController::class, 'bulkRestore'])->name('etikets.bulk_restore');
         Route::post('etikets/bulk-force-delete', [EtiketController::class, 'bulkForceDelete'])->name('etikets.bulk_force_delete');
+        Route::post('etikets/{id}/restore', [EtiketController::class, 'restore'])->name('etikets.restore');
+        Route::delete('etikets/{id}/force-delete', [EtiketController::class, 'forceDelete'])->name('etikets.force-delete');
         Route::post('etikets/bulk-update-for-products', [EtiketController::class, 'bulkUpdateForProducts'])->name('etikets.bulk_update_for_products');
     });
     Route::middleware(['auth'])->prefix('admin')-> group(function (){

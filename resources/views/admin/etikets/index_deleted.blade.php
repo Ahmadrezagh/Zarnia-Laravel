@@ -58,6 +58,10 @@
             ]"
             :url="route('table.etikets', ['deleted' => 1] + request()->all())"
             :hasCheckbox="true"
+            :actions="[
+                ['label' => 'بازیابی', 'type' => 'restore', 'class' => 'btn-success'],
+                ['label' => 'حذف دائمی', 'type' => 'forceDelete', 'class' => 'btn-danger'],
+            ]"
         />
 
     </x-page>

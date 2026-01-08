@@ -580,6 +580,48 @@ class EtiketController extends Controller
     }
 
     /**
+     * Restore a single deleted etiket
+     */
+    public function restore(string $id)
+    {
+        try {
+            $etiket = Etiket::onlyTrashed()->findOrFail($id);
+            $etiket->restore();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'اتیکت با موفقیت بازیابی شد'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در بازیابی اتیکت: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Permanently delete a single etiket
+     */
+    public function forceDelete(string $id)
+    {
+        try {
+            $etiket = Etiket::onlyTrashed()->findOrFail($id);
+            $etiket->forceDelete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'اتیکت به صورت دائمی حذف شد'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطا در حذف دائمی اتیکت: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Export etikets to Excel
      */
     public function export(Request $request)
