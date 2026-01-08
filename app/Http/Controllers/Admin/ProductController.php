@@ -1608,7 +1608,107 @@ class ProductController extends Controller
     }
     public function updateComprehensiveProduct(updateComprehensiveProductRequest $request)
     {
-
+        try {
+            $validated = $request->validated();
+            
+            // Find the comprehensive product
+            $product = Product::findOrFail($request->id);
+            
+            if (!$product->is_comprehensive) {
+                return back()->withErrors(['error' => 'این محصول یک محصول جامع نیست']);
+            }
+            
+            // Update basic product info
+            if (isset($validated['name'])) {
+                $product->name = $validated['name'];
+            }
+            if (isset($validated['description'])) {
+                $product->description = $validated['description'];
+            }
+            if (isset($validated['discount_percentage'])) {
+                $product->discount_percentage = $validated['discount_percentage'];
+            }
+            
+            // Calculate weight and price from constituent products
+            $totalWeight = 0;
+            $totalPrice = 0;
+            
+            if ($request->has('product_ids') && is_array($request->product_ids) && !empty($request->product_ids)) {
+                foreach ($request->product_ids as $productId) {
+                    $constituentProduct = Product::find($productId);
+                    if ($constituentProduct) {
+                        $totalPrice += ($constituentProduct->price * 10);
+                        $totalWeight += $constituentProduct->weight;
+                    }
+                }
+                
+                $product->price = $totalPrice;
+                $product->weight = $totalWeight;
+                
+                // Update comprehensive products relationship
+                // First, delete existing relationships
+                ComprehensiveProduct::where('comprehensive_product_id', $product->id)->delete();
+                
+                // Then create new relationships
+                foreach ($request->product_ids as $productId) {
+                    ComprehensiveProduct::create([
+                        'comprehensive_product_id' => $product->id,
+                        'product_id' => $productId,
+                    ]);
+                }
+            }
+            
+            $product->save();
+            
+            // Handle cover image deletion
+            if ($request->has('delete_cover_image') && $request->delete_cover_image == '1') {
+                $product->clearMediaCollection('cover_image');
+            }
+            
+            // Handle cover image upload
+            if ($request->hasFile('cover_image')) {
+                $product->clearMediaCollection('cover_image');
+                $product->addMedia($request->file('cover_image'))
+                    ->toMediaCollection('cover_image');
+            }
+            
+            // Handle gallery images
+            $existingGallery = $request->existing_gallery ? json_decode($request->existing_gallery, true) : [];
+            $currentMedia = $product->getMedia('gallery');
+            foreach ($currentMedia as $media) {
+                if (!in_array($media->getUrl(), $existingGallery)) {
+                    $media->delete();
+                }
+            }
+            
+            if ($request->hasFile('gallery')) {
+                foreach ($request->file('gallery') as $image) {
+                    $product->addMedia($image)
+                        ->toMediaCollection('gallery');
+                }
+            }
+            
+            // Handle categories
+            $categoryIds = [];
+            if ($request->has('category_ids')) {
+                $categoryIds = $request->category_ids;
+            } elseif ($request->has('categories')) {
+                $categoryIds = is_array($request->categories) ? $request->categories : [$request->categories];
+            }
+            
+            if (!empty($categoryIds)) {
+                $product->categories()->sync($categoryIds);
+            }
+            
+            // Update discounted price
+            $this->updateDiscountedPrice($product);
+            
+            return back()->with('success', 'محصول جامع با موفقیت به‌روزرسانی شد');
+        } catch (\Exception $e) {
+            \Log::error('Error updating comprehensive product: ' . $e->getMessage());
+            \Log::error('Request data: ' . json_encode($request->all()));
+            return back()->withErrors(['error' => 'خطا در به‌روزرسانی محصول جامع: ' . $e->getMessage()])->withInput();
+        }
     }
 
     /**
