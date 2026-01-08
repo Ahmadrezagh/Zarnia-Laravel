@@ -119,9 +119,9 @@ class ProductController extends Controller
             // Prepare product data
             $productData = [
                 'name' => $validated['name'],
-                'weight' => $isNotGoldProduct ? null : ($validated['weight'] ?? null),
-                'darsad_kharid' => $isNotGoldProduct ? null : ($validated['darsad_kharid'] ?? null),
-                'ojrat' => $isNotGoldProduct ? null : ($validated['ojrat'] ?? null),
+                'weight' => $isNotGoldProduct ? 0 : ($validated['weight'] ?? 0),
+                'darsad_kharid' => $isNotGoldProduct ? 0 : ($validated['darsad_kharid'] ?? 0),
+                'ojrat' => $isNotGoldProduct ? 0 : ($validated['ojrat'] ?? 0),
                 'discount_percentage' => $validated['discount_percentage'] ?? 0, // Set to 0 if null
                 'description' => $validated['description'] ?? null,
                 'parent_id' => $request->input('parent_id') ? (int)$request->input('parent_id') : null,
