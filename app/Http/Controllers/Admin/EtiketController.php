@@ -487,7 +487,7 @@ class EtiketController extends Controller
     }
 
     /**
-     * Bulk delete etikets
+     * Bulk delete etikets (soft delete)
      */
     public function bulkDelete(Request $request)
     {
@@ -501,6 +501,7 @@ class EtiketController extends Controller
             'etiket_ids.*' => 'exists:etikets,id',
         ]);
 
+        // Soft delete etikets
         $deleted = Etiket::whereIn('id', $request->etiket_ids)->delete();
 
         return response()->json([
