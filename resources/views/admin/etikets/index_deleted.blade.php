@@ -60,7 +60,6 @@
             :hasCheckbox="true"
             :actions="[
                 ['label' => 'بازیابی', 'type' => 'restore', 'class' => 'btn-success'],
-                ['label' => 'حذف دائمی', 'type' => 'forceDelete', 'class' => 'btn-danger'],
             ]"
         />
 
