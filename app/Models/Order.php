@@ -598,6 +598,7 @@ class Order extends Model
      */
     public function markAsPaid()
     {
+        
         $this->update([
             'status' => 'paid'
         ]);
@@ -608,13 +609,7 @@ class Order extends Model
         $this->user->shoppingCartItems()->delete();
 
         // Use user's phone and name for SMS
-        $sms = new Kavehnegar();
-        $sms->send_with_two_token(
-            $this->user->phone,
-            $this->user->name,
-            $this->id,
-            $this->status
-        );
+        $this->sendSmsNotifications();
 
         $this->submitInAccountingApp(); // Uncomment if needed
         
@@ -857,7 +852,6 @@ class Order extends Model
      */
     public function sendNajvaNotifications(): void
     {
-        $order->sendSmsNotifications();
         try {
             Log::info('Najva notifications: Starting', [
                 'order_id' => $this->id,

@@ -104,11 +104,11 @@ class GatewayController extends Controller
             $transaction_id = $request->transactionId;
             $order = Order::query()->where('transaction_id', $transaction_id)->first();
             if($order && $order->status == Order::$STATUSES[0]){
-                $order->notifyAdminsNewOrder();
                 $verified = $order->verify();
                 if($verified){
                     // Send Najva notifications when payment is successfully verified
                     $order->sendNajvaNotifications();
+                    $order->notifyAdminsNewOrder();
                 }
             }
         }
