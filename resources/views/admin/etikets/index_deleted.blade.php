@@ -56,7 +56,7 @@
                 ['label' => 'درصد خرید', 'key' => 'darsad_kharid', 'type' => 'text'],
                 ['label' => 'تاریخ ایجاد', 'key' => 'created_at', 'type' => 'text'],
             ]"
-            :url="route('table.etikets', ['is_mojood' => '', 'deleted' => 1] + request()->all())"
+            :url="route('table.etikets', ['deleted' => 1] + request()->all())"
             :hasCheckbox="true"
         />
 
