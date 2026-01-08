@@ -991,7 +991,7 @@ class ProductController extends Controller
     }
     public function products_without_category_table(Request $request)
     {
-        $query = Product::query()->wihtoutCategory()->main()->select('*'); // Assuming your model is Product
+        $query = Product::query()->main()->whereDoesntHave('categories')->select('*'); // Assuming your model is Product
 
         // Get total records before applying filters
         $totalRecords = $query->count();
