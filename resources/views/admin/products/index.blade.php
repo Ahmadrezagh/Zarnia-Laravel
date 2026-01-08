@@ -1999,6 +1999,15 @@
                 <small class="form-text text-muted">فقط در صورت نیاز به تغییر پر کنید</small>
             </div>
 
+            <div class="form-group">
+                <label>محصول والد</label>
+                <select name="parent_id" id="bulk-update-parent-product" class="form-control">
+                    <option value="">-- بدون تغییر --</option>
+                    <option value="0">-- حذف والد (تبدیل به محصول اصلی) --</option>
+                </select>
+                <small class="form-text text-muted">فقط در صورت نیاز به تغییر محصول والد پر کنید</small>
+            </div>
+
             <button type="button" onclick="submitBulkUpdateEtikets(this)" class="btn btn-primary">ویرایش</button>
         </form>
     `;
@@ -2008,6 +2017,35 @@
             // Set the selected product IDs
             $('#product_ids_for_etikets').val(JSON.stringify(selectedIds));
 
+            // Initialize Select2 for parent product search (only parent products)
+            $('#bulk-update-parent-product').select2({
+                placeholder: 'جستجو و انتخاب محصول والد',
+                allowClear: true,
+                width: '100%',
+                minimumInputLength: 1,
+                ajax: {
+                    url: '{{ route("products.ajax.search.parents") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            only_parents: 1 // Only return products with parent_id = null
+                        };
+                    },
+                    processResults: function (data) {
+                        const products = (data.results || data.data || data).filter(item => item && item.id && item.id.toString().startsWith('Product:'));
+                        return {
+                            results: products.map(item => ({
+                                id: item.id.toString().replace('Product:', ''),
+                                text: item.text || item.name || 'محصول'
+                            }))
+                        };
+                    },
+                    cache: true
+                }
+            });
+
             showDynamicModal();
         }
 
@@ -2016,6 +2054,12 @@
             const form = $(button).closest('form')[0];
             const formData = new FormData(form);
             formData.append('_token', '{{ csrf_token() }}');
+            
+            // Get Select2 value for parent_id if it exists
+            const parentId = $('#bulk-update-parent-product').val();
+            if (parentId !== null && parentId !== '') {
+                formData.set('parent_id', parentId);
+            }
 
             $.ajax({
                 url: '{{ route('products.bulk_update_products_and_etikets') }}',

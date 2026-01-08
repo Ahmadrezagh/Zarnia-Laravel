@@ -1355,6 +1355,7 @@ class ProductController extends Controller
             'ojrat' => 'nullable|string',
             'darsad_kharid' => 'nullable|string',
             'weight' => 'nullable|numeric|min:0',
+            'parent_id' => 'nullable|integer',
         ]);
 
         $products = Product::whereIn('id', $request->product_ids)->with('children')->get();
@@ -1380,8 +1381,30 @@ class ProductController extends Controller
             $productUpdateData['weight'] = $request->weight;
             $etiketUpdateData['weight'] = $request->weight;
         }
+        
+        // Handle parent_id update
+        if ($request->has('parent_id') && $request->parent_id !== '' && $request->parent_id !== null) {
+            // If parent_id is 0, set to null (remove parent)
+            if ($request->parent_id == 0) {
+                $productUpdateData['parent_id'] = null;
+            } else {
+                // Validate that parent_id exists and is a parent product (parent_id = null)
+                $parentProduct = Product::where('id', $request->parent_id)
+                    ->whereNull('parent_id')
+                    ->first();
+                    
+                if (!$parentProduct) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'محصول والد انتخاب شده معتبر نیست'
+                    ], 400);
+                }
+                
+                $productUpdateData['parent_id'] = $request->parent_id;
+            }
+        }
 
-        if (empty($productUpdateData)) {
+        if (empty($productUpdateData) && empty($etiketUpdateData)) {
             return response()->json([
                 'success' => false,
                 'message' => 'لطفا حداقل یک فیلد را برای به‌روزرسانی وارد کنید'
