@@ -98,7 +98,7 @@ class TabanGohar
                     $product->refresh();
                     
                     // Calculate tabanGoharPrice
-                    $tabanGoharPrice = $product->taban_gohar_price;
+                    $tabanGoharPrice = $product->TabanGoharPrice;
                     
                     if ($tabanGoharPrice > 0) {
                         // Update product price (multiply by 10 to match database format)
