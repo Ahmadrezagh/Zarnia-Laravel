@@ -102,7 +102,7 @@ class TabanGohar
                     
                     if ($tabanGoharPrice > 0) {
                         // Update product price (multiply by 10 to match database format)
-                        $product->updateQuietly([
+                        $product->update([
                             'price' => $tabanGoharPrice * 10
                         ]);
                         
