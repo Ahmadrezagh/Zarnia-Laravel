@@ -94,6 +94,8 @@ class TabanGohar
             // Process products in chunks to avoid memory issues
             Product::query()->chunk(100, function ($products) use (&$updatedCount) {
                 foreach ($products as $product) {
+                    
+                    Log::info("forech products");
                     // Refresh to ensure we have latest attributes
                     $product->refresh();
                     
@@ -101,6 +103,7 @@ class TabanGohar
                     $tabanGoharPrice = $product->TabanGoharPrice;
                     
                     if ($tabanGoharPrice > 0) {
+                        Log::info("if tbng > 0");
                         // Update product price (multiply by 10 to match database format)
                         $product->update([
                             'price' => $tabanGoharPrice * 10
