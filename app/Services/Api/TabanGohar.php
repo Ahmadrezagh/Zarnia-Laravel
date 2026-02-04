@@ -4,6 +4,7 @@ namespace App\Services\Api;
 
 use App\Models\Product;
 use App\Models\Setting;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -108,15 +109,26 @@ class TabanGohar
                     $tabanGoharPrice = $product->taban_gohar_price;
                     
                     if ($tabanGoharPrice > 0) {
-                        // Update product price (multiply by 10 to match database format)
-                        $product->updateQuietly([
-                            'price' => $tabanGoharPrice * 10
-                        ]);
+                        // Get the raw stored price value (which is multiplied by 10)
+                        $currentStoredPrice = $product->getRawOriginal('price');
+                        $newStoredPrice = $tabanGoharPrice * 10;
                         
-                        // Update discounted price
-                        $this->updateDiscountedPrice($product);
-                        
-                        $updatedProductsCount++;
+                        // Only update if price changed
+                        if ($currentStoredPrice != $newStoredPrice) {
+                            // Update product price (multiply by 10 to match database format)
+                            // The accessor will divide by 10 when reading
+                            DB::table('products')
+                                ->where('id', $product->id)
+                                ->update(['price' => $newStoredPrice]);
+                            
+                            // Refresh the model
+                            $product->refresh();
+                            
+                            // Update discounted price
+                            $this->updateDiscountedPrice($product);
+                            
+                            $updatedProductsCount++;
+                        }
                         
                         // Update all etikets for this product
                         $etikets = $product->etikets;
@@ -148,10 +160,16 @@ class TabanGohar
                     }
                     
                     if ($totalPrice > 0) {
-                        $comprehensive->updateQuietly([
-                            'price' => $totalPrice,
-                            'weight' => $totalWeight
-                        ]);
+                        // Update using DB query to bypass accessor
+                        DB::table('products')
+                            ->where('id', $comprehensive->id)
+                            ->update([
+                                'price' => $totalPrice,
+                                'weight' => $totalWeight
+                            ]);
+                        
+                        // Refresh the model
+                        $comprehensive->refresh();
                         
                         // Update discounted price
                         $this->updateDiscountedPrice($comprehensive);
