@@ -89,15 +89,22 @@ class TabanGohar
     private function updateAllProductsPrices(): void
     {
         try {
-            $updatedCount = 0;
+            $updatedProductsCount = 0;
+            $updatedEtiketsCount = 0;
+            $updatedComprehensiveCount = 0;
             
             // Process products in chunks to avoid memory issues
-            Product::query()->chunk(100, function ($products) use (&$updatedCount) {
+            Product::query()->chunk(100, function ($products) use (&$updatedProductsCount, &$updatedEtiketsCount, &$updatedComprehensiveCount) {
                 foreach ($products as $product) {
+                    // Skip comprehensive products for now - we'll handle them separately
+                    if ($product->is_comprehensive) {
+                        continue;
+                    }
+                    
                     // Refresh to ensure we have latest attributes
                     $product->refresh();
                     
-                    // Calculate tabanGoharPrice
+                    // Calculate tabanGoharPrice (for gold products with weight, ojrat)
                     $tabanGoharPrice = $product->taban_gohar_price;
                     
                     if ($tabanGoharPrice > 0) {
@@ -109,13 +116,55 @@ class TabanGohar
                         // Update discounted price
                         $this->updateDiscountedPrice($product);
                         
-                        $updatedCount++;
+                        $updatedProductsCount++;
+                        
+                        // Update all etikets for this product
+                        $etikets = $product->etikets;
+                        foreach ($etikets as $etiket) {
+                            $etiketPrice = $this->calculateEtiketPrice($product, $etiket->weight);
+                            if ($etiketPrice > 0) {
+                                $etiket->updateQuietly(['price' => $etiketPrice]);
+                                $updatedEtiketsCount++;
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update comprehensive products separately
+            Product::where('is_comprehensive', 1)->chunk(100, function ($comprehensiveProducts) use (&$updatedComprehensiveCount) {
+                foreach ($comprehensiveProducts as $comprehensive) {
+                    // Recalculate price from constituent products
+                    $totalPrice = 0;
+                    $totalWeight = 0;
+                    
+                    // Load constituent products relationship
+                    $constituentProducts = $comprehensive->products;
+                    foreach ($constituentProducts as $constituentProduct) {
+                        if ($constituentProduct) {
+                            $totalPrice += ($constituentProduct->price * 10);
+                            $totalWeight += $constituentProduct->weight;
+                        }
+                    }
+                    
+                    if ($totalPrice > 0) {
+                        $comprehensive->updateQuietly([
+                            'price' => $totalPrice,
+                            'weight' => $totalWeight
+                        ]);
+                        
+                        // Update discounted price
+                        $this->updateDiscountedPrice($comprehensive);
+                        
+                        $updatedComprehensiveCount++;
                     }
                 }
             });
 
             Log::info('All products updated with new gold price', [
-                'updated_count' => $updatedCount
+                'updated_products' => $updatedProductsCount,
+                'updated_etikets' => $updatedEtiketsCount,
+                'updated_comprehensive' => $updatedComprehensiveCount
             ]);
         } catch (\Exception $e) {
             Log::error('Error updating products after gold price change', [
@@ -123,6 +172,32 @@ class TabanGohar
                 'trace' => $e->getTraceAsString()
             ]);
         }
+    }
+    
+    /**
+     * Calculate etiket price based on product and etiket weight
+     */
+    private function calculateEtiketPrice(Product $product, float $etiketWeight): float
+    {
+        $baseGoldPrice = (float) setting('gold_price') ?? 0;
+        $ojrat = $product->ojrat ?? 0;
+        $darsadKharid = $product->darsad_kharid ?? 0;
+        
+        // Add 1% to gold price
+        $goldPrice = $baseGoldPrice * 1.01;
+        
+        if ($etiketWeight > 0 && $goldPrice > 0) {
+            // Calculate base price: weight * gold_price * (1 + darsad_kharid/100)
+            $basePrice = $etiketWeight * $goldPrice * (1 + ($darsadKharid / 100));
+            
+            // Add ojrat
+            $finalPrice = $basePrice + $ojrat;
+            
+            // Round down to nearest thousand
+            return floor($finalPrice / 1000) * 1000;
+        }
+        
+        return 0;
     }
 
     /**
