@@ -62,3 +62,22 @@ function get_gold_price(){
     // Add 1% to gold price and multiply by 10 for IRT format
     return $baseGoldPrice * 10;
 }
+
+function updateProductPrices(){
+    $products = Product::where('is_comprehensive', '!=', 1)
+                ->orWhereNull('is_comprehensive')
+                ->get();
+            
+            foreach ($products as $product) {
+                // Calculate tabanGoharPrice (for gold products with weight, ojrat)
+                $tabanGoharPrice = $product->taban_gohar_price;
+                
+                if ($tabanGoharPrice > 0) {
+                
+                    $newStoredPrice = $tabanGoharPrice * 10;
+                    DB::table('products')
+                            ->where('id', $product->id)
+                            ->update(['price' => $newStoredPrice]);
+                }
+            }
+}
