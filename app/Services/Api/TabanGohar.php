@@ -94,90 +94,70 @@ class TabanGohar
             $updatedEtiketsCount = 0;
             $updatedComprehensiveCount = 0;
             
-            // Process products in chunks to avoid memory issues
-            Product::query()->chunk(100, function ($products) use (&$updatedProductsCount, &$updatedEtiketsCount, &$updatedComprehensiveCount) {
-                foreach ($products as $product) {
-                    // Skip comprehensive products for now - we'll handle them separately
-                    if ($product->is_comprehensive) {
-                        continue;
-                    }
+            // Get all non-comprehensive products
+            $products = Product::where('is_comprehensive', '!=', 1)
+                ->orWhereNull('is_comprehensive')
+                ->get();
+            
+            foreach ($products as $product) {
+                // Calculate tabanGoharPrice (for gold products with weight, ojrat)
+                $tabanGoharPrice = $product->taban_gohar_price;
+                
+                if ($tabanGoharPrice > 0) {
+                
+                    $newStoredPrice = $tabanGoharPrice * 10;
+                    DB::table('products')
+                            ->where('id', $product->id)
+                            ->update(['price' => $newStoredPrice]);
+
                     
-                    // Refresh to ensure we have latest attributes
-                    $product->refresh();
-                    
-                    // Calculate tabanGoharPrice (for gold products with weight, ojrat)
-                    $tabanGoharPrice = $product->taban_gohar_price;
-                    
-                    if ($tabanGoharPrice > 0) {
-                        // Get the raw stored price value (which is multiplied by 10)
-                        $currentStoredPrice = $product->getRawOriginal('price');
-                        $newStoredPrice = $tabanGoharPrice * 10;
-                        
-                        // Only update if price changed
-                        if ($currentStoredPrice != $newStoredPrice) {
-                            // Update product price (multiply by 10 to match database format)
-                            // The accessor will divide by 10 when reading
-                            DB::table('products')
-                                ->where('id', $product->id)
-                                ->update(['price' => $newStoredPrice]);
-                            
-                            // Refresh the model
-                            $product->refresh();
-                            
-                            // Update discounted price
-                            $this->updateDiscountedPrice($product);
-                            
-                            $updatedProductsCount++;
-                        }
-                        
-                        // Update all etikets for this product
-                        $etikets = $product->etikets;
-                        foreach ($etikets as $etiket) {
-                            $etiketPrice = $this->calculateEtiketPrice($product, $etiket->weight);
-                            if ($etiketPrice > 0) {
-                                $etiket->updateQuietly(['price' => $etiketPrice]);
-                                $updatedEtiketsCount++;
-                            }
+                    // Update all etikets for this product
+                    $etikets = $product->etikets;
+                    foreach ($etikets as $etiket) {
+                        $etiketPrice = $this->calculateEtiketPrice($product, $etiket->weight);
+                        if ($etiketPrice > 0) {
+                            $etiket->updateQuietly(['price' => $etiketPrice]);
+                            $updatedEtiketsCount++;
                         }
                     }
                 }
-            });
+            }
             
             // Update comprehensive products separately
-            Product::where('is_comprehensive', 1)->chunk(100, function ($comprehensiveProducts) use (&$updatedComprehensiveCount) {
-                foreach ($comprehensiveProducts as $comprehensive) {
-                    // Recalculate price from constituent products
-                    $totalPrice = 0;
-                    $totalWeight = 0;
-                    
-                    // Load constituent products relationship
-                    $constituentProducts = $comprehensive->products;
-                    foreach ($constituentProducts as $constituentProduct) {
-                        if ($constituentProduct) {
-                            $totalPrice += ($constituentProduct->price * 10);
-                            $totalWeight += $constituentProduct->weight;
-                        }
-                    }
-                    
-                    if ($totalPrice > 0) {
-                        // Update using DB query to bypass accessor
-                        DB::table('products')
-                            ->where('id', $comprehensive->id)
-                            ->update([
-                                'price' => $totalPrice,
-                                'weight' => $totalWeight
-                            ]);
-                        
-                        // Refresh the model
-                        $comprehensive->refresh();
-                        
-                        // Update discounted price
-                        $this->updateDiscountedPrice($comprehensive);
-                        
-                        $updatedComprehensiveCount++;
+            $comprehensiveProducts = Product::where('is_comprehensive', 1)->get();
+            
+            foreach ($comprehensiveProducts as $comprehensive) {
+                // Recalculate price from constituent products
+                $totalPrice = 0;
+                $totalWeight = 0;
+                
+                // Load constituent products relationship
+                $constituentProducts = $comprehensive->products;
+                foreach ($constituentProducts as $constituentProduct) {
+                    if ($constituentProduct) {
+                        $totalPrice += ($constituentProduct->price * 10);
+                        $totalWeight += $constituentProduct->weight;
                     }
                 }
-            });
+                
+                if ($totalPrice > 0) {
+                    // Update using DB query to bypass accessor
+                    DB::table('products')
+                        ->where('id', $comprehensive->id)
+                        ->update([
+                            'price' => $totalPrice,
+                            'weight' => $totalWeight
+                        ]);
+                    
+                    // Refresh the model
+                    $comprehensive->refresh();
+                    
+                    // Update discounted price
+                    $this->updateDiscountedPrice($comprehensive);
+                    
+                    $updatedComprehensiveCount++;
+                }
+            }
 
             Log::info('All products updated with new gold price', [
                 'updated_products' => $updatedProductsCount,
