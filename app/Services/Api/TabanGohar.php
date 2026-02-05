@@ -47,6 +47,8 @@ class TabanGohar
 
     /**
      * Update gold price setting from API
+     * Note: This only updates the gold_price setting, not product prices
+     * Use updateAllProductsPrices() separately to recalculate product prices
      *
      * @return bool
      */
@@ -71,9 +73,6 @@ class TabanGohar
                 'time_read' => $prices['TimeRead'] ?? null
             ]);
 
-            // Update all products with new gold price
-            $this->updateAllProductsPrices();
-
             return true;
         }
 
@@ -86,8 +85,9 @@ class TabanGohar
 
     /**
      * Update all products' prices based on tabanGoharPrice and update discounted prices
+     * This can be called independently to recalculate all product prices
      */
-    private function updateAllProductsPrices(): void
+    public function updateAllProductsPrices(): void
     {
         try {
             $updatedProductsCount = 0;

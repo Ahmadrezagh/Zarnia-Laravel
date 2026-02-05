@@ -14,7 +14,7 @@ class UpdateGoldPrice extends Command
      *
      * @var string
      */
-    protected $description = 'Update gold price from Taban Gohar API';
+    protected $description = 'Update gold price from Taban Gohar API (does not update product prices)';
 
     /**
      * Execute the console command.
@@ -29,6 +29,8 @@ class UpdateGoldPrice extends Command
         if ($success) {
             $goldPrice = \App\Models\Setting::getValue('gold_price');
             $this->info("Gold price updated successfully: {$goldPrice} (YekGram18)");
+            $this->comment('Note: Product prices were not updated. Run "php artisan products:update-prices" to update them.');
+            
             return Command::SUCCESS;
         }
 
