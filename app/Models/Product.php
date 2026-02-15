@@ -780,7 +780,7 @@ class Product extends Model implements HasMedia
             ->min('price');
         
         if ($lowestEtiketPrice) {
-            return $lowestEtiketPrice ;
+            return $lowestEtiketPrice /10;
         }
         
         // If no available etikets, check children's etikets
@@ -792,7 +792,7 @@ class Product extends Model implements HasMedia
                 ->min('etikets.price');
             
             if ($lowestChildEtiketPrice) {
-                return $lowestChildEtiketPrice ;
+                return $lowestChildEtiketPrice /10;
             }
         }
         
