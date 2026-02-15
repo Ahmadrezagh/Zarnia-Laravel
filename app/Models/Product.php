@@ -767,21 +767,9 @@ class Product extends Model implements HasMedia
             ->min('price');
         
         if ($lowestEtiketPrice) {
-            return $lowestEtiketPrice /10;
+            return $lowestEtiketPrice ;
         }
         
-        // If no available etikets, check children's etikets
-        if ($this->children()->exists()) {
-            $lowestChildEtiketPrice = \DB::table('etikets')
-                ->join('products', 'etikets.product_id', '=', 'products.id')
-                ->where('products.parent_id', $this->id)
-                ->where('etikets.is_mojood', 1)
-                ->min('etikets.price');
-            
-            if ($lowestChildEtiketPrice) {
-                return $lowestChildEtiketPrice /10;
-            }
-        }
         
         return 0;
     }
