@@ -74,7 +74,7 @@ class Etiket extends Model
             $discountedPrice = $this->price * (1 - $discountPercentage / 100);
             
             // Round to nearest integer
-            return (int) round($discountedPrice);
+            return (int) round($discountedPrice) * 10;
         }
 
         return null;
