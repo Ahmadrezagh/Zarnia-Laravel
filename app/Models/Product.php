@@ -31,7 +31,6 @@ class Product extends Model implements HasMedia
     protected $fillable = [
         'name',
         'slug',
-        'discounted_price',
         'parent_id',
         'description',
         'attribute_group_id',
@@ -66,18 +65,44 @@ class Product extends Model implements HasMedia
 
     public function getPriceAttribute($value)
     {
-        // Use discounted_price if exists (already calculated from parent's discount_percentage if applicable)
-        if($this->discounted_price){
-            return $this->discounted_price;
+        // Get all available etikets (is_mojood = 1) and calculate lowest effective price
+        $etikets = $this->etikets()->where('is_mojood', 1)->get();
+        
+        if ($etikets->isNotEmpty()) {
+            // Get the lowest price considering discounts
+            $lowestPrice = $etikets->map(function ($etiket) {
+                // Use discounted_price accessor if available, otherwise use regular price
+                return $etiket->discounted_price ?? $etiket->price;
+            })->min();
+            
+            if ($lowestPrice) {
+                return $lowestPrice / 10;
+            }
         }
         
-        // Get lowest price from available etikets (is_mojood = 1)
-        $lowestEtiketPrice = $this->etikets()
-            ->where('is_mojood', 1)
-            ->min('price');
-        
-        if ($lowestEtiketPrice) {
-            return $lowestEtiketPrice ;
+        // If no available etikets, check children's etikets
+        if ($this->children()->exists()) {
+            $childEtikets = \DB::table('etikets')
+                ->join('products', 'etikets.product_id', '=', 'products.id')
+                ->where('products.parent_id', $this->id)
+                ->where('etikets.is_mojood', 1)
+                ->select('etikets.*', 'products.discount_percentage')
+                ->get();
+            
+            if ($childEtikets->isNotEmpty()) {
+                $lowestPrice = $childEtikets->map(function ($etiket) {
+                    // Calculate discounted price if discount percentage exists
+                    $discountPercentage = $etiket->discount_percentage ?? 0;
+                    if ($discountPercentage > 0 && $etiket->price > 0) {
+                        return (int) round($etiket->price * (1 - $discountPercentage / 100));
+                    }
+                    return $etiket->price;
+                })->min();
+                
+                if ($lowestPrice) {
+                    return $lowestPrice / 10;
+                }
+            }
         }
         
         // Fallback to 0 if no etikets found
@@ -113,26 +138,37 @@ class Product extends Model implements HasMedia
 
     public function getPriceWithoutDiscountAttribute($value)
     {
-        if($this->discounted_price){
-            // Get lowest price from available etikets (is_mojood = 1) when discounted
-            $lowestEtiketPrice = $this->etikets()
-                ->where('is_mojood', 1)
-                ->min('price');
-            
-            if ($lowestEtiketPrice) {
-                return $lowestEtiketPrice / 10;
+        // Get all available etikets that have discounts applied
+        $etikets = $this->etikets()
+            ->where('is_mojood', 1)
+            ->get()
+            ->filter(function ($etiket) {
+                // Only include etikets where discount_percentage exists
+                return $etiket->product && ($etiket->product->discount_percentage ?? 0) > 0;
+            });
+        
+        if ($etikets->isNotEmpty()) {
+            // Get the lowest regular price (without discount)
+            $lowestPrice = $etikets->pluck('price')->min();
+            if ($lowestPrice) {
+                return $lowestPrice / 10;
             }
+        }
+        
+        // If no available etikets, check children's etikets
+        if ($this->children()->exists()) {
+            $childEtikets = \DB::table('etikets')
+                ->join('products', 'etikets.product_id', '=', 'products.id')
+                ->where('products.parent_id', $this->id)
+                ->where('etikets.is_mojood', 1)
+                ->where('products.discount_percentage', '>', 0)
+                ->select('etikets.price')
+                ->get();
             
-            // If no available etikets, check children's etikets
-            if ($this->children()->exists()) {
-                $lowestChildEtiketPrice = \DB::table('etikets')
-                    ->join('products', 'etikets.product_id', '=', 'products.id')
-                    ->where('products.parent_id', $this->id)
-                    ->where('etikets.is_mojood', 1)
-                    ->min('etikets.price');
-                
-                if ($lowestChildEtiketPrice) {
-                    return $lowestChildEtiketPrice / 10;
+            if ($childEtikets->isNotEmpty()) {
+                $lowestPrice = $childEtikets->pluck('price')->min();
+                if ($lowestPrice) {
+                    return $lowestPrice / 10;
                 }
             }
         }
@@ -224,16 +260,25 @@ class Product extends Model implements HasMedia
     {
         $availableDirections = ['asc', 'desc'];
         if($direction && in_array($direction, $availableDirections)){
-            // Note: discounted_price is stored as-is (NOT multiplied by 10)
-            // price is stored multiplied by 10
-            // For sorting, we need to normalize both to the same unit
-            // Multiply discounted_price by 10 to match price format for comparison
-            return $query->orderByRaw("
-                CASE
-                    WHEN discounted_price IS NOT NULL AND discounted_price > 0 THEN discounted_price * 10
-                    ELSE price
-                END {$direction}
-            ");
+            // Order by minimum etiket price considering product's discount_percentage
+            // Since discounted_price is now an accessor, we calculate it in the subquery
+            return $query->leftJoin(\DB::raw('(
+                SELECT 
+                    e.product_id,
+                    MIN(
+                        CASE 
+                            WHEN p.discount_percentage > 0 AND p.discount_percentage IS NOT NULL 
+                            THEN e.price * (1 - p.discount_percentage / 100)
+                            ELSE e.price
+                        END
+                    ) as min_price
+                FROM etikets e
+                JOIN products p ON e.product_id = p.id
+                WHERE e.is_mojood = 1
+                GROUP BY e.product_id
+            ) as etiket_prices'), 'products.id', '=', 'etiket_prices.product_id')
+            ->orderBy('etiket_prices.min_price', $direction)
+            ->select('products.*');
         }
         return $query;
     }
@@ -1056,25 +1101,43 @@ class Product extends Model implements HasMedia
             case 'oldest':
                 return $query->orderBy('created_at', 'asc');
             case 'price_asc':
-                // Note: discounted_price is stored as-is (NOT multiplied by 10)
-                // price is stored multiplied by 10
-                // Multiply discounted_price by 10 to match price format for comparison
-                return $query->orderByRaw("
-                    CASE
-                        WHEN discounted_price IS NOT NULL AND discounted_price > 0 THEN discounted_price * 10
-                        ELSE price
-                    END asc
-                ");
+                // Order by minimum etiket price considering discount_percentage
+                return $query->leftJoin(\DB::raw('(
+                    SELECT 
+                        e.product_id,
+                        MIN(
+                            CASE 
+                                WHEN p.discount_percentage > 0 AND p.discount_percentage IS NOT NULL 
+                                THEN e.price * (1 - p.discount_percentage / 100)
+                                ELSE e.price
+                            END
+                        ) as min_price
+                    FROM etikets e
+                    JOIN products p ON e.product_id = p.id
+                    WHERE e.is_mojood = 1
+                    GROUP BY e.product_id
+                ) as etiket_prices_asc'), 'products.id', '=', 'etiket_prices_asc.product_id')
+                ->orderBy('etiket_prices_asc.min_price', 'asc')
+                ->select('products.*');
             case 'price_desc':
-                // Note: discounted_price is stored as-is (NOT multiplied by 10)
-                // price is stored multiplied by 10
-                // Multiply discounted_price by 10 to match price format for comparison
-                return $query->orderByRaw("
-                    CASE
-                        WHEN discounted_price IS NOT NULL AND discounted_price > 0 THEN discounted_price * 10
-                        ELSE price
-                    END desc
-                ");
+                // Order by minimum etiket price considering discount_percentage
+                return $query->leftJoin(\DB::raw('(
+                    SELECT 
+                        e.product_id,
+                        MIN(
+                            CASE 
+                                WHEN p.discount_percentage > 0 AND p.discount_percentage IS NOT NULL 
+                                THEN e.price * (1 - p.discount_percentage / 100)
+                                ELSE e.price
+                            END
+                        ) as min_price
+                    FROM etikets e
+                    JOIN products p ON e.product_id = p.id
+                    WHERE e.is_mojood = 1
+                    GROUP BY e.product_id
+                ) as etiket_prices_desc'), 'products.id', '=', 'etiket_prices_desc.product_id')
+                ->orderBy('etiket_prices_desc.min_price', 'desc')
+                ->select('products.*');
             case 'name_asc':
                 return $query->orderBy('name', 'asc');
             case 'name_desc':

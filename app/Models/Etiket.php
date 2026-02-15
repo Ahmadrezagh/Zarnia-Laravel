@@ -50,6 +50,36 @@ class Etiket extends Model
         return (int) $this->is_mojood;
     }
 
+    /**
+     * Get discounted price based on product's discount_percentage
+     * Returns null if no discount, otherwise returns the discounted price
+     */
+    public function getDiscountedPriceAttribute()
+    {
+        // Load product if not already loaded
+        if (!$this->relationLoaded('product')) {
+            $this->load('product');
+        }
+
+        if (!$this->product) {
+            return null;
+        }
+
+        // Get discount percentage from product (or parent if product has parent)
+        $discountPercentage = $this->product->discount_percentage ?? 0;
+
+        if ($discountPercentage > 0 && $this->price > 0) {
+            // Calculate discounted price
+            // Note: etiket price is stored multiplied by 10, keep it that way
+            $discountedPrice = $this->price * (1 - $discountPercentage / 100);
+            
+            // Round to nearest integer
+            return (int) round($discountedPrice);
+        }
+
+        return null;
+    }
+
 
     public function getTabanGoharPriceAttribute()
     {
