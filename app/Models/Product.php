@@ -912,7 +912,6 @@ class Product extends Model implements HasMedia
 
     public function getPriceWithoutDiscountMinimumAvailableProductAttribute()
     {
-        return $this->original_price;
         // Ensure children relationship is loaded for availability checks
         if (!$this->relationLoaded('children')) {
             $this->load('children');
