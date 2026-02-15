@@ -49,4 +49,23 @@ class Etiket extends Model
         }
         return (int) $this->is_mojood;
     }
+
+
+    public function getTabanGoharPriceAttribute()
+    {
+        $weight = $this->weight ?? 0;
+        $baseGoldPrice = (float) setting('gold_price') ?? 0;
+        $ojrat = $this->ojrat ?? 0;
+        
+        // Add 1% to gold price
+        $goldPrice = $baseGoldPrice * 1.01;
+        
+        if ($weight > 0 && $goldPrice > 0 && $ojrat > 0) {
+            $price = $weight * $goldPrice * (1 + ($ojrat / 100));
+            // Round down to nearest thousand (last three digits become 0)
+            return floor($price / 1000) * 1000;
+        }
+        
+        return 0;
+    }
 }

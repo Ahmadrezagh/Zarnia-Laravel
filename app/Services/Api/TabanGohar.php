@@ -102,7 +102,7 @@ class TabanGohar
                 
                 foreach ($etikets as $etiket) {
                     // Calculate price based on etiket's weight and product's attributes
-                    $etiketPrice = $this->calculateEtiketPrice($product, $etiket->weight);
+                    $etiketPrice = $etiket->taban_gohar_price;
                     
                     if ($etiketPrice > 0) {
                         $etiket->updateQuietly(['price' => $etiketPrice]);
@@ -127,23 +127,6 @@ class TabanGohar
      * Formula: weight * gold_price * 1.01 * (1 + ojrat/100)
      * Note: darsad_kharid has been removed from products, using ojrat instead
      */
-    private function calculateEtiketPrice(Product $product, float $etiketWeight): float
-    {
-        $baseGoldPrice = (float) setting('gold_price') ?? 0;
-        $ojrat = $product->ojrat ?? 0;
-        
-        // Add 1% to gold price
-        $goldPrice = $baseGoldPrice * 1.01;
-        
-        if ($etiketWeight > 0 && $goldPrice > 0 && $ojrat > 0) {
-            // Calculate price: weight * gold_price * (1 + ojrat/100)
-            $finalPrice = $etiketWeight * $goldPrice * (1 + ($ojrat / 100));
-            
-            // Round down to nearest thousand
-            return floor($finalPrice / 1000) * 1000;
-        }
-        
-        return 0;
-    }
+
 }
 
