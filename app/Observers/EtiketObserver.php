@@ -13,108 +13,24 @@ class EtiketObserver
      */
     public function created(Etiket $etiket): void
     {
-        if ((int) $etiket->is_mojood !== 1) {
-            return;
-        }
+        // NOTE: This method has been disabled because etiket->name field has been removed.
+        // Etikets should now be created with a product_id already assigned.
+        // If you need to implement auto-assignment logic, use product_id directly instead of name matching.
+        
+        // if ((int) $etiket->is_mojood !== 1) {
+        //     return;
+        // }
 
-        // Step 1: Look for a product with SAME name AND SAME weight
-        $product = Product::query()
-            ->where('name', '=', $etiket->name)
-            ->where('weight', '=', $etiket->weight)
-            ->first();
-
-        if ($product) {
-            // Product exists with same name and weight - just update its attributes
-            $product->update([
-                'ojrat' => $etiket->ojrat,
-                'darsad_kharid' => $etiket->darsad_kharid,
-                'mazaneh' => $etiket->mazaneh,
-                'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
-            ]);
-            
-            $etiket->updateQuietly([
-                'product_id' => $product->id,
-            ]);
-
-//            Log::info('Etiket assigned to existing product', [
-//                'etiket_id' => $etiket->id,
-//                'etiket_name' => $etiket->name,
-//                'etiket_weight' => $etiket->weight,
-//                'product_id' => $product->id,
-//            ]);
-
-        } else {
-            // Step 2: No exact match - check if there's a product with same name but different weight
-            $sameNameProduct = Product::query()
-                ->where('name', '=', $etiket->name)
-                ->whereNull('parent_id')
-                ->first();
-
-            if ($sameNameProduct) {
-                // Create a variant (child product) with different weight
-                $product = $sameNameProduct->replicate();
-                $product->parent_id = $sameNameProduct->id;
-                $product->weight = $etiket->weight;
-                $product->ojrat = $etiket->ojrat;
-                $product->darsad_kharid = $etiket->darsad_kharid;
-                $product->mazaneh = $etiket->mazaneh;
-                $product->darsad_vazn_foroosh = $etiket->darsad_vazn_foroosh;
-                $product->price = 0; // Set to 0 initially, will be updated after
-                $product->save();
-
-                // Update price with tabanGoharPrice after creation
-                $product->refresh();
-                $tabanGoharPrice = $product->taban_gohar_price;
-                if ($tabanGoharPrice > 0) {
-                    $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
-                }
-
-                $etiket->updateQuietly([
-                    'product_id' => $product->id,
-                ]);
-
-//                Log::info('Etiket assigned to new variant product', [
-//                    'etiket_id' => $etiket->id,
-//                    'etiket_name' => $etiket->name,
-//                    'etiket_weight' => $etiket->weight,
-//                    'product_id' => $product->id,
-//                    'parent_id' => $sameNameProduct->id,
-//                ]);
-
-            } else {
-                // Step 3: No product with this name exists - create a new parent product
-                $product = Product::create([
-                    'name' => $etiket->name,
-                    'weight' => $etiket->weight,
-                    'ojrat' => $etiket->ojrat,
-                    'darsad_kharid' => $etiket->darsad_kharid,
-                    'mazaneh' => $etiket->mazaneh,
-                    'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
-                    'price' => 0, // Set to 0 initially, will be updated after
-                ]);
-
-                // Update price with tabanGoharPrice after creation
-                $product->refresh();
-                $tabanGoharPrice = $product->taban_gohar_price;
-                if ($tabanGoharPrice > 0) {
-                    $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
-                }
-
-                $etiket->updateQuietly([
-                    'product_id' => $product->id,
-                ]);
-
-//                Log::info('Etiket assigned to new parent product', [
-//                    'etiket_id' => $etiket->id,
-//                    'etiket_name' => $etiket->name,
-//                    'etiket_weight' => $etiket->weight,
-//                    'product_id' => $product->id,
-//                ]);
-            }
-        }
-
-        // Final validation: Disconnect if names don't match
-        $this->validateEtiketProductConnection($etiket);
+        // // If etiket already has a product_id assigned, update product attributes
+        // if ($etiket->product_id) {
+        //     $product = Product::find($etiket->product_id);
+        //     if ($product) {
+        //         $product->update([
+        //             'ojrat' => $etiket->ojrat,
+        //             'mazaneh' => $etiket->mazaneh,
+        //         ]);
+        //     }
+        // }
     }
 
     /**
@@ -123,135 +39,24 @@ class EtiketObserver
 
     public function updated(Etiket $etiket): void
     {
-        if ((int) $etiket->is_mojood !== 1) {
-            return;
-        }
+        // NOTE: This method has been disabled because etiket->name field has been removed.
+        // Etikets should now be created with a product_id already assigned.
+        // If you need to implement auto-assignment logic, use product_id directly instead of name matching.
+        
+        // if ((int) $etiket->is_mojood !== 1) {
+        //     return;
+        // }
 
-        // Keep track of old product before update
-        $oldProductId = $etiket->getOriginal('product_id');
-
-        // Step 1: Look for a product with SAME name AND SAME weight
-        $product = Product::query()
-            ->where('name', '=', $etiket->name)
-            ->where('weight', '=', $etiket->weight)
-            ->first();
-
-        if ($product) {
-            // Product exists with same name and weight - just update its attributes
-            $product->update([
-                'ojrat' => $etiket->ojrat,
-                'darsad_kharid' => $etiket->darsad_kharid,
-                'mazaneh' => $etiket->mazaneh,
-                'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
-            ]);
-
-            // Update price with tabanGoharPrice after update
-            $product->refresh();
-            $tabanGoharPrice = $product->taban_gohar_price;
-            if ($tabanGoharPrice > 0) {
-                $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
-            }
-
-            $etiket->updateQuietly([
-                'product_id' => $product->id,
-            ]);
-
-//            Log::info('Etiket updated - assigned to existing product', [
-//                'etiket_id' => $etiket->id,
-//                'etiket_name' => $etiket->name,
-//                'etiket_weight' => $etiket->weight,
-//                'product_id' => $product->id,
-//                'old_product_id' => $oldProductId,
-//            ]);
-
-        } else {
-            // No product with same name AND weight - check if there's a product with same name but different weight
-            $sameNameProduct = Product::query()
-                ->where('name', '=', $etiket->name)
-                ->whereNull('parent_id')
-                ->first();
-
-            if ($sameNameProduct) {
-                // Create a variant (child product) with different weight
-                $product = $sameNameProduct->replicate();
-                $product->parent_id = $sameNameProduct->id;
-                $product->weight = $etiket->weight;
-                $product->ojrat = $etiket->ojrat;
-                $product->darsad_kharid = $etiket->darsad_kharid;
-                $product->mazaneh = $etiket->mazaneh;
-                $product->darsad_vazn_foroosh = $etiket->darsad_vazn_foroosh;
-                $product->save();
-
-                // Update price with tabanGoharPrice after creation
-                $product->refresh();
-                $tabanGoharPrice = $product->taban_gohar_price;
-                if ($tabanGoharPrice > 0) {
-                    $product->updateQuietly(['price' => $tabanGoharPrice * 10]);
-                }
-
-                $etiket->updateQuietly([
-                    'product_id' => $product->id,
-                ]);
-
-//                Log::info('Etiket updated - assigned to new variant product', [
-//                    'etiket_id' => $etiket->id,
-//                    'etiket_name' => $etiket->name,
-//                    'etiket_weight' => $etiket->weight,
-//                    'product_id' => $product->id,
-//                    'parent_id' => $sameNameProduct->id,
-//                    'old_product_id' => $oldProductId,
-//                ]);
-
-            } else {
-                // No product with this name exists - create a new parent product
-                $newProduct = Product::create([
-                    'name' => $etiket->name,
-                    'weight' => $etiket->weight,
-                    'ojrat' => $etiket->ojrat,
-                    'darsad_kharid' => $etiket->darsad_kharid,
-                    'mazaneh' => $etiket->mazaneh,
-                    'darsad_vazn_foroosh' => $etiket->darsad_vazn_foroosh,
-                    'price' => 0, // Set to 0 initially, will be updated after
-                ]);
-
-                // Update price with tabanGoharPrice after creation
-                $newProduct->refresh();
-                $tabanGoharPrice = $newProduct->taban_gohar_price;
-                if ($tabanGoharPrice > 0) {
-                    $newProduct->updateQuietly(['price' => $tabanGoharPrice * 10]);
-                }
-
-                $etiket->updateQuietly([
-                    'product_id' => $newProduct->id,
-                ]);
-
-//                Log::info('Etiket updated - assigned to new parent product', [
-//                    'etiket_id' => $etiket->id,
-//                    'etiket_name' => $etiket->name,
-//                    'etiket_weight' => $etiket->weight,
-//                    'product_id' => $newProduct->id,
-//                    'old_product_id' => $oldProductId,
-//                ]);
-            }
-        }
-
-        // Step 2: Handle old product (cleanup/repair)
-        if ($oldProductId && $oldProductId !== $etiket->product_id) {
-            $oldProduct = Product::find($oldProductId);
-
-            if ($oldProduct) {
-                // If no etikets left → optional: delete old product
-                if ($oldProduct->etikets()->count() === 0) {
-                    // $oldProduct->delete(); // uncomment if you want auto-delete
-                } else {
-                    // Otherwise: re-run parent-name consistency repair
-                    $this->fixParentRelation($oldProduct);
-                }
-            }
-        }
-
-        // Final validation: Disconnect if names don't match
-        $this->validateEtiketProductConnection($etiket);
+        // // If etiket has a product_id assigned, update product attributes
+        // if ($etiket->product_id) {
+        //     $product = Product::find($etiket->product_id);
+        //     if ($product) {
+        //         $product->update([
+        //             'ojrat' => $etiket->ojrat,
+        //             'mazaneh' => $etiket->mazaneh,
+        //         ]);
+        //     }
+        // }
     }
 
 // ✅ Helper to enforce parent-child consistency (same as ProductObserver)
@@ -273,39 +78,12 @@ class EtiketObserver
 
     /**
      * Disconnect etikets from products with mismatched names
-     * If etiket name doesn't match product name, set product_id to null
+     * NOTE: This method has been disabled because etiket->name field has been removed.
      */
     protected function validateEtiketProductConnection(Etiket $etiket): void
     {
-        // If etiket has a product assigned
-        if ($etiket->product_id) {
-            $product = Product::find($etiket->product_id);
-            
-            if ($product) {
-                // Normalize both names for comparison (handle Arabic/Persian characters)
-                $etiketName = $this->normalizeName($etiket->name);
-                $productName = $this->normalizeName($product->name);
-                
-                // If names don't match, disconnect
-                if ($etiketName !== $productName) {
-                    Log::warning('Etiket disconnected from product with different name', [
-                        'etiket_id' => $etiket->id,
-                        'etiket_name' => $etiket->name,
-                        'product_id' => $product->id,
-                        'product_name' => $product->name,
-                    ]);
-                    
-                    $etiket->updateQuietly([
-                        'product_id' => null,
-                    ]);
-                }
-            } else {
-                // Product doesn't exist anymore, set to null
-                $etiket->updateQuietly([
-                    'product_id' => null,
-                ]);
-            }
-        }
+        // This method is no longer relevant since etikets don't have a name field
+        // Etikets are now directly linked to products via product_id
     }
 
     /**
@@ -351,42 +129,11 @@ class EtiketObserver
 
     /**
      * Clean up all etikets with mismatched product names
-     * This can be run manually to fix data integrity issues
-     * 
-     * Usage: app(EtiketObserver::class)->cleanupMismatchedEtikets();
+     * NOTE: This method has been disabled because etiket->name field has been removed.
      */
     public function cleanupMismatchedEtikets(): array
     {
-        $disconnected = [];
-        
-        // Get all etikets that have a product_id
-        $etikets = Etiket::whereNotNull('product_id')->with('product')->get();
-        
-        foreach ($etikets as $etiket) {
-            if ($etiket->product) {
-                $etiketName = $this->normalizeName($etiket->name);
-                $productName = $this->normalizeName($etiket->product->name);
-                
-                if ($etiketName !== $productName) {
-                    $disconnected[] = [
-                        'etiket_id' => $etiket->id,
-                        'etiket_name' => $etiket->name,
-                        'product_id' => $etiket->product_id,
-                        'product_name' => $etiket->product->name,
-                    ];
-                    
-                    $etiket->updateQuietly(['product_id' => null]);
-                }
-            }
-        }
-        
-        if (count($disconnected) > 0) {
-            Log::warning('Bulk cleanup: Disconnected etikets from mismatched products', [
-                'count' => count($disconnected),
-                'items' => $disconnected,
-            ]);
-        }
-        
-        return $disconnected;
+        // This method is no longer relevant since etikets don't have a name field
+        return [];
     }
 }

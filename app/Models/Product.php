@@ -31,18 +31,14 @@ class Product extends Model implements HasMedia
     protected $fillable = [
         'name',
         'slug',
-        'weight',
-        'price',
         'discounted_price',
         'parent_id',
         'description',
         'attribute_group_id',
         'discount_percentage',
         'ojrat',
-        'darsad_kharid',
         'is_comprehensive',
         'mazaneh',
-        'darsad_vazn_foroosh',
         'meta_title',
         'meta_description',
         'meta_keywords',
@@ -231,11 +227,11 @@ class Product extends Model implements HasMedia
         $currentProductWeight = $this->weight;
 
         foreach ($this->AllEtikets as $etiket) {
-            // Normalize etiket name for comparison
-            $etiketName = $this->normalizeName($etiket->name);
+            // Get etiket's product name (from its relationship)
+            $etiketProductName = $etiket->product ? $this->normalizeName($etiket->product->name) : '';
             
             // Check if etiket matches this product (same name AND same weight)
-            $matchesThisProduct = ($etiketName === $currentProductName) && 
+            $matchesThisProduct = ($etiketProductName === $currentProductName) && 
                                   ($etiket->weight == $currentProductWeight);
             
             // Build the style for this etiket code
@@ -251,8 +247,9 @@ class Product extends Model implements HasMedia
                 $style .= ' color: red;';
             }
             
-            // Create tooltip content
-            $tooltipContent = e($etiket->name) . ' - ' . e($etiket->weight) . 'g';
+            // Create tooltip content - using product name instead of etiket name
+            $productName = $etiket->product ? $etiket->product->name : 'نامشخص';
+            $tooltipContent = e($productName) . ' - ' . e($etiket->weight) . 'g';
             if ($etiket->is_mojood == 0) {
                 $tooltipContent .= ' (ناموجود)';
             }
