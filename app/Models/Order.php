@@ -369,7 +369,7 @@ class Order extends Model
     {
         $weight = 0;
         foreach ($this->orderItems as $orderItem) {
-            if($orderItem->product){
+            if($orderItem->etiket()->first()){
                 $weight = $weight + $orderItem->etiket()->first()->weight * $orderItem->count;
             }
         }
