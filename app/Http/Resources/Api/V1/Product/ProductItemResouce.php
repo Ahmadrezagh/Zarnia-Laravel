@@ -70,7 +70,7 @@ class ProductItemResouce extends JsonResource
             ),
             'slug' => $this->slug,
             'price' => number_format($this->minimum_available_price),
-            'price_without_discount' => number_format($this->price_without_discount),
+            'price_without_discount' => number_format($this->price_without_discount_minimum_available_product * 10 ?? 0),
             'price_range_title' => $this->price_range_title,
             'minimum_available_price' => $this->minimum_available_price,
             'minimum_available_weight' => $this->minimum_available_weight,
