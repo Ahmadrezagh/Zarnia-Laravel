@@ -156,8 +156,8 @@
         $map['product_'.$idx.'_image'] = "<img src='$img' style='width:100px;height:100px' ></img>";
         $map['product_'.$idx.'_title'] = $orderItem->name;
         $map['product_'.$idx.'_count'] = $orderItem->count;
-        $map['product_'.$idx.'_weight'] = $orderItem->etiket->weight;
-        $map['product_'.$idx.'_weight_2'] = $orderItem->etiket->weight;
+        $map['product_'.$idx.'_weight'] = $orderItem->etiket()->first()->weight;
+        $map['product_'.$idx.'_weight_2'] = $orderItem->etiket()->first()->weight;
         $map['product_'.$idx.'_ayar'] = '18';
         $map['product_'.$idx.'_etiket'] = $orderItem->etiket;
         $map['product_'.$idx.'_price'] = number_format($orderItem->price);
