@@ -261,19 +261,20 @@ class Product extends Model implements HasMedia
         $availableDirections = ['asc', 'desc'];
         if($direction && in_array($direction, $availableDirections)){
             // Order by minimum etiket price considering product's discount_percentage
-            // Since discounted_price is now an accessor, we calculate it in the subquery
+            // If product has parent, use parent's discount_percentage
             return $query->leftJoin(\DB::raw('(
                 SELECT 
                     e.product_id,
                     MIN(
                         CASE 
-                            WHEN p.discount_percentage > 0 AND p.discount_percentage IS NOT NULL 
-                            THEN e.price * (1 - p.discount_percentage / 100)
+                            WHEN COALESCE(parent.discount_percentage, p.discount_percentage, 0) > 0 
+                            THEN e.price * (1 - COALESCE(parent.discount_percentage, p.discount_percentage, 0) / 100)
                             ELSE e.price
                         END
                     ) as min_price
                 FROM etikets e
                 JOIN products p ON e.product_id = p.id
+                LEFT JOIN products parent ON p.parent_id = parent.id
                 WHERE e.is_mojood = 1
                 GROUP BY e.product_id
             ) as etiket_prices'), 'products.id', '=', 'etiket_prices.product_id')
@@ -1102,18 +1103,20 @@ class Product extends Model implements HasMedia
                 return $query->orderBy('created_at', 'asc');
             case 'price_asc':
                 // Order by minimum etiket price considering discount_percentage
+                // If product has parent, use parent's discount_percentage
                 return $query->leftJoin(\DB::raw('(
                     SELECT 
                         e.product_id,
                         MIN(
                             CASE 
-                                WHEN p.discount_percentage > 0 AND p.discount_percentage IS NOT NULL 
-                                THEN e.price * (1 - p.discount_percentage / 100)
+                                WHEN COALESCE(parent.discount_percentage, p.discount_percentage, 0) > 0 
+                                THEN e.price * (1 - COALESCE(parent.discount_percentage, p.discount_percentage, 0) / 100)
                                 ELSE e.price
                             END
                         ) as min_price
                     FROM etikets e
                     JOIN products p ON e.product_id = p.id
+                    LEFT JOIN products parent ON p.parent_id = parent.id
                     WHERE e.is_mojood = 1
                     GROUP BY e.product_id
                 ) as etiket_prices_asc'), 'products.id', '=', 'etiket_prices_asc.product_id')
@@ -1121,18 +1124,20 @@ class Product extends Model implements HasMedia
                 ->select('products.*');
             case 'price_desc':
                 // Order by minimum etiket price considering discount_percentage
+                // If product has parent, use parent's discount_percentage
                 return $query->leftJoin(\DB::raw('(
                     SELECT 
                         e.product_id,
                         MIN(
                             CASE 
-                                WHEN p.discount_percentage > 0 AND p.discount_percentage IS NOT NULL 
-                                THEN e.price * (1 - p.discount_percentage / 100)
+                                WHEN COALESCE(parent.discount_percentage, p.discount_percentage, 0) > 0 
+                                THEN e.price * (1 - COALESCE(parent.discount_percentage, p.discount_percentage, 0) / 100)
                                 ELSE e.price
                             END
                         ) as min_price
                     FROM etikets e
                     JOIN products p ON e.product_id = p.id
+                    LEFT JOIN products parent ON p.parent_id = parent.id
                     WHERE e.is_mojood = 1
                     GROUP BY e.product_id
                 ) as etiket_prices_desc'), 'products.id', '=', 'etiket_prices_desc.product_id')

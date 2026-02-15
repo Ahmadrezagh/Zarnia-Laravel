@@ -52,6 +52,7 @@ class Etiket extends Model
 
     /**
      * Get discounted price based on product's discount_percentage
+     * If product has a parent, checks parent's discount_percentage
      * Returns null if no discount, otherwise returns the discounted price
      */
     public function getDiscountedPriceAttribute()
@@ -65,8 +66,21 @@ class Etiket extends Model
             return null;
         }
 
-        // Get discount percentage from product (or parent if product has parent)
-        $discountPercentage = $this->product->discount_percentage ?? 0;
+        $discountPercentage = 0;
+
+        // If product has a parent, use parent's discount_percentage
+        if ($this->product->parent_id) {
+            if (!$this->product->relationLoaded('parent')) {
+                $this->product->load('parent');
+            }
+            
+            if ($this->product->parent) {
+                $discountPercentage = $this->product->parent->discount_percentage ?? 0;
+            }
+        } else {
+            // Use own discount percentage
+            $discountPercentage = $this->product->discount_percentage ?? 0;
+        }
 
         if ($discountPercentage > 0 && $this->price > 0) {
             // Calculate discounted price
