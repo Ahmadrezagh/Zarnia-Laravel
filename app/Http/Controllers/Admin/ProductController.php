@@ -261,7 +261,7 @@ class ProductController extends Controller
         $enteredParentId = $request->input('parent_id') ? (int)$request->input('parent_id') : null;
         $firstProductId = null;
         $createdProducts = [];
-        $etiketCodes = []; // For zr- codes
+        $etiketCodes = []; // For regular numeric codes
         $orderableEtiketCodes = []; // For s- codes
         
         // Common product data from form
@@ -394,8 +394,8 @@ class ProductController extends Controller
             
             // Create etikets for this product based on count
             for ($i = 0; $i < $etiketCount; $i++) {
-                // Generate unique code: zr-{number} for regular, s-{number} for orderable
-                $prefix = $isOrderable ? 's' : 'zr';
+                // Generate unique code: {number} for regular, s-{number} for orderable
+                $prefix = $isOrderable ? 's' : '';
                 $existingCodesForPrefix = $isOrderable ? $orderableEtiketCodes : $etiketCodes;
                 $etiketCode = $this->generateUniqueEtiketCode($existingCodesForPrefix, $prefix);
                 
@@ -430,35 +430,61 @@ class ProductController extends Controller
     }
     
     /**
-     * Generate unique etiket code in format: {prefix}-{number} starting from 7000
+     * Generate unique etiket code in format: {prefix}-{number} or just {number} starting from 7000
      * @param array $existingCodes Existing codes in current batch
-     * @param string $prefix Code prefix ('zr' for regular, 's' for orderable)
+     * @param string $prefix Code prefix ('' for regular, 's' for orderable)
      * @return string
      */
-    private function generateUniqueEtiketCode(array $existingCodes = [], string $prefix = 'zr'): string
+    private function generateUniqueEtiketCode(array $existingCodes = [], string $prefix = ''): string
     {
         $startNumber = 7000;
         $highestNumber = $startNumber - 1;
         
-        // Find the highest existing code number in database that matches {prefix}-{number} pattern
-        $etikets = Etiket::where('code', 'like', $prefix . '-%')->get();
-        foreach ($etikets as $etiket) {
-            $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
-            if (preg_match($pattern, $etiket->code, $matches)) {
-                $codeNumber = (int)$matches[1];
-                if ($codeNumber >= $highestNumber) {
-                    $highestNumber = $codeNumber;
+        // Build the pattern based on prefix
+        $likePattern = $prefix ? $prefix . '-%' : '';
+        
+        // Find the highest existing code number in database
+        if ($prefix) {
+            // For prefixed codes (like s-7000)
+            $etikets = Etiket::where('code', 'like', $likePattern)->get();
+            foreach ($etikets as $etiket) {
+                $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
+                if (preg_match($pattern, $etiket->code, $matches)) {
+                    $codeNumber = (int)$matches[1];
+                    if ($codeNumber >= $highestNumber) {
+                        $highestNumber = $codeNumber;
+                    }
+                }
+            }
+        } else {
+            // For non-prefixed codes (just numbers like 7000)
+            $etikets = Etiket::whereRaw('code REGEXP \'^[0-9]+$\'')->get();
+            foreach ($etikets as $etiket) {
+                if (preg_match('/^(\d+)$/', $etiket->code, $matches)) {
+                    $codeNumber = (int)$matches[1];
+                    if ($codeNumber >= $highestNumber) {
+                        $highestNumber = $codeNumber;
+                    }
                 }
             }
         }
         
         // Check for codes in current batch and find the highest
         foreach ($existingCodes as $code) {
-            $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
-            if (preg_match($pattern, $code, $matches)) {
-                $codeNumber = (int)$matches[1];
-                if ($codeNumber >= $highestNumber) {
-                    $highestNumber = $codeNumber;
+            if ($prefix) {
+                $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
+                if (preg_match($pattern, $code, $matches)) {
+                    $codeNumber = (int)$matches[1];
+                    if ($codeNumber >= $highestNumber) {
+                        $highestNumber = $codeNumber;
+                    }
+                }
+            } else {
+                if (preg_match('/^(\d+)$/', $code, $matches)) {
+                    $codeNumber = (int)$matches[1];
+                    if ($codeNumber >= $highestNumber) {
+                        $highestNumber = $codeNumber;
+                    }
                 }
             }
         }
@@ -466,7 +492,7 @@ class ProductController extends Controller
         // Start from the highest number found + 1, or 7000 if no codes exist
         $nextNumber = max($startNumber, $highestNumber + 1);
         
-        return $prefix . '-' . $nextNumber;
+        return $prefix ? $prefix . '-' . $nextNumber : (string)$nextNumber;
     }
 
     /**

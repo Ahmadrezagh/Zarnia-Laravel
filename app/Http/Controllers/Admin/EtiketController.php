@@ -135,7 +135,7 @@ class EtiketController extends Controller
         if ($sortColumn) {
             switch ($sortColumn) {
                 case 'code':
-                    // Sort by numeric part of code (extract numbers after removing prefixes like s- or zr-)
+                    // Sort by numeric part of code (extract numbers after removing prefixes like s-)
                     // Use SUBSTRING_INDEX to get part after last dash, then cast to number
                     // Handle cases where code might not have a dash
                     $query->orderByRaw("CAST(
@@ -257,8 +257,8 @@ class EtiketController extends Controller
         $created = 0;
         $skipped = 0;
 
-        // Get existing zr- codes to avoid duplicates
-        $existingZrCodes = Etiket::where('code', 'like', 'zr-%')->pluck('code')->toArray();
+        // Get existing numeric codes to avoid duplicates
+        $existingCodes = Etiket::whereRaw('code REGEXP \'^[0-9]+$\'')->pluck('code')->toArray();
 
         foreach ($request->etikets as $etiketData) {
             $count = (int)($etiketData['count'] ?? 1);
@@ -269,11 +269,11 @@ class EtiketController extends Controller
                 continue;
             }
             
-            // Generate unique zr- codes for each etiket
+            // Generate unique numeric codes for each etiket
             for ($i = 0; $i < $count; $i++) {
                 $etiketCode = $this->generateUniqueEtiketCode(
-                    array_merge($etiketCodes, $existingZrCodes),
-                    'zr'
+                    array_merge($etiketCodes, $existingCodes),
+                    ''
                 );
             
             // Check for duplicate in database
@@ -312,39 +312,64 @@ class EtiketController extends Controller
     }
     
     /**
-     * Generate unique etiket code in format: {prefix}-{number}
+     * Generate unique etiket code in format: {prefix}-{number} or just {number}
+     * @param array $existingCodes Existing codes in current batch
+     * @param string $prefix Code prefix ('' for regular numeric, 's' for orderable)
      */
-    private function generateUniqueEtiketCode(array $existingCodes = [], string $prefix = 'zr'): string
+    private function generateUniqueEtiketCode(array $existingCodes = [], string $prefix = ''): string
     {
         $startNumber = 7000;
         $highestNumber = $startNumber - 1;
         
-        // Find the highest existing code number in database that matches {prefix}-{number} pattern
-        $etikets = Etiket::where('code', 'like', $prefix . '-%')->get();
-        foreach ($etikets as $etiket) {
-            $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
-            if (preg_match($pattern, $etiket->code, $matches)) {
-                $codeNumber = (int)$matches[1];
-                if ($codeNumber >= $highestNumber) {
-                    $highestNumber = $codeNumber;
+        // Find the highest existing code number in database
+        if ($prefix) {
+            // For prefixed codes (like s-7000)
+            $etikets = Etiket::where('code', 'like', $prefix . '-%')->get();
+            foreach ($etikets as $etiket) {
+                $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
+                if (preg_match($pattern, $etiket->code, $matches)) {
+                    $codeNumber = (int)$matches[1];
+                    if ($codeNumber >= $highestNumber) {
+                        $highestNumber = $codeNumber;
+                    }
+                }
+            }
+        } else {
+            // For non-prefixed codes (just numbers like 7000)
+            $etikets = Etiket::whereRaw('code REGEXP \'^[0-9]+$\'')->get();
+            foreach ($etikets as $etiket) {
+                if (preg_match('/^(\d+)$/', $etiket->code, $matches)) {
+                    $codeNumber = (int)$matches[1];
+                    if ($codeNumber >= $highestNumber) {
+                        $highestNumber = $codeNumber;
+                    }
                 }
             }
         }
         
         // Check for codes in current batch and find the highest
         foreach ($existingCodes as $code) {
-            $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
-            if (preg_match($pattern, $code, $matches)) {
-                $codeNumber = (int)$matches[1];
-                if ($codeNumber >= $highestNumber) {
-                    $highestNumber = $codeNumber;
+            if ($prefix) {
+                $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
+                if (preg_match($pattern, $code, $matches)) {
+                    $codeNumber = (int)$matches[1];
+                    if ($codeNumber >= $highestNumber) {
+                        $highestNumber = $codeNumber;
+                    }
+                }
+            } else {
+                if (preg_match('/^(\d+)$/', $code, $matches)) {
+                    $codeNumber = (int)$matches[1];
+                    if ($codeNumber >= $highestNumber) {
+                        $highestNumber = $codeNumber;
+                    }
                 }
             }
         }
         
         // Generate next code
         $nextNumber = max($highestNumber + 1, $startNumber);
-        return $prefix . '-' . $nextNumber;
+        return $prefix ? $prefix . '-' . $nextNumber : (string)$nextNumber;
     }
     
     /**
