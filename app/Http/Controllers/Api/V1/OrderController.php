@@ -96,7 +96,9 @@ class OrderController extends Controller
 
         // Calculate total amount from cart
         foreach ($cartItems as $cartItem) {
-            $totalAmount += $cartItem->product->price * $cartItem->count;
+            // Use etiket price if available, otherwise fallback to product's lowest etiket price
+            $itemPrice = $cartItem->etiket ? ($cartItem->etiket->price / 10) : 0;
+            $totalAmount += $itemPrice * $cartItem->count;
         }
         $discountPercentage = 0;
         // Apply discount if code exists
@@ -158,13 +160,16 @@ class OrderController extends Controller
                 $isOrderableAfterOutOfStock = $cartItem->etiket->orderable_after_out_of_stock ?? false;
             }
 
+            // Use etiket price if available, otherwise fallback to product's lowest etiket price
+            $itemPrice = $cartItem->etiket ? ($cartItem->etiket->price / 10) : 0;
+            
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $cartItem->product_id,
                 'etiket' => $etiketCode ?? '',
                 'name' => $cartItem->product->name,
                 'count' => $cartItem->count,
-                'price' => $cartItem->product->price,
+                'price' => $itemPrice,
             ]);
             
             // Collect etiket codes that are being reserved (only if we have an etiket)
