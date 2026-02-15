@@ -68,20 +68,89 @@ class Product extends Model implements HasMedia
     {
         // Use discounted_price if exists (already calculated from parent's discount_percentage if applicable)
         if($this->discounted_price){
-            $price = $this->discounted_price;
-        }else{
-            $price = $value/10;
+            return $this->discounted_price;
         }
-        return $price;
+        
+        // Get lowest price from available etikets (is_mojood = 1)
+        $lowestEtiketPrice = $this->etikets()
+            ->where('is_mojood', 1)
+            ->min('price');
+        
+        if ($lowestEtiketPrice) {
+            return $lowestEtiketPrice / 10;
+        }
+        
+        // If no available etikets, check children's etikets
+        if ($this->children()->exists()) {
+            $lowestChildEtiketPrice = \DB::table('etikets')
+                ->join('products', 'etikets.product_id', '=', 'products.id')
+                ->where('products.parent_id', $this->id)
+                ->where('etikets.is_mojood', 1)
+                ->min('etikets.price');
+            
+            if ($lowestChildEtiketPrice) {
+                return $lowestChildEtiketPrice / 10;
+            }
+        }
+        
+        // Fallback to 0 if no etikets found
+        return 0;
     }
+    public function getWeightAttribute($value)
+    {
+        // Get lowest weight from available etikets (is_mojood = 1)
+        $lowestEtiketWeight = $this->etikets()
+            ->where('is_mojood', 1)
+            ->min('weight');
+        
+        if ($lowestEtiketWeight) {
+            return $lowestEtiketWeight;
+        }
+        
+        // If no available etikets, check children's etikets
+        if ($this->children()->exists()) {
+            $lowestChildEtiketWeight = \DB::table('etikets')
+                ->join('products', 'etikets.product_id', '=', 'products.id')
+                ->where('products.parent_id', $this->id)
+                ->where('etikets.is_mojood', 1)
+                ->min('etikets.weight');
+            
+            if ($lowestChildEtiketWeight) {
+                return $lowestChildEtiketWeight;
+            }
+        }
+        
+        // Fallback to 0 if no etikets found
+        return 0;
+    }
+
     public function getPriceWithoutDiscountAttribute($value)
     {
         if($this->discounted_price){
-            $price = $this->getRawOriginal('price');
-        }else{
-            $price = 0;
+            // Get lowest price from available etikets (is_mojood = 1) when discounted
+            $lowestEtiketPrice = $this->etikets()
+                ->where('is_mojood', 1)
+                ->min('price');
+            
+            if ($lowestEtiketPrice) {
+                return $lowestEtiketPrice / 10;
+            }
+            
+            // If no available etikets, check children's etikets
+            if ($this->children()->exists()) {
+                $lowestChildEtiketPrice = \DB::table('etikets')
+                    ->join('products', 'etikets.product_id', '=', 'products.id')
+                    ->where('products.parent_id', $this->id)
+                    ->where('etikets.is_mojood', 1)
+                    ->min('etikets.price');
+                
+                if ($lowestChildEtiketPrice) {
+                    return $lowestChildEtiketPrice / 10;
+                }
+            }
         }
-        return $price/10;
+        
+        return 0;
     }
 
     public function getTabanGoharPriceAttribute()
@@ -705,7 +774,29 @@ class Product extends Model implements HasMedia
 
     public function getOriginalPriceAttribute()
     {
-        return $this->getRawOriginal('price') /10;
+        // Get lowest price from available etikets (is_mojood = 1)
+        $lowestEtiketPrice = $this->etikets()
+            ->where('is_mojood', 1)
+            ->min('price');
+        
+        if ($lowestEtiketPrice) {
+            return $lowestEtiketPrice / 10;
+        }
+        
+        // If no available etikets, check children's etikets
+        if ($this->children()->exists()) {
+            $lowestChildEtiketPrice = \DB::table('etikets')
+                ->join('products', 'etikets.product_id', '=', 'products.id')
+                ->where('products.parent_id', $this->id)
+                ->where('etikets.is_mojood', 1)
+                ->min('etikets.price');
+            
+            if ($lowestChildEtiketPrice) {
+                return $lowestChildEtiketPrice / 10;
+            }
+        }
+        
+        return 0;
     }
 
     /**

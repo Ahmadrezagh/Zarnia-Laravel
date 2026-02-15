@@ -84,88 +84,38 @@ class TabanGohar
     }
 
     /**
-     * Update all products' prices based on tabanGoharPrice and update discounted prices
-     * This can be called independently to recalculate all product prices
+     * Update all etikets' prices based on their weight and product's ojrat
+     * This can be called independently to recalculate all etiket prices
+     * Note: Products no longer store price/weight directly - these are calculated from etikets
      */
     public function updateAllProductsPrices(): void
     {
         try {
-            $updatedProductsCount = 0;
             $updatedEtiketsCount = 0;
-            $updatedComprehensiveCount = 0;
             
-            // Get all non-comprehensive products
-            $products = Product::where('is_comprehensive', '!=', 1)
-                ->orWhereNull('is_comprehensive')
-                ->get();
+            // Get all products (both regular and comprehensive)
+            $products = Product::with('etikets')->get();
             
             foreach ($products as $product) {
-                // Calculate tabanGoharPrice (for gold products with weight, ojrat)
-                $tabanGoharPrice = $product->taban_gohar_price;
+                // Update all etikets for this product
+                $etikets = $product->etikets;
                 
-                if ($tabanGoharPrice > 0) {
-                
-                    $newStoredPrice = $tabanGoharPrice * 10;
-                    DB::table('products')
-                            ->where('id', $product->id)
-                            ->update(['price' => $newStoredPrice]);
-
+                foreach ($etikets as $etiket) {
+                    // Calculate price based on etiket's weight and product's attributes
+                    $etiketPrice = $this->calculateEtiketPrice($product, $etiket->weight);
                     
-                    // Update all etikets for this product
-                    $etikets = $product->etikets;
-                    foreach ($etikets as $etiket) {
-                        $etiketPrice = $this->calculateEtiketPrice($product, $etiket->weight);
-                        if ($etiketPrice > 0) {
-                            $etiket->updateQuietly(['price' => $etiketPrice]);
-                            $updatedEtiketsCount++;
-                        }
+                    if ($etiketPrice > 0) {
+                        $etiket->updateQuietly(['price' => $etiketPrice]);
+                        $updatedEtiketsCount++;
                     }
                 }
             }
-            
-            // Update comprehensive products separately
-            $comprehensiveProducts = Product::where('is_comprehensive', 1)->get();
-            
-            foreach ($comprehensiveProducts as $comprehensive) {
-                // Recalculate price from constituent products
-                $totalPrice = 0;
-                $totalWeight = 0;
-                
-                // Load constituent products relationship
-                $constituentProducts = $comprehensive->products;
-                foreach ($constituentProducts as $constituentProduct) {
-                    if ($constituentProduct) {
-                        $totalPrice += ($constituentProduct->price * 10);
-                        $totalWeight += $constituentProduct->weight;
-                    }
-                }
-                
-                if ($totalPrice > 0) {
-                    // Update using DB query to bypass accessor
-                    DB::table('products')
-                        ->where('id', $comprehensive->id)
-                        ->update([
-                            'price' => $totalPrice,
-                            'weight' => $totalWeight
-                        ]);
-                    
-                    // Refresh the model
-                    $comprehensive->refresh();
-                    
-                    // Update discounted price
-                    $this->updateDiscountedPrice($comprehensive);
-                    
-                    $updatedComprehensiveCount++;
-                }
-            }
 
-            Log::info('All products updated with new gold price', [
-                'updated_products' => $updatedProductsCount,
-                'updated_etikets' => $updatedEtiketsCount,
-                'updated_comprehensive' => $updatedComprehensiveCount
+            Log::info('All etikets updated with new gold price', [
+                'updated_etikets' => $updatedEtiketsCount
             ]);
         } catch (\Exception $e) {
-            Log::error('Error updating products after gold price change', [
+            Log::error('Error updating etikets after gold price change', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -173,66 +123,27 @@ class TabanGohar
     }
     
     /**
-     * Calculate etiket price based on product and etiket weight
+     * Calculate etiket price based on etiket weight and product attributes
+     * Formula: weight * gold_price * 1.01 * (1 + ojrat/100)
+     * Note: darsad_kharid has been removed from products, using ojrat instead
      */
     private function calculateEtiketPrice(Product $product, float $etiketWeight): float
     {
         $baseGoldPrice = (float) setting('gold_price') ?? 0;
         $ojrat = $product->ojrat ?? 0;
-        $darsadKharid = $product->darsad_kharid ?? 0;
         
         // Add 1% to gold price
         $goldPrice = $baseGoldPrice * 1.01;
         
-        if ($etiketWeight > 0 && $goldPrice > 0) {
-            // Calculate base price: weight * gold_price * (1 + darsad_kharid/100)
-            $basePrice = $etiketWeight * $goldPrice * (1 + ($darsadKharid / 100));
-            
-            // Add ojrat
-            $finalPrice = $basePrice + $ojrat;
+        if ($etiketWeight > 0 && $goldPrice > 0 && $ojrat > 0) {
+            // Calculate price: weight * gold_price * (1 + ojrat/100)
+            $finalPrice = $etiketWeight * $goldPrice * (1 + ($ojrat / 100));
             
             // Round down to nearest thousand
             return floor($finalPrice / 1000) * 1000;
         }
         
         return 0;
-    }
-
-    /**
-     * Calculate and update discounted price for a product
-     */
-    private function updateDiscountedPrice(Product $product): void
-    {
-        // Get raw price value (stored multiplied by 10) and discount percentage
-        $rawPrice = $product->getRawOriginal('price');
-        
-        // If product has parent, use parent's discount_percentage
-        $discountPercentage = 0;
-        if ($product->parent_id) {
-            $parent = Product::find($product->parent_id);
-            if ($parent) {
-                $discountPercentage = $parent->getRawOriginal('discount_percentage') ?? 0;
-            }
-        } else {
-            // Use own discount_percentage
-            $discountPercentage = $product->getRawOriginal('discount_percentage') ?? 0;
-        }
-
-        if ($rawPrice != 0 && $discountPercentage != 0) {
-            // Calculate discounted price
-            // Raw price is stored multiplied by 10, so divide by 10 to get actual price
-            // discounted_price is stored as-is (not multiplied by 10)
-            $discountedPrice = ($rawPrice / 10) * (1 - $discountPercentage / 100);
-
-            // Round to nearest 1000 (last three digits to 000)
-            $discountedPrice = round($discountedPrice, -3);
-
-            $product->discounted_price = $discountedPrice;
-        } else {
-            $product->discounted_price = null;
-        }
-
-        $product->saveQuietly();
     }
 }
 
