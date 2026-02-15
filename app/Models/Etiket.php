@@ -112,4 +112,9 @@ class Etiket extends Model
         
         return 0;
     }
+
+    public function getPriceAttribute($value)
+    {
+        return $value * 10;
+    }
 }
