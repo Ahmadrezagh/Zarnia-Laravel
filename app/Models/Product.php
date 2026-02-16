@@ -1086,6 +1086,40 @@ class Product extends Model implements HasMedia
             });
     }
 
+    /**
+     * Scope: only products that have a cover image (no availability requirement).
+     */
+    public function scopeHasCoverImage(Builder $query): Builder
+    {
+        return $query->whereHas('media', function ($q) {
+            $q->where('collection_name', 'cover_image');
+        });
+    }
+
+    /**
+     * Scope: products that have cover image but NO available etiket (is_mojood=1).
+     * Used to append "unavailable" products at the end of the list.
+     */
+    public function scopeHasNoAvailableEtiket(Builder $query): Builder
+    {
+        $raw = "
+            (
+                (products.is_comprehensive = 1 AND (
+                    SELECT COUNT(*) FROM comprehensive_products cp
+                    JOIN products const ON const.id = cp.product_id
+                    WHERE cp.comprehensive_product_id = products.id
+                    AND NOT EXISTS (SELECT 1 FROM etikets e WHERE e.product_id = const.id AND e.is_mojood = 1 AND e.deleted_at IS NULL)
+                ) = 0)
+                OR
+                (COALESCE(products.is_comprehensive, 0) = 0 AND (
+                    EXISTS (SELECT 1 FROM etikets e WHERE e.product_id = products.id AND e.is_mojood = 1 AND e.deleted_at IS NULL)
+                    OR EXISTS (SELECT 1 FROM products ch JOIN etikets e ON e.product_id = ch.id AND e.deleted_at IS NULL WHERE ch.parent_id = products.id AND ch.deleted_at IS NULL AND e.is_mojood = 1)
+                ))
+            )
+        ";
+        return $query->whereRaw("NOT ({$raw})");
+    }
+
     public function scopeMain(Builder $query)
     {
         return $query->whereNull('parent_id');

@@ -16,6 +16,8 @@ use App\Models\Product;
 use App\Models\Shipping;
 
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class ProductController extends Controller
 {
@@ -40,53 +42,105 @@ class ProductController extends Controller
         $fromPrice = $request->filled('from_price') ? $request->from_price : ($request->filled('minPrice') ? $request->minPrice : null);
         $toPrice = $request->filled('to_price') ? $request->to_price : ($request->filled('maxPrice') ? $request->maxPrice : null);
         
-        $products = Product::query()
-            ->with('children') // Eager load children for price_range_title
+        $perPage = (int) ($request->get('per_page') ?? 12);
+        $page = max(1, (int) $request->get('page', 1));
+
+        // 1) Available products (current list – unchanged)
+        $availableQuery = Product::query()
+            ->with('children')
             ->main()
             ->categories($request->category_ids)
             ->search($request->search)
             ->priceRange($fromPrice, $toPrice)
             ->hasCountAndImage()
             ->applyDefaultSort($sortType)
-            ->HasDiscount($request->hasDiscount)
-            ->paginate($request->get('per_page') ?? 12);
-            
+            ->HasDiscount($request->hasDiscount);
+        $availableCount = $availableQuery->count();
+
+        // 2) Unavailable products (cover image but no available etiket) – appended at the end
+        $unavailableQuery = Product::query()
+            ->with('children')
+            ->main()
+            ->categories($request->category_ids)
+            ->search($request->search)
+            ->hasCoverImage()
+            ->hasNoAvailableEtiket()
+            ->applyDefaultSort($sortType);
+        $unavailableCount = $unavailableQuery->count();
+
+        $total = $availableCount + $unavailableCount;
+        $offset = ($page - 1) * $perPage;
+
+        if ($offset < $availableCount) {
+            $takeAvailable = min($perPage, $availableCount - $offset);
+            $availableItems = $availableQuery->skip($offset)->take($takeAvailable)->get();
+            $needMore = $perPage - $availableItems->count();
+            $unavailableItems = $needMore > 0
+                ? $unavailableQuery->skip(0)->take($needMore)->get()
+                : new Collection;
+        } else {
+            $availableItems = new Collection;
+            $unavailableItems = $unavailableQuery->skip($offset - $availableCount)->take($perPage)->get();
+        }
+
+        $items = $availableItems->concat($unavailableItems);
+        $products = new LengthAwarePaginator($items, $total, $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
+
         return new ProductListCollection($products, $user);
     }
 
     public function categoryProducts(Request $request, Category $category)
     {
-        // $user = $request->user('sanctum');
-
         $sortType = null;
         if ($request->has('random')) {
             $sortType = 'random';
-        } 
-        // elseif ($request->price_dir) {
-        //     $sortType = $request->price_dir === 'asc' ? 'price_asc' : 'price_desc';
-        // } elseif ($request->sort_by) {
-        //     $sortType = $request->sort_by;
-        // }
+        }
 
-        // $fromPrice = $request->filled('from_price') ? $request->from_price : ($request->filled('minPrice') ? $request->minPrice : null);
-        // $toPrice = $request->filled('to_price') ? $request->to_price : ($request->filled('maxPrice') ? $request->maxPrice : null);
+        $perPage = (int) ($request->get('per_page') ?? 12);
+        $page = max(1, (int) $request->get('page', 1));
 
-        // $categoryIds = collect((array) $request->category_ids)
-        //     ->filter()
-        //     ->push($category->id)
-        //     ->unique()
-        //     ->all();
-
-        $products = Product::query()
-            // ->with('children')
+        // 1) Available products (current list – unchanged)
+        $availableQuery = Product::query()
+            ->with('children')
             ->main()
             ->categories([$category->id])
-            // ->search($request->search)
-            // ->priceRange($fromPrice, $toPrice)
             ->hasCountAndImage()
-            ->applyDefaultSort($sortType)
-            // ->HasDiscount($request->hasDiscount)
-            ->paginate($request->get('per_page') ?? 12);
+            ->applyDefaultSort($sortType);
+        $availableCount = $availableQuery->count();
+
+        // 2) Unavailable products – appended at the end
+        $unavailableQuery = Product::query()
+            ->with('children')
+            ->main()
+            ->categories([$category->id])
+            ->hasCoverImage()
+            ->hasNoAvailableEtiket()
+            ->applyDefaultSort($sortType);
+        $unavailableCount = $unavailableQuery->count();
+
+        $total = $availableCount + $unavailableCount;
+        $offset = ($page - 1) * $perPage;
+
+        if ($offset < $availableCount) {
+            $takeAvailable = min($perPage, $availableCount - $offset);
+            $availableItems = $availableQuery->skip($offset)->take($takeAvailable)->get();
+            $needMore = $perPage - $availableItems->count();
+            $unavailableItems = $needMore > 0
+                ? $unavailableQuery->skip(0)->take($needMore)->get()
+                : new Collection;
+        } else {
+            $availableItems = new Collection;
+            $unavailableItems = $unavailableQuery->skip($offset - $availableCount)->take($perPage)->get();
+        }
+
+        $items = $availableItems->concat($unavailableItems);
+        $products = new LengthAwarePaginator($items, $total, $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
 
         return new ProductListCollection($products);
     }
