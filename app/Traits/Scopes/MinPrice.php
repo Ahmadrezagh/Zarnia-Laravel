@@ -2,28 +2,22 @@
 namespace App\Traits\Scopes;
 use Illuminate\Database\Eloquent\Builder;
 
-trait MinPrice{
+trait MinPrice
+{
+    /**
+     * Filter products that have at least one available etiket with effective price >= minPrice.
+     * Effective price = etikets.price * 100 * (1 - products.discount_percentage/100) (same scale as price column).
+     */
     public function scopeMinPrice(Builder $query, $minPrice = null)
     {
         if (is_null($minPrice)) {
             return $query;
         }
         $minPrice = $minPrice * 10;
-        return $query->where(function ($q) use ($minPrice) {
-            // Case 1: Product has discounted_price
-            $q->where(function ($discountedQuery) use ($minPrice) {
-                $discountedQuery->whereNotNull('discounted_price')
-                    ->where('discounted_price', '>', 0)
-                    ->where('discounted_price', '>=', $minPrice);
-            })
-            // Case 2: Product doesn't have discounted_price, use regular price
-            ->orWhere(function ($regularQuery) use ($minPrice) {
-                $regularQuery->where(function ($nullOrZero) {
-                    $nullOrZero->whereNull('discounted_price')
-                        ->orWhere('discounted_price', '=', 0);
-                })
-                ->where('price', '>=', $minPrice);
-            });
+        $effectivePrice = 'etikets.price * 100 * (1 - COALESCE(products.discount_percentage, 0) / 100)';
+        return $query->whereHas('etikets', function ($etiketQuery) use ($minPrice, $effectivePrice) {
+            $etiketQuery->where('is_mojood', 1)
+                ->whereRaw("({$effectivePrice}) >= ?", [$minPrice]);
         });
     }
 }

@@ -2,28 +2,22 @@
 namespace App\Traits\Scopes;
 use Illuminate\Database\Eloquent\Builder;
 
-trait MaxPrice{
+trait MaxPrice
+{
+    /**
+     * Filter products that have at least one available etiket with effective price <= maxPrice.
+     * Effective price = etikets.price * 100 * (1 - products.discount_percentage/100) (same scale as price column).
+     */
     public function scopeMaxPrice(Builder $query, $maxPrice = null)
     {
         if (is_null($maxPrice)) {
             return $query;
         }
         $maxPrice = $maxPrice * 10;
-        return $query->where(function ($q) use ($maxPrice) {
-            // Case 1: Product has discounted_price
-            $q->where(function ($discountedQuery) use ($maxPrice) {
-                $discountedQuery->whereNotNull('discounted_price')
-                    ->where('discounted_price', '>', 0)
-                    ->where('discounted_price', '<=', $maxPrice);
-            })
-            // Case 2: Product doesn't have discounted_price, use regular price
-            ->orWhere(function ($regularQuery) use ($maxPrice) {
-                $regularQuery->where(function ($nullOrZero) {
-                    $nullOrZero->whereNull('discounted_price')
-                        ->orWhere('discounted_price', '=', 0);
-                })
-                ->where('price', '<=', $maxPrice);
-            });
+        $effectivePrice = 'etikets.price * 100 * (1 - COALESCE(products.discount_percentage, 0) / 100)';
+        return $query->whereHas('etikets', function ($etiketQuery) use ($maxPrice, $effectivePrice) {
+            $etiketQuery->where('is_mojood', 1)
+                ->whereRaw("({$effectivePrice}) <= ?", [$maxPrice]);
         });
     }
 }

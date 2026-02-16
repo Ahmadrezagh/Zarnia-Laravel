@@ -5,10 +5,21 @@ use Illuminate\Database\Eloquent\Builder;
 trait PriceRange
 {
     /**
+     * Effective price expression: etiket price with product discount_percentage applied.
+     * etikets.price is stored as display/10; display = price*10; we compare in display*10 units (same as old product.price).
+     * So effective in display*10 = etikets.price * 10 * (1 - d/100) * 10 = etikets.price * 100 * (1 - d/100).
+     * products = outer query table (correlated).
+     */
+    protected function etiketEffectivePriceSql(): string
+    {
+        return 'etikets.price * 100 * (1 - COALESCE(products.discount_percentage, 0) / 100)';
+    }
+
+    /**
      * Scope to filter parent products by their own price or their children's prices.
+     * Price is determined by available etikets and product discount_percentage (products table no longer has price/discounted_price).
      * Only includes products that are available (single_count >= 1).
-     * This works well when combined with ->main() scope.
-     * 
+     *
      * @param Builder $query
      * @param float|null $fromPrice Minimum price (can be null)
      * @param float|null $toPrice Maximum price (can be null)
@@ -16,52 +27,29 @@ trait PriceRange
      */
     public function scopePriceRange(Builder $query, $fromPrice = null, $toPrice = null)
     {
-        // If both prices are null, return the query as is
         if (is_null($fromPrice) && is_null($toPrice)) {
             return $query;
         }
 
-        // Multiply by 10 to match the database format
         $fromPrice = !is_null($fromPrice) ? $fromPrice * 10 : null;
         $toPrice = !is_null($toPrice) ? $toPrice * 10 : null;
 
-        // Filter products based on their own price OR any of their children's prices
-        // Only include products that are available (have at least one etiket with is_mojood = 1)
         $query->where(function ($q) use ($fromPrice, $toPrice) {
-            // Check if the product itself matches the price range AND is available
             $q->where(function ($ownPriceQuery) use ($fromPrice, $toPrice) {
                 $this->applyPriceFilter($ownPriceQuery, $fromPrice, $toPrice);
-                // Add availability check: product must have at least one available etiket
-                $ownPriceQuery->whereHas('etikets', function ($etiketQuery) {
-                    $etiketQuery->where('is_mojood', 1);
-                });
             })
-            // OR check if any of its children match the price range AND are available
             ->orWhereHas('children', function ($childrenQuery) use ($fromPrice, $toPrice) {
                 $this->applyPriceFilter($childrenQuery, $fromPrice, $toPrice);
-                // Add availability check: child must have at least one available etiket
-                $childrenQuery->whereHas('etikets', function ($etiketQuery) {
-                    $etiketQuery->where('is_mojood', 1);
-                });
             });
         });
-        
-        // Order by price from low to high (ascending)
-        // Use discounted_price if available, otherwise use regular price
-        // Note: discounted_price is stored as-is (NOT multiplied by 10)
-        // price is stored multiplied by 10
-        // Multiply discounted_price by 10 to match price format for comparison
-        return $query->orderByRaw("
-            CASE
-                WHEN discounted_price IS NOT NULL AND discounted_price > 0 THEN discounted_price * 10
-                ELSE price
-            END asc
-        ");
+
+        return $query;
     }
 
     /**
-     * Apply price filter logic considering discounted_price and regular price.
-     * 
+     * Apply price filter via etikets: at least one available etiket's effective price must be in range.
+     * Effective price = etikets.price * (1 - products.discount_percentage/100). products = outer query.
+     *
      * @param Builder $query
      * @param float|null $fromPrice (already multiplied by 10)
      * @param float|null $toPrice (already multiplied by 10)
@@ -69,40 +57,15 @@ trait PriceRange
      */
     protected function applyPriceFilter($query, $fromPrice, $toPrice)
     {
-        $query->where(function ($priceQuery) use ($fromPrice, $toPrice) {
-            // Case 1: Product has discounted_price
-            // Note: discounted_price is stored as-is (NOT multiplied by 10)
-            // But fromPrice/toPrice are already multiplied by 10 in scopePriceRange
-            // So we need to divide by 10 for comparison with discounted_price
-            $priceQuery->where(function ($discountedQuery) use ($fromPrice, $toPrice) {
-                $discountedQuery->whereNotNull('discounted_price')
-                    ->where('discounted_price', '>', 0);
-                
-                if (!is_null($fromPrice)) {
-                    // discounted_price is stored as-is, so divide by 10 for comparison
-                    $discountedQuery->where('discounted_price', '>=', $fromPrice / 10);
+        $effectivePrice = $this->etiketEffectivePriceSql();
+        $query->whereHas('etikets', function ($etiketQuery) use ($fromPrice, $toPrice, $effectivePrice) {
+            $etiketQuery->where('is_mojood', 1);
+            $etiketQuery->where(function ($priceCondition) use ($fromPrice, $toPrice, $effectivePrice) {
+                if ($fromPrice !== null) {
+                    $priceCondition->whereRaw("({$effectivePrice}) >= ?", [$fromPrice]);
                 }
-                if (!is_null($toPrice)) {
-                    // discounted_price is stored as-is, so divide by 10 for comparison
-                    $discountedQuery->where('discounted_price', '<=', $toPrice / 10);
-                }
-            })
-            // Case 2: Product doesn't have discounted_price, use regular price
-            // Note: price is stored multiplied by 10 in database
-            // fromPrice/toPrice are already multiplied by 10, so compare directly
-            ->orWhere(function ($regularQuery) use ($fromPrice, $toPrice) {
-                $regularQuery->where(function ($nullOrZero) {
-                    $nullOrZero->whereNull('discounted_price')
-                        ->orWhere('discounted_price', '=', 0);
-                });
-                
-                if (!is_null($fromPrice)) {
-                    // price is stored multiplied by 10, so compare directly
-                    $regularQuery->where('price', '>=', $fromPrice);
-                }
-                if (!is_null($toPrice)) {
-                    // price is stored multiplied by 10, so compare directly
-                    $regularQuery->where('price', '<=', $toPrice);
+                if ($toPrice !== null) {
+                    $priceCondition->whereRaw("({$effectivePrice}) <= ?", [$toPrice]);
                 }
             });
         });
@@ -110,7 +73,7 @@ trait PriceRange
 
     /**
      * Scope to filter only parent products by price range.
-     * 
+     *
      * @param Builder $query
      * @param float|null $fromPrice Minimum price (can be null)
      * @param float|null $toPrice Maximum price (can be null)
@@ -118,16 +81,13 @@ trait PriceRange
      */
     public function scopeParentPriceRange(Builder $query, $fromPrice = null, $toPrice = null)
     {
-        // If both prices are null, return the query as is
         if (is_null($fromPrice) && is_null($toPrice)) {
             return $query;
         }
 
-        // Multiply by 10 to match the database format
         $fromPrice = !is_null($fromPrice) ? $fromPrice * 10 : null;
         $toPrice = !is_null($toPrice) ? $toPrice * 10 : null;
 
-        // Filter only parent products
         return $query->whereNull('parent_id')->where(function ($q) use ($fromPrice, $toPrice) {
             $this->applyPriceFilter($q, $fromPrice, $toPrice);
         });
