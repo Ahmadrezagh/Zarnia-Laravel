@@ -62,7 +62,7 @@ Route::prefix('v1')->group(function () {
         Route::get('favorite_products/{product}', [FavoriteProductController::class, 'addOrRemove']);
         Route::get('favorite_products', [FavoriteProductController::class, 'list']);
 
-        Route::get('shopping_cart/plus/{product}', [ShoppingCartController::class, 'plus']);
+        Route::get('shopping_cart/plus/{etiket_code}', [ShoppingCartController::class, 'plus']);
         Route::get('shopping_cart/remove/{id}', [ShoppingCartController::class, 'remove']);
         Route::get('shopping_cart', [ShoppingCartController::class, 'index']);
         Route::get('profile', [ProfileController::class, 'index']);
