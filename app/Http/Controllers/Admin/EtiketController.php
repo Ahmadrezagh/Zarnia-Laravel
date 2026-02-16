@@ -68,7 +68,9 @@ class EtiketController extends Controller
 
         // Apply filters
         if ($request->has('name') && !empty($request->input('name'))) {
-            $query->where('etikets.name', 'like', '%' . $request->input('name') . '%');
+            $query->whereHas('product', function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->input('name') . '%');
+            });
         }
 
         if ($request->has('code') && !empty($request->input('code'))) {
@@ -100,8 +102,10 @@ class EtiketController extends Controller
         if ($request->has('search') && !empty($request->input('search.value'))) {
             $search = $request->input('search.value');
             $query->where(function ($q) use ($search) {
-                $q->where('etikets.name', 'like', "%{$search}%")
-                    ->orWhere('etikets.code', 'like', "%{$search}%");
+                $q->where('etikets.code', 'like', "%{$search}%")
+                    ->orWhereHas('product', function($subQuery) use ($search) {
+                        $subQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -147,7 +151,10 @@ class EtiketController extends Controller
                     ) {$sortDirection}");
                     break;
                 case 'name':
-                    $query->orderBy('etikets.name', $sortDirection);
+                    // Join with products table to sort by product name
+                    $query->join('products', 'etikets.product_id', '=', 'products.id')
+                        ->orderBy('products.name', $sortDirection)
+                        ->select('etikets.*');
                     break;
                 case 'weight':
                     $query->orderBy('etikets.weight', $sortDirection);

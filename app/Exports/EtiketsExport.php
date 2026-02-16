@@ -37,7 +37,9 @@ class EtiketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
 
         // Apply filters
         if (!empty($this->filters['name'])) {
-            $query->where('etikets.name', 'like', '%' . $this->filters['name'] . '%');
+            $query->whereHas('product', function($q) {
+                $q->where('name', 'like', '%' . $this->filters['name'] . '%');
+            });
         }
 
         if (!empty($this->filters['code'])) {
@@ -82,7 +84,10 @@ class EtiketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
                     ) {$direction}");
                     break;
                 case 'name':
-                    $query->orderBy('etikets.name', $direction);
+                    // Join with products table to sort by product name
+                    $query->join('products', 'etikets.product_id', '=', 'products.id')
+                        ->orderBy('products.name', $direction)
+                        ->select('etikets.*');
                     break;
                 case 'weight':
                     $query->orderBy('etikets.weight', $direction);
@@ -137,7 +142,7 @@ class EtiketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
         
         return [
             $etiket->code,
-            $etiket->name,
+            $product ? $product->name : '-', // Use product name instead of etiket name
             $etiket->weight,
             number_format($etiket->price / 10), // Divide by 10 as per requirement
             $product ? $product->name : '-',
