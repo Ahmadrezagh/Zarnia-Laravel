@@ -51,6 +51,15 @@ class Etiket extends Model
     }
 
     /**
+     * Get the original price (stored price * 10 for display)
+     * This returns the price from database without any discount applied
+     */
+    public function getOriginalPriceAttribute()
+    {
+        return $this->getRawOriginal('price') * 10;
+    }
+
+    /**
      * Get discounted price based on product's discount_percentage
      * If product has a parent, checks parent's discount_percentage
      * Returns null if no discount, otherwise returns the discounted price
@@ -82,13 +91,12 @@ class Etiket extends Model
             $discountPercentage = $this->product->discount_percentage ?? 0;
         }
 
-        if ($discountPercentage > 0 && $this->price > 0) {
-            // Calculate discounted price
-            // Note: etiket price is stored multiplied by 10, keep it that way
-            $discountedPrice = $this->price * (1 - $discountPercentage / 100);
+        if ($discountPercentage > 0 && $this->original_price > 0) {
+            // Calculate discounted price using original_price
+            $discountedPrice = $this->original_price * (1 - $discountPercentage / 100);
             
             // Round to nearest integer
-            return (int) round($discountedPrice) ;
+            return (int) round($discountedPrice);
         }
 
         return null;
@@ -113,8 +121,13 @@ class Etiket extends Model
         return 0;
     }
 
+    /**
+     * Get the effective price (discounted if available, otherwise original)
+     * This is the price that should be used for calculations and display
+     */
     public function getPriceAttribute($value)
     {
-        return $value * 10;
+        // If discounted price is available, use it; otherwise use original price
+        return $this->discounted_price ?? $this->original_price;
     }
 }
