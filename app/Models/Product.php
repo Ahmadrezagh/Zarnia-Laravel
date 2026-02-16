@@ -148,8 +148,11 @@ class Product extends Model implements HasMedia
             });
         
         if ($etikets->isNotEmpty()) {
-            // Get the lowest regular price (without discount)
-            $lowestPrice = $etikets->pluck('price')->min();
+            // Get the lowest original price (without discount)
+            $lowestPrice = $etikets->map(function ($etiket) {
+                return $etiket->original_price;
+            })->min();
+            
             if ($lowestPrice) {
                 return $lowestPrice / 10;
             }
@@ -166,7 +169,11 @@ class Product extends Model implements HasMedia
                 ->get();
             
             if ($childEtikets->isNotEmpty()) {
-                $lowestPrice = $childEtikets->pluck('price')->min();
+                // Use price * 10 to get original_price equivalent
+                $lowestPrice = $childEtikets->map(function ($etiket) {
+                    return $etiket->price * 10;
+                })->min();
+                
                 if ($lowestPrice) {
                     return $lowestPrice / 10;
                 }
@@ -807,13 +814,38 @@ class Product extends Model implements HasMedia
 
     public function getOriginalPriceAttribute()
     {
-        // Get lowest price from available etikets (is_mojood = 1)
-        $lowestEtiketPrice = $this->etikets()
-            ->where('is_mojood', 1)
-            ->min('price');
+        // Get lowest original price from available etikets (is_mojood = 1)
+        $etikets = $this->etikets()->where('is_mojood', 1)->get();
         
-        if ($lowestEtiketPrice) {
-            return $lowestEtiketPrice ;
+        if ($etikets->isNotEmpty()) {
+            $lowestPrice = $etikets->map(function ($etiket) {
+                return $etiket->original_price;
+            })->min();
+            
+            if ($lowestPrice) {
+                return $lowestPrice / 10;
+            }
+        }
+        
+        // If no available etikets, check children's etikets
+        if ($this->children()->exists()) {
+            $childEtikets = \DB::table('etikets')
+                ->join('products', 'etikets.product_id', '=', 'products.id')
+                ->where('products.parent_id', $this->id)
+                ->where('etikets.is_mojood', 1)
+                ->select('etikets.price')
+                ->get();
+            
+            if ($childEtikets->isNotEmpty()) {
+                // Use price * 10 to get original_price equivalent
+                $lowestPrice = $childEtikets->map(function ($etiket) {
+                    return $etiket->price * 10;
+                })->min();
+                
+                if ($lowestPrice) {
+                    return $lowestPrice / 10;
+                }
+            }
         }
         
         return 0;
