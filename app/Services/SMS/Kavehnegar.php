@@ -37,7 +37,8 @@ class Kavehnegar {
         $t = '3438695A44513638314F654D4A71722F67493430396B4D616B50524B3153445457484B7670496C357A34303D';
         $url = 'https://api.kavenegar.com/v1/'.$t.'/verify/lookup.json';
         // Ensure URL is properly encoded if it contains spaces (Laravel's Http::get automatically encodes query params)
-        $url = str_replace(' ', '%20', $url);
+        
+        $token = str_replace(' ', '_', $token);
         try {
             $d = [
                 'receptor' => $receiver,
@@ -56,7 +57,11 @@ class Kavehnegar {
         $t = '3438695A44513638314F654D4A71722F67493430396B4D616B50524B3153445457484B7670496C357A34303D';
         $url = 'https://api.kavenegar.com/v1/'.$t.'/verify/lookup.json';
         // Ensure URL is properly encoded if it contains spaces
-        $url = str_replace(' ', '%20', $url);
+        
+        // Replace spaces with underscores in tokens
+        $token = str_replace(' ', '_', $token);
+        $token2 = str_replace(' ', '_', $token2);
+        
         try {
             $d = [
                 'receptor' => $receiver,
