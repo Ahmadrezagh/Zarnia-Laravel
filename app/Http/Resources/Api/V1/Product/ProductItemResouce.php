@@ -115,15 +115,8 @@ class ProductItemResouce extends JsonResource
                 ->filter()
                 ->sortBy('weight')
                 ->values(),
-                'etikets' => $product->etikets()->where('is_mojood', 1)->get()->map(function ($etiket) {
-                    return [
-                        'id' => $etiket->id,
-                        'code' => $etiket->code,
-                        'weight' => $etiket->weight,
-                        'price' => $etiket->price,
-                    ];
-                }),
-                
+               
+
         ];
     }
 
