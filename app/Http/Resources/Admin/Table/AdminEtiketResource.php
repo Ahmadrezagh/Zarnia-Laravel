@@ -30,7 +30,7 @@ class AdminEtiketResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
-            'name' => $this->name,
+            'name' => $product ? $product->name : '-', // Use product name instead of etiket name
             'weight' => $this->weight,
             'price' => number_format($this->price),
             'product_name' => $product ? $product->name : '-',
@@ -39,7 +39,6 @@ class AdminEtiketResource extends JsonResource
             'is_mojood' => $this->is_mojood ? 'موجود' : 'ناموجود',
             'ojrat' => $this->ojrat ?? '-',
             'darsad_kharid' => $this->darsad_kharid ?? '-',
-            'darsad_vazn_foroosh' => $this->darsad_vazn_foroosh ?? '-',
             'created_at' => $this->created_at ? $this->created_at->format('Y/m/d H:i') : '-',
         ];
     }
