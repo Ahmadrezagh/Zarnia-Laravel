@@ -5,14 +5,13 @@ use Illuminate\Database\Eloquent\Builder;
 trait PriceRange
 {
     /**
-     * Effective price expression: etiket price with product discount_percentage applied.
-     * etikets.price is stored as display/10; display = price*10; we compare in display*10 units (same as old product.price).
-     * So effective in display*10 = etikets.price * 10 * (1 - d/100) * 10 = etikets.price * 100 * (1 - d/100).
+     * Effective price expression in display units (what user sees).
+     * etikets.price is stored as display/10; display = price*10. So effective display = price*10*(1-d/100).
      * products = outer query table (correlated).
      */
     protected function etiketEffectivePriceSql(): string
     {
-        return 'etikets.price * 100 * (1 - COALESCE(products.discount_percentage, 0) / 100)';
+        return 'etikets.price * 10 * (1 - COALESCE(products.discount_percentage, 0) / 100)';
     }
 
     /**
@@ -31,9 +30,7 @@ trait PriceRange
             return $query;
         }
 
-        $fromPrice = !is_null($fromPrice) ? $fromPrice * 10 : null;
-        $toPrice = !is_null($toPrice) ? $toPrice * 10 : null;
-
+        // User input is in display units (e.g. 5,000,000 to 7,000,000); compare with effective display price
         $query->where(function ($q) use ($fromPrice, $toPrice) {
             $q->where(function ($ownPriceQuery) use ($fromPrice, $toPrice) {
                 $this->applyPriceFilter($ownPriceQuery, $fromPrice, $toPrice);
@@ -51,8 +48,8 @@ trait PriceRange
      * Effective price = etikets.price * (1 - products.discount_percentage/100). products = outer query.
      *
      * @param Builder $query
-     * @param float|null $fromPrice (already multiplied by 10)
-     * @param float|null $toPrice (already multiplied by 10)
+     * @param float|null $fromPrice minimum price in display units
+     * @param float|null $toPrice maximum price in display units
      * @return void
      */
     protected function applyPriceFilter($query, $fromPrice, $toPrice)
@@ -84,9 +81,6 @@ trait PriceRange
         if (is_null($fromPrice) && is_null($toPrice)) {
             return $query;
         }
-
-        $fromPrice = !is_null($fromPrice) ? $fromPrice * 10 : null;
-        $toPrice = !is_null($toPrice) ? $toPrice * 10 : null;
 
         return $query->whereNull('parent_id')->where(function ($q) use ($fromPrice, $toPrice) {
             $this->applyPriceFilter($q, $fromPrice, $toPrice);
