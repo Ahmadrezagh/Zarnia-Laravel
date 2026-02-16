@@ -49,7 +49,7 @@ class TorobController extends Controller
         $productsQuery = Product::query()
             ->main() // Only main products (parent_id is null)
             ->hasCountAndImage() // Has count >= 1 and has image
-            ->with(['categories', 'etikets', 'children']); // Load children for minimum_available_price
+            ->with(['categories', 'etikets', 'children.etikets']); // Load children with their etikets
         
         // Get total count before pagination
         $total = $productsQuery->count();
@@ -66,8 +66,8 @@ class TorobController extends Controller
             ->get()
             ->groupBy('product_id');
         
-        // Transform products to Torob format
-        $items = $products->map(function ($product) use ($baseUrl, $attributeValues, $brandAttribute, $gtinAttribute) {
+        // Transform products to Torob format - loop through each etiket
+        $items = $products->flatMap(function ($product) use ($baseUrl, $attributeValues, $brandAttribute, $gtinAttribute) {
             // Get attribute values for this product
             $productAttributeValues = $attributeValues->get($product->id, collect())
                 ->keyBy('attribute_id');
@@ -78,60 +78,79 @@ class TorobController extends Controller
                 $imageUrl = null;
             }
             
-            // Get minimum available price (minimum weight price) like single product resource
-            $minimumPrice = $product->minimum_available_price ?? $product->price;
+            // Get all etikets for this product (including children's etikets)
+            $etikets = $product->etikets;
             
-            // Build product data
-            $productData = [
-                'id' => (string) $product->id,
-                'title' => $product->name,
-                'link' => $baseUrl . '/products/' . $product->slug,
-                'price' => (int) ($minimumPrice * 10), // Convert to integer (price is stored * 10 in DB)
-                'availability' => $product->single_count > 0 ? 'instock' : 'outofstock',
-            ];
-            
-            // Add image if available
-            if ($imageUrl) {
-                $productData['image'] = $imageUrl;
+            // If product has children, also include their etikets
+            if ($product->children && $product->children->isNotEmpty()) {
+                $childrenEtikets = $product->children->flatMap(function ($child) {
+                    return $child->etikets;
+                });
+                $etikets = $etikets->merge($childrenEtikets);
             }
             
-            // Add original price if there's a discount (use price_without_discount_minimum_available_product)
-            $priceWithoutDiscount = $product->price_without_discount_minimum_available_product ?? $product->price_without_discount;
-            if ($product->discounted_price && $priceWithoutDiscount) {
-                $productData['original_price'] = (int) ($priceWithoutDiscount * 10); // Convert to integer
+            // If no etikets found, return empty array
+            if ($etikets->isEmpty()) {
+                return [];
             }
             
-            // Add category
-            if ($product->categories->isNotEmpty()) {
-                $categoryNames = $product->categories->pluck('title')->implode(' > ');
-                $productData['category'] = $categoryNames;
-            }
-            
-            // Add description
-            if ($product->description) {
-                $productData['description'] = strip_tags($product->description);
-            }
-            
-            // Add brand if available
-            if ($brandAttribute && $productAttributeValues->has($brandAttribute->id)) {
-                $brandValue = $productAttributeValues->get($brandAttribute->id)->value;
-                if ($brandValue) {
-                    $productData['brand'] = $brandValue;
+            // Create a separate entry for each etiket
+            return $etikets->map(function ($etiket) use ($product, $baseUrl, $imageUrl, $productAttributeValues, $brandAttribute, $gtinAttribute) {
+                // Get etiket price (use price attribute which returns discounted_price or original_price)
+                $etiketPrice = $etiket->price / 10; // Divide by 10 as etiket->price is already * 10
+                
+                // Build product data for this etiket
+                $productData = [
+                    'id' => (string) $product->id . '-' . $etiket->code, // Unique ID combining product ID and etiket code
+                    'title' => $product->name,
+                    'link' => $baseUrl . '/products/' . $product->slug . '?e=' . $etiket->code,
+                    'price' => (int) ($etiketPrice * 10), // Convert to integer (price is stored * 10 in DB)
+                    'availability' => $etiket->is_mojood ? 'instock' : 'outofstock',
+                ];
+                
+                // Add image if available
+                if ($imageUrl) {
+                    $productData['image'] = $imageUrl;
                 }
-            }
-            
-            // Add GTIN if available
-            if ($gtinAttribute && $productAttributeValues->has($gtinAttribute->id)) {
-                $gtinValue = $productAttributeValues->get($gtinAttribute->id)->value;
-                if ($gtinValue) {
-                    $productData['gtin'] = $gtinValue;
+                
+                // Add original price if there's a discount
+                if ($etiket->discounted_price) {
+                    $originalPrice = $etiket->original_price / 10; // Divide by 10
+                    $productData['original_price'] = (int) ($originalPrice * 10); // Convert to integer
                 }
-            }
-            
-            // Add stock count
-            $productData['stock_count'] = $product->single_count;
-            
-            return $productData;
+                
+                // Add category
+                if ($product->categories->isNotEmpty()) {
+                    $categoryNames = $product->categories->pluck('title')->implode(' > ');
+                    $productData['category'] = $categoryNames;
+                }
+                
+                // Add description
+                if ($product->description) {
+                    $productData['description'] = strip_tags($product->description);
+                }
+                
+                // Add brand if available
+                if ($brandAttribute && $productAttributeValues->has($brandAttribute->id)) {
+                    $brandValue = $productAttributeValues->get($brandAttribute->id)->value;
+                    if ($brandValue) {
+                        $productData['brand'] = $brandValue;
+                    }
+                }
+                
+                // Add GTIN if available
+                if ($gtinAttribute && $productAttributeValues->has($gtinAttribute->id)) {
+                    $gtinValue = $productAttributeValues->get($gtinAttribute->id)->value;
+                    if ($gtinValue) {
+                        $productData['gtin'] = $gtinValue;
+                    }
+                }
+                
+                // Add stock count (1 if in stock, 0 if not)
+                $productData['stock_count'] = $etiket->is_mojood ? 1 : 0;
+                
+                return $productData;
+            });
         });
         
         return response()->json([
