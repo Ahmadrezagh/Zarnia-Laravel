@@ -15,10 +15,10 @@ class ShoppingCartItemResource extends JsonResource
     public function toArray(Request $request): array
     {
         // Get price from etiket if available, otherwise fallback to product's lowest etiket price
-        $itemPrice = $this->etiket ? ($this->etiket->price / 10) : $this->product->price;
+        $itemPrice = $this->etiket ? ($this->etiket->price / 10) : 0;
         
         // Get weight from etiket if available, otherwise fallback to product's lowest etiket weight
-        $itemWeight = $this->etiket ? $this->etiket->weight : ($this->product->weight ?? 0);
+        $itemWeight = $this->etiket ? $this->etiket->weight : 0;
         
         return [
             'id' => $this->id,
