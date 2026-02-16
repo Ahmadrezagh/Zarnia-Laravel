@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Product;
 
+use App\Models\Etiket;
 use App\Models\Favorite;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -44,7 +45,18 @@ class ProductListResouce extends JsonResource
             ->where('is_mojood', 1)
             ->where('orderable_after_out_of_stock', 1)
             ->count();
-        
+
+        // Availability: product has at least one available etiket (is_mojood=1), or has a child with at least one
+        $hasOwnAvailableEtiket = $product->etikets()->where('is_mojood', 1)->exists();
+        if ($hasOwnAvailableEtiket) {
+            $availability = true;
+        } else {
+            $hasChildWithAvailableEtiket = $product->relationLoaded('children') && $product->children->isNotEmpty()
+                ? Etiket::whereIn('product_id', $product->children->pluck('id'))->where('is_mojood', 1)->exists()
+                : $product->children()->whereHas('etikets', fn ($q) => $q->where('is_mojood', 1))->exists();
+            $availability = $hasChildWithAvailableEtiket;
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -61,6 +73,7 @@ class ProductListResouce extends JsonResource
             'discount_percentage' => $this->discount_percentage,
             'snapp_pay_each_installment' => number_format($this->price/4),
             'is_favorite' => $is_favorite,
+            'availability' => $availability,
             'available_count' => $this->count,
             'available_count_orderable_after_out_of_stock' => $availableCountOrderableAfterOutOfStock,
         ];
