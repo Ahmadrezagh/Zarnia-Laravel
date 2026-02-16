@@ -130,4 +130,12 @@ class Etiket extends Model
         // If discounted price is available, use it; otherwise use original price
         return $this->discounted_price ?? $this->original_price;
     }
+
+    public function getNameAttribute()
+    {
+        if($this->product){
+        return $this->product->name;
+        }
+        return '-';
+    }
 }
