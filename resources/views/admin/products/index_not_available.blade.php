@@ -118,7 +118,7 @@
             const query = new URLSearchParams(formData).toString();
 
             // Construct the URL with the query string
-            const url = "{{route('table.products')}}?" + query;
+            const url = "{{route('table.products_not_available')}}?" + query;
 
             // Call the loadDataWithNewUrl function with the constructed URL
             window.loadDataWithNewUrl(url);
@@ -697,9 +697,9 @@
         function filterProductsSelectOption(element){
             let val = $(element).val()
             if(val !== '0'){
-                window.loadDataWithNewUrl("{{route('table.products')}}"+val);
+                window.loadDataWithNewUrl("{{route('table.products_not_available')}}"+val);
             }else{
-                window.loadDataWithNewUrl("{{route('table.products')}}");
+                window.loadDataWithNewUrl("{{route('table.products_not_available')}}");
             }
         }
 
@@ -712,7 +712,7 @@
             });
 
             let queryString = params.join('&');
-            let baseUrl = "{{ route('table.products') }}";
+            let baseUrl = "{{ route('table.products_not_available') }}";
             let finalUrl = baseUrl + '?' + queryString;
 
             window.loadDataWithNewUrl(finalUrl);
@@ -729,7 +729,7 @@
                     if(searchKey == '0'){
                         toastr.error('ابتدا تعیین کنید جستجو بر اساس چه معیاری باشد')
                     }else{
-                        window.loadDataWithNewUrl('{{ route('table.products') }}?searchKey='+searchKey+'&searchVal='+searchVal);
+                        window.loadDataWithNewUrl('{{ route('table.products_not_available') }}?searchKey='+searchKey+'&searchVal='+searchVal);
                     }
                 }
             });
