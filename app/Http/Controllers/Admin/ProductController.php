@@ -961,11 +961,11 @@ class ProductController extends Controller
     }
     public function not_available_table(Request $request)
     {
-        // Show only parent products where count > 0, available_count == 0, and parent_id is null
+        // Show only parent products that have no available etiket (is_mojood=1) on themselves or on any child
         $query = Product::query()
             ->whereNull('parent_id')
-            ->where('count', '>', 0)
-            ->where('available_count', '=', 0)
+            ->whereDoesntHave('etikets', fn ($q) => $q->where('is_mojood', 1))
+            ->whereDoesntHave('children', fn ($q) => $q->whereHas('etikets', fn ($e) => $e->where('is_mojood', 1)))
             ->select('*');
 
         // Get total records before applying filters
