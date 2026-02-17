@@ -109,6 +109,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('products/create-non-gold', [ProductController::class, 'createNonGold'])->name('products.create.non.gold');
         Route::get('products/create-comprehensive', [ProductController::class, 'createComprehensive'])->name('products.create.comprehensive');
         Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
+        Route::post('products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk_delete');
         Route::post('products/bulk-update-products-and-etikets', [ProductController::class, 'bulkUpdateProductsAndEtikets'])->name('products.bulk_update_products_and_etikets');
         Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
         Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');

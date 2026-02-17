@@ -56,6 +56,11 @@
                     <button type="button" class="btn btn-primary" onclick="showBulkUpdateModal()">ویرایش دسته جمعی </button>
                 </div>
                 <div class="col-3">
+                    <button type="button" class="btn btn-danger" onclick="bulkDeleteProducts()">
+                        <i class="fas fa-trash-alt"></i> حذف دسته جمعی
+                    </button>
+                </div>
+                <div class="col-3">
                     <button type="button" id="bulk-update-etikets-btn" class="btn btn-info" onclick="showBulkUpdateEtiketsModal()" >ویرایش دسته جمعی اتیکت‌ها</button>
                 </div>
                 <div class="col-3">
@@ -535,6 +540,44 @@
                 placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
                 allowClear: true,
                 width: '100%'
+            });
+        }
+
+        function bulkDeleteProducts() {
+            let selectedIds = [];
+            try {
+                selectedIds = JSON.parse($('#selectedValues').val() || '[]');
+            } catch (e) {
+                selectedIds = [];
+            }
+            if (!selectedIds || selectedIds.length === 0) {
+                toastr.warning('لطفاً حداقل یک محصول را انتخاب کنید.');
+                return;
+            }
+            if (!confirm('آیا از حذف ' + selectedIds.length + ' محصول انتخاب شده اطمینان دارید؟')) {
+                return;
+            }
+            $.ajax({
+                url: '{{ route("products.bulk_delete") }}',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({ product_ids: selectedIds }),
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        if (typeof window.refreshTable === 'function') {
+                            window.refreshTable();
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'خطا در حذف دسته جمعی.';
+                    toastr.error(msg);
+                }
             });
         }
 

@@ -614,6 +614,33 @@ class ProductController extends Controller
         return response()->json($product);
     }
     /**
+     * Bulk soft-delete selected products.
+     */
+    public function bulkDelete(Request $request)
+    {
+        if (is_string($request->product_ids)) {
+            $productIds = json_decode($request->product_ids, true);
+            $request->merge(['product_ids' => $productIds ?? []]);
+        }
+
+        $request->validate([
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'exists:products,id',
+        ]);
+
+        $count = Product::whereIn('id', $request->product_ids)->delete();
+
+        $message = $count === 1
+            ? 'محصول با موفقیت حذف شد'
+            : "تعداد {$count} محصول با موفقیت حذف شدند";
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+        ]);
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
