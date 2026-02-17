@@ -47,11 +47,6 @@ class OrderItem extends Model
         return $number;
     }
 
-    public function etiket()
-    {
-        return $this->hasOne(Etiket::class,'code','etiket');
-    }
-
 
     public function etiketItem()
     {
