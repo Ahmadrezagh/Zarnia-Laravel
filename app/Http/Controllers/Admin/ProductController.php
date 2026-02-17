@@ -1328,7 +1328,9 @@ class ProductController extends Controller
             'cover_image' => 'nullable|file|image|max:2048',
         ]);
 
-        $products = Product::whereIn('id', $request->product_ids)->get();
+        $products = Product::whereIn('id', $request->product_ids)
+            ->with(['etikets', 'children.etikets'])
+            ->get();
 
         // Store the uploaded file in Laravel storage
         $tempFilePath = null;
@@ -1379,8 +1381,8 @@ class ProductController extends Controller
                 }
             }
 
-            // Update discounted price
-            $this->updateDiscountedPrice($product);
+            // Use etikets: if any etiket's discounted_price is zero, remove discount so price is real
+            $this->syncDiscountFromEtikets($product);
         }
 
         // Clean up original temporary file
@@ -2363,6 +2365,27 @@ class ProductController extends Controller
         }
 
         $product->saveQuietly();
+    }
+
+    /**
+     * Use product's etikets: if any etiket's discounted_price is zero, remove discount
+     * so the effective price is the real (original) etiket price.
+     */
+    private function syncDiscountFromEtikets(Product $product): void
+    {
+        $product->load(['etikets', 'children.etikets']);
+        $productsToCheck = collect([$product])->merge($product->children ?? []);
+        foreach ($productsToCheck as $p) {
+            $etikets = $p->relationLoaded('etikets') ? $p->etikets : $p->etikets()->get();
+            foreach ($etikets as $etiket) {
+                $discountedPrice = $etiket->discounted_price;
+                $originalPrice = $etiket->original_price;
+                if ($originalPrice > 0 && $discountedPrice === 0) {
+                    $p->updateQuietly(['discount_percentage' => 0]);
+                    break;
+                }
+            }
+        }
     }
     
     /**
