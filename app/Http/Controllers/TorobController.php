@@ -78,13 +78,12 @@ class TorobController extends Controller
                 $imageUrl = null;
             }
             
-            // Get all etikets for this product (including children's etikets)
-            $etikets = $product->etikets;
+            // Get only available etikets (is_mojood = 1) for this product and its children
+            $etikets = $product->etikets->where('is_mojood', 1)->values();
             
-            // If product has children, also include their etikets
             if ($product->children && $product->children->isNotEmpty()) {
                 $childrenEtikets = $product->children->flatMap(function ($child) {
-                    return $child->etikets;
+                    return $child->etikets->where('is_mojood', 1)->values();
                 });
                 $etikets = $etikets->merge($childrenEtikets);
             }
