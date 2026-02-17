@@ -331,11 +331,14 @@ class Product extends Model implements HasMedia
     {
         $codes = "";
 
+        // Only show available etikets (is_mojood = 1)
+        $availableEtikets = $this->AllEtikets->where('is_mojood', 1);
+
         // Normalize current product name for comparison
         $currentProductName = $this->normalizeName($this->name);
         $currentProductWeight = $this->weight;
 
-        foreach ($this->AllEtikets as $etiket) {
+        foreach ($availableEtikets as $etiket) {
             // Get etiket's product name (from its relationship)
             $etiketProductName = $etiket->product ? $this->normalizeName($etiket->product->name) : '';
             
@@ -351,20 +354,12 @@ class Product extends Model implements HasMedia
                 $style = 'background-color: lightblue; padding: 2px 5px; border-radius: 3px;';
             }
             
-            if ($etiket->is_mojood == 0) {
-                // Red color for unavailable etikets (can combine with blue background)
-                $style .= ' color: red;';
-            }
+            // Add cursor pointer for better UX
+            $style .= ' cursor: help;';
             
             // Create tooltip content - using product name instead of etiket name
             $productName = $etiket->product ? $etiket->product->name : 'نامشخص';
             $tooltipContent = e($productName) . ' - ' . e($etiket->weight) . 'g';
-            if ($etiket->is_mojood == 0) {
-                $tooltipContent .= ' (ناموجود)';
-            }
-            
-            // Add cursor pointer for better UX
-            $style .= ' cursor: help;';
             
             // Add Bootstrap tooltip attributes
             $tooltip = 'data-toggle="tooltip" data-placement="top" data-html="true" title="' . $tooltipContent . '"';
