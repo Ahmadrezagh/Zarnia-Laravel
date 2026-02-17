@@ -53,7 +53,8 @@ class OrderController extends Controller
             $etiket = $cartItem->etiket;
             $isOrderableAfterOutOfStock = $etiket->orderable_after_out_of_stock ?? false;
             $cacheKey = 'reserved_etiket_' . $etiket->code;
-            $isReserved = Cache::has($cacheKey);
+            $reservedByUserId = Cache::get($cacheKey);
+            $isReserved = $reservedByUserId !== null;
             
             // Skip availability check if etiket is orderable after out of stock
             if ($isOrderableAfterOutOfStock) {
@@ -61,7 +62,9 @@ class OrderController extends Controller
                 continue;
             }
             
-            if ($etiket->is_mojood != 1 || $isReserved) {
+            // Etiket must be available (is_mojood). If reserved, only the user who reserved it can purchase.
+            $canPurchaseReserved = $isReserved && $reservedByUserId === $user->id;
+            if ($etiket->is_mojood != 1 || ($isReserved && !$canPurchaseReserved)) {
                 $unavailableProducts[] = $cartItem->product->name . ' (اتیکت انتخاب شده موجود نیست)';
                 $cartItem->delete();
                 continue;
@@ -178,12 +181,14 @@ class OrderController extends Controller
             }
         }
 
-        // Cache reserved etiket codes for 32 minutes (1920 seconds)
-        // This reserves them until gateway response comes (success or failed)
-        // During this time, when checking availability, these etikets will return is_mojood = 0
+        // Cache reserved etiket codes for 32 minutes (1920 seconds), store reserving user id
+        // Only the user who reserved can purchase; do not overwrite another user's reservation
         foreach ($reservedEtiketCodes as $etiketCode) {
             $cacheKey = 'reserved_etiket_' . $etiketCode;
-            Cache::put($cacheKey, true, 1920); // 32 minutes = 1920 seconds
+            $existing = Cache::get($cacheKey);
+            if ($existing === null || $existing === $user->id || $existing === true) {
+                Cache::put($cacheKey, $user->id, 1920);
+            }
         }
 
         $order_url = null;
