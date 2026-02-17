@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Product;
+use Illuminate\Support\Facades\Schema;
 
 class ProductObserver
 {
@@ -19,7 +20,7 @@ class ProductObserver
      */
     public function updated(Product $product): void
     {
-        // Check if price or discount_percentage changed
+        // Check if price or discount_percentage changed (updateDiscountedPrice no-ops if column dropped)
         $this->updateDiscountedPrice($product);
 
         // ✅ Only check if product has a parent
@@ -92,9 +93,14 @@ class ProductObserver
 
     /**
      * Calculate and update discounted price.
+     * No-op if products.discounted_price column was dropped (price now comes from etikets).
      */
     private function updateDiscountedPrice(Product $product)
     {
+        if (!Schema::hasColumn('products', 'discounted_price')) {
+            return;
+        }
+
         // Get raw price value (stored multiplied by 10) and discount percentage
         $rawPrice = $product->getRawOriginal('price');
         
