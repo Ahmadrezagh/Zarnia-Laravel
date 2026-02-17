@@ -377,7 +377,7 @@ class Order extends Model
     }
     public function getPercentageAttribute()
     {
-        return $this->orderItems()->first()->product->darsad_kharid ?? 0;
+        return $this->orderItems()->first()->etiketItem->darsad_kharid ?? 0;
     }
 
     public function getDarsadKharidAttribute()
@@ -389,7 +389,7 @@ class Order extends Model
         $sum = 0;
         foreach ($this->orderItems as $orderItem) {
             if($orderItem->product){
-                $sum = $sum + $orderItem->product->darsad_vazn_foroosh;
+                $sum = $sum + $orderItem->etiketItem->darsad_vazn_foroosh;
             }
         }
         return $sum;
