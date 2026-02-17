@@ -108,7 +108,7 @@ class ProductItemResouce extends JsonResource
                             $isReserved = $etiket->isReserved();
                             $reservedByUserId = $isReserved ? Cache::get('reserved_etiket_' . $etiket->code) : null;
                             $available = !$isReserved || ($reservedByUserId === $this->user?->id || $reservedByUserId === true);
-                            if(!$isReserved){
+                            
                                 return [
                                     'id' => $etiket->id,
                                     'code' => $etiket->code,
@@ -118,7 +118,7 @@ class ProductItemResouce extends JsonResource
                                     'is_reserved' => $isReserved,
                                     'available' => $available,
                                 ];
-                            }
+                            
                         })->values(),
                     ];
                 })
