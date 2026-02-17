@@ -21,11 +21,11 @@ class OrderItemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $etiket = $this->etiket;
+        $etiketItem = $this->etiketItem;
         return [
             'id' => $this->id,
-            'etiket' => $etiket ? array_merge($etiket->toArray(), [
-                'is_reserved' => $etiket->isReserved(),
+            'etiket' => $etiketItem ? array_merge($etiketItem->toArray(), [
+                'is_reserved' => $etiketItem->isReserved(),
             ]) : null,
             'name' => $this->name,
             'count' => $this->count,
