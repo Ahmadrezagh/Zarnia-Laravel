@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class ProductItemResouce extends JsonResource
 {
@@ -103,13 +104,20 @@ class ProductItemResouce extends JsonResource
                         'name' => $productItem->name,
                         'slug' => $productItem->slug,
                         'price' => number_format($productItem->price),
-                        'etikets' => $availableEtikets->map(fn($etiket) => [
-                            'id' => $etiket->id,
-                            'code' => $etiket->code,
-                            'weight' => $etiket->weight,
-                            'price' => $etiket->price,
-                            'orderable_after_out_of_stock' => $etiket->orderable_after_out_of_stock ?? false,
-                        ])->values(),
+                        'etikets' => $availableEtikets->map(function ($etiket) {
+                            $isReserved = $etiket->isReserved();
+                            $reservedByUserId = $isReserved ? Cache::get('reserved_etiket_' . $etiket->code) : null;
+                            $available = !$isReserved || ($reservedByUserId === $this->user?->id || $reservedByUserId === true);
+                            return [
+                                'id' => $etiket->id,
+                                'code' => $etiket->code,
+                                'weight' => $etiket->weight,
+                                'price' => $etiket->price,
+                                'orderable_after_out_of_stock' => $etiket->orderable_after_out_of_stock ?? false,
+                                'is_reserved' => $isReserved,
+                                'available' => $available,
+                            ];
+                        })->values(),
                     ];
                 })
                 ->filter()
