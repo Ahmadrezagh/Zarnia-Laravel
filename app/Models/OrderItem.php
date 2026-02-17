@@ -53,4 +53,9 @@ class OrderItem extends Model
     }
 
 
+    public function etiketItem()
+    {
+        return $this->hasOne(Etiket::class,'id','etiket');
+    }
+
 }
