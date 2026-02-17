@@ -94,8 +94,7 @@
     </style>
 @endsection
 
-
-@section('js')
+@push('scripts')
     <script>
         function applySelectColors() {
             $('.table-select-option').each(function () {
@@ -460,4 +459,4 @@
             }
         });
     </script>
-@endsection
+@endpush

@@ -40,21 +40,29 @@
 
 @push('scripts')
 <script>
-    // Handle restore action
+    // Handle restore action (use data-url from button so id is correct after DataTables render)
     $(document).on('click', '[data-action="restore"]', function(e) {
         e.preventDefault();
+        const url = $(this).data('url');
         const productId = $(this).data('id');
-        
+        if (!url && !productId) return;
+        const restoreUrl = url || ('{{ route("products.restore", ":id") }}'.replace(':id', productId));
+
         if (confirm('آیا از بازیابی این محصول اطمینان دارید؟')) {
             $.ajax({
-                url: '{{ route("products.restore", ":id") }}'.replace(':id', productId),
+                url: restoreUrl,
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
                 },
                 success: function(response) {
                     if (response.success) {
-                        alert(response.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(response.message);
+                        } else {
+                            alert(response.message);
+                        }
                         if (typeof window.refreshTable === 'function') {
                             window.refreshTable();
                         } else {
@@ -64,7 +72,12 @@
                 },
                 error: function(xhr) {
                     const response = xhr.responseJSON;
-                    alert(response?.message || 'خطا در بازیابی محصول');
+                    const msg = response?.message || 'خطا در بازیابی محصول';
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(msg);
+                    } else {
+                        alert(msg);
+                    }
                 }
             });
         }
