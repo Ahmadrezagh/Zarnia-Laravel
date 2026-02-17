@@ -49,13 +49,13 @@ class OrderItem extends Model
 
     public function etiket()
     {
-        return $this->hasOne(Etiket::class,'id','etiket');
+        return $this->hasOne(Etiket::class,'code','etiket');
     }
 
 
     public function etiketItem()
     {
-        return $this->hasOne(Etiket::class,'id','etiket');
+        return $this->hasOne(Etiket::class,'code','etiket');
     }
 
 }
