@@ -964,9 +964,9 @@ class ProductController extends Controller
         // Show only parent products that have no available etiket (is_mojood=1) on themselves or on any child
         $query = Product::query()
             ->whereNull('parent_id')
-            ->whereDoesntHave('etikets', fn ($q) => $q->where('is_mojood', 1))
-            ->whereDoesntHave('children', fn ($q) => $q->whereHas('etikets', fn ($e) => $e->where('is_mojood', 1)))
-            ->select('*');
+            ->whereRaw('NOT EXISTS (SELECT 1 FROM etikets WHERE etikets.product_id = products.id AND etikets.is_mojood = 1)')
+            ->whereRaw('NOT EXISTS (SELECT 1 FROM products AS child JOIN etikets ON etikets.product_id = child.id AND etikets.is_mojood = 1 WHERE child.parent_id = products.id)')
+            ->select('products.*');
 
         // Get total records before applying filters
         $totalRecords = $query->count();
