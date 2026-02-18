@@ -45,6 +45,9 @@ class ProductController extends Controller
         $perPage = (int) ($request->get('per_page') ?? 12);
         $page = max(1, (int) $request->get('page', 1));
 
+        // When minPrice or maxPrice (or from_price/to_price) is present, only show products with at least one available etiket
+        $priceFilterActive = $fromPrice !== null || $toPrice !== null;
+
         // 1) Available products (current list – unchanged)
         $availableQuery = Product::query()
             ->with('children')
@@ -57,37 +60,46 @@ class ProductController extends Controller
             ->HasDiscount($request->hasDiscount);
         $availableCount = $availableQuery->count();
 
-        // 2) Unavailable products (cover image but no available etiket) – appended at the end
-        $unavailableQuery = Product::query()
-            ->with('children')
-            ->main()
-            ->categories($request->category_ids)
-            ->search($request->search)
-            ->hasCoverImage()
-            ->hasNoAvailableEtiket()
-            ->applyDefaultSort($sortType);
-        $unavailableCount = $unavailableQuery->count();
+        // 2) Unavailable products (cover image but no available etiket) – appended at the end (skip when price filter is active)
+        $unavailableCount = 0;
+        $unavailableQuery = null;
+        if (!$priceFilterActive) {
+            $unavailableQuery = Product::query()
+                ->with('children')
+                ->main()
+                ->categories($request->category_ids)
+                ->search($request->search)
+                ->hasCoverImage()
+                ->hasNoAvailableEtiket()
+                ->applyDefaultSort($sortType);
+            $unavailableCount = $unavailableQuery->count();
+        }
 
         $total = $availableCount + $unavailableCount;
         $offset = ($page - 1) * $perPage;
 
-        if ($offset < $availableCount) {
-            $takeAvailable = min($perPage, $availableCount - $offset);
-            $availableItems = $availableQuery->skip($offset)->take($takeAvailable)->get();
-            $needMore = $perPage - $availableItems->count();
-            $unavailableItems = $needMore > 0
-                ? $unavailableQuery->skip(0)->take($needMore)->get()
-                : new Collection;
+        if ($priceFilterActive) {
+            // Only available products: paginate the available query
+            $products = $availableQuery->paginate($perPage, ['*'], 'page', $page);
+            $products->appends($request->query());
         } else {
-            $availableItems = new Collection;
-            $unavailableItems = $unavailableQuery->skip($offset - $availableCount)->take($perPage)->get();
+            if ($offset < $availableCount) {
+                $takeAvailable = min($perPage, $availableCount - $offset);
+                $availableItems = $availableQuery->skip($offset)->take($takeAvailable)->get();
+                $needMore = $perPage - $availableItems->count();
+                $unavailableItems = $needMore > 0
+                    ? $unavailableQuery->skip(0)->take($needMore)->get()
+                    : new Collection;
+            } else {
+                $availableItems = new Collection;
+                $unavailableItems = $unavailableQuery->skip($offset - $availableCount)->take($perPage)->get();
+            }
+            $items = $availableItems->concat($unavailableItems);
+            $products = new LengthAwarePaginator($items, $total, $perPage, $page, [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]);
         }
-
-        $items = $availableItems->concat($unavailableItems);
-        $products = new LengthAwarePaginator($items, $total, $perPage, $page, [
-            'path' => $request->url(),
-            'query' => $request->query(),
-        ]);
 
         return new ProductListCollection($products, $user);
     }
