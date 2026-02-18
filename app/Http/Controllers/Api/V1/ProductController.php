@@ -25,15 +25,15 @@ class ProductController extends Controller
     {
         $user = $request->user('sanctum');
         
-        // Determine sort type
+        // Determine sort type (support price_dir / priceDir for legacy, and sort_by)
         $sortType = null;
         if ($request->has('random')) {
             $sortType = 'random';
-        } elseif ($request->price_dir) {
-            // Legacy support: map price_dir to new sort types
-            $sortType = $request->price_dir === 'asc' ? 'price_asc' : 'price_desc';
-        } elseif ($request->sort_by) {
-            // New parameter: sort_by can be: latest, oldest, price_asc, price_desc, name_asc, name_desc, random, most_favorite
+        } elseif ($request->filled('price_dir') || $request->filled('priceDir')) {
+            $dir = $request->input('price_dir') ?? $request->input('priceDir');
+            $sortType = strtolower((string) $dir) === 'asc' ? 'price_asc' : 'price_desc';
+        } elseif ($request->filled('sort_by')) {
+            // sort_by can be: latest, oldest, price_asc, price_desc, name_asc, name_desc, random, most_favorite
             $sortType = $request->sort_by;
         }
         
@@ -109,6 +109,11 @@ class ProductController extends Controller
         $sortType = null;
         if ($request->has('random')) {
             $sortType = 'random';
+        } elseif ($request->filled('price_dir') || $request->filled('priceDir')) {
+            $dir = $request->input('price_dir') ?? $request->input('priceDir');
+            $sortType = strtolower((string) $dir) === 'asc' ? 'price_asc' : 'price_desc';
+        } elseif ($request->filled('sort_by')) {
+            $sortType = $request->sort_by;
         }
 
         $perPage = (int) ($request->get('per_page') ?? 12);

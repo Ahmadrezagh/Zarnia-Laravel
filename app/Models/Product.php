@@ -266,12 +266,12 @@ class Product extends Model implements HasMedia
     public function scopeOrderByEffectivePrice($query, $direction = null)
     {
         $availableDirections = ['asc', 'desc'];
-        if($direction && in_array($direction, $availableDirections)){
-            // Order by minimum etiket price considering product's discount_percentage
-            // If product has parent, use parent's discount_percentage
+        if ($direction && in_array($direction, $availableDirections)) {
+            // Order by minimum etiket price (no product price column; use etikets only)
+            // For main products: min over own etikets + children's etikets, with discount
             return $query->leftJoin(\DB::raw('(
                 SELECT 
-                    e.product_id,
+                    COALESCE(parent.id, p.id) as product_id,
                     MIN(
                         CASE 
                             WHEN COALESCE(parent.discount_percentage, p.discount_percentage, 0) > 0 
@@ -283,9 +283,9 @@ class Product extends Model implements HasMedia
                 JOIN products p ON e.product_id = p.id
                 LEFT JOIN products parent ON p.parent_id = parent.id
                 WHERE e.is_mojood = 1
-                GROUP BY e.product_id
+                GROUP BY COALESCE(parent.id, p.id)
             ) as etiket_prices'), 'products.id', '=', 'etiket_prices.product_id')
-            ->orderBy('etiket_prices.min_price', $direction)
+            ->orderByRaw('(etiket_prices.min_price IS NULL), etiket_prices.min_price ' . $direction)
             ->select('products.*');
         }
         return $query;
@@ -1163,11 +1163,11 @@ class Product extends Model implements HasMedia
             case 'oldest':
                 return $query->orderBy('created_at', 'asc');
             case 'price_asc':
-                // Order by minimum etiket price considering discount_percentage
-                // If product has parent, use parent's discount_percentage
+                // Order by minimum etiket price (products have no price column; use etikets only)
+                // For main products: min over own etikets + children's etikets, with discount
                 return $query->leftJoin(\DB::raw('(
                     SELECT 
-                        e.product_id,
+                        COALESCE(parent.id, p.id) as product_id,
                         MIN(
                             CASE 
                                 WHEN COALESCE(parent.discount_percentage, p.discount_percentage, 0) > 0 
@@ -1179,16 +1179,16 @@ class Product extends Model implements HasMedia
                     JOIN products p ON e.product_id = p.id
                     LEFT JOIN products parent ON p.parent_id = parent.id
                     WHERE e.is_mojood = 1
-                    GROUP BY e.product_id
+                    GROUP BY COALESCE(parent.id, p.id)
                 ) as etiket_prices_asc'), 'products.id', '=', 'etiket_prices_asc.product_id')
-                ->orderBy('etiket_prices_asc.min_price', 'asc')
+                ->orderByRaw('(etiket_prices_asc.min_price IS NULL), etiket_prices_asc.min_price ASC')
                 ->select('products.*');
             case 'price_desc':
-                // Order by minimum etiket price considering discount_percentage
-                // If product has parent, use parent's discount_percentage
+                // Order by minimum etiket price (products have no price column; use etikets only)
+                // For main products: min over own etikets + children's etikets, with discount
                 return $query->leftJoin(\DB::raw('(
                     SELECT 
-                        e.product_id,
+                        COALESCE(parent.id, p.id) as product_id,
                         MIN(
                             CASE 
                                 WHEN COALESCE(parent.discount_percentage, p.discount_percentage, 0) > 0 
@@ -1200,9 +1200,9 @@ class Product extends Model implements HasMedia
                     JOIN products p ON e.product_id = p.id
                     LEFT JOIN products parent ON p.parent_id = parent.id
                     WHERE e.is_mojood = 1
-                    GROUP BY e.product_id
+                    GROUP BY COALESCE(parent.id, p.id)
                 ) as etiket_prices_desc'), 'products.id', '=', 'etiket_prices_desc.product_id')
-                ->orderBy('etiket_prices_desc.min_price', 'desc')
+                ->orderByRaw('(etiket_prices_desc.min_price IS NULL), etiket_prices_desc.min_price DESC')
                 ->select('products.*');
             case 'name_asc':
                 return $query->orderBy('name', 'asc');
