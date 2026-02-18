@@ -317,7 +317,142 @@ class EtiketController extends Controller
             'skipped' => $skipped
         ]);
     }
-    
+
+    /**
+     * Show add etiket to product form (select product then add etikets).
+     */
+    public function addToProductForm()
+    {
+        return view('admin.etikets.add_to_product');
+    }
+
+    /**
+     * Store etikets for a product from the add-to-product form (product_id, darsad_kharid, ojrat, etikets, orderable_etikets).
+     */
+    public function storeAddToProduct(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'darsad_kharid' => 'nullable|numeric|min:0',
+            'ojrat' => 'nullable|numeric|min:0',
+            'etikets' => 'nullable|array',
+            'etikets.*.count' => 'required_with:etikets|integer|min:1',
+            'etikets.*.weight' => 'required_with:etikets|numeric|min:0',
+            'orderable_etikets' => 'nullable|array',
+            'orderable_etikets.*.count' => 'required_with:orderable_etikets|integer|min:1',
+            'orderable_etikets.*.weight' => 'required_with:orderable_etikets|numeric|min:0',
+        ]);
+
+        $productModel = Product::findOrFail($request->product_id);
+
+        $hasRegular = $request->has('etikets') && is_array($request->etikets) && count(array_filter($request->etikets, function ($e) {
+            $w = (float)($e['weight'] ?? 0);
+            $c = (int)($e['count'] ?? 0);
+            return $w > 0 && $c > 0;
+        })) > 0;
+        $hasOrderable = $request->has('orderable_etikets') && is_array($request->orderable_etikets) && count(array_filter($request->orderable_etikets, function ($e) {
+            $w = (float)($e['weight'] ?? 0);
+            $c = (int)($e['count'] ?? 0);
+            return $w > 0 && $c > 0;
+        })) > 0;
+
+        if (!$hasRegular && !$hasOrderable) {
+            return redirect()->back()->withInput()->withErrors(['product_id' => 'حداقل یک اتیکت (عادی یا قابل فروش پس از اتمام موجودی) با وزن و تعداد معتبر وارد کنید.']);
+        }
+
+        // Update product percentages if provided
+        $updateData = [];
+        if ($request->has('darsad_kharid') && $request->darsad_kharid !== null && $request->darsad_kharid !== '') {
+            $updateData['darsad_kharid'] = $request->darsad_kharid;
+        }
+        if ($request->has('ojrat') && $request->ojrat !== null && $request->ojrat !== '') {
+            $updateData['ojrat'] = $request->ojrat;
+        }
+        if (!empty($updateData)) {
+            $productModel->update($updateData);
+            $productModel->refresh();
+        }
+
+        $etiketCodes = [];
+        $orderableEtiketCodes = [];
+        $created = 0;
+        $skipped = 0;
+        $existingNumeric = Etiket::whereRaw('code REGEXP \'^[0-9]+$\'')->pluck('code')->toArray();
+        $existingOrderable = Etiket::where('code', 'like', 's-%')->pluck('code')->toArray();
+
+        // Regular etikets
+        if ($hasRegular) {
+            foreach ($request->etikets as $etiketData) {
+                $count = (int)($etiketData['count'] ?? 1);
+                $weight = (float)($etiketData['weight'] ?? 0);
+                if ($count <= 0 || $weight <= 0) {
+                    $skipped += $count;
+                    continue;
+                }
+                for ($i = 0; $i < $count; $i++) {
+                    $etiketCode = $this->generateUniqueEtiketCode(array_merge($etiketCodes, $existingNumeric), '');
+                    if (Etiket::where('code', $etiketCode)->exists()) {
+                        $skipped++;
+                        continue;
+                    }
+                    $price = $this->calculateEtiketPrice($productModel, $weight);
+                    Etiket::create([
+                        'code' => $etiketCode,
+                        'name' => $productModel->name,
+                        'weight' => $weight,
+                        'price' => $price,
+                        'product_id' => $productModel->id,
+                        'ojrat' => $productModel->ojrat ?? null,
+                        'darsad_kharid' => $productModel->darsad_kharid ?? null,
+                        'is_mojood' => 1,
+                        'orderable_after_out_of_stock' => 0,
+                    ]);
+                    $etiketCodes[] = $etiketCode;
+                    $created++;
+                }
+            }
+        }
+
+        // Orderable etikets (s-xxxx)
+        if ($hasOrderable) {
+            foreach ($request->orderable_etikets as $etiketData) {
+                $count = (int)($etiketData['count'] ?? 1);
+                $weight = (float)($etiketData['weight'] ?? 0);
+                if ($count <= 0 || $weight <= 0) {
+                    $skipped += $count;
+                    continue;
+                }
+                for ($i = 0; $i < $count; $i++) {
+                    $etiketCode = $this->generateUniqueEtiketCode(array_merge($orderableEtiketCodes, $existingOrderable), 's');
+                    if (Etiket::where('code', $etiketCode)->exists()) {
+                        $skipped++;
+                        continue;
+                    }
+                    $price = $this->calculateEtiketPrice($productModel, $weight);
+                    Etiket::create([
+                        'code' => $etiketCode,
+                        'name' => $productModel->name,
+                        'weight' => $weight,
+                        'price' => $price,
+                        'product_id' => $productModel->id,
+                        'ojrat' => $productModel->ojrat ?? null,
+                        'darsad_kharid' => $productModel->darsad_kharid ?? null,
+                        'is_mojood' => 1,
+                        'orderable_after_out_of_stock' => 1,
+                    ]);
+                    $orderableEtiketCodes[] = $etiketCode;
+                    $created++;
+                }
+            }
+        }
+
+        $message = "تعداد {$created} اتیکت با موفقیت ایجاد شد";
+        if ($skipped > 0) {
+            $message .= " و {$skipped} اتیکت رد شد (تکراری یا خالی)";
+        }
+        return redirect()->route('etikets.add_to_product')->with('success', $message);
+    }
+
     /**
      * Generate unique etiket code in format: {prefix}-{number} or just {number}
      * @param array $existingCodes Existing codes in current batch

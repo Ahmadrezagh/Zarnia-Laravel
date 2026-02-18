@@ -121,7 +121,9 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('products/search-by-etiket', [ProductController::class, 'searchByEtiketCode'])->name('products.search.by.etiket');
         Route::get('products/{product}/assign-etiket', [EtiketController::class, 'assignEtiket'])->name('products.assign_etiket');
         Route::post('products/{product}/etikets', [EtiketController::class, 'storeForProduct'])->name('products.etikets.store');
-        
+        Route::get('etikets/add-to-product', [EtiketController::class, 'addToProductForm'])->name('etikets.add_to_product');
+        Route::post('etikets/add-to-product', [EtiketController::class, 'storeAddToProduct'])->name('etikets.add_to_product.store');
+
         Route::resource('products', ProductController::class );
         Route::get('products_deleted', [ProductController::class, 'deletedProducts'])->name('products.deleted');
         Route::any('table/products_deleted', [ProductController::class, 'deletedProductsTable'])->name('table.products.deleted');

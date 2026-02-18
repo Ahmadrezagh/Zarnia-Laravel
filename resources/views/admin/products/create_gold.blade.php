@@ -59,14 +59,14 @@
                             </div>
                             
                             <div class="form-group">
-                                <label for="parent-product" class="font-weight-bold">محصول والد (اختیاری)</label>
-                                <select name="parent_id" id="parent-product" class="form-control">
-                                    <option value="">-- انتخاب محصول والد --</option>
+                                <label for="import-product" class="font-weight-bold">ایمپورت محصول</label>
+                                <select name="import_product_id" id="import-product" class="form-control">
+                                    <option value="">-- انتخاب محصول برای بارگذاری داده‌ها --</option>
                                 </select>
-                                <small class="form-text text-muted">در صورت نیاز به ایجاد محصول زیرمجموعه، محصول والد را انتخاب کنید</small>
-                                <div id="parent-product-url" class="mt-2" style="display: none;">
-                                    <small class="text-muted">لینک محصول والد: </small>
-                                    <a href="#" id="parent-product-url-link" target="_blank" class="text-primary"></a>
+                                <small class="form-text text-muted">با انتخاب یک محصول موجود، داده‌های آن (نام، اجرت، اتیکت‌ها و...) در فرم بارگذاری می‌شود. مقدار این فیلد هنگام ذخیره ارسال نمی‌شود.</small>
+                                <div id="import-product-url" class="mt-2" style="display: none;">
+                                    <small class="text-muted">لینک محصول: </small>
+                                    <a href="#" id="import-product-url-link" target="_blank" class="text-primary"></a>
                                 </div>
                             </div>
                             
@@ -195,9 +195,9 @@
             width: '100%'
         });
         
-        // Initialize Select2 for parent product
-        $('#parent-product').select2({
-            placeholder: 'جستجو و انتخاب محصول والد',
+        // Initialize Select2 for import product
+        $('#import-product').select2({
+            placeholder: 'جستجو و انتخاب محصول برای ایمپورت',
             allowClear: true,
             width: '100%',
             minimumInputLength: 1,
@@ -255,19 +255,18 @@
             }
         });
 
-        // When parent product is selected, fill form with parent data
-        $('#parent-product').on('select2:select', function (e) {
-            const parentId = e.params.data.id;
-            if (parentId) {
-                loadParentProductData(parentId);
+        // When import product is selected, fill form with product data
+        $('#import-product').on('select2:select', function (e) {
+            const productId = e.params.data.id;
+            if (productId) {
+                loadImportProductData(productId);
             }
         });
 
-        // When parent product is cleared, optionally clear form or keep data
-        $('#parent-product').on('select2:clear', function (e) {
-            // Hide parent product URL
-            $('#parent-product-url').hide();
-            $('#parent-product-url-link').attr('href', '#').text('');
+        // When import product is cleared
+        $('#import-product').on('select2:clear', function (e) {
+            $('#import-product-url').hide();
+            $('#import-product-url-link').attr('href', '#').text('');
         });
         
         // Initialize image-uploader for gallery only
@@ -305,8 +304,8 @@
         // Start initialization
         setTimeout(initializeGalleryUploader, 100);
 
-        // Function to load parent product data and fill form
-        function loadParentProductData(productId) {
+        // Function to load import product data and fill form
+        function loadImportProductData(productId) {
             $.ajax({
                 url: '{{ route("products.index") }}/' + productId,
                 method: 'GET',
@@ -316,12 +315,12 @@
                 success: function(response) {
                     const product = response.data || response;
                     
-                    // Display parent product URL
+                    // Display import product URL
                     if (product.frontend_url) {
-                        $('#parent-product-url-link').attr('href', product.frontend_url).text(product.frontend_url);
-                        $('#parent-product-url').show();
+                        $('#import-product-url-link').attr('href', product.frontend_url).text(product.frontend_url);
+                        $('#import-product-url').show();
                     } else {
-                        $('#parent-product-url').hide();
+                        $('#import-product-url').hide();
                     }
                     
                     // Fill name
@@ -414,7 +413,7 @@
                     
                 },
                 error: function(xhr) {
-                    console.error('Error loading parent product data:', xhr);
+                    console.error('Error loading import product data:', xhr);
                 }
             });
         }

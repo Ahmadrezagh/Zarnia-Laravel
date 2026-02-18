@@ -369,6 +369,9 @@
                             <li class="nav-sub-item">
                                 <a class="nav-sub-link" href="{{route('etikets.deleted')}}">اتیکت‌های حذف شده</a>
                             </li>
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('etikets.add_to_product')}}">افزودن اتیکت به محصول</a>
+                            </li>
                         </ul>
                     </li>
                 @endif

@@ -2027,9 +2027,10 @@ class ProductController extends Controller
         $parentProductIds = collect();
 
         // First, search by product name - only main products (parent_id = null)
+        // products table no longer has price, discounted_price, weight
         $productsByName = Product::where('name', 'LIKE', "%{$query}%")
             ->whereNull('parent_id')
-            ->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
+            ->select('id', 'name', 'parent_id')
             ->distinct()
             ->limit(50)
             ->get();
@@ -2038,7 +2039,7 @@ class ProductController extends Controller
 
         // Also search by etiket code
         $etikets = \App\Models\Etiket::where('code', '=', $query)
-            ->with('product:id,parent_id,name,price,discounted_price,weight')
+            ->with('product:id,parent_id,name')
             ->get();
 
         foreach ($etikets as $etiket) {
@@ -2058,19 +2059,18 @@ class ProductController extends Controller
             }
         }
 
-        // Get unique parent products
+        // Get unique parent products (price/weight from accessors via etikets)
         $uniqueParentIds = $parentProductIds->unique()->take(50);
         
         $products = Product::whereIn('id', $uniqueParentIds)
-            ->select('id', 'name', 'price', 'discounted_price', 'weight', 'parent_id')
+            ->select('id', 'name', 'parent_id')
             ->get()
             ->map(function ($product) {
-                // Calculate counts for display (but don't filter by them)
                 $singleCount = $product->single_count;
                 $count = $product->count;
                 $finalPrice = (int) $product->price;
                 $originalPrice = (int) $product->originalPrice;
-                $discountedPrice = $product->discounted_price ? (int) $product->discounted_price : null;
+                $discountedPrice = $product->discounted_price !== null ? (int) $product->discounted_price : null;
 
                 return [
                     'id' => "Product:{$product->id}",
