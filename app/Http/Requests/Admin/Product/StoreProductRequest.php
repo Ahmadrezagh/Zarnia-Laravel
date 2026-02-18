@@ -51,14 +51,11 @@ class StoreProductRequest extends FormRequest
         
         // Add gold-related fields validation only if it's a gold product
         if (!$isNotGoldProduct) {
-            // Weight is only required if no etikets are provided (for regular gold product creation)
-            // If etikets or orderable_etikets are provided, weight comes from etiket cards
+            // Weight: optional when no etikets (create-gold can create product without weight; add etikets later)
             if (!$hasAnyEtikets) {
-                $rules['weight'] = 'required|numeric|min:0';
-            } else {
-                // Weight is not required when etikets are provided - it will be calculated from etiket weights
                 $rules['weight'] = 'nullable|numeric|min:0';
-                // Require at least one etiket with weight when etikets are provided
+            } else {
+                $rules['weight'] = 'nullable|numeric|min:0';
                 if ($hasEtikets) {
                     $rules['etikets'] = 'required|array|min:1';
                     $rules['etikets.*.weight'] = 'required_with:etikets|numeric|min:0';
@@ -68,8 +65,9 @@ class StoreProductRequest extends FormRequest
                     $rules['orderable_etikets.*.weight'] = 'required_with:orderable_etikets|numeric|min:0';
                 }
             }
-            $rules['darsad_kharid'] = 'required|numeric|min:0|max:100';
-            $rules['ojrat'] = 'required|numeric|min:0|max:100';
+            // darsad_kharid and ojrat optional (can be set later via "افزودن اتیکت به محصول")
+            $rules['darsad_kharid'] = 'nullable|numeric|min:0|max:100';
+            $rules['ojrat'] = 'nullable|numeric|min:0|max:100';
         }
         
         return $rules;

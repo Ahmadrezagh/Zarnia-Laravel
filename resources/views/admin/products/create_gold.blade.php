@@ -63,29 +63,10 @@
                                 <select name="import_product_id" id="import-product" class="form-control">
                                     <option value="">-- انتخاب محصول برای بارگذاری داده‌ها --</option>
                                 </select>
-                                <small class="form-text text-muted">با انتخاب یک محصول موجود، داده‌های آن (نام، اجرت، اتیکت‌ها و...) در فرم بارگذاری می‌شود. مقدار این فیلد هنگام ذخیره ارسال نمی‌شود.</small>
+                                <small class="form-text text-muted">با انتخاب یک محصول موجود، داده‌های آن (نام و...) در فرم بارگذاری می‌شود. مقدار این فیلد هنگام ذخیره ارسال نمی‌شود.</small>
                                 <div id="import-product-url" class="mt-2" style="display: none;">
                                     <small class="text-muted">لینک محصول: </small>
                                     <a href="#" id="import-product-url-link" target="_blank" class="text-primary"></a>
-                                </div>
-                            </div>
-                            
-                            <div id="gold-product-fields">
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="darsad-kharid" class="font-weight-bold">اجرت خرید (%) <span class="text-danger">*</span></label>
-                                            <input type="number" class="form-control" id="darsad-kharid" step="0.01" placeholder="درصد اجرت خرید" required>
-                                            <input type="hidden" name="darsad_kharid" id="darsad-kharid-hidden">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="ojrat" class="font-weight-bold">اجرت فروش (%) <span class="text-danger">*</span></label>
-                                            <input type="number" class="form-control" id="ojrat" step="0.01" placeholder="درصد اجرت فروش" required>
-                                            <input type="hidden" name="ojrat" id="ojrat-hidden">
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                             
@@ -121,40 +102,6 @@
                                 <label for="product-description" class="font-weight-bold">توضیحات</label>
                                 <textarea class="form-control" id="product-description" name="description" rows="3" placeholder="توضیحات محصول"></textarea>
                             </div>
-                            
-                            <!-- Etikets Sections (Side by Side) -->
-                            <div class="form-group mt-4">
-                                <div class="row">
-
-                                    <!-- Orderable After Out of Stock Etikets Section -->
-                                    <div class="col-md-6">
-                                        <label class="font-weight-bold">اتیکت‌های قابل فروش پس از اتمام موجودی</label>
-                                        <div id="orderable-etikets-list" class="border rounded p-3" style="width: 100%; min-height: 400px; height: auto; overflow-y: visible; border-color: #ffc107;">
-                                            <div class="row" id="orderable-etikets-row">
-                                                <p class="text-muted text-center mb-0 col-12">هیچ اتیکتی اضافه نشده است</p>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-warning mt-2" onclick="addOrderableEtiket()">
-                                            <i class="fas fa-plus"></i> افزودن اتیکت قابل فروش پس از اتمام موجودی
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- Regular Etikets Section -->
-                                    <div class="col-md-6">
-                                        <label class="font-weight-bold">اتیکت‌ها</label>
-                                        <div id="etikets-list" class="border rounded p-3" style="width: 100%; min-height: 400px; height: auto; overflow-y: visible;">
-                                            <div class="row" id="etikets-row">
-                                                <p class="text-muted text-center mb-0 col-12">هیچ اتیکتی اضافه نشده است</p>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-info mt-2" onclick="addEtiket()">
-                                            <i class="fas fa-plus"></i> افزودن اتیکت
-                                        </button>
-                                    </div>
-                                    
-                                    
-                                </div>
-                            </div>
                         <div>
     </div>
                     </div>
@@ -176,18 +123,7 @@
 
 @push('scripts')
 <script>
-    let etiketCounter = 0;
-    let orderableEtiketCounter = 0;
-    let goldPrice = 0;
-
-    // Fetch gold price on page load
     $(document).ready(function() {
-        // Get gold price from PHP setting
-        goldPrice = parseFloat('{{ (float) setting("gold_price") ?? 0 }}') || 0;
-        window.goldPrice = goldPrice;
-        
-        console.log('Gold price loaded:', goldPrice);
-
         // Initialize Select2 for categories
         $('#product-categories').select2({
             placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
@@ -328,22 +264,6 @@
                         $('#product-name').val(product.name);
                     }
                     
-                    // Fill darsad_kharid (execution purchase percentage)
-                    // Allow 0 as a valid value, so only check for null/undefined
-                    if (product.darsad_kharid !== null && product.darsad_kharid !== undefined) {
-                        $('#darsad-kharid').val(product.darsad_kharid);
-                        $('#darsad-kharid-hidden').val(product.darsad_kharid);
-                        $('#darsad-kharid').trigger('change');
-                    }
-                    
-                    // Fill ojrat (execution sale percentage)
-                    // Allow 0 as a valid value, so only check for null/undefined
-                    if (product.ojrat !== null && product.ojrat !== undefined) {
-                        $('#ojrat').val(product.ojrat);
-                        $('#ojrat-hidden').val(product.ojrat);
-                        $('#ojrat').trigger('change');
-                    }
-                    
                     // Fill discount_percentage
                     if (product.discount_percentage !== null && product.discount_percentage !== undefined) {
                         $('#discount-percentage').val(product.discount_percentage);
@@ -435,83 +355,7 @@
                 $('#product-categories').next('.invalid-feedback').remove();
             }
             
-            // Validate darsad_kharid (required)
-            const darsadKharid = $('#darsad-kharid').val();
-            const darsadKharidNum = parseFloat(darsadKharid);
-            if (darsadKharid === '' || darsadKharid === null || darsadKharid === undefined || isNaN(darsadKharidNum) || darsadKharidNum < 0) {
-                $('#darsad-kharid').addClass('is-invalid');
-                $('#darsad-kharid').next('.invalid-feedback').remove();
-                $('#darsad-kharid').after('<div class="invalid-feedback">اجرت خرید الزامی است</div>');
-                return false;
-            } else {
-                $('#darsad-kharid').removeClass('is-invalid');
-                $('#darsad-kharid').next('.invalid-feedback').remove();
-            }
-            
-            // Validate ojrat (required)
-            const ojrat = $('#ojrat').val();
-            const ojratNum = parseFloat(ojrat);
-            if (ojrat === '' || ojrat === null || ojrat === undefined || isNaN(ojratNum) || ojratNum < 0) {
-                $('#ojrat').addClass('is-invalid');
-                $('#ojrat').next('.invalid-feedback').remove();
-                $('#ojrat').after('<div class="invalid-feedback">اجرت فروش الزامی است</div>');
-                return false;
-            } else {
-                $('#ojrat').removeClass('is-invalid');
-                $('#ojrat').next('.invalid-feedback').remove();
-            }
-            
-            // Validate at least one etiket exists in either section
-            const etiketCount = $('#etikets-row .etiket-item').length;
-            const orderableEtiketCount = $('#orderable-etikets-row .etiket-item').length;
-            if (etiketCount === 0 && orderableEtiketCount === 0) {
-                alert('حداقل یک اتیکت باید در بخش "اتیکت‌ها" یا "اتیکت‌های قابل فروش پس از اتمام موجودی" اضافه شود');
-                return false;
-            }
-            
-            // Validate each etiket has weight (regular etikets)
-            let hasInvalidEtiket = false;
-            $('#etikets-row .etiket-item').each(function() {
-                const $etiketItem = $(this);
-                const weight = parseFloat($etiketItem.find('.etiket-weight-input').val()) || 0;
-                if (weight <= 0) {
-                    hasInvalidEtiket = true;
-                    $etiketItem.find('.etiket-weight-input').addClass('is-invalid');
-                    return false; // break
-                } else {
-                    $etiketItem.find('.etiket-weight-input').removeClass('is-invalid');
-                }
-            });
-            
-            // Validate each orderable etiket has weight
-            $('#orderable-etikets-row .etiket-item').each(function() {
-                const $etiketItem = $(this);
-                const weight = parseFloat($etiketItem.find('.etiket-weight-input').val()) || 0;
-                if (weight <= 0) {
-                    hasInvalidEtiket = true;
-                    $etiketItem.find('.etiket-weight-input').addClass('is-invalid');
-                    return false; // break
-                } else {
-                    $etiketItem.find('.etiket-weight-input').removeClass('is-invalid');
-                }
-            });
-            
-            if (hasInvalidEtiket) {
-                alert('تمام اتیکت‌ها باید وزن داشته باشند');
-                return false;
-            }
-            
             const formData = new FormData();
-            
-            // Sync numeric values to hidden inputs before submission
-            const darsadKharidVal = $('#darsad-kharid').val();
-            const ojratVal = $('#ojrat').val();
-            if (darsadKharidVal !== '' && darsadKharidVal !== null && darsadKharidVal !== undefined) {
-                $('#darsad-kharid-hidden').val(darsadKharidVal);
-            }
-            if (ojratVal !== '' && ojratVal !== null && ojratVal !== undefined) {
-                $('#ojrat-hidden').val(ojratVal);
-            }
             
             // Add all form fields except files
             $(this).find('input:not([type="file"]), select, textarea').each(function() {
@@ -526,17 +370,9 @@
                             formData.append(name, $field.val());
                         }
                     } else if (type !== 'file') {
-                        // For hidden inputs with numeric values, always include them (even if 0)
-                        if (type === 'hidden' && (name === 'darsad_kharid' || name === 'ojrat')) {
-                            const val = $field.val();
-                            if (val !== '' && val !== null && val !== undefined) {
-                                formData.append(name, val);
-                        }
-                    } else if (type !== 'file') {
                         // Always include required fields, even if empty
                         if (isRequired || $field.val()) {
                             formData.append(name, $field.val() || '');
-                            }
                         }
                     }
                 }
@@ -684,220 +520,6 @@
             }
         }
     };
-
-    // Add etiket
-    function addEtiket() {
-        etiketCounter++;
-        const etiketHtml = '<div class="col-md-3 mb-3">' +
-            '<div class="card etiket-item h-100" data-index="' + etiketCounter + '">' +
-                '<div class="card-header d-flex justify-content-between align-items-center bg-light">' +
-                    '<h6 class="mb-0">اتیکت ' + etiketCounter + '</h6>' +
-                    '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')">' +
-                        '<i class="fas fa-times"></i>' +
-                    '</button>' +
-                '</div>' +
-                '<div class="card-body">' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">تعداد</label>' +
-                        '<input type="number" class="form-control etiket-count-input" name="etikets[' + etiketCounter + '][count]" placeholder="تعداد" min="1" value="1" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">وزن (گرم)</label>' +
-                        '<input type="number" class="form-control etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')" onkeypress="handleWeightEnter(event, ' + etiketCounter + ')">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">قیمت (تومان)</label>' +
-                        '<input type="number" class="form-control etiket-price-input" name="etikets[' + etiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + etiketCounter + '">' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-        '</div>';
-        
-        if ($('#etikets-row p.text-muted').length > 0) {
-            $('#etikets-row').html('');
-        }
-        $('#etikets-row').append(etiketHtml);
-        
-        // Calculate price if weight and ojrat are available
-        setTimeout(function() {
-            calculateEtiketPrice(etiketCounter);
-        }, 100);
-        
-        // Return the new index for focusing
-        return etiketCounter;
-    }
-    
-    // Handle Enter key press in weight field
-    function handleWeightEnter(event, currentIndex) {
-        if (event.which === 13 || event.keyCode === 13) {
-            event.preventDefault();
-            // Add new etiket card
-            const newIndex = addEtiket();
-            // Focus on the weight field of the new card
-            setTimeout(function() {
-                $('.etiket-weight-input[data-index="' + newIndex + '"]').focus();
-            }, 100);
-        }
-    }
-    
-    // Remove etiket
-    function removeEtiket(index) {
-        const etiketItem = $('.etiket-item[data-index="' + index + '"]').closest('.col-md-3');
-        etiketItem.remove();
-        if ($('#etikets-row .etiket-item').length === 0) {
-            $('#etikets-row').html('<p class="text-muted text-center mb-0 col-12">هیچ اتیکتی اضافه نشده است</p>');
-        }
-    }
-
-    // Calculate etiket price based on weight and ojrat
-    function calculateEtiketPrice(index, isOrderable) {
-        const selector = isOrderable ? '#orderable-etikets-row' : '#etikets-row';
-        const $etiketItem = $(selector + ' .etiket-item[data-index="' + index + '"]');
-        const weight = parseFloat($etiketItem.find('.etiket-weight-input').val()) || 0;
-        const ojrat = parseFloat($('#ojrat').val()) || 0;
-        const $priceInput = $etiketItem.find('.etiket-price-input');
-        
-        // Get gold price from global variable or setting
-        let currentGoldPrice = goldPrice || window.goldPrice || parseFloat('{{ (float) setting("gold_price") ?? 0 }}') || 0;
-        
-        console.log('Calculating price for etiket', index, {
-            weight: weight,
-            ojrat: ojrat,
-            goldPrice: currentGoldPrice,
-            isOrderable: isOrderable
-        });
-        
-        if (weight > 0 && currentGoldPrice > 0 && ojrat > 0) {
-            // Formula: price = weight * (goldPrice * 1.01) * (1 + (ojrat / 100))
-            const adjustedGoldPrice = currentGoldPrice * 1.01;
-            let calculatedPrice = weight * adjustedGoldPrice * (1 + (ojrat / 100));
-            
-            // Round down to nearest thousand (last three digits become 0)
-            calculatedPrice = Math.floor(calculatedPrice / 1000) * 1000;
-            
-            // Update price field
-            $priceInput.val(calculatedPrice);
-            console.log('Price calculated:', calculatedPrice);
-        } else {
-            // Clear price if required fields are missing
-            $priceInput.val('');
-            if (weight === 0) {
-                console.log('Weight is 0');
-            }
-            if (currentGoldPrice === 0) {
-                console.log('Gold price is 0');
-            }
-            if (ojrat === 0) {
-                console.log('Ojrat is 0');
-            }
-        }
-    }
-
-    // Sync numeric values to hidden inputs when they change
-    $(document).on('input change', '#darsad-kharid', function() {
-        const val = $(this).val();
-        if (val !== '' && val !== null && val !== undefined) {
-            $('#darsad-kharid-hidden').val(val);
-        }
-    });
-    
-    // Recalculate all etiket prices when ojrat changes and sync to hidden input
-    $(document).on('input change', '#ojrat', function() {
-        const val = $(this).val();
-        if (val !== '' && val !== null && val !== undefined) {
-            $('#ojrat-hidden').val(val);
-        }
-        
-        $('#etikets-row .etiket-item').each(function() {
-            const index = $(this).data('index');
-            if (index) {
-                calculateEtiketPrice(index, false);
-            }
-        });
-        $('#orderable-etikets-row .etiket-item').each(function() {
-            const index = $(this).data('index');
-            if (index) {
-                calculateEtiketPrice(index, true);
-            }
-        });
-    });
-    
-    // Use event delegation for weight and count inputs in dynamically added cards
-    $(document).on('input change', '.etiket-weight-input:not([data-orderable]), .etiket-count-input:not([data-orderable])', function() {
-        const index = $(this).data('index');
-        if (index) {
-            calculateEtiketPrice(index, false);
-        }
-    });
-    
-    // Use event delegation for orderable etiket weight and count inputs
-    $(document).on('input change', '.etiket-weight-input[data-orderable="true"], .etiket-count-input[data-orderable="true"]', function() {
-        const index = $(this).data('index');
-        if (index) {
-            calculateEtiketPrice(index, true);
-        }
-    });
-    
-    // Add orderable etiket (orderable after out of stock)
-    function addOrderableEtiket() {
-        orderableEtiketCounter++;
-        const etiketHtml = '<div class="col-md-3 mb-3">' +
-            '<div class="card etiket-item h-100" data-index="' + orderableEtiketCounter + '" style="border-color: #ffc107;">' +
-                '<div class="card-header d-flex justify-content-between align-items-center" style="background-color: #fff3cd;">' +
-                    '<h6 class="mb-0">اتیکت قابل فروش ' + orderableEtiketCounter + '</h6>' +
-                    '<button type="button" class="btn btn-sm btn-danger" onclick="removeOrderableEtiket(' + orderableEtiketCounter + ')">' +
-                        '<i class="fas fa-times"></i>' +
-                    '</button>' +
-                '</div>' +
-                '<div class="card-body">' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">تعداد</label>' +
-                        '<input type="number" class="form-control etiket-count-input" name="orderable_etikets[' + orderableEtiketCounter + '][count]" placeholder="تعداد" min="1" value="1" data-index="' + orderableEtiketCounter + '" data-orderable="true" onchange="calculateEtiketPrice(' + orderableEtiketCounter + ', true)">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">وزن (گرم)</label>' +
-                        '<input type="number" class="form-control etiket-weight-input" name="orderable_etikets[' + orderableEtiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + orderableEtiketCounter + '" data-orderable="true" onchange="calculateEtiketPrice(' + orderableEtiketCounter + ', true)" oninput="calculateEtiketPrice(' + orderableEtiketCounter + ', true)" onkeypress="handleOrderableWeightEnter(event, ' + orderableEtiketCounter + ')">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">قیمت (تومان)</label>' +
-                        '<input type="number" class="form-control etiket-price-input" name="orderable_etikets[' + orderableEtiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + orderableEtiketCounter + '" data-orderable="true">' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-        '</div>';
-        
-        if ($('#orderable-etikets-row p.text-muted').length > 0) {
-            $('#orderable-etikets-row').html('');
-        }
-        $('#orderable-etikets-row').append(etiketHtml);
-        
-        // Calculate price if weight and ojrat are available
-        setTimeout(function() {
-            calculateEtiketPrice(orderableEtiketCounter, true);
-        }, 100);
-        
-        return orderableEtiketCounter;
-    }
-    
-    // Handle Enter key press in orderable weight field
-    function handleOrderableWeightEnter(event, currentIndex) {
-        if (event.which === 13 || event.keyCode === 13) {
-            event.preventDefault();
-            const newIndex = addOrderableEtiket();
-            setTimeout(function() {
-                $('.etiket-weight-input[data-index="' + newIndex + '"][data-orderable="true"]').focus();
-            }, 100);
-        }
-    }
-    
-    // Remove orderable etiket
-    function removeOrderableEtiket(index) {
-        const etiketItem = $('#orderable-etikets-row .etiket-item[data-index="' + index + '"]').closest('.col-md-3');
-        etiketItem.remove();
-        if ($('#orderable-etikets-row .etiket-item').length === 0) {
-            $('#orderable-etikets-row').html('<p class="text-muted text-center mb-0 col-12">هیچ اتیکتی اضافه نشده است</p>');
-        }
-    }
 </script>
 @endpush
 
