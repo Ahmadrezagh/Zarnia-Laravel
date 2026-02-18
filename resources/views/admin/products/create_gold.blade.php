@@ -93,8 +93,8 @@
                                 <small class="form-text text-muted">حداقل یک دسته بندی باید انتخاب شود</small>
                             </div>
 
-                            <div class="form-group">
-                                <label for="attribute-group" class="font-weight-bold">گروه ویژگی</label>
+                            <div id="attribute-group-wrapper" class="form-group" style="display: none;">
+                                <label for="attribute-group" id="attribute-group-label" class="font-weight-bold">گروه ویژگی</label>
                                 <input type="text" class="form-control" id="attribute-group" name="attribute_group" placeholder="نام گروه ویژگی را وارد کنید">
                             </div>
                             
@@ -130,6 +130,51 @@
             allowClear: true,
             width: '100%'
         });
+
+        // Show/hide گروه ویژگی based on selected categories; label/placeholder = attribute name(s) e.g. ارتفاع
+        function toggleAttributeGroupByCategories() {
+            var categoryIds = $('#product-categories').val();
+            if (!categoryIds || categoryIds.length === 0) {
+                $('#attribute-group-wrapper').hide();
+                $('#attribute-group-label').text('گروه ویژگی');
+                $('#attribute-group').attr('placeholder', 'نام گروه ویژگی را وارد کنید');
+                return;
+            }
+            $.ajax({
+                url: '{{ route("load_attribute_group") }}',
+                method: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    category_ids: categoryIds,
+                    get_attribute_groups: 1
+                },
+                success: function(response) {
+                    var attributes = response.attributes || [];
+                    var hasAttributes = Array.isArray(attributes) && attributes.length > 0;
+                    if (hasAttributes) {
+                        var names = attributes.map(function(a) { return a.name || ''; }).filter(Boolean);
+                        var labelText = names.length > 0 ? names.join('، ') : 'گروه ویژگی';
+                        var placeholderText = names.length > 0 ? (names.length === 1 ? 'مقدار ' + names[0] + ' را وارد کنید' : 'مقدار را وارد کنید') : 'نام گروه ویژگی را وارد کنید';
+                        $('#attribute-group-label').text(labelText);
+                        $('#attribute-group').attr('placeholder', placeholderText);
+                        $('#attribute-group-wrapper').show();
+                    } else {
+                        $('#attribute-group-wrapper').hide();
+                        $('#attribute-group').val('');
+                        $('#attribute-group-label').text('گروه ویژگی');
+                        $('#attribute-group').attr('placeholder', 'نام گروه ویژگی را وارد کنید');
+                    }
+                },
+                error: function() {
+                    $('#attribute-group-wrapper').hide();
+                    $('#attribute-group-label').text('گروه ویژگی');
+                    $('#attribute-group').attr('placeholder', 'نام گروه ویژگی را وارد کنید');
+                }
+            });
+        }
+        $('#product-categories').on('change', toggleAttributeGroupByCategories);
+        // Run once on load in case categories are pre-selected
+        toggleAttributeGroupByCategories();
         
         // Initialize Select2 for import product
         $('#import-product').select2({
