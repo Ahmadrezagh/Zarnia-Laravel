@@ -525,7 +525,10 @@ class ProductController extends Controller
         $product = Product::query()->findOrFail($id);
         $validated = $request->validated();
         $validated['discount_percentage'] = $request->input('discount_percentage') ?? 0;
-        
+
+        // Products table no longer has price/discounted_price; remove if present to avoid SQL error
+        unset($validated['discounted_price'], $validated['price']);
+
         $product->update($validated);
         
         // Apply discount_percentage to children if checkbox is checked
@@ -2332,9 +2335,14 @@ class ProductController extends Controller
 
     /**
      * Calculate and update discounted price.
+     * No-op if products.discounted_price column was dropped (price now from etikets).
      */
     private function updateDiscountedPrice(Product $product)
     {
+        if (!Schema::hasColumn('products', 'discounted_price')) {
+            return;
+        }
+
         // Get raw price value (stored multiplied by 10) and discount percentage
         $rawPrice = $product->getRawOriginal('price');
         

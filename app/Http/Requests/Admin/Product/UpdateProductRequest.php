@@ -32,7 +32,6 @@ class UpdateProductRequest extends FormRequest
             'meta_keywords' => 'nullable|string',
             'canonical_url' => 'nullable|url',
             'description' => 'nullable|string',
-            'discounted_price' => 'nullable|numeric',
             'categories' => 'nullable',
             'cover_image' => 'nullable',
             'gallery' => 'nullable',
