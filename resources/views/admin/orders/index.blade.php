@@ -533,8 +533,28 @@
         }
 
         function modalEdit(id){
-            const dModal = $("#modal-edit-"+id)
-            dModal.modal("show")
+            let dModal = $("#modal-edit-"+id);
+            if (dModal.length === 0) {
+                // Modal not in DOM (e.g. order on page 2+); load via AJAX
+                const editModalUrl = "{{ route('admin_orders.edit_modal', ['order' => '__ID__']) }}".replace('__ID__', id);
+                $.get(editModalUrl, function(html) {
+                    $('body').append(html);
+                    dModal = $("#modal-edit-"+id);
+                    dModal.modal("show");
+                    // Remove modal from DOM after hide so we can load fresh if opened again
+                    dModal.one('hidden.bs.modal', function() {
+                        $(this).remove();
+                    });
+                }).fail(function() {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('خطا در بارگذاری فرم ویرایش');
+                    } else {
+                        alert('خطا در بارگذاری فرم ویرایش');
+                    }
+                });
+                return;
+            }
+            dModal.modal("show");
         }
 
         function modalDestroy(id){
@@ -781,62 +801,62 @@
     </script>
 
     <script>
+        // شی برای ذخیره تغییرات همه سفارش‌ها (دسترسی از طریق event delegation)
+        window.orderEditUpdates = window.orderEditUpdates || {};
+
         document.addEventListener("DOMContentLoaded", function () {
-            // شی برای ذخیره تغییرات همه سفارش‌ها
-            // مثلا: { 12: { 45: 2, 46: 0 }, 13: { 77: 1 } }
-            let updates = {};
+            // دکمه کاهش (event delegation برای کار در مودال‌های لود شده با AJAX)
+            document.addEventListener("click", function (e) {
+                const btn = e.target.closest(".decrease-count");
+                if (!btn) return;
+                e.preventDefault();
+                let row = btn.closest("tr");
+                let orderId = btn.dataset.orderId;
+                let itemId = row.dataset.id;
+                let countEl = row.querySelector(".item-count");
+                let count = parseInt(countEl.innerText, 10);
 
-            // دکمه کاهش
-            document.querySelectorAll(".decrease-count").forEach(btn => {
-                btn.addEventListener("click", function () {
-                    let row = this.closest("tr");
-                    let orderId = this.dataset.orderId;
-                    let itemId = row.dataset.id;
-                    let countEl = row.querySelector(".item-count");
-                    let count = parseInt(countEl.innerText);
-
-                    count--;
-
-                    if (count <= 0) {
-                        row.remove();
-                        updates[orderId] = updates[orderId] || {};
-                        updates[orderId][itemId] = 0; // حذف
-                    } else {
-                        countEl.innerText = count;
-                        updates[orderId] = updates[orderId] || {};
-                        updates[orderId][itemId] = count;
-                    }
-                });
-            });
-
-            // دکمه حذف مستقیم
-            document.querySelectorAll(".delete-item").forEach(btn => {
-                btn.addEventListener("click", function () {
-                    let row = this.closest("tr");
-                    let orderId = this.dataset.orderId;
-                    let itemId = row.dataset.id;
-
+                count--;
+                if (count <= 0) {
                     row.remove();
-                    updates[orderId] = updates[orderId] || {};
-                    updates[orderId][itemId] = 0; // حذف
-                });
+                    window.orderEditUpdates[orderId] = window.orderEditUpdates[orderId] || {};
+                    window.orderEditUpdates[orderId][itemId] = 0;
+                } else {
+                    countEl.innerText = count;
+                    window.orderEditUpdates[orderId] = window.orderEditUpdates[orderId] || {};
+                    window.orderEditUpdates[orderId][itemId] = count;
+                }
             });
 
-            // هندل همه فرم‌ها → قبل از submit آپدیت‌ها رو تو hidden بریزیم
-            document.querySelectorAll("form").forEach(form => {
-                form.addEventListener("submit", function () {
-                    let orderId = form.querySelector("[name='id']").value;
-                    let hiddenInput = form.querySelector(`#updated-items-${orderId}`);
-
-                    if (hiddenInput) {
-                        let payload = {
-                            order_id: orderId,
-                            items: updates[orderId] || {}
-                        };
-                        hiddenInput.value = JSON.stringify(payload);
-                    }
-                });
+            // دکمه حذف مستقیم (event delegation)
+            document.addEventListener("click", function (e) {
+                const btn = e.target.closest(".delete-item");
+                if (!btn) return;
+                e.preventDefault();
+                let row = btn.closest("tr");
+                let orderId = btn.dataset.orderId;
+                let itemId = row.dataset.id;
+                row.remove();
+                window.orderEditUpdates[orderId] = window.orderEditUpdates[orderId] || {};
+                window.orderEditUpdates[orderId][itemId] = 0;
             });
+
+            // قبل از submit آپدیت‌ها را در hidden بریز (event delegation برای فرم‌های داخل مودال)
+            document.addEventListener("submit", function (e) {
+                const form = e.target.closest ? e.target.closest("form") : e.target;
+                if (!form || !form.matches || !form.matches("form.ajax-form")) return;
+                let orderIdInput = form.querySelector("[name='id']");
+                if (!orderIdInput) return;
+                let orderId = orderIdInput.value;
+                let hiddenInput = form.querySelector("#updated-items-" + orderId);
+                if (hiddenInput) {
+                    let payload = {
+                        order_id: orderId,
+                        items: window.orderEditUpdates[orderId] || {}
+                    };
+                    hiddenInput.value = JSON.stringify(payload);
+                }
+            }, true);
         });
     </script>
 

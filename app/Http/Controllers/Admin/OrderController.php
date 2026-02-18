@@ -345,6 +345,15 @@ class OrderController extends Controller
     }
 
     /**
+     * Return the edit modal HTML for an order (for AJAX load when modal not in DOM, e.g. paginated table).
+     */
+    public function editModal(Order $order)
+    {
+        $order->load(['orderItems.product', 'user', 'address', 'shipping', 'gateway', 'shippingTime']);
+        return view('admin.orders.partials.edit_modal', compact('order'))->render();
+    }
+
+    /**
      * Update the specified resource in storage.
      */
     public function update(AdminUpdateOrderRequest $request, $order)
