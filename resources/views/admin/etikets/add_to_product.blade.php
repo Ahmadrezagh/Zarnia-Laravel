@@ -57,7 +57,7 @@
                     <div class="form-group mt-4">
                         <div class="row">
                             <!-- Orderable After Out of Stock Etikets Section -->
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="font-weight-bold">اتیکت‌های قابل فروش پس از اتمام موجودی</label>
                                 <div id="orderable-etikets-list" class="border rounded p-3" style="width: 100%; min-height: 400px; height: auto; overflow-y: visible; border-color: #ffc107;">
                                     <div class="row" id="orderable-etikets-row">
@@ -70,7 +70,7 @@
                             </div>
 
                             <!-- Regular Etikets Section -->
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="font-weight-bold">اتیکت‌ها</label>
                                 <div id="etikets-list" class="border rounded p-3" style="width: 100%; min-height: 400px; height: auto; overflow-y: visible;">
                                     <div class="row" id="etikets-row">
@@ -182,32 +182,53 @@
     }
 
     function addEtiket() {
-        etiketCounter++;
-        const etiketHtml = '<div class="col-md-3 mb-3">' +
-            '<div class="card etiket-item h-100" data-index="' + etiketCounter + '">' +
-                '<div class="card-header d-flex justify-content-between align-items-center bg-light">' +
-                    '<h6 class="mb-0">اتیکت ' + etiketCounter + '</h6>' +
-                    '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')"><i class="fas fa-times"></i></button>' +
-                '</div>' +
-                '<div class="card-body">' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">تعداد</label>' +
-                        '<input type="number" class="form-control etiket-count-input" name="etikets[' + etiketCounter + '][count]" placeholder="تعداد" min="1" value="1" data-index="' + etiketCounter + '">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">وزن (گرم)</label>' +
-                        '<input type="number" class="form-control etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">قیمت (تومان)</label>' +
-                        '<input type="number" class="form-control etiket-price-input" name="etikets[' + etiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + etiketCounter + '">' +
-                    '</div>' +
-                '</div>' +
-            '</div></div>';
-        if ($('#etikets-row p.text-muted').length > 0) $('#etikets-row').html('');
-        $('#etikets-row').append(etiketHtml);
-        setTimeout(function() { calculateEtiketPrice(etiketCounter, false); }, 100);
-        return etiketCounter;
+        var countStr = prompt('تعداد اتیکت\u200cهای مورد نیاز را وارد کنید:', '1');
+        if (countStr === null || countStr === '') return;
+        var count = parseInt(countStr, 10);
+        if (isNaN(count) || count < 1) {
+            alert('لطفاً یک عدد معتبر (حداقل ۱) وارد کنید.');
+            return;
+        }
+        var weightStr = prompt('وزن (گرم) را وارد کنید:', '');
+        if (weightStr === null) return;
+        var weightVal = parseFloat(weightStr);
+        if (isNaN(weightVal) || weightVal < 0) {
+            alert('لطفاً وزن معتبر وارد کنید.');
+            return;
+        }
+        var pending = $('#etikets-row .etiket-item').length;
+        $.get('{{ route("etikets.next_numbers") }}', { pending_regular: pending }, function(res) {
+            var start = res.regular_start || 7000;
+            if ($('#etikets-row p.text-muted').length > 0) $('#etikets-row').html('');
+            for (var i = 0; i < count; i++) {
+                etiketCounter++;
+                var num = start + i;
+                var etiketHtml = '<div class="col-md-3 mb-3">' +
+                    '<div class="card etiket-item h-100" data-index="' + etiketCounter + '">' +
+                        '<div class="card-header d-flex justify-content-between align-items-center bg-light">' +
+                            '<button type="button" class="btn btn-sm btn-danger" onclick="removeEtiket(' + etiketCounter + ')"><i class="fas fa-times"></i></button>' +
+                        '</div>' +
+                        '<div class="card-body">' +
+                            '<div class="form-group">' +
+                                '<label class="small font-weight-bold">شماره اتیکت</label>' +
+                                '<input type="text" class="form-control etiket-code-input" name="etikets[' + etiketCounter + '][code]" placeholder="شماره" value="' + num + '" data-index="' + etiketCounter + '">' +
+                            '</div>' +
+                            '<div class="form-group">' +
+                                '<label class="small font-weight-bold">وزن (گرم)</label>' +
+                                '<input type="number" class="form-control etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" value="' + (weightVal > 0 ? weightVal : '') + '" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')">' +
+                            '</div>' +
+                            '<div class="form-group">' +
+                                '<label class="small font-weight-bold">قیمت (تومان)</label>' +
+                                '<input type="number" class="form-control etiket-price-input" name="etikets[' + etiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + etiketCounter + '">' +
+                            '</div>' +
+                        '</div>' +
+                    '</div></div>';
+                $('#etikets-row').append(etiketHtml);
+                setTimeout(function() { calculateEtiketPrice(etiketCounter, false); }, 50 * (i + 1));
+            }
+        }).fail(function() {
+            alert('خطا در دریافت شماره\u200cهای اتیکت.');
+        });
     }
 
     function removeEtiket(index) {
@@ -218,32 +239,53 @@
     }
 
     function addOrderableEtiket() {
-        orderableEtiketCounter++;
-        const etiketHtml = '<div class="col-md-3 mb-3">' +
-            '<div class="card etiket-item h-100" data-index="' + orderableEtiketCounter + '" style="border-color: #ffc107;">' +
-                '<div class="card-header d-flex justify-content-between align-items-center" style="background-color: #fff3cd;">' +
-                    '<h6 class="mb-0">اتیکت قابل فروش ' + orderableEtiketCounter + '</h6>' +
-                    '<button type="button" class="btn btn-sm btn-danger" onclick="removeOrderableEtiket(' + orderableEtiketCounter + ')"><i class="fas fa-times"></i></button>' +
-                '</div>' +
-                '<div class="card-body">' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">تعداد</label>' +
-                        '<input type="number" class="form-control etiket-count-input" name="orderable_etikets[' + orderableEtiketCounter + '][count]" placeholder="تعداد" min="1" value="1" data-index="' + orderableEtiketCounter + '" data-orderable="true">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">وزن (گرم)</label>' +
-                        '<input type="number" class="form-control etiket-weight-input" name="orderable_etikets[' + orderableEtiketCounter + '][weight]" placeholder="وزن" step="0.01" data-index="' + orderableEtiketCounter + '" data-orderable="true" onchange="calculateEtiketPrice(' + orderableEtiketCounter + ', true)" oninput="calculateEtiketPrice(' + orderableEtiketCounter + ', true)">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label class="small font-weight-bold">قیمت (تومان)</label>' +
-                        '<input type="number" class="form-control etiket-price-input" name="orderable_etikets[' + orderableEtiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + orderableEtiketCounter + '" data-orderable="true">' +
-                    '</div>' +
-                '</div>' +
-            '</div></div>';
-        if ($('#orderable-etikets-row p.text-muted').length > 0) $('#orderable-etikets-row').html('');
-        $('#orderable-etikets-row').append(etiketHtml);
-        setTimeout(function() { calculateEtiketPrice(orderableEtiketCounter, true); }, 100);
-        return orderableEtiketCounter;
+        var countStr = prompt('تعداد اتیکت\u200cهای قابل فروش پس از اتمام موجودی را وارد کنید:', '1');
+        if (countStr === null || countStr === '') return;
+        var count = parseInt(countStr, 10);
+        if (isNaN(count) || count < 1) {
+            alert('لطفاً یک عدد معتبر (حداقل ۱) وارد کنید.');
+            return;
+        }
+        var weightStr = prompt('وزن (گرم) را وارد کنید:', '');
+        if (weightStr === null) return;
+        var weightVal = parseFloat(weightStr);
+        if (isNaN(weightVal) || weightVal < 0) {
+            alert('لطفاً وزن معتبر وارد کنید.');
+            return;
+        }
+        var pending = $('#orderable-etikets-row .etiket-item').length;
+        $.get('{{ route("etikets.next_numbers") }}', { pending_orderable: pending }, function(res) {
+            var start = res.orderable_start || 7000;
+            if ($('#orderable-etikets-row p.text-muted').length > 0) $('#orderable-etikets-row').html('');
+            for (var i = 0; i < count; i++) {
+                orderableEtiketCounter++;
+                var num = 's-' + (start + i);
+                var etiketHtml = '<div class="col-md-3 mb-3">' +
+                    '<div class="card etiket-item h-100" data-index="' + orderableEtiketCounter + '" style="border-color: #ffc107;">' +
+                        '<div class="card-header d-flex justify-content-between align-items-center" style="background-color: #fff3cd;">' +
+                            '<button type="button" class="btn btn-sm btn-danger" onclick="removeOrderableEtiket(' + orderableEtiketCounter + ')"><i class="fas fa-times"></i></button>' +
+                        '</div>' +
+                        '<div class="card-body">' +
+                            '<div class="form-group">' +
+                                '<label class="small font-weight-bold">شماره اتیکت</label>' +
+                                '<input type="text" class="form-control etiket-code-input" name="orderable_etikets[' + orderableEtiketCounter + '][code]" placeholder="شماره (مثال: s-7000)" value="' + num + '" data-index="' + orderableEtiketCounter + '" data-orderable="true">' +
+                            '</div>' +
+                            '<div class="form-group">' +
+                                '<label class="small font-weight-bold">وزن (گرم)</label>' +
+                                '<input type="number" class="form-control etiket-weight-input" name="orderable_etikets[' + orderableEtiketCounter + '][weight]" placeholder="وزن" step="0.01" value="' + (weightVal > 0 ? weightVal : '') + '" data-index="' + orderableEtiketCounter + '" data-orderable="true" onchange="calculateEtiketPrice(' + orderableEtiketCounter + ', true)" oninput="calculateEtiketPrice(' + orderableEtiketCounter + ', true)">' +
+                            '</div>' +
+                            '<div class="form-group">' +
+                                '<label class="small font-weight-bold">قیمت (تومان)</label>' +
+                                '<input type="number" class="form-control etiket-price-input" name="orderable_etikets[' + orderableEtiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + orderableEtiketCounter + '" data-orderable="true">' +
+                            '</div>' +
+                        '</div>' +
+                    '</div></div>';
+                $('#orderable-etikets-row').append(etiketHtml);
+                setTimeout(function() { calculateEtiketPrice(orderableEtiketCounter, true); }, 50 * (i + 1));
+            }
+        }).fail(function() {
+            alert('خطا در دریافت شماره\u200cهای اتیکت.');
+        });
     }
 
     function removeOrderableEtiket(index) {

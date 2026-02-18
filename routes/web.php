@@ -123,6 +123,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::post('products/{product}/etikets', [EtiketController::class, 'storeForProduct'])->name('products.etikets.store');
         Route::get('etikets/add-to-product', [EtiketController::class, 'addToProductForm'])->name('etikets.add_to_product');
         Route::post('etikets/add-to-product', [EtiketController::class, 'storeAddToProduct'])->name('etikets.add_to_product.store');
+        Route::get('etikets/next-numbers', [EtiketController::class, 'nextEtiketNumbers'])->name('etikets.next_numbers');
 
         Route::resource('products', ProductController::class );
         Route::get('products_deleted', [ProductController::class, 'deletedProducts'])->name('products.deleted');

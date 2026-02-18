@@ -336,10 +336,10 @@ class EtiketController extends Controller
             'darsad_kharid' => 'nullable|numeric|min:0',
             'ojrat' => 'nullable|numeric|min:0',
             'etikets' => 'nullable|array',
-            'etikets.*.count' => 'required_with:etikets|integer|min:1',
+            'etikets.*.code' => 'nullable|string|max:64',
             'etikets.*.weight' => 'required_with:etikets|numeric|min:0',
             'orderable_etikets' => 'nullable|array',
-            'orderable_etikets.*.count' => 'required_with:orderable_etikets|integer|min:1',
+            'orderable_etikets.*.code' => 'nullable|string|max:64',
             'orderable_etikets.*.weight' => 'required_with:orderable_etikets|numeric|min:0',
         ]);
 
@@ -347,17 +347,15 @@ class EtiketController extends Controller
 
         $hasRegular = $request->has('etikets') && is_array($request->etikets) && count(array_filter($request->etikets, function ($e) {
             $w = (float)($e['weight'] ?? 0);
-            $c = (int)($e['count'] ?? 0);
-            return $w > 0 && $c > 0;
+            return $w > 0;
         })) > 0;
         $hasOrderable = $request->has('orderable_etikets') && is_array($request->orderable_etikets) && count(array_filter($request->orderable_etikets, function ($e) {
             $w = (float)($e['weight'] ?? 0);
-            $c = (int)($e['count'] ?? 0);
-            return $w > 0 && $c > 0;
+            return $w > 0;
         })) > 0;
 
         if (!$hasRegular && !$hasOrderable) {
-            return redirect()->back()->withInput()->withErrors(['product_id' => 'حداقل یک اتیکت (عادی یا قابل فروش پس از اتمام موجودی) با وزن و تعداد معتبر وارد کنید.']);
+            return redirect()->back()->withInput()->withErrors(['product_id' => 'حداقل یک اتیکت (عادی یا قابل فروش پس از اتمام موجودی) با وزن معتبر وارد کنید.']);
         }
 
         // Update product percentages if provided
@@ -380,69 +378,75 @@ class EtiketController extends Controller
         $existingNumeric = Etiket::whereRaw('code REGEXP \'^[0-9]+$\'')->pluck('code')->toArray();
         $existingOrderable = Etiket::where('code', 'like', 's-%')->pluck('code')->toArray();
 
-        // Regular etikets
+        // Regular etikets (one per row; code from form or generated)
         if ($hasRegular) {
             foreach ($request->etikets as $etiketData) {
-                $count = (int)($etiketData['count'] ?? 1);
                 $weight = (float)($etiketData['weight'] ?? 0);
-                if ($count <= 0 || $weight <= 0) {
-                    $skipped += $count;
+                if ($weight <= 0) {
+                    $skipped++;
                     continue;
                 }
-                for ($i = 0; $i < $count; $i++) {
+                $codeInput = trim((string)($etiketData['code'] ?? ''));
+                if ($codeInput !== '' && preg_match('/^\d+$/', $codeInput)) {
+                    $etiketCode = $codeInput;
+                } else {
                     $etiketCode = $this->generateUniqueEtiketCode(array_merge($etiketCodes, $existingNumeric), '');
-                    if (Etiket::where('code', $etiketCode)->exists()) {
-                        $skipped++;
-                        continue;
-                    }
-                    $price = $this->calculateEtiketPrice($productModel, $weight);
-                    Etiket::create([
-                        'code' => $etiketCode,
-                        'name' => $productModel->name,
-                        'weight' => $weight,
-                        'price' => $price,
-                        'product_id' => $productModel->id,
-                        'ojrat' => $productModel->ojrat ?? null,
-                        'darsad_kharid' => $productModel->darsad_kharid ?? null,
-                        'is_mojood' => 1,
-                        'orderable_after_out_of_stock' => 0,
-                    ]);
-                    $etiketCodes[] = $etiketCode;
-                    $created++;
                 }
+                if (Etiket::where('code', $etiketCode)->exists()) {
+                    $skipped++;
+                    continue;
+                }
+                $price = $this->calculateEtiketPrice($productModel, $weight);
+                Etiket::create([
+                    'code' => $etiketCode,
+                    'name' => $productModel->name,
+                    'weight' => $weight,
+                    'price' => $price,
+                    'product_id' => $productModel->id,
+                    'ojrat' => $productModel->ojrat ?? null,
+                    'darsad_kharid' => $productModel->darsad_kharid ?? null,
+                    'is_mojood' => 1,
+                    'orderable_after_out_of_stock' => 0,
+                ]);
+                $etiketCodes[] = $etiketCode;
+                $existingNumeric[] = $etiketCode;
+                $created++;
             }
         }
 
-        // Orderable etikets (s-xxxx)
+        // Orderable etikets (s-xxxx, one per row; code from form or generated)
         if ($hasOrderable) {
             foreach ($request->orderable_etikets as $etiketData) {
-                $count = (int)($etiketData['count'] ?? 1);
                 $weight = (float)($etiketData['weight'] ?? 0);
-                if ($count <= 0 || $weight <= 0) {
-                    $skipped += $count;
+                if ($weight <= 0) {
+                    $skipped++;
                     continue;
                 }
-                for ($i = 0; $i < $count; $i++) {
+                $codeInput = trim((string)($etiketData['code'] ?? ''));
+                if ($codeInput !== '' && preg_match('/^s-\d+$/', $codeInput)) {
+                    $etiketCode = $codeInput;
+                } else {
                     $etiketCode = $this->generateUniqueEtiketCode(array_merge($orderableEtiketCodes, $existingOrderable), 's');
-                    if (Etiket::where('code', $etiketCode)->exists()) {
-                        $skipped++;
-                        continue;
-                    }
-                    $price = $this->calculateEtiketPrice($productModel, $weight);
-                    Etiket::create([
-                        'code' => $etiketCode,
-                        'name' => $productModel->name,
-                        'weight' => $weight,
-                        'price' => $price,
-                        'product_id' => $productModel->id,
-                        'ojrat' => $productModel->ojrat ?? null,
-                        'darsad_kharid' => $productModel->darsad_kharid ?? null,
-                        'is_mojood' => 1,
-                        'orderable_after_out_of_stock' => 1,
-                    ]);
-                    $orderableEtiketCodes[] = $etiketCode;
-                    $created++;
                 }
+                if (Etiket::where('code', $etiketCode)->exists()) {
+                    $skipped++;
+                    continue;
+                }
+                $price = $this->calculateEtiketPrice($productModel, $weight);
+                Etiket::create([
+                    'code' => $etiketCode,
+                    'name' => $productModel->name,
+                    'weight' => $weight,
+                    'price' => $price,
+                    'product_id' => $productModel->id,
+                    'ojrat' => $productModel->ojrat ?? null,
+                    'darsad_kharid' => $productModel->darsad_kharid ?? null,
+                    'is_mojood' => 1,
+                    'orderable_after_out_of_stock' => 1,
+                ]);
+                $orderableEtiketCodes[] = $etiketCode;
+                $existingOrderable[] = $etiketCode;
+                $created++;
             }
         }
 
@@ -451,6 +455,33 @@ class EtiketController extends Controller
             $message .= " و {$skipped} اتیکت رد شد (تکراری یا خالی)";
         }
         return redirect()->route('etikets.add_to_product')->with('success', $message);
+    }
+
+    /**
+     * Return next etiket number(s) for add-to-product form (from DB max + 1, plus optional pending).
+     * Query params: pending_regular=0, pending_orderable=0
+     */
+    public function nextEtiketNumbers(Request $request)
+    {
+        $pendingRegular = (int) $request->get('pending_regular', 0);
+        $pendingOrderable = (int) $request->get('pending_orderable', 0);
+        return response()->json([
+            'regular_start' => $this->getNextEtiketNumber('', $pendingRegular),
+            'orderable_start' => $this->getNextEtiketNumber('s', $pendingOrderable),
+        ]);
+    }
+
+    /**
+     * Get next starting number for etiket codes. Uses latest etiket id + 1 so numbers follow id (e.g. 15474 after id 15473).
+     * @param string $prefix '' for regular numeric, 's' for orderable (s-XXXX)
+     * @param int $pending Number of cards already added in form (offset)
+     */
+    private function getNextEtiketNumber(string $prefix, int $pending = 0): int
+    {
+        $startNumber = 7000;
+        $maxId = (int) Etiket::max('id');
+        $nextFromId = $maxId + 1 + $pending;
+        return max($nextFromId, $startNumber);
     }
 
     /**
@@ -509,11 +540,15 @@ class EtiketController extends Controller
             }
         }
         
-        // Generate next code
-        $nextNumber = max($highestNumber + 1, $startNumber);
+        // Use latest etiket id + 1 so new codes follow id (e.g. 15474 after id 15473); avoid using stray high code values
+        $maxId = (int) Etiket::max('id');
+        $nextFromId = $maxId + 1;
+        $nextFromCodes = max($highestNumber + 1, $startNumber);
+        // If code-based next is unreasonably high (e.g. 33333333335), use id-based next instead
+        $nextNumber = $nextFromCodes <= $nextFromId ? $nextFromCodes : $nextFromId;
         return $prefix ? $prefix . '-' . $nextNumber : (string)$nextNumber;
     }
-    
+
     /**
      * Calculate etiket price based on product and weight
      */
