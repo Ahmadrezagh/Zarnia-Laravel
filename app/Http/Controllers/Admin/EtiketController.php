@@ -350,18 +350,20 @@ class EtiketController extends Controller
         $productModel = Product::findOrFail($request->product_id);
         $isNoneGold = ($productModel->type ?? 'gold') === 'none_gold';
 
-        $hasRegular = $request->has('etikets') && is_array($request->etikets) && count(array_filter($request->etikets, function ($e) use ($isNoneGold) {
-            if ($isNoneGold) {
-                return true;
-            }
-            return (float)($e['weight'] ?? 0) > 0;
-        })) > 0;
-        $hasOrderable = $request->has('orderable_etikets') && is_array($request->orderable_etikets) && count(array_filter($request->orderable_etikets, function ($e) use ($isNoneGold) {
-            if ($isNoneGold) {
-                return true;
-            }
-            return (float)($e['weight'] ?? 0) > 0;
-        })) > 0;
+        $etiketsList         = $request->input('etikets', []);
+        $orderableEtiketsList = $request->input('orderable_etikets', []);
+
+        if ($isNoneGold) {
+            $hasRegular   = is_array($etiketsList) && count($etiketsList) > 0;
+            $hasOrderable = is_array($orderableEtiketsList) && count($orderableEtiketsList) > 0;
+        } else {
+            $hasRegular = is_array($etiketsList) && count(array_filter($etiketsList, function ($e) {
+                return (float)($e['weight'] ?? 0) > 0;
+            })) > 0;
+            $hasOrderable = is_array($orderableEtiketsList) && count(array_filter($orderableEtiketsList, function ($e) {
+                return (float)($e['weight'] ?? 0) > 0;
+            })) > 0;
+        }
 
         if (!$hasRegular && !$hasOrderable) {
             return redirect()->back()->withInput()->withErrors(['product_id' => 'حداقل یک اتیکت (عادی یا قابل فروش پس از اتمام موجودی) با وزن معتبر وارد کنید.']);
@@ -386,7 +388,7 @@ class EtiketController extends Controller
 
         // Regular etikets (one per row; code from form or generated)
         if ($hasRegular) {
-            foreach ($request->etikets as $key => $etiketData) {
+            foreach ($etiketsList as $key => $etiketData) {
                 $weight = $isNoneGold ? 0 : (float)($etiketData['weight'] ?? 0);
                 if (!$isNoneGold && $weight <= 0) {
                     $skipped++;
@@ -427,7 +429,7 @@ class EtiketController extends Controller
 
         // Orderable etikets (s-xxxx, one per row; code from form or generated)
         if ($hasOrderable) {
-            foreach ($request->orderable_etikets as $key => $etiketData) {
+            foreach ($orderableEtiketsList as $key => $etiketData) {
                 $weight = $isNoneGold ? 0 : (float)($etiketData['weight'] ?? 0);
                 if (!$isNoneGold && $weight <= 0) {
                     $skipped++;
