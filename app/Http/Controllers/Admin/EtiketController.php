@@ -387,7 +387,7 @@ class EtiketController extends Controller
         // Regular etikets (one per row; code from form or generated)
         if ($hasRegular) {
             foreach ($request->etikets as $etiketData) {
-                $weight = (float)($etiketData['weight'] ?? 0);
+                $weight = $isNoneGold ? 0 : (float)($etiketData['weight'] ?? 0);
                 if (!$isNoneGold && $weight <= 0) {
                     $skipped++;
                     continue;
@@ -425,7 +425,7 @@ class EtiketController extends Controller
         // Orderable etikets (s-xxxx, one per row; code from form or generated)
         if ($hasOrderable) {
             foreach ($request->orderable_etikets as $etiketData) {
-                $weight = (float)($etiketData['weight'] ?? 0);
+                $weight = $isNoneGold ? 0 : (float)($etiketData['weight'] ?? 0);
                 if (!$isNoneGold && $weight <= 0) {
                     $skipped++;
                     continue;
