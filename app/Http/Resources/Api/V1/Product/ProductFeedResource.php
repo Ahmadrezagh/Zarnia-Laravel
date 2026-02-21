@@ -43,6 +43,13 @@ class ProductFeedResource extends JsonResource
         if ($imageUrl === asset('img/no_image.jpg')) {
             $imageUrl = null;
         }
+
+        // Get gallery images
+        $galleryUrls = $this->getMedia('gallery')->map(fn($media) => $media->getUrl())->values()->toArray();
+        if ($imageUrl && !in_array($imageUrl, $galleryUrls)) {
+            array_unshift($galleryUrls, $imageUrl);
+        }
+        $imageLink = !empty($galleryUrls) ? $galleryUrls : ($imageUrl ? [$imageUrl] : []);
         
         // Get minimum available price (minimum weight price) like single product resource
         $minimumPrice = $this->minimum_available_price ?? ($this->getRawOriginal('price') / 10);
@@ -81,16 +88,19 @@ class ProductFeedResource extends JsonResource
             'title' => $this->name,
             'subtitle' => $this->meta_description ?? strip_tags($this->description ?? ''),
             'link' => $baseUrl . '/products/' . $this->slug,
-            'image_link' => $imageUrl,
+            'image_link' => $imageLink,
             'availability' => $availability,
             'regular_price' => (int) $regularPrice,
             'sale_price' => (int) $salePrice,
             'category' => $category,
             'description' => !empty($description) ? $description : null,
-            'brand' => $brand,
         ];
         
         // Add optional fields if they exist
+        if ($brand) {
+            $result['brand'] = $brand;
+        }
+        
         if ($gtin) {
             $result['GTIN'] = $gtin;
         }
