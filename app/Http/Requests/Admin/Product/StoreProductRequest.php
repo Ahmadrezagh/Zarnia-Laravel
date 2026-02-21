@@ -28,11 +28,11 @@ class StoreProductRequest extends FormRequest
         
         $rules = [
             'name' => 'required|string|max:255',
-            'price' => $isNotGoldProduct ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+            'price' => $isNotGoldProduct ? 'nullable|numeric|min:0' : 'nullable|numeric|min:0',
             'parent_id' => 'nullable|integer|exists:products,id',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'description' => 'nullable|string',
-            'category_ids' => 'required|array|min:1',
+            'category_ids' => $isNotGoldProduct ? 'nullable|array' : 'required|array|min:1',
             'category_ids.*' => 'integer|exists:categories,id',
             'attribute_group' => 'nullable|string|max:255',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
