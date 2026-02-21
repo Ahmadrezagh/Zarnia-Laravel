@@ -424,8 +424,10 @@
     });
 
     $('#add-etiket-form').on('submit', function() {
-        const hasRegular = $('#etikets-row .etiket-item').length > 0 && $('#etikets-row .etiket-weight-input').filter(function() { return parseFloat($(this).val()) > 0; }).length > 0;
-        const hasOrderable = $('#orderable-etikets-row .etiket-item').length > 0 && $('#orderable-etikets-row .etiket-weight-input').filter(function() { return parseFloat($(this).val()) > 0; }).length > 0;
+        const hasRegular   = $('#etikets-row .etiket-item').length > 0 &&
+            (isNoneGoldProduct || $('#etikets-row .etiket-weight-input').filter(function() { return parseFloat($(this).val()) > 0; }).length > 0);
+        const hasOrderable = $('#orderable-etikets-row .etiket-item').length > 0 &&
+            (isNoneGoldProduct || $('#orderable-etikets-row .etiket-weight-input').filter(function() { return parseFloat($(this).val()) > 0; }).length > 0);
         if (!hasRegular && !hasOrderable) {
             alert('حداقل یک اتیکت (عادی یا قابل فروش پس از اتمام موجودی) با وزن معتبر اضافه کنید.');
             return false;
