@@ -113,7 +113,7 @@ class ProductItemResouce extends JsonResource
                                     'id' => $etiket->id,
                                     'code' => $etiket->code,
                                     'weight' => $etiket->weight,
-                                    'price' => $etiket->price,
+                                    'price' => $etiket->price / 10,
                                     'orderable_after_out_of_stock' => $etiket->orderable_after_out_of_stock ?? false,
                                     'is_reserved' => $isReserved,
                                     'available' => $available,
