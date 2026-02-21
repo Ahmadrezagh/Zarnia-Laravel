@@ -388,8 +388,8 @@ class Order extends Model
     {
         $sum = 0;
         foreach ($this->orderItems as $orderItem) {
-            if ($orderItem->product && $orderItem->etiketItem) {
-                $sum = $sum + ($orderItem->etiketItem->darsad_vazn_foroosh ?? 0);
+            if ($orderItem->etiketItem) {
+                $sum = $sum + ($orderItem->etiketItem->ojrat ?? 0);
             }
         }
         return $sum;
