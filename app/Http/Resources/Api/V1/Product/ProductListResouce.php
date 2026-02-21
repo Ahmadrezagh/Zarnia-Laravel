@@ -46,6 +46,17 @@ class ProductListResouce extends JsonResource
             ->where('orderable_after_out_of_stock', 1)
             ->count();
 
+        // fast_delivery: true if at least one available etiket has a numeric code,
+        // but false if ALL available etiket codes start with "s-"
+        $availableEtiketCodes = $product->etikets()
+            ->where('is_mojood', 1)
+            ->pluck('code');
+
+        $hasNumericCode = $availableEtiketCodes->contains(fn($code) => is_numeric($code));
+        $allStartWithS = $availableEtiketCodes->isNotEmpty() && $availableEtiketCodes->every(fn($code) => str_starts_with((string) $code, 's-'));
+
+        $fast_delivery = $hasNumericCode && !$allStartWithS;
+
         // Availability: product has at least one available etiket (is_mojood=1), or has a child with at least one
         $hasOwnAvailableEtiket = $product->etikets()->where('is_mojood', 1)->exists();
         if ($hasOwnAvailableEtiket) {
@@ -76,6 +87,7 @@ class ProductListResouce extends JsonResource
             'availability' => $availability,
             'available_count' => $this->count,
             'available_count_orderable_after_out_of_stock' => $availableCountOrderableAfterOutOfStock,
+            'fast_delivery' => $fast_delivery,
         ];
     }
 }
