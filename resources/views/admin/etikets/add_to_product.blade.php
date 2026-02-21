@@ -38,6 +38,10 @@
                                     <option value="">-- انتخاب محصول --</option>
                                 </select>
                             </div>
+                            <div id="product-cover-preview" class="mt-2" style="display:none;">
+                                <img id="product-cover-img" src="" alt="تصویر محصول"
+                                     style="max-height:160px; max-width:160px; border-radius:8px; border:1px solid #dee2e6; object-fit:cover;">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
@@ -153,6 +157,11 @@
             const productId = e.params.data.id;
             if (productId) loadProductData(productId);
         });
+
+        $('#product-select').on('select2:clear', function () {
+            $('#product-cover-preview').hide();
+            $('#product-cover-img').attr('src', '');
+        });
     });
 
     function loadProductData(productId) {
@@ -168,6 +177,12 @@
                 }
                 if (product.ojrat !== null && product.ojrat !== undefined) {
                     $('#ojrat').val(product.ojrat);
+                }
+                if (product.image) {
+                    $('#product-cover-img').attr('src', product.image);
+                    $('#product-cover-preview').show();
+                } else {
+                    $('#product-cover-preview').hide();
                 }
                 $('#etikets-row .etiket-item').each(function() {
                     const index = $(this).data('index');
