@@ -2235,25 +2235,26 @@ class ProductController extends Controller
                 ]);
             }
             
-            // Get product price (stored multiplied by 10)
-            $rawPrice = $product->getRawOriginal('price') ?? 0;
-            $basePrice = $rawPrice / 10;
-            $discountedPrice = $product->discounted_price ?? null;
-            $originalPrice = $product->originalPrice ?? null;
+            // Price comes from the etiket (product price column was removed)
+            $basePrice      = $etiket->price / 10;          // effective price (after discount if any)
+            $originalPrice  = $etiket->original_price / 10; // raw stored price before discount
+            $discountedPrice = $etiket->discounted_price     // null when no discount applies
+                ? (int) $etiket->discounted_price
+                : null;
 
-        return response()->json([
-            'success' => true,
-                'exists' => true,
+            return response()->json([
+                'success' => true,
+                'exists'  => true,
                 'message' => 'این کد اتیکت در پایگاه داده موجود است',
-            'product' => [
-                'id' => $product->id,
-                'name' => $product->name,
-                    'price' => (int) $basePrice,
-                    'discounted_price' => $discountedPrice ? (int) $discountedPrice : null,
-                    'original_price' => $originalPrice ? (int) $originalPrice : null,
-                    'weight' => $product->weight ?? null,
-                'etiket_code' => $etiketCode
-            ]
+                'product' => [
+                    'id'               => $product->id,
+                    'name'             => $product->name,
+                    'price'            => (int) $basePrice,
+                    'discounted_price' => $discountedPrice,
+                    'original_price'   => (int) $originalPrice,
+                    'weight'           => $etiket->weight ?? $product->weight ?? null,
+                    'etiket_code'      => $etiketCode,
+                ]
             ]);
         }
 
