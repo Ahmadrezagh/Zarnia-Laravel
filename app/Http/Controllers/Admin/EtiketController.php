@@ -352,13 +352,13 @@ class EtiketController extends Controller
 
         $hasRegular = $request->has('etikets') && is_array($request->etikets) && count(array_filter($request->etikets, function ($e) use ($isNoneGold) {
             if ($isNoneGold) {
-                return isset($e['code']) || isset($e['price']);
+                return true;
             }
             return (float)($e['weight'] ?? 0) > 0;
         })) > 0;
         $hasOrderable = $request->has('orderable_etikets') && is_array($request->orderable_etikets) && count(array_filter($request->orderable_etikets, function ($e) use ($isNoneGold) {
             if ($isNoneGold) {
-                return isset($e['code']) || isset($e['price']);
+                return true;
             }
             return (float)($e['weight'] ?? 0) > 0;
         })) > 0;
