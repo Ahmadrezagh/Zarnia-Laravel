@@ -152,13 +152,14 @@
 
                             foreach ($order->orderItems as $item) {
                                 if ($item->product) {
-                                    $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
+                                    $etiket = $item->etiketItem;
+                                    $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                                     $itemAmount = floatval($item->price) * intval($item->count);
                                     
-                                    $darsadKharid = floatval($item->product->darsad_kharid ?? 0);
+                                    $darsadKharid = floatval($etiket->darsad_kharid ?? $item->product->darsad_kharid ?? 0);
                                     $purchaseCommissionGrams = ($itemWeight * $darsadKharid) / 100;
                                     
-                                    $ojrat = floatval($item->product->ojrat ?? 0);
+                                    $ojrat = floatval($etiket->ojrat ?? $item->product->ojrat ?? 0);
                                     
                                     $orderWeight += $itemWeight;
                                     $orderAmount += $itemAmount;

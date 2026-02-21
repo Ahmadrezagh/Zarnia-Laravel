@@ -19,7 +19,7 @@ class GoldSummaryController extends Controller
     public function index(Request $request)
     {
         // Build base query with date filters
-        $query = Order::with(['orderItems.product', 'gateway'])
+        $query = Order::with(['orderItems.product', 'orderItems.etiketItem', 'gateway'])
             ->whereIn('status', self::VALID_STATUSES);
 
         // Apply date filters if provided
@@ -54,13 +54,14 @@ class GoldSummaryController extends Controller
             
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
-                    $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
+                    $etiket = $item->etiketItem;
+                    $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                     $itemAmount = floatval($item->price) * intval($item->count);
                     
-                    $darsadKharid = floatval($item->product->darsad_kharid ?? 0);
+                    $darsadKharid = floatval($etiket->darsad_kharid ?? $item->product->darsad_kharid ?? 0);
                     $purchaseCommissionGrams = ($itemWeight * $darsadKharid) / 100;
                     
-                    $ojrat = floatval($item->product->ojrat ?? 0);
+                    $ojrat = floatval($etiket->ojrat ?? $item->product->ojrat ?? 0);
                     
                     // Calculate discount: price - discounted_price
                     $originalPrice = floatval($item->product->getRawOriginal('price') ?? 0) / 10;
@@ -111,13 +112,14 @@ class GoldSummaryController extends Controller
             
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
-                    $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
+                    $etiket = $item->etiketItem;
+                    $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                     $itemAmount = floatval($item->price) * intval($item->count);
                     
-                    $darsadKharid = floatval($item->product->darsad_kharid ?? 0);
+                    $darsadKharid = floatval($etiket->darsad_kharid ?? $item->product->darsad_kharid ?? 0);
                     $purchaseCommissionGrams = ($itemWeight * $darsadKharid) / 100;
                     
-                    $ojrat = floatval($item->product->ojrat ?? 0);
+                    $ojrat = floatval($etiket->ojrat ?? $item->product->ojrat ?? 0);
                     
                     // Calculate discount: price - discounted_price
                     $originalPrice = floatval($item->product->getRawOriginal('price') ?? 0) / 10;
@@ -185,7 +187,7 @@ class GoldSummaryController extends Controller
     public function table(Request $request)
     {
         // Build base query with status filter
-        $query = Order::with(['orderItems.product'])
+        $query = Order::with(['orderItems.product', 'orderItems.etiketItem'])
             ->whereIn('status', self::VALID_STATUSES)
             ->orderBy('created_at', 'asc');
 
@@ -201,7 +203,6 @@ class GoldSummaryController extends Controller
         // Get total count before pagination
         $totalRecords = $query->count();
         
-        \Log::info('Gold Summary - Total successful orders:', ['count' => $totalRecords]);
 
         // Get ALL orders for summary calculations (not paginated)
         $allOrders = $query->get();
@@ -211,7 +212,7 @@ class GoldSummaryController extends Controller
         $length = $request->input('length', 25);
 
         // Build paginated query with same filters
-        $paginatedQuery = Order::with(['orderItems.product'])
+        $paginatedQuery = Order::with(['orderItems.product', 'orderItems.etiketItem'])
             ->whereIn('status', self::VALID_STATUSES)
             ->orderBy('created_at', 'asc');
             
@@ -245,15 +246,16 @@ class GoldSummaryController extends Controller
             
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
-                    $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
+                    $etiket = $item->etiketItem;
+                    $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                     $itemAmount = floatval($item->price) * intval($item->count);
                     
                     // Calculate purchase commission in grams
-                    $darsadKharid = floatval($item->product->darsad_kharid ?? 0);
+                    $darsadKharid = floatval($etiket->darsad_kharid ?? $item->product->darsad_kharid ?? 0);
                     $purchaseCommissionGrams = ($itemWeight * $darsadKharid) / 100;
                     
                     // Calculate sale commission percentage (ojrat)
-                    $ojrat = floatval($item->product->ojrat ?? 0);
+                    $ojrat = floatval($etiket->ojrat ?? $item->product->ojrat ?? 0);
                     
                     // Calculate discount: price - discounted_price
                     $originalPrice = floatval($item->product->getRawOriginal('price') ?? 0) / 10;
@@ -286,7 +288,6 @@ class GoldSummaryController extends Controller
         }
 
         // Now process paginated orders for table display
-        \Log::info('Gold Summary - Processing paginated orders:', ['count' => count($orders)]);
         
         foreach ($orders as $order) {
             $orderWeight = 0;
@@ -295,23 +296,17 @@ class GoldSummaryController extends Controller
             $orderSaleWeightSum = 0;
 
             foreach ($order->orderItems as $item) {
-                \Log::info('Gold Summary - Processing item:', [
-                    'order_id' => $order->id,
-                    'product_id' => $item->product_id,
-                    'has_product' => !is_null($item->product),
-                    'product_weight' => $item->product ? $item->product->weight : null
-                ]);
-                
                 if ($item->product) {
-                    $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
+                    $etiket = $item->etiketItem;
+                    $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                     $itemAmount = floatval($item->price) * intval($item->count);
                     
                     // Calculate purchase commission in grams
-                    $darsadKharid = floatval($item->product->darsad_kharid ?? 0);
+                    $darsadKharid = floatval($etiket->darsad_kharid ?? $item->product->darsad_kharid ?? 0);
                     $purchaseCommissionGrams = ($itemWeight * $darsadKharid) / 100;
                     
                     // Calculate sale commission percentage (ojrat)
-                    $ojrat = floatval($item->product->ojrat ?? 0);
+                    $ojrat = floatval($etiket->ojrat ?? $item->product->ojrat ?? 0);
                     
                     $orderWeight += $itemWeight;
                     $orderAmount += $itemAmount;
@@ -348,12 +343,6 @@ class GoldSummaryController extends Controller
 
             $cumulativeAmount += $orderAmount;
             
-            \Log::info('Gold Summary - Order processed:', [
-                'order_id' => $order->id,
-                'weight' => $orderWeight,
-                'amount' => $orderAmount,
-                'items_count' => $order->orderItems->count()
-            ]);
 
             // Always add row even if amounts are 0
             $detailUrl = route('gold_summary.show', $order->id);
@@ -372,7 +361,6 @@ class GoldSummaryController extends Controller
             ];
         }
         
-        \Log::info('Gold Summary - Final data count:', ['count' => count($data)]);
 
         // Calculate overall averages from ALL orders
         $avgPurchasePercentage = $totalWeight > 0 ? ($totalPurchasePercentageWeight / $totalWeight) * 100 : 0;
@@ -411,8 +399,8 @@ class GoldSummaryController extends Controller
             abort(404, 'Order not found or status not valid for gold summary');
         }
 
-        // Load order with items and products
-        $order->load(['orderItems.product', 'user', 'address']);
+        // Load order with items, products and etikets
+        $order->load(['orderItems.product', 'orderItems.etiketItem', 'user', 'address']);
 
         // Calculate details for each order item
         $items = [];
@@ -429,13 +417,14 @@ class GoldSummaryController extends Controller
         
         foreach ($order->orderItems as $item) {
             if ($item->product) {
-                $itemWeight = floatval($item->product->weight ?? 0) * intval($item->count);
+                $etiket = $item->etiketItem;
+                $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                 $itemAmount = floatval($item->price) * intval($item->count);
                 
-                $darsadKharid = floatval($item->product->darsad_kharid ?? 0);
+                $darsadKharid = floatval($etiket->darsad_kharid ?? $item->product->darsad_kharid ?? 0);
                 $purchaseCommissionGrams = ($itemWeight * $darsadKharid) / 100;
                 
-                $ojrat = floatval($item->product->ojrat ?? 0);
+                $ojrat = floatval($etiket->ojrat ?? $item->product->ojrat ?? 0);
                 $saleCommissionGrams = ($itemWeight * $ojrat) / 100;
 
                 // Calculate discount per gram for this item
@@ -463,7 +452,7 @@ class GoldSummaryController extends Controller
                     'product_name' => $item->name,
                     'product_id' => $item->product_id,
                     'count' => $item->count,
-                    'unit_weight' => floatval($item->product->weight ?? 0),
+                    'unit_weight' => floatval($etiket->weight ?? $item->product->weight ?? 0),
                     'total_weight' => $itemWeight,
                     'unit_price' => floatval($item->price),
                     'total_amount' => $itemAmount,
