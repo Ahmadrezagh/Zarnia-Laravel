@@ -41,7 +41,9 @@ class ProductItemResouce extends JsonResource
         $product = Product::query()
             ->with([
                 'etikets' => fn($query) => $query->where('is_mojood', 1),
+                'etikets.attributeValues.attribute',
                 'children.etikets' => fn($query) => $query->where('is_mojood', 1),
+                'children.etikets.attributeValues.attribute',
             ])
             ->find($this->id);
         $coverImage = $product->getFirstMedia('cover_image');
@@ -82,7 +84,12 @@ class ProductItemResouce extends JsonResource
             'is_favorite' => $is_favorite,
             'purity' => '18',
             'gold_price' => get_gold_price()/10,
-            'options' => $this->options,
+            'attribute_values' => $product->etikets->first()?->attributeValues
+                ->map(fn($av) => [
+                    'attribute_id'   => $av->attribute_id,
+                    'attribute_name' => $av->attribute?->name,
+                    'value'          => $av->value,
+                ]) ?? collect(),
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             'meta_keywords' => $this->meta_keywords,
@@ -108,17 +115,23 @@ class ProductItemResouce extends JsonResource
                             $isReserved = $etiket->isReserved();
                             $reservedByUserId = $isReserved ? Cache::get('reserved_etiket_' . $etiket->code) : null;
                             $available = !$isReserved || ($reservedByUserId === $this->user?->id || $reservedByUserId === true);
-                            
-                                return [
-                                    'id' => $etiket->id,
-                                    'code' => $etiket->code,
-                                    'weight' => $etiket->weight,
-                                    'price' => $etiket->price / 10,
-                                    'orderable_after_out_of_stock' => $etiket->orderable_after_out_of_stock ?? false,
-                                    'is_reserved' => $isReserved,
-                                    'available' => $available,
-                                ];
-                            
+
+                            return [
+                                'id'                            => $etiket->id,
+                                'code'                          => $etiket->code,
+                                'weight'                        => $etiket->weight,
+                                'price'                         => $etiket->price / 10,
+                                'orderable_after_out_of_stock'  => $etiket->orderable_after_out_of_stock ?? false,
+                                'is_reserved'                   => $isReserved,
+                                'available'                     => $available,
+                                'attribute_values'              => $etiket->relationLoaded('attributeValues')
+                                    ? $etiket->attributeValues->map(fn($av) => [
+                                        'attribute_id'   => $av->attribute_id,
+                                        'attribute_name' => $av->attribute?->name,
+                                        'value'          => $av->value,
+                                    ])
+                                    : [],
+                            ];
                         })->values(),
                     ];
                 })
