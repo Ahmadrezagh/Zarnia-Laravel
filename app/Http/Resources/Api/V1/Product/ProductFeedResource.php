@@ -51,11 +51,24 @@ class ProductFeedResource extends JsonResource
         }
         $imageLink = !empty($galleryUrls) ? $galleryUrls : ($imageUrl ? [$imageUrl] : []);
         
-        // sale_price: discounted price of the minimum-weight available product/etiket
-        $salePrice = $this->minimum_available_price ?? ($this->getRawOriginal('price') / 10);
+        // Get available etikets (own + children's), pick the one with lowest price
+        $availableEtikets = ($this->relationLoaded('etikets') ? $this->etikets : $this->etikets()->get())
+            ->where('is_mojood', 1);
 
-        // regular_price: original price (before discount) of the same etiket used for sale_price
-        $regularPrice = $this->price_without_discount_minimum_available_product ?? $salePrice;
+        if ($availableEtikets->isEmpty() && $this->relationLoaded('children')) {
+            $availableEtikets = $this->children->flatMap(function ($child) {
+                $etikets = $child->relationLoaded('etikets') ? $child->etikets : $child->etikets()->get();
+                return $etikets->where('is_mojood', 1);
+            });
+        }
+
+        $lowestEtiket = $availableEtikets->sortBy(fn($e) => $e->price)->first();
+
+        // sale_price: effective price of the cheapest available etiket (discounted if applicable)
+        $salePrice = $lowestEtiket ? $lowestEtiket->price : 0;
+
+        // regular_price: original price (before discount) of the same etiket
+        $regularPrice = $lowestEtiket ? $lowestEtiket->original_price : $salePrice;
         
         // Get availability
         $availability = $this->single_count > 0 ? 'in_stock' : 'out_of_stock';

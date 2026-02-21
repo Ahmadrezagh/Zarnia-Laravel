@@ -227,7 +227,7 @@ class ProductController extends Controller
             ->main() // Only main products (parent_id is null)
             ->hasCountAndImage() // Has count >= 1 and has image
             ->whereHas('etikets', fn($q) => $q->where('is_mojood', 1)) // At least one available etiket
-            ->with(['categories', 'children']); // Load children for minimum_available_price
+            ->with(['categories', 'children', 'etikets', 'children.etikets']); // Load etikets for price calculation
         
         // Get total count before pagination
         $total = $productsQuery->count();
