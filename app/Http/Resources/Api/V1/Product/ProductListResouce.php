@@ -56,7 +56,7 @@ class ProductListResouce extends JsonResource
         $allStartWithS = $availableEtiketCodes->isNotEmpty() && $availableEtiketCodes->every(fn($code) => str_starts_with((string) $code, 's-'));
 
         // true if at least one numeric code exists; false if all codes start with "s-" (overrides)
-        $fast_delivery = $allStartWithS ? false : $hasNumericCode;
+        $fast_delivery = $allStartWithS ? false : true;
 
         // Availability: product has at least one available etiket (is_mojood=1), or has a child with at least one
         $hasOwnAvailableEtiket = $product->etikets()->where('is_mojood', 1)->exists();
