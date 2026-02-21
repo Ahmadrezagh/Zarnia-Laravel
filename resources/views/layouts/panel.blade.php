@@ -372,6 +372,9 @@
                             <li class="nav-sub-item">
                                 <a class="nav-sub-link" href="{{route('etikets.add_to_product')}}">افزودن اتیکت به محصول</a>
                             </li>
+                            <li class="nav-sub-item">
+                                <a class="nav-sub-link" href="{{route('etikets.add_attribute')}}">افزودن ویژگی به اتیکت</a>
+                            </li>
                         </ul>
                     </li>
                 @endif

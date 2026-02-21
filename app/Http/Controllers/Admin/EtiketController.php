@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Exports\EtiketsExport;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\Table\AdminEtiketResource;
+use App\Models\Attribute;
+use App\Models\AttributeValue;
 use App\Models\Category;
 use App\Models\Etiket;
 use App\Models\Product;
@@ -452,6 +454,112 @@ class EtiketController extends Controller
             $message .= " و {$skipped} اتیکت رد شد (تکراری یا خالی)";
         }
         return redirect()->route('etikets.add_to_product')->with('success', $message);
+    }
+
+    /**
+     * Show the افزودن ویژگی به اتیکت form.
+     */
+    public function addAttributeForm()
+    {
+        return view('admin.etikets.add_attribute');
+    }
+
+    /**
+     * Save attribute values for a specific etiket.
+     */
+    public function storeAttributeToEtiket(Request $request)
+    {
+        $request->validate([
+            'etiket_id'  => 'required|exists:etikets,id',
+            'attributes' => 'nullable|array',
+            'attributes.*.attribute_id' => 'required|exists:attributes,id',
+            'attributes.*.value'        => 'nullable|string|max:255',
+        ]);
+
+        $etiket = Etiket::findOrFail($request->etiket_id);
+
+        foreach ($request->get('attributes', []) as $attr) {
+            $value = trim($attr['value'] ?? '');
+            if ($value === '') {
+                AttributeValue::where('etiket_id', $etiket->id)
+                    ->where('attribute_id', $attr['attribute_id'])
+                    ->delete();
+            } else {
+                AttributeValue::updateOrCreate(
+                    ['etiket_id' => $etiket->id, 'attribute_id' => $attr['attribute_id']],
+                    ['value' => $value]
+                );
+            }
+        }
+
+        return redirect()->route('etikets.add_attribute')
+            ->with('success', 'ویژگی‌های اتیکت ' . $etiket->code . ' با موفقیت ذخیره شد.');
+    }
+
+    /**
+     * AJAX: search etikets by code or name for select2.
+     */
+    public function ajaxSearch(Request $request)
+    {
+        $q = $request->input('q', '');
+
+        $etikets = Etiket::with('product')
+            ->where(function ($query) use ($q) {
+                $query->where('code', 'like', "%{$q}%")
+                      ->orWhereHas('product', fn($p) => $p->where('name', 'like', "%{$q}%"));
+            })
+            ->whereNull('deleted_at')
+            ->orderBy('id', 'desc')
+            ->limit(30)
+            ->get();
+
+        $results = $etikets->map(fn($e) => [
+            'id'   => $e->id,
+            'text' => $e->code . ($e->product ? ' — ' . $e->product->name : ''),
+        ]);
+
+        return response()->json(['results' => $results]);
+    }
+
+    /**
+     * AJAX: return attribute inputs for a given etiket (from its product's categories).
+     */
+    public function etiketAttributeData(int $id)
+    {
+        $etiket = Etiket::with(['product.categories.attributeGroups.attributes'])->findOrFail($id);
+
+        $product = $etiket->product;
+        if (!$product) {
+            return response()->json(['attributes' => [], 'attributeValues' => []]);
+        }
+
+        $attributeIds = [];
+        foreach ($product->categories as $category) {
+            foreach ($category->attributeGroups as $group) {
+                foreach ($group->attributes as $attribute) {
+                    $attributeIds[$attribute->id] = $attribute;
+                }
+            }
+        }
+
+        $existingValues = AttributeValue::where('etiket_id', $etiket->id)
+            ->whereIn('attribute_id', array_keys($attributeIds))
+            ->get()
+            ->keyBy('attribute_id');
+
+        $attributes = collect($attributeIds)->values()->map(fn($attr) => [
+            'id'               => $attr->id,
+            'name'             => $attr->name,
+            'prefix_sentence'  => $attr->prefix_sentence,
+            'postfix_sentence' => $attr->postfix_sentence,
+            'value'            => $existingValues->get($attr->id)?->value ?? '',
+        ]);
+
+        return response()->json([
+            'etiket'          => ['id' => $etiket->id, 'code' => $etiket->code],
+            'product'         => ['id' => $product->id, 'name' => $product->name],
+            'attributes'      => $attributes,
+        ]);
     }
 
     /**
