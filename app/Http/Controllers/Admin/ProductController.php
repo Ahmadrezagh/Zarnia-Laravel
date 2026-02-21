@@ -957,11 +957,10 @@ class ProductController extends Controller
     }
     public function not_available_table(Request $request)
     {
-        // Show only parent products that have no available etiket (is_mojood=1) on themselves or on any child
+        // Show only parent products that are unavailable in the frontend (same logic as hasNoAvailableEtiket scope)
         $query = Product::query()
-            ->whereNull('parent_id')
-            ->whereRaw('NOT EXISTS (SELECT 1 FROM etikets WHERE etikets.product_id = products.id AND etikets.is_mojood = 1)')
-            ->whereRaw('NOT EXISTS (SELECT 1 FROM products AS child JOIN etikets ON etikets.product_id = child.id AND etikets.is_mojood = 1 WHERE child.parent_id = products.id)')
+            ->main()
+            ->hasNoAvailableEtiket()
             ->select('products.*');
 
         // Get total records before applying filters
