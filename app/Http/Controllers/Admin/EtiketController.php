@@ -358,18 +358,15 @@ class EtiketController extends Controller
             return redirect()->back()->withInput()->withErrors(['product_id' => 'حداقل یک اتیکت (عادی یا قابل فروش پس از اتمام موجودی) با وزن معتبر وارد کنید.']);
         }
 
-        // Update product percentages if provided
-        $updateData = [];
-        if ($request->has('darsad_kharid') && $request->darsad_kharid !== null && $request->darsad_kharid !== '') {
-            $updateData['darsad_kharid'] = $request->darsad_kharid;
-        }
+        // Update product ojrat if provided (darsad_kharid lives on etikets, not products)
         if ($request->has('ojrat') && $request->ojrat !== null && $request->ojrat !== '') {
-            $updateData['ojrat'] = $request->ojrat;
-        }
-        if (!empty($updateData)) {
-            $productModel->update($updateData);
+            $productModel->update(['ojrat' => $request->ojrat]);
             $productModel->refresh();
         }
+
+        $darsadKharid = ($request->darsad_kharid !== null && $request->darsad_kharid !== '')
+            ? $request->darsad_kharid
+            : null;
 
         $etiketCodes = [];
         $orderableEtiketCodes = [];
@@ -404,7 +401,7 @@ class EtiketController extends Controller
                     'price' => $price,
                     'product_id' => $productModel->id,
                     'ojrat' => $productModel->ojrat ?? null,
-                    'darsad_kharid' => $productModel->darsad_kharid ?? null,
+                    'darsad_kharid' => $darsadKharid,
                     'is_mojood' => 1,
                     'orderable_after_out_of_stock' => 0,
                 ]);
@@ -440,7 +437,7 @@ class EtiketController extends Controller
                     'price' => $price,
                     'product_id' => $productModel->id,
                     'ojrat' => $productModel->ojrat ?? null,
-                    'darsad_kharid' => $productModel->darsad_kharid ?? null,
+                    'darsad_kharid' => $darsadKharid,
                     'is_mojood' => 1,
                     'orderable_after_out_of_stock' => 1,
                 ]);
