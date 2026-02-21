@@ -222,10 +222,11 @@ class ProductController extends Controller
             ? $shipping->times()->first()->title ?? null 
             : null;
         
-        // Get only main products (no children), with count >= 1, and with images
+        // Get only main products (no children), with count >= 1, with images, and at least one available etiket
         $productsQuery = Product::query()
             ->main() // Only main products (parent_id is null)
             ->hasCountAndImage() // Has count >= 1 and has image
+            ->whereHas('etikets', fn($q) => $q->where('is_mojood', 1)) // At least one available etiket
             ->with(['categories', 'children']); // Load children for minimum_available_price
         
         // Get total count before pagination
