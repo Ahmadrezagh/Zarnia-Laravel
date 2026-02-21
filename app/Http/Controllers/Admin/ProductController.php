@@ -119,10 +119,11 @@ class ProductController extends Controller
             // Prepare product data
             $productData = [
                 'name' => $validated['name'],
+                'type' => $isNotGoldProduct ? 'none_gold' : 'gold',
                 'weight' => $isNotGoldProduct ? 0 : ($validated['weight'] ?? 0),
                 'darsad_kharid' => $isNotGoldProduct ? 0 : ($validated['darsad_kharid'] ?? 0),
                 'ojrat' => $isNotGoldProduct ? 0 : ($validated['ojrat'] ?? 0),
-                'discount_percentage' => $validated['discount_percentage'] ?? 0, // Set to 0 if null
+                'discount_percentage' => $validated['discount_percentage'] ?? 0,
                 'description' => $validated['description'] ?? null,
                 'parent_id' => $request->input('parent_id') ? (int)$request->input('parent_id') : null,
             ];
@@ -131,16 +132,7 @@ class ProductController extends Controller
             if (isset($validated['price']) && $validated['price'] > 0) {
                 $productData['price'] = $validated['price'] * 10;
             } else {
-                if ($isNotGoldProduct) {
-                    // Non-gold products must have a price
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'قیمت برای محصولات غیر طلایی الزامی است'
-                    ], 422);
-                } else {
-                    // Calculate price from taban gohar if not provided (for gold products)
-                    $productData['price'] = 0;
-                }
+                $productData['price'] = 0;
             }
             
             // Handle attribute group
@@ -266,6 +258,7 @@ class ProductController extends Controller
         
         // Common product data from form
         $commonProductData = [
+            'type' => 'gold',
             'darsad_kharid' => $validated['darsad_kharid'] ?? null,
             'ojrat' => $validated['ojrat'] ?? null,
             'discount_percentage' => $validated['discount_percentage'] ?? 0,
@@ -1593,6 +1586,7 @@ class ProductController extends Controller
                 unset($validated['slug']);
             }
             $validated['is_comprehensive'] = 1;
+            $validated['type'] = 'comprehensive_product';
             $validated['weight'] = 0;
             $validated['price'] = 0;
 

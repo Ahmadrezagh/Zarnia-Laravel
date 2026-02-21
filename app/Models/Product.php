@@ -37,6 +37,7 @@ class Product extends Model implements HasMedia
         'discount_percentage',
         'ojrat',
         'is_comprehensive',
+        'type',
         'mazaneh',
         'meta_title',
         'meta_description',

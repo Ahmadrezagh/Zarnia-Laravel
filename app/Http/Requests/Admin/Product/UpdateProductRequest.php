@@ -38,6 +38,7 @@ class UpdateProductRequest extends FormRequest
             'attribute_group' => 'nullable',
             'attributes' => 'nullable',
             'discount_percentage' => 'nullable',
+            'type' => ['nullable', Rule::in(['gold', 'none_gold', 'comprehensive_product'])],
         ];
     }
 }
