@@ -386,7 +386,7 @@ class EtiketController extends Controller
 
         // Regular etikets (one per row; code from form or generated)
         if ($hasRegular) {
-            foreach ($request->etikets as $etiketData) {
+            foreach ($request->etikets as $key => $etiketData) {
                 $weight = $isNoneGold ? 0 : (float)($etiketData['weight'] ?? 0);
                 if (!$isNoneGold && $weight <= 0) {
                     $skipped++;
@@ -402,9 +402,12 @@ class EtiketController extends Controller
                     $skipped++;
                     continue;
                 }
-                $price = $isNoneGold
-                    ? (float)($etiketData['price'] ?? 0)
-                    : $this->calculateEtiketPrice($productModel, $weight);
+                if ($isNoneGold) {
+                    $submittedPrice = $request->input("etikets.{$key}.price") ?? ($etiketData['price'] ?? 0);
+                    $price = (float) $submittedPrice;
+                } else {
+                    $price = $this->calculateEtiketPrice($productModel, $weight);
+                }
                 Etiket::create([
                     'code' => $etiketCode,
                     'name' => $productModel->name,
@@ -424,7 +427,7 @@ class EtiketController extends Controller
 
         // Orderable etikets (s-xxxx, one per row; code from form or generated)
         if ($hasOrderable) {
-            foreach ($request->orderable_etikets as $etiketData) {
+            foreach ($request->orderable_etikets as $key => $etiketData) {
                 $weight = $isNoneGold ? 0 : (float)($etiketData['weight'] ?? 0);
                 if (!$isNoneGold && $weight <= 0) {
                     $skipped++;
@@ -440,9 +443,12 @@ class EtiketController extends Controller
                     $skipped++;
                     continue;
                 }
-                $price = $isNoneGold
-                    ? (float)($etiketData['price'] ?? 0)
-                    : $this->calculateEtiketPrice($productModel, $weight);
+                if ($isNoneGold) {
+                    $submittedPrice = $request->input("orderable_etikets.{$key}.price") ?? ($etiketData['price'] ?? 0);
+                    $price = (float) $submittedPrice;
+                } else {
+                    $price = $this->calculateEtiketPrice($productModel, $weight);
+                }
                 Etiket::create([
                     'code' => $etiketCode,
                     'name' => $productModel->name,
