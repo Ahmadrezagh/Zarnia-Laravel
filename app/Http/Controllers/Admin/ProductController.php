@@ -576,38 +576,38 @@ class ProductController extends Controller
             $product->categories()->sync($request->category_ids);
         }
 
-        // Handle attribute group and attributes
+        // Handle attribute group and attributes (stored per etiket; use first etiket of product)
         if ($request->has('attributes')) {
-            // Get existing attribute values for this product and group
-            $existingAttributeIds = AttributeValue::where('product_id', $product->id)
-                ->pluck('attribute_id')
-                ->toArray();
+            $etiket = $product->etikets()->orderBy('id')->first();
 
-            $newAttributeIds = [];
+            if ($etiket) {
+                $existingAttributeIds = AttributeValue::where('etiket_id', $etiket->id)
+                    ->pluck('attribute_id')
+                    ->toArray();
 
-            foreach ($request->get('attributes') as  $attr) {
+                $newAttributeIds = [];
 
-                if (!empty($attr['value'])) {
-                    if (isset($attr['attribute_id']) && $attr['attribute_id']) {
-                        // Update existing attribute value
-                        AttributeValue::updateOrCreate(
-                            [
-                                'product_id' => $product->id,
-                                'attribute_id' => $attr['attribute_id']
-                            ],
-                            ['value' => $attr['value']]
-                        );
-                        $newAttributeIds[] = $attr['attribute_id'];
+                foreach ($request->get('attributes') as $attr) {
+                    if (!empty($attr['value'])) {
+                        if (isset($attr['attribute_id']) && $attr['attribute_id']) {
+                            AttributeValue::updateOrCreate(
+                                [
+                                    'etiket_id'    => $etiket->id,
+                                    'attribute_id' => $attr['attribute_id'],
+                                ],
+                                ['value' => $attr['value']]
+                            );
+                            $newAttributeIds[] = $attr['attribute_id'];
+                        }
                     }
                 }
-            }
 
-            // Delete attribute values that are no longer in the request
-            $attributesToDelete = array_diff($existingAttributeIds, $newAttributeIds);
-            if (!empty($attributesToDelete)) {
-                AttributeValue::where('product_id', $product->id)
-                    ->whereIn('attribute_id', $attributesToDelete)
-                    ->delete();
+                $attributesToDelete = array_diff($existingAttributeIds, $newAttributeIds);
+                if (!empty($attributesToDelete)) {
+                    AttributeValue::where('etiket_id', $etiket->id)
+                        ->whereIn('attribute_id', $attributesToDelete)
+                        ->delete();
+                }
             }
         }
 

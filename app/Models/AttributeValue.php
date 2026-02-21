@@ -6,15 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class AttributeValue extends Model
 {
-    protected $fillable = ['attribute_id','product_id', 'value'];
+    protected $fillable = ['attribute_id', 'etiket_id', 'value'];
 
     public function attribute()
     {
         return $this->belongsTo(Attribute::class);
     }
 
-    public function product()
+    public function etiket()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Etiket::class);
     }
 }

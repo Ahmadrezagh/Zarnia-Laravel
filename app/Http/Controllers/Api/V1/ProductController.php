@@ -237,14 +237,23 @@ class ProductController extends Controller
             ->take($perPage)
             ->get();
         
-        // Get all attribute values for these products in one query
+        // Get all attribute values for these products in one query (via etikets)
         $attributeValues = collect();
         if (!empty($attributeIds)) {
-            $attributeValues = AttributeValue::whereIn('product_id', $products->pluck('id'))
+            $etiketIds = \App\Models\Etiket::whereIn('product_id', $products->pluck('id'))
+                ->orderBy('id')
+                ->get(['id', 'product_id'])
+                ->groupBy('product_id')
+                ->map(fn($group) => $group->first()->id); // first etiket per product
+
+            $attributeValues = AttributeValue::whereIn('etiket_id', $etiketIds->values())
                 ->whereIn('attribute_id', $attributeIds)
                 ->with('attribute')
                 ->get()
-                ->groupBy('product_id');
+                ->groupBy(function ($av) use ($etiketIds) {
+                    // Map etiket_id back to product_id
+                    return $etiketIds->search($av->etiket_id);
+                });
         }
         
         // Attach attribute values to products and add shipping info to request

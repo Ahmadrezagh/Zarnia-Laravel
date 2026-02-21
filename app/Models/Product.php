@@ -1499,8 +1499,8 @@ class Product extends Model implements HasMedia
             ->count();
     }
 
-    public function options()
+    public function attributeValues()
     {
-        return $this->belongsToMany(Attribute::class,'attribute_values')->withPivot('value');
+        return $this->hasManyThrough(AttributeValue::class, Etiket::class);
     }
 }

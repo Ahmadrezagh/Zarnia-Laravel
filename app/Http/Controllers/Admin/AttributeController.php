@@ -9,6 +9,8 @@ use App\Models\Attribute;
 use App\Models\AttributeGroup;
 use App\Models\AttributeValue;
 use App\Models\Category;
+use App\Models\Etiket;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -114,9 +116,18 @@ class AttributeController extends Controller
                     }
                 }
                 
-                $attributeValues = AttributeValue::where('product_id', $request->product_id)
-                    ->whereIn('attribute_id', $attribute_ids)
-                    ->get();
+                // Resolve etiket_id: accept etiket_id directly, or fall back to first etiket of product
+                $etiketId = $request->etiket_id;
+                if (!$etiketId && $request->product_id) {
+                    $etiket = Etiket::where('product_id', $request->product_id)->orderBy('id')->first();
+                    $etiketId = $etiket?->id;
+                }
+
+                $attributeValues = $etiketId
+                    ? AttributeValue::where('etiket_id', $etiketId)
+                        ->whereIn('attribute_id', $attribute_ids)
+                        ->get()
+                    : collect();
 
                 $response = [
                     'attributeGroup' => '',

@@ -60,12 +60,20 @@ class TorobController extends Controller
             ->take($perPage)
             ->get();
         
-        // Get all attribute values for these products in one query
-        $attributeValues = AttributeValue::whereIn('product_id', $products->pluck('id'))
+        // Get all attribute values for these products in one query (via etikets)
+        $etiketIds = \App\Models\Etiket::whereIn('product_id', $products->pluck('id'))
+            ->orderBy('id')
+            ->get(['id', 'product_id'])
+            ->groupBy('product_id')
+            ->map(fn($group) => $group->first()->id);
+
+        $attributeValues = AttributeValue::whereIn('etiket_id', $etiketIds->values())
             ->whereIn('attribute_id', $attributeIds)
             ->get()
-            ->groupBy('product_id');
-        
+            ->groupBy(function ($av) use ($etiketIds) {
+                return $etiketIds->search($av->etiket_id);
+            });
+
         // Transform products to Torob format - loop through each etiket
         $items = $products->flatMap(function ($product) use ($baseUrl, $attributeValues, $brandAttribute, $gtinAttribute) {
             // Get attribute values for this product

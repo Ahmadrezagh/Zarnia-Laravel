@@ -28,6 +28,11 @@ class Etiket extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function attributeValues()
+    {
+        return $this->hasMany(AttributeValue::class);
+    }
+
     /**
      * Check if this etiket is currently reserved (cached for 32 minutes during order processing)
      * Reserved etikets should return is_mojood = 0 during the reservation period
