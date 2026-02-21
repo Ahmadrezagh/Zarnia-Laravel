@@ -340,20 +340,27 @@ class EtiketController extends Controller
             'etikets' => 'nullable|array',
             'etikets.*.code' => 'nullable|string|max:64',
             'etikets.*.weight' => 'required_with:etikets|numeric|min:0',
+            'etikets.*.price' => 'nullable|numeric|min:0',
             'orderable_etikets' => 'nullable|array',
             'orderable_etikets.*.code' => 'nullable|string|max:64',
             'orderable_etikets.*.weight' => 'required_with:orderable_etikets|numeric|min:0',
+            'orderable_etikets.*.price' => 'nullable|numeric|min:0',
         ]);
 
         $productModel = Product::findOrFail($request->product_id);
+        $isNoneGold = ($productModel->type ?? 'gold') === 'none_gold';
 
-        $hasRegular = $request->has('etikets') && is_array($request->etikets) && count(array_filter($request->etikets, function ($e) {
-            $w = (float)($e['weight'] ?? 0);
-            return $w > 0;
+        $hasRegular = $request->has('etikets') && is_array($request->etikets) && count(array_filter($request->etikets, function ($e) use ($isNoneGold) {
+            if ($isNoneGold) {
+                return isset($e['code']) || isset($e['price']);
+            }
+            return (float)($e['weight'] ?? 0) > 0;
         })) > 0;
-        $hasOrderable = $request->has('orderable_etikets') && is_array($request->orderable_etikets) && count(array_filter($request->orderable_etikets, function ($e) {
-            $w = (float)($e['weight'] ?? 0);
-            return $w > 0;
+        $hasOrderable = $request->has('orderable_etikets') && is_array($request->orderable_etikets) && count(array_filter($request->orderable_etikets, function ($e) use ($isNoneGold) {
+            if ($isNoneGold) {
+                return isset($e['code']) || isset($e['price']);
+            }
+            return (float)($e['weight'] ?? 0) > 0;
         })) > 0;
 
         if (!$hasRegular && !$hasOrderable) {
@@ -381,7 +388,7 @@ class EtiketController extends Controller
         if ($hasRegular) {
             foreach ($request->etikets as $etiketData) {
                 $weight = (float)($etiketData['weight'] ?? 0);
-                if ($weight <= 0) {
+                if (!$isNoneGold && $weight <= 0) {
                     $skipped++;
                     continue;
                 }
@@ -395,7 +402,9 @@ class EtiketController extends Controller
                     $skipped++;
                     continue;
                 }
-                $price = $this->calculateEtiketPrice($productModel, $weight);
+                $price = $isNoneGold
+                    ? (float)($etiketData['price'] ?? 0)
+                    : $this->calculateEtiketPrice($productModel, $weight);
                 Etiket::create([
                     'code' => $etiketCode,
                     'name' => $productModel->name,
@@ -417,7 +426,7 @@ class EtiketController extends Controller
         if ($hasOrderable) {
             foreach ($request->orderable_etikets as $etiketData) {
                 $weight = (float)($etiketData['weight'] ?? 0);
-                if ($weight <= 0) {
+                if (!$isNoneGold && $weight <= 0) {
                     $skipped++;
                     continue;
                 }
@@ -431,7 +440,9 @@ class EtiketController extends Controller
                     $skipped++;
                     continue;
                 }
-                $price = $this->calculateEtiketPrice($productModel, $weight);
+                $price = $isNoneGold
+                    ? (float)($etiketData['price'] ?? 0)
+                    : $this->calculateEtiketPrice($productModel, $weight);
                 Etiket::create([
                     'code' => $etiketCode,
                     'name' => $productModel->name,

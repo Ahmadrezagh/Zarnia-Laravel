@@ -43,16 +43,20 @@
                                      style="max-height:160px; max-width:160px; border-radius:8px; border:1px solid #dee2e6; object-fit:cover;">
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="darsad-kharid" class="font-weight-bold">درصد خرید</label>
-                                <input type="number" class="form-control" id="darsad-kharid" name="darsad_kharid" step="0.01" placeholder="درصد خرید">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="ojrat" class="font-weight-bold">درصد فروش</label>
-                                <input type="number" class="form-control" id="ojrat" name="ojrat" step="0.01" placeholder="درصد فروش">
+                        <div class="col-md-12" id="gold-fields">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="darsad-kharid" class="font-weight-bold">درصد خرید</label>
+                                        <input type="number" class="form-control" id="darsad-kharid" name="darsad_kharid" step="0.01" placeholder="درصد خرید">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="ojrat" class="font-weight-bold">درصد فروش</label>
+                                        <input type="number" class="form-control" id="ojrat" name="ojrat" step="0.01" placeholder="درصد فروش">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -108,6 +112,7 @@
     let etiketCounter = 0;
     let orderableEtiketCounter = 0;
     let goldPrice = 0;
+    let isNoneGoldProduct = false;
 
     $(document).ready(function() {
         goldPrice = parseFloat('{{ (float) setting("gold_price") ?? 0 }}') || 0;
@@ -159,8 +164,10 @@
         });
 
         $('#product-select').on('select2:clear', function () {
+            isNoneGoldProduct = false;
             $('#product-cover-preview').hide();
             $('#product-cover-img').attr('src', '');
+            $('#gold-fields').show();
         });
     });
 
@@ -172,18 +179,31 @@
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function(response) {
                 const product = response.data || response;
-                if (product.darsad_kharid !== null && product.darsad_kharid !== undefined) {
-                    $('#darsad-kharid').val(product.darsad_kharid);
+
+                isNoneGoldProduct = (product.type === 'none_gold');
+
+                if (isNoneGoldProduct) {
+                    $('#gold-fields').hide();
+                } else {
+                    $('#gold-fields').show();
+                    if (product.darsad_kharid !== null && product.darsad_kharid !== undefined) {
+                        $('#darsad-kharid').val(product.darsad_kharid);
+                    }
+                    if (product.ojrat !== null && product.ojrat !== undefined) {
+                        $('#ojrat').val(product.ojrat);
+                    }
                 }
-                if (product.ojrat !== null && product.ojrat !== undefined) {
-                    $('#ojrat').val(product.ojrat);
-                }
+
                 if (product.image) {
                     $('#product-cover-img').attr('src', product.image);
                     $('#product-cover-preview').show();
                 } else {
                     $('#product-cover-preview').hide();
                 }
+
+                // Update existing etiket cards to match product type
+                updateEtiketCardPriceMode();
+
                 $('#etikets-row .etiket-item').each(function() {
                     const index = $(this).data('index');
                     if (index) calculateEtiketPrice(index, false);
@@ -196,6 +216,14 @@
         });
     }
 
+    function updateEtiketCardPriceMode() {
+        if (isNoneGoldProduct) {
+            $('.etiket-price-input').prop('readonly', false).attr('placeholder', 'قیمت (تومان) *');
+        } else {
+            $('.etiket-price-input').prop('readonly', true).attr('placeholder', 'قیمت');
+        }
+    }
+
     function addEtiket() {
         var countStr = prompt('تعداد اتیکت\u200cهای مورد نیاز را وارد کنید:', '1');
         if (countStr === null || countStr === '') return;
@@ -204,12 +232,25 @@
             alert('لطفاً یک عدد معتبر (حداقل ۱) وارد کنید.');
             return;
         }
-        var weightStr = prompt('وزن (گرم) را وارد کنید:', '');
-        if (weightStr === null) return;
-        var weightVal = parseFloat(weightStr);
-        if (isNaN(weightVal) || weightVal < 0) {
-            alert('لطفاً وزن معتبر وارد کنید.');
-            return;
+        var weightVal = 0;
+        if (!isNoneGoldProduct) {
+            var weightStr = prompt('وزن (گرم) را وارد کنید:', '');
+            if (weightStr === null) return;
+            weightVal = parseFloat(weightStr);
+            if (isNaN(weightVal) || weightVal < 0) {
+                alert('لطفاً وزن معتبر وارد کنید.');
+                return;
+            }
+        }
+        var priceVal = '';
+        if (isNoneGoldProduct) {
+            var priceStr = prompt('قیمت (تومان) را وارد کنید:', '');
+            if (priceStr === null) return;
+            priceVal = parseFloat(priceStr);
+            if (isNaN(priceVal) || priceVal < 0) {
+                alert('لطفاً قیمت معتبر وارد کنید.');
+                return;
+            }
         }
         var pending = $('#etikets-row .etiket-item').length;
         $.get('{{ route("etikets.next_numbers") }}', { pending_regular: pending }, function(res) {
@@ -218,6 +259,17 @@
             for (var i = 0; i < count; i++) {
                 etiketCounter++;
                 var num = start + i;
+                var priceReadonly = isNoneGoldProduct ? '' : ' readonly';
+                var priceLabel = isNoneGoldProduct ? 'قیمت (تومان) <span class="text-danger">*</span>' : 'قیمت (تومان)';
+                var priceInputVal = isNoneGoldProduct ? priceVal : '';
+                var weightField = isNoneGoldProduct ? '' :
+                    '<div class="form-group">' +
+                        '<label class="small font-weight-bold">وزن (گرم)</label>' +
+                        '<input type="number" class="form-control etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" value="' + (weightVal > 0 ? weightVal : '') + '" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')">' +
+                    '</div>';
+                var weightHidden = isNoneGoldProduct
+                    ? '<input type="hidden" name="etikets[' + etiketCounter + '][weight]" value="0">'
+                    : '';
                 var etiketHtml = '<div class="col-md-3 mb-3">' +
                     '<div class="card etiket-item h-100" data-index="' + etiketCounter + '">' +
                         '<div class="card-header d-flex justify-content-between align-items-center bg-light">' +
@@ -228,18 +280,18 @@
                                 '<label class="small font-weight-bold">شماره اتیکت</label>' +
                                 '<input type="text" class="form-control etiket-code-input" name="etikets[' + etiketCounter + '][code]" placeholder="شماره" value="' + num + '" data-index="' + etiketCounter + '">' +
                             '</div>' +
+                            weightField +
+                            weightHidden +
                             '<div class="form-group">' +
-                                '<label class="small font-weight-bold">وزن (گرم)</label>' +
-                                '<input type="number" class="form-control etiket-weight-input" name="etikets[' + etiketCounter + '][weight]" placeholder="وزن" step="0.01" value="' + (weightVal > 0 ? weightVal : '') + '" data-index="' + etiketCounter + '" onchange="calculateEtiketPrice(' + etiketCounter + ')" oninput="calculateEtiketPrice(' + etiketCounter + ')">' +
-                            '</div>' +
-                            '<div class="form-group">' +
-                                '<label class="small font-weight-bold">قیمت (تومان)</label>' +
-                                '<input type="number" class="form-control etiket-price-input" name="etikets[' + etiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + etiketCounter + '">' +
+                                '<label class="small font-weight-bold">' + priceLabel + '</label>' +
+                                '<input type="number" class="form-control etiket-price-input" name="etikets[' + etiketCounter + '][price]" placeholder="قیمت"' + priceReadonly + ' value="' + priceInputVal + '" data-index="' + etiketCounter + '">' +
                             '</div>' +
                         '</div>' +
                     '</div></div>';
                 $('#etikets-row').append(etiketHtml);
-                setTimeout(function() { calculateEtiketPrice(etiketCounter, false); }, 50 * (i + 1));
+                if (!isNoneGoldProduct) {
+                    setTimeout(function() { calculateEtiketPrice(etiketCounter, false); }, 50 * (i + 1));
+                }
             }
         }).fail(function() {
             alert('خطا در دریافت شماره\u200cهای اتیکت.');
@@ -261,12 +313,25 @@
             alert('لطفاً یک عدد معتبر (حداقل ۱) وارد کنید.');
             return;
         }
-        var weightStr = prompt('وزن (گرم) را وارد کنید:', '');
-        if (weightStr === null) return;
-        var weightVal = parseFloat(weightStr);
-        if (isNaN(weightVal) || weightVal < 0) {
-            alert('لطفاً وزن معتبر وارد کنید.');
-            return;
+        var weightVal = 0;
+        if (!isNoneGoldProduct) {
+            var weightStr = prompt('وزن (گرم) را وارد کنید:', '');
+            if (weightStr === null) return;
+            weightVal = parseFloat(weightStr);
+            if (isNaN(weightVal) || weightVal < 0) {
+                alert('لطفاً وزن معتبر وارد کنید.');
+                return;
+            }
+        }
+        var priceVal = '';
+        if (isNoneGoldProduct) {
+            var priceStr = prompt('قیمت (تومان) را وارد کنید:', '');
+            if (priceStr === null) return;
+            priceVal = parseFloat(priceStr);
+            if (isNaN(priceVal) || priceVal < 0) {
+                alert('لطفاً قیمت معتبر وارد کنید.');
+                return;
+            }
         }
         var pending = $('#orderable-etikets-row .etiket-item').length;
         $.get('{{ route("etikets.next_numbers") }}', { pending_orderable: pending }, function(res) {
@@ -275,6 +340,17 @@
             for (var i = 0; i < count; i++) {
                 orderableEtiketCounter++;
                 var num = 's-' + (start + i);
+                var priceReadonly = isNoneGoldProduct ? '' : ' readonly';
+                var priceLabel = isNoneGoldProduct ? 'قیمت (تومان) <span class="text-danger">*</span>' : 'قیمت (تومان)';
+                var priceInputVal = isNoneGoldProduct ? priceVal : '';
+                var weightField = isNoneGoldProduct ? '' :
+                    '<div class="form-group">' +
+                        '<label class="small font-weight-bold">وزن (گرم)</label>' +
+                        '<input type="number" class="form-control etiket-weight-input" name="orderable_etikets[' + orderableEtiketCounter + '][weight]" placeholder="وزن" step="0.01" value="' + (weightVal > 0 ? weightVal : '') + '" data-index="' + orderableEtiketCounter + '" data-orderable="true" onchange="calculateEtiketPrice(' + orderableEtiketCounter + ', true)" oninput="calculateEtiketPrice(' + orderableEtiketCounter + ', true)">' +
+                    '</div>';
+                var weightHidden = isNoneGoldProduct
+                    ? '<input type="hidden" name="orderable_etikets[' + orderableEtiketCounter + '][weight]" value="0">'
+                    : '';
                 var etiketHtml = '<div class="col-md-3 mb-3">' +
                     '<div class="card etiket-item h-100" data-index="' + orderableEtiketCounter + '" style="border-color: #ffc107;">' +
                         '<div class="card-header d-flex justify-content-between align-items-center" style="background-color: #fff3cd;">' +
@@ -285,18 +361,18 @@
                                 '<label class="small font-weight-bold">شماره اتیکت</label>' +
                                 '<input type="text" class="form-control etiket-code-input" name="orderable_etikets[' + orderableEtiketCounter + '][code]" placeholder="شماره (مثال: s-7000)" value="' + num + '" data-index="' + orderableEtiketCounter + '" data-orderable="true">' +
                             '</div>' +
+                            weightField +
+                            weightHidden +
                             '<div class="form-group">' +
-                                '<label class="small font-weight-bold">وزن (گرم)</label>' +
-                                '<input type="number" class="form-control etiket-weight-input" name="orderable_etikets[' + orderableEtiketCounter + '][weight]" placeholder="وزن" step="0.01" value="' + (weightVal > 0 ? weightVal : '') + '" data-index="' + orderableEtiketCounter + '" data-orderable="true" onchange="calculateEtiketPrice(' + orderableEtiketCounter + ', true)" oninput="calculateEtiketPrice(' + orderableEtiketCounter + ', true)">' +
-                            '</div>' +
-                            '<div class="form-group">' +
-                                '<label class="small font-weight-bold">قیمت (تومان)</label>' +
-                                '<input type="number" class="form-control etiket-price-input" name="orderable_etikets[' + orderableEtiketCounter + '][price]" placeholder="قیمت" readonly data-index="' + orderableEtiketCounter + '" data-orderable="true">' +
+                                '<label class="small font-weight-bold">' + priceLabel + '</label>' +
+                                '<input type="number" class="form-control etiket-price-input" name="orderable_etikets[' + orderableEtiketCounter + '][price]" placeholder="قیمت"' + priceReadonly + ' value="' + priceInputVal + '" data-index="' + orderableEtiketCounter + '" data-orderable="true">' +
                             '</div>' +
                         '</div>' +
                     '</div></div>';
                 $('#orderable-etikets-row').append(etiketHtml);
-                setTimeout(function() { calculateEtiketPrice(orderableEtiketCounter, true); }, 50 * (i + 1));
+                if (!isNoneGoldProduct) {
+                    setTimeout(function() { calculateEtiketPrice(orderableEtiketCounter, true); }, 50 * (i + 1));
+                }
             }
         }).fail(function() {
             alert('خطا در دریافت شماره\u200cهای اتیکت.');
@@ -311,6 +387,7 @@
     }
 
     function calculateEtiketPrice(index, isOrderable) {
+        if (isNoneGoldProduct) return;
         const selector = isOrderable ? '#orderable-etikets-row' : '#etikets-row';
         const $etiketItem = $(selector + ' .etiket-item[data-index="' + index + '"]');
         const weight = parseFloat($etiketItem.find('.etiket-weight-input').val()) || 0;
