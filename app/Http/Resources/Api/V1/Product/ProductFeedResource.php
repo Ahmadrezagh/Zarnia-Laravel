@@ -104,7 +104,7 @@ class ProductFeedResource extends JsonResource
             'regular_price' => (int) $regularPrice,
             'sale_price' => (int) $salePrice,
             'category' => $category,
-            'description' => !empty($description) ? $description : null,
+            'description' => 'طلا 18 عیار',
         ];
         
         // Add optional fields if they exist
