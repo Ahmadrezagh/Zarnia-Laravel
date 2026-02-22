@@ -88,7 +88,7 @@ class ProductItemResouce extends JsonResource
                 ->map(fn($av) => [
                     'attribute_id'   => $av->attribute_id,
                     'attribute_name' => $av->attribute?->name,
-                    'value'          => $av->value,
+                    'value'          => trim(($av->attribute?->prefix_sentence ?? '') . ' ' . $av->value . ' ' . ($av->attribute?->postfix_sentence ?? '')),
                 ]) ?? collect(),
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
@@ -129,7 +129,7 @@ class ProductItemResouce extends JsonResource
                                     ? $etiket->attributeValues->map(fn($av) => [
                                         'attribute_id'   => $av->attribute_id,
                                         'attribute_name' => $av->attribute?->name,
-                                        'value'          => $av->value,
+                                        'value'          => trim(($av->attribute?->prefix_sentence ?? '') . ' ' . $av->value . ' ' . ($av->attribute?->postfix_sentence ?? '')),
                                     ])
                                     : [],
                             ];
