@@ -154,17 +154,54 @@ class OrderController extends Controller
         $reservedEtiketCodes = [];
         
         foreach ($cartItems as $cartItem) {
+            $etiket = $cartItem->etiket_id ? $cartItem->etiket : null;
+
+            // If etiket is comprehensive, expand it into its related etikets
+            if ($etiket && $etiket->type === 'comprehensive') {
+                $links = $etiket->relationLoaded('comprehensiveEtikets')
+                    ? $etiket->comprehensiveEtikets
+                    : $etiket->comprehensiveEtikets()->with('relatedEtiket.product')->get();
+
+                foreach ($links as $link) {
+                    $related = $link->relatedEtiket;
+                    if (!$related) {
+                        continue;
+                    }
+
+                    $relatedProduct = $related->relationLoaded('product')
+                        ? $related->product
+                        : $related->product()->first();
+
+                    $itemPrice = $related->price ? ($related->price / 10) : 0;
+
+                    OrderItem::create([
+                        'order_id'   => $order->id,
+                        'product_id' => $relatedProduct ? $relatedProduct->id : $cartItem->product_id,
+                        'etiket'     => $related->code,
+                        'name'       => $relatedProduct ? $relatedProduct->name : $cartItem->product->name,
+                        'count'      => $cartItem->count,
+                        'price'      => $itemPrice,
+                    ]);
+
+                    // Reserve each real etiket that participates in the comprehensive etiket
+                    $reservedEtiketCodes[] = $related->code;
+                }
+
+                // Skip normal real-etiket handling for comprehensive etikets
+                continue;
+            }
+
             $etiketCode = null;
             $isOrderableAfterOutOfStock = false;
             
             // Use the etiket from the cart item if available
-            if ($cartItem->etiket_id && $cartItem->etiket) {
-                $etiketCode = $cartItem->etiket->code;
-                $isOrderableAfterOutOfStock = $cartItem->etiket->orderable_after_out_of_stock ?? false;
+            if ($etiket) {
+                $etiketCode = $etiket->code;
+                $isOrderableAfterOutOfStock = $etiket->orderable_after_out_of_stock ?? false;
             }
 
             // Use etiket price if available, otherwise fallback to product's lowest etiket price
-            $itemPrice = $cartItem->etiket ? ($cartItem->etiket->price / 10) : 0;
+            $itemPrice = $etiket ? ($etiket->price / 10) : 0;
             
             OrderItem::create([
                 'order_id' => $order->id,
