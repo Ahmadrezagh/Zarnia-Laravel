@@ -103,6 +103,33 @@
                 </form>
             </div>
         </div>
+
+        <!-- Modal: Select related etikets for comprehensive products -->
+        <div class="modal fade" id="comprehensiveEtiketModal" tabindex="-1" role="dialog" aria-labelledby="comprehensiveEtiketModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="comprehensiveEtiketModalLabel">انتخاب اتیکت‌های مرتبط</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="comprehensive-related-etikets-select" class="font-weight-bold">اتیکت‌های مرتبط را انتخاب کنید</label>
+                            <select id="comprehensive-related-etikets-select" class="form-control" multiple></select>
+                            <small class="form-text text-muted">
+                                اتیکت‌هایی را انتخاب کنید که این اتیکت جامع بر اساس آن‌ها محاسبه می‌شود.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                        <button type="button" class="btn btn-primary" id="confirm-comprehensive-etiket-btn">تایید</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </x-page>
 
 @endsection
@@ -113,6 +140,8 @@
     let orderableEtiketCounter = 0;
     let goldPrice = 0;
     let isNoneGoldProduct = false;
+    let isComprehensiveProduct = false;
+    let comprehensiveModalIsOrderable = false;
 
     $(document).ready(function() {
         goldPrice = parseFloat('{{ (float) setting("gold_price") ?? 0 }}') || 0;
@@ -165,9 +194,52 @@
 
         $('#product-select').on('select2:clear', function () {
             isNoneGoldProduct = false;
+            isComprehensiveProduct = false;
             $('#product-cover-preview').hide();
             $('#product-cover-img').attr('src', '');
             $('#gold-fields').show();
+        });
+
+        // Initialize Select2 for comprehensive related etikets modal
+        $('#comprehensive-related-etikets-select').select2({
+            placeholder: 'جستجو و انتخاب اتیکت‌های مرتبط',
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 1,
+            language: {
+                inputTooShort: function() { return 'حداقل 1 کاراکتر وارد کنید'; },
+                noResults: function() { return 'نتیجه‌ای یافت نشد'; },
+                searching: function() { return 'در حال جستجو...'; }
+            },
+            ajax: {
+                url: '{{ route("etikets.ajax.search") }}',
+                dataType: 'json',
+                type: 'GET',
+                delay: 250,
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                data: function (params) {
+                    return { q: params.term || '' };
+                },
+                processResults: function (data) {
+                    let results = [];
+                    if (data && data.results && Array.isArray(data.results)) {
+                        results = data.results;
+                    }
+                    return { results: results };
+                },
+                cache: true
+            }
+        });
+
+        // Confirm button in comprehensive etiket modal
+        $('#confirm-comprehensive-etiket-btn').on('click', function () {
+            const relatedIds = $('#comprehensive-related-etikets-select').val() || [];
+            if (!relatedIds.length) {
+                alert('لطفاً حداقل یک اتیکت مرتبط انتخاب کنید.');
+                return;
+            }
+            $('#comprehensiveEtiketModal').modal('hide');
+            createComprehensiveEtiketCard(relatedIds, comprehensiveModalIsOrderable);
         });
     });
 
@@ -181,6 +253,7 @@
                 const product = response.data || response;
 
                 isNoneGoldProduct = (product.type === 'none_gold');
+                isComprehensiveProduct = (product.type === 'comprehensive_product');
 
                 if (isNoneGoldProduct) {
                     $('#gold-fields').hide();
@@ -225,6 +298,11 @@
     }
 
     function addEtiket() {
+        // For comprehensive products, always use modal and create exactly one etiket
+        if (isComprehensiveProduct) {
+            openComprehensiveEtiketModal(false);
+            return;
+        }
         var countStr = prompt('تعداد اتیکت\u200cهای مورد نیاز را وارد کنید:', '1');
         if (countStr === null || countStr === '') return;
         var count = parseInt(countStr, 10);
@@ -306,6 +384,11 @@
     }
 
     function addOrderableEtiket() {
+        // For comprehensive products, always use modal and create exactly one etiket
+        if (isComprehensiveProduct) {
+            openComprehensiveEtiketModal(true);
+            return;
+        }
         var countStr = prompt('تعداد اتیکت\u200cهای قابل فروش پس از اتمام موجودی را وارد کنید:', '1');
         if (countStr === null || countStr === '') return;
         var count = parseInt(countStr, 10);
@@ -387,7 +470,7 @@
     }
 
     function calculateEtiketPrice(index, isOrderable) {
-        if (isNoneGoldProduct) return;
+        if (isNoneGoldProduct || isComprehensiveProduct) return;
         const selector = isOrderable ? '#orderable-etikets-row' : '#etikets-row';
         const $etiketItem = $(selector + ' .etiket-item[data-index="' + index + '"]');
         const weight = parseFloat($etiketItem.find('.etiket-weight-input').val()) || 0;
@@ -425,14 +508,101 @@
 
     $('#add-etiket-form').on('submit', function() {
         const hasRegular   = $('#etikets-row .etiket-item').length > 0 &&
-            (isNoneGoldProduct || $('#etikets-row .etiket-weight-input').filter(function() { return parseFloat($(this).val()) > 0; }).length > 0);
+            (isNoneGoldProduct || isComprehensiveProduct || $('#etikets-row .etiket-weight-input').filter(function() { return parseFloat($(this).val()) > 0; }).length > 0);
         const hasOrderable = $('#orderable-etikets-row .etiket-item').length > 0 &&
-            (isNoneGoldProduct || $('#orderable-etikets-row .etiket-weight-input').filter(function() { return parseFloat($(this).val()) > 0; }).length > 0);
+            (isNoneGoldProduct || isComprehensiveProduct || $('#orderable-etikets-row .etiket-weight-input').filter(function() { return parseFloat($(this).val()) > 0; }).length > 0);
         if (!hasRegular && !hasOrderable) {
             alert('حداقل یک اتیکت (عادی یا قابل فروش پس از اتمام موجودی) با وزن معتبر اضافه کنید.');
             return false;
         }
         return true;
     });
+
+    function openComprehensiveEtiketModal(isOrderable) {
+        if (!isComprehensiveProduct) {
+            return;
+        }
+        comprehensiveModalIsOrderable = !!isOrderable;
+        $('#comprehensive-related-etikets-select').val(null).trigger('change');
+        $('#comprehensiveEtiketModal').modal('show');
+    }
+
+    function createComprehensiveEtiketCard(relatedEtiketIds, isOrderable) {
+        if (!Array.isArray(relatedEtiketIds) || !relatedEtiketIds.length) {
+            return;
+        }
+
+        const isOrder = !!isOrderable;
+        const rowSelector = isOrder ? '#orderable-etikets-row' : '#etikets-row';
+        const pending = $(rowSelector + ' .etiket-item').length;
+        const params = isOrder ? { pending_orderable: pending } : { pending_regular: pending };
+
+        $.get('{{ route("etikets.next_numbers") }}', params, function(res) {
+            let codeValue;
+            let index;
+
+            if (isOrder) {
+                const start = res.orderable_start || 7000;
+                orderableEtiketCounter++;
+                index = orderableEtiketCounter;
+                codeValue = 's-' + start;
+            } else {
+                const start = res.regular_start || 7000;
+                etiketCounter++;
+                index = etiketCounter;
+                codeValue = start;
+            }
+
+            if ($(rowSelector + ' p.text-muted').length > 0) {
+                $(rowSelector).html('');
+            }
+
+            const namePrefix = isOrder
+                ? 'orderable_etikets[' + index + ']'
+                : 'etikets[' + index + ']';
+
+            let relatedInputsHtml = '';
+            relatedEtiketIds.forEach(function(id) {
+                relatedInputsHtml += '<input type="hidden" name="' + namePrefix + '[related_etikets][]" value="' + id + '">';
+            });
+
+            const weightHidden = '<input type="hidden" name="' + namePrefix + '[weight]" value="0">';
+
+            const priceInput = '<div class="form-group">' +
+                '<label class="small font-weight-bold">قیمت (تومان)</label>' +
+                '<input type="number" class="form-control etiket-price-input" name="' + namePrefix + '[price]" value="0" readonly>' +
+            '</div>';
+
+            const relatedSummary = '<div class="form-group">' +
+                '<label class="small font-weight-bold">اتیکت‌های مرتبط</label>' +
+                '<p class="small mb-0 text-muted">تعداد ' + relatedEtiketIds.length + ' اتیکت انتخاب شده است.</p>' +
+            '</div>';
+
+            const cardStyle = isOrder ? ' style="border-color: #ffc107;"' : '';
+            const headerStyle = isOrder ? ' style="background-color: #fff3cd;"' : '';
+
+            const html = '<div class="col-md-3 mb-3">' +
+                '<div class="card etiket-item h-100" data-index="' + index + '"' + cardStyle + '>' +
+                    '<div class="card-header d-flex justify-content-between align-items-center"' + headerStyle + '>' +
+                        '<button type="button" class="btn btn-sm btn-danger" onclick="' + (isOrder ? 'removeOrderableEtiket(' + index + ')' : 'removeEtiket(' + index + ')') + '"><i class="fas fa-times"></i></button>' +
+                    '</div>' +
+                    '<div class="card-body">' +
+                        '<div class="form-group">' +
+                            '<label class="small font-weight-bold">شماره اتیکت</label>' +
+                            '<input type="text" class="form-control etiket-code-input" name="' + namePrefix + '[code]" value="' + codeValue + '"' + (isOrder ? ' data-orderable="true"' : '') + '>' +
+                        '</div>' +
+                        weightHidden +
+                        priceInput +
+                        relatedSummary +
+                        relatedInputsHtml +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+            $(rowSelector).append(html);
+        }).fail(function() {
+            alert('خطا در دریافت شماره\u200cهای اتیکت.');
+        });
+    }
 </script>
 @endpush

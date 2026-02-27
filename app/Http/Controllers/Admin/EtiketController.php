@@ -9,6 +9,7 @@ use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\Category;
 use App\Models\Etiket;
+use App\Models\ComprehensiveEtiket;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -341,19 +342,24 @@ class EtiketController extends Controller
             'etikets.*.code' => 'nullable|string|max:64',
             'etikets.*.weight' => 'required_with:etikets|numeric|min:0',
             'etikets.*.price' => 'nullable|numeric|min:0',
+            'etikets.*.related_etikets' => 'nullable|array',
+            'etikets.*.related_etikets.*' => 'integer|exists:etikets,id',
             'orderable_etikets' => 'nullable|array',
             'orderable_etikets.*.code' => 'nullable|string|max:64',
             'orderable_etikets.*.weight' => 'required_with:orderable_etikets|numeric|min:0',
             'orderable_etikets.*.price' => 'nullable|numeric|min:0',
+            'orderable_etikets.*.related_etikets' => 'nullable|array',
+            'orderable_etikets.*.related_etikets.*' => 'integer|exists:etikets,id',
         ]);
 
         $productModel = Product::findOrFail($request->product_id);
         $isNoneGold = ($productModel->type ?? 'gold') === 'none_gold';
+        $isComprehensive = ($productModel->type ?? 'gold') === 'comprehensive_product';
 
         $etiketsList         = $request->input('etikets', []);
         $orderableEtiketsList = $request->input('orderable_etikets', []);
 
-        if ($isNoneGold) {
+        if ($isNoneGold || $isComprehensive) {
             $hasRegular   = is_array($etiketsList) && count($etiketsList) > 0;
             $hasOrderable = is_array($orderableEtiketsList) && count($orderableEtiketsList) > 0;
         } else {
@@ -389,8 +395,8 @@ class EtiketController extends Controller
         // Regular etikets (one per row; code from form or generated)
         if ($hasRegular) {
             foreach ($etiketsList as $key => $etiketData) {
-                $weight = $isNoneGold ? 0 : (float)($etiketData['weight'] ?? 0);
-                if (!$isNoneGold && $weight <= 0) {
+                $weight = ($isNoneGold || $isComprehensive) ? 0 : (float)($etiketData['weight'] ?? 0);
+                if (!$isNoneGold && !$isComprehensive && $weight <= 0) {
                     $skipped++;
                     continue;
                 }
@@ -407,10 +413,13 @@ class EtiketController extends Controller
                 if ($isNoneGold) {
                     $submittedPrice = $request->input("etikets.{$key}.price") ?? ($etiketData['price'] ?? 0);
                     $price = (float) $submittedPrice;
+                } elseif ($isComprehensive) {
+                    // For comprehensive products, etiket price is always stored as 0
+                    $price = 0;
                 } else {
                     $price = $this->calculateEtiketPrice($productModel, $weight);
                 }
-                Etiket::create([
+                $createdEtiket = Etiket::create([
                     'code' => $etiketCode,
                     'name' => $productModel->name,
                     'weight' => $weight,
@@ -420,7 +429,17 @@ class EtiketController extends Controller
                     'darsad_kharid' => $darsadKharid,
                     'is_mojood' => 1,
                     'orderable_after_out_of_stock' => 0,
+                    'type' => $isComprehensive ? 'comprehensive' : 'real',
                 ]);
+                // Save related etikets for comprehensive products
+                if ($isComprehensive && !empty($etiketData['related_etikets']) && is_array($etiketData['related_etikets'])) {
+                    foreach ($etiketData['related_etikets'] as $relatedId) {
+                        ComprehensiveEtiket::create([
+                            'etiket_id' => $createdEtiket->id,
+                            'related_etiket_id' => $relatedId,
+                        ]);
+                    }
+                }
                 $etiketCodes[] = $etiketCode;
                 $existingNumeric[] = $etiketCode;
                 $created++;
@@ -430,8 +449,8 @@ class EtiketController extends Controller
         // Orderable etikets (s-xxxx, one per row; code from form or generated)
         if ($hasOrderable) {
             foreach ($orderableEtiketsList as $key => $etiketData) {
-                $weight = $isNoneGold ? 0 : (float)($etiketData['weight'] ?? 0);
-                if (!$isNoneGold && $weight <= 0) {
+                $weight = ($isNoneGold || $isComprehensive) ? 0 : (float)($etiketData['weight'] ?? 0);
+                if (!$isNoneGold && !$isComprehensive && $weight <= 0) {
                     $skipped++;
                     continue;
                 }
@@ -448,10 +467,13 @@ class EtiketController extends Controller
                 if ($isNoneGold) {
                     $submittedPrice = $request->input("orderable_etikets.{$key}.price") ?? ($etiketData['price'] ?? 0);
                     $price = (float) $submittedPrice;
+                } elseif ($isComprehensive) {
+                    // For comprehensive products, etiket price is always stored as 0
+                    $price = 0;
                 } else {
                     $price = $this->calculateEtiketPrice($productModel, $weight);
                 }
-                Etiket::create([
+                $createdEtiket = Etiket::create([
                     'code' => $etiketCode,
                     'name' => $productModel->name,
                     'weight' => $weight,
@@ -461,7 +483,17 @@ class EtiketController extends Controller
                     'darsad_kharid' => $darsadKharid,
                     'is_mojood' => 1,
                     'orderable_after_out_of_stock' => 1,
+                    'type' => $isComprehensive ? 'comprehensive' : 'real',
                 ]);
+                // Save related etikets for comprehensive products (orderable)
+                if ($isComprehensive && !empty($etiketData['related_etikets']) && is_array($etiketData['related_etikets'])) {
+                    foreach ($etiketData['related_etikets'] as $relatedId) {
+                        ComprehensiveEtiket::create([
+                            'etiket_id' => $createdEtiket->id,
+                            'related_etiket_id' => $relatedId,
+                        ]);
+                    }
+                }
                 $orderableEtiketCodes[] = $etiketCode;
                 $existingOrderable[] = $etiketCode;
                 $created++;
