@@ -186,7 +186,7 @@ class Etiket extends Model
                 return 0;
             }
 
-            return $links->sum(function (ComprehensiveEtiket $link) {
+            $total = $links->sum(function (ComprehensiveEtiket $link) {
                 $related = $link->relatedEtiket;
                 if (!$related) {
                     return 0;
@@ -194,6 +194,9 @@ class Etiket extends Model
                 // Use effective weight of related etikets (supports nested comprehensive if ever needed)
                 return (float) ($related->weight ?? 0);
             });
+
+            // For comprehensive etikets, show weight with at most two digits after decimal
+            return round($total, 2);
         }
 
         return (float) $value;
