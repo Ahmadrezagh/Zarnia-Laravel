@@ -50,6 +50,26 @@ class Etiket extends Model
      */
     public function isReserved(): bool
     {
+        // For comprehensive etikets, consider reserved if ANY related etiket is reserved
+        if ($this->type === 'comprehensive') {
+            $links = $this->relationLoaded('comprehensiveEtikets')
+                ? $this->comprehensiveEtikets
+                : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
+
+            if (!$links || $links->isEmpty()) {
+                return false;
+            }
+
+            foreach ($links as $link) {
+                $related = $link->relatedEtiket;
+                if ($related && $related->isReserved()) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         $cacheKey = 'reserved_etiket_' . $this->code;
         return Cache::has($cacheKey);
     }
