@@ -31,8 +31,6 @@ class storeComprehensiveProductRequest extends FormRequest
             'meta_keywords' => 'nullable|string',
             'canonical_url' => 'nullable|url',
             'categories' => 'nullable',
-            'product_ids' => 'required|array|min:1',
-            'product_ids.*' => 'integer|exists:products,id',
             'cover_image' => 'nullable', // Adjust if it's a file
             'gallery' => 'nullable|array|min:1',
         ];
