@@ -74,8 +74,15 @@
                             </div>
                             
                             <div class="form-group">
-                                <label for="comprehensive-product-import" class="font-weight-bold">ایمپورت محصول</label>
-                                <textarea class="form-control" id="comprehensive-product-import" name="product_import" rows="3" placeholder="لیست محصولات را برای ایمپورت وارد کنید"></textarea>
+                                <label for="comprehensive-import-product" class="font-weight-bold">ایمپورت محصول</label>
+                                <select id="comprehensive-import-product" class="form-control">
+                                    <option value="">-- انتخاب محصول برای بارگذاری داده‌ها --</option>
+                                </select>
+                                <small class="form-text text-muted">با انتخاب یک محصول موجود، داده‌های آن در فرم بارگذاری می‌شود. مقدار این فیلد هنگام ذخیره ارسال نمی‌شود.</small>
+                                <div id="comprehensive-import-product-url" class="mt-2" style="display: none;">
+                                    <small class="text-muted">لینک محصول: </small>
+                                    <a href="#" id="comprehensive-import-product-url-link" target="_blank" class="text-primary"></a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -103,6 +110,80 @@
             placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
             allowClear: true,
             width: '100%'
+        });
+
+        // Initialize Select2 for import product
+        $('#comprehensive-import-product').select2({
+            placeholder: 'جستجو و انتخاب محصول برای ایمپورت',
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 1,
+            language: {
+                inputTooShort: function() {
+                    return 'حداقل 1 کاراکتر وارد کنید';
+                },
+                noResults: function() {
+                    return 'نتیجه‌ای یافت نشد';
+                },
+                searching: function() {
+                    return 'در حال جستجو...';
+                }
+            },
+            ajax: {
+                url: '{{ route("products.ajax.search.parents") }}',
+                dataType: 'json',
+                type: 'GET',
+                delay: 250,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: function (params) {
+                    return {
+                        q: params.term || ''
+                    };
+                },
+                processResults: function (data) {
+                    let results = [];
+                    if (data && data.results && Array.isArray(data.results)) {
+                        results = data.results;
+                    } else if (Array.isArray(data)) {
+                        results = data;
+                    } else if (data && data.data && Array.isArray(data.data)) {
+                        results = data.data;
+                    }
+
+                    const products = results.filter(function(item) {
+                        if (!item || !item.id) return false;
+                        const itemId = item.id.toString();
+                        return itemId.startsWith('Product:');
+                    });
+
+                    return {
+                        results: products.map(function(item) {
+                            const productId = item.id.toString().replace('Product:', '');
+                            return {
+                                id: productId,
+                                text: item.text || item.name || 'محصول'
+                            };
+                        })
+                    };
+                },
+                cache: true
+            }
+        });
+
+        // When import product is selected, fill form with its data
+        $('#comprehensive-import-product').on('select2:select', function (e) {
+            const productId = e.params.data.id;
+            if (productId) {
+                loadComprehensiveImportProductData(productId);
+            }
+        });
+
+        // When import product is cleared, hide URL
+        $('#comprehensive-import-product').on('select2:clear', function () {
+            $('#comprehensive-import-product-url').hide();
+            $('#comprehensive-import-product-url-link').attr('href', '#').text('');
         });
         
         // Initialize image-uploader for gallery only
@@ -154,8 +235,8 @@
             this.submit();
         });
         
-        // Function to load parent product data and fill form
-        function loadComprehensiveParentProductData(productId) {
+        // Function to load import product data and fill form
+        function loadComprehensiveImportProductData(productId) {
             $.ajax({
                 url: '{{ route("products.index") }}/' + productId,
                 method: 'GET',
@@ -164,13 +245,13 @@
                 },
                 success: function(response) {
                     const product = response.data || response;
-                    
-                    // Display parent product URL
+
+                    // Display import product URL
                     if (product.frontend_url) {
-                        $('#comprehensive-parent-product-url-link').attr('href', product.frontend_url).text(product.frontend_url);
-                        $('#comprehensive-parent-product-url').show();
+                        $('#comprehensive-import-product-url-link').attr('href', product.frontend_url).text(product.frontend_url);
+                        $('#comprehensive-import-product-url').show();
                     } else {
-                        $('#comprehensive-parent-product-url').hide();
+                        $('#comprehensive-import-product-url').hide();
                     }
                     
                     // Fill name
@@ -233,11 +314,11 @@
                     
                 },
                 error: function(xhr) {
-                    console.error('Error loading parent product data:', xhr);
+                    console.error('Error loading import product data:', xhr);
                 }
             });
         }
-        window.loadComprehensiveParentProductData = loadComprehensiveParentProductData;
+        window.loadComprehensiveImportProductData = loadComprehensiveImportProductData;
     });
 
     // Preview comprehensive cover image
