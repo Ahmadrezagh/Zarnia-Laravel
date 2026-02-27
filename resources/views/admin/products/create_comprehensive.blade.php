@@ -57,7 +57,17 @@
                                 <label for="comprehensive-product-name" class="font-weight-bold">نام محصول جامع <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="comprehensive-product-name" name="name" required placeholder="مثال: ست طلا">
                             </div>
-                            
+                            <div class="form-group">
+                                <label for="comprehensive-import-product" class="font-weight-bold">ایمپورت محصول</label>
+                                <select id="comprehensive-import-product" class="form-control">
+                                    <option value="">-- انتخاب محصول برای بارگذاری داده‌ها --</option>
+                                </select>
+                                <small class="form-text text-muted">با انتخاب یک محصول موجود، داده‌های آن در فرم بارگذاری می‌شود. مقدار این فیلد هنگام ذخیره ارسال نمی‌شود.</small>
+                                <div id="comprehensive-import-product-url" class="mt-2" style="display: none;">
+                                    <small class="text-muted">لینک محصول: </small>
+                                    <a href="#" id="comprehensive-import-product-url-link" target="_blank" class="text-primary"></a>
+                                </div>
+                            </div>
                             <div class="form-group">
                                 <label for="comprehensive-product-description" class="font-weight-bold">توضیحات</label>
                                 <textarea class="form-control" id="comprehensive-product-description" name="description" rows="3" placeholder="توضیحات محصول"></textarea>
@@ -73,17 +83,7 @@
                                 <small class="form-text text-muted">حداقل یک دسته بندی باید انتخاب شود</small>
                             </div>
                             
-                            <div class="form-group">
-                                <label for="comprehensive-import-product" class="font-weight-bold">ایمپورت محصول</label>
-                                <select id="comprehensive-import-product" class="form-control">
-                                    <option value="">-- انتخاب محصول برای بارگذاری داده‌ها --</option>
-                                </select>
-                                <small class="form-text text-muted">با انتخاب یک محصول موجود، داده‌های آن در فرم بارگذاری می‌شود. مقدار این فیلد هنگام ذخیره ارسال نمی‌شود.</small>
-                                <div id="comprehensive-import-product-url" class="mt-2" style="display: none;">
-                                    <small class="text-muted">لینک محصول: </small>
-                                    <a href="#" id="comprehensive-import-product-url-link" target="_blank" class="text-primary"></a>
-                                </div>
-                            </div>
+                            
                         </div>
                     </div>
                     
