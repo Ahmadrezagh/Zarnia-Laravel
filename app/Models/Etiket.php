@@ -12,6 +12,7 @@ class Etiket extends Model
     
     protected $fillable = [
         'code',
+        'type',
         'weight',
         'price',
         'product_id',
@@ -31,6 +32,16 @@ class Etiket extends Model
     public function attributeValues()
     {
         return $this->hasMany(AttributeValue::class);
+    }
+
+    public function comprehensiveEtikets()
+    {
+        return $this->hasMany(ComprehensiveEtiket::class);
+    }
+
+    public function relatedComprehensiveEtikets()
+    {
+        return $this->hasMany(ComprehensiveEtiket::class, 'related_etiket_id');
     }
 
     /**
