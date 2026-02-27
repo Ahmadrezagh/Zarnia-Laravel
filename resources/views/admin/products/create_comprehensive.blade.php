@@ -59,23 +59,6 @@
                             </div>
                             
                             <div class="form-group">
-                                <label for="comprehensive-parent-product" class="font-weight-bold">محصول والد (اختیاری)</label>
-                                <select name="parent_id" id="comprehensive-parent-product" class="form-control">
-                                    <option value="">-- انتخاب محصول والد --</option>
-                                </select>
-                                <small class="form-text text-muted">در صورت نیاز به ایجاد محصول زیرمجموعه، محصول والد را انتخاب کنید</small>
-                                <div id="comprehensive-parent-product-url" class="mt-2" style="display: none;">
-                                    <small class="text-muted">لینک محصول والد: </small>
-                                    <a href="#" id="comprehensive-parent-product-url-link" target="_blank" class="text-primary"></a>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="comprehensive-product-slug" class="font-weight-bold">نامک (Slug) (اختیاری)</label>
-                                <input type="text" id="comprehensive-product-slug" name="slug" class="form-control" dir="ltr" placeholder="example-slug">
-                            </div>
-                            
-                            <div class="form-group">
                                 <label for="comprehensive-product-description" class="font-weight-bold">توضیحات</label>
                                 <textarea class="form-control" id="comprehensive-product-description" name="description" rows="3" placeholder="توضیحات محصول"></textarea>
                             </div>
@@ -91,9 +74,8 @@
                             </div>
                             
                             <div class="form-group">
-                                <label for="comprehensive-etiket-select" class="font-weight-bold">محصولات <span class="text-danger">*</span></label>
-                                <select id="comprehensive-etiket-select" name="product_ids[]" class="form-control" multiple required></select>
-                                <small class="form-text text-muted">محصولاتی که این محصول جامع از آن‌ها تشکیل شده است را انتخاب کنید</small>
+                                <label for="comprehensive-product-import" class="font-weight-bold">ایمپورت محصول</label>
+                                <textarea class="form-control" id="comprehensive-product-import" name="product_import" rows="3" placeholder="لیست محصولات را برای ایمپورت وارد کنید"></textarea>
                             </div>
                         </div>
                     </div>
@@ -121,80 +103,6 @@
             placeholder: 'دسته‌بندی‌ها را انتخاب کنید',
             allowClear: true,
             width: '100%'
-        });
-        
-        // Initialize Select2 for parent product
-        $('#comprehensive-parent-product').select2({
-            placeholder: 'جستجو و انتخاب محصول والد',
-            allowClear: true,
-            width: '100%',
-            minimumInputLength: 1,
-            language: {
-                inputTooShort: function() {
-                    return 'حداقل 1 کاراکتر وارد کنید';
-                },
-                noResults: function() {
-                    return 'نتیجه‌ای یافت نشد';
-                },
-                searching: function() {
-                    return 'در حال جستجو...';
-                }
-            },
-            ajax: {
-                url: '{{ route("products.ajax.search.parents") }}',
-                dataType: 'json',
-                type: 'GET',
-                delay: 250,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                data: function (params) {
-                    return {
-                        q: params.term || ''
-                    };
-                },
-                processResults: function (data) {
-                    let results = [];
-                    if (data && data.results && Array.isArray(data.results)) {
-                        results = data.results;
-                    } else if (Array.isArray(data)) {
-                        results = data;
-                    } else if (data && data.data && Array.isArray(data.data)) {
-                        results = data.data;
-                    }
-                    
-                    const products = results.filter(function(item) {
-                        if (!item || !item.id) return false;
-                        const itemId = item.id.toString();
-                        return itemId.startsWith('Product:');
-                    });
-                    
-                    return {
-                        results: products.map(function(item) {
-                            const productId = item.id.toString().replace('Product:', '');
-                            return {
-                                id: productId,
-                                text: item.text || item.name || 'محصول'
-                            };
-                        })
-                    };
-                },
-                cache: true
-            }
-        });
-
-        // When parent product is selected, fill form with parent data
-        $('#comprehensive-parent-product').on('select2:select', function (e) {
-            const parentId = e.params.data.id;
-            if (parentId) {
-                loadComprehensiveParentProductData(parentId);
-            }
-        });
-
-        // When parent product is cleared, hide URL
-        $('#comprehensive-parent-product').on('select2:clear', function (e) {
-            $('#comprehensive-parent-product-url').hide();
-            $('#comprehensive-parent-product-url-link').attr('href', '#').text('');
         });
         
         // Initialize image-uploader for gallery only
@@ -227,43 +135,6 @@
         
         setTimeout(initializeComprehensiveGalleryUploader, 100);
         
-        // Initialize Select2 for etiket/product selection
-        $('#comprehensive-etiket-select').select2({
-            placeholder: 'جستجو و انتخاب محصولات (با موجودی)',
-            allowClear: true,
-            width: '100%',
-            minimumInputLength: 1,
-            language: {
-                inputTooShort: function() {
-                    return 'حداقل 1 کاراکتر وارد کنید';
-                },
-                noResults: function() {
-                    return 'نتیجه‌ای یافت نشد';
-                },
-                searching: function() {
-                    return 'در حال جستجو...';
-                }
-            },
-            ajax: {
-                url: '{{ route("products.ajax.search.comprehensive") }}',
-                dataType: 'json',
-                delay: 250,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                data: function (params) {
-                    return { q: params.term || '' };
-                },
-                processResults: function (data) {
-                    if (data && data.results && Array.isArray(data.results)) {
-                        return { results: data.results };
-                    }
-                    return { results: [] };
-                },
-                cache: false
-            }
-        });
-
         // Setup form submission
         $('#create-comprehensive-product-form').on('submit', function(e) {
             e.preventDefault();
@@ -279,19 +150,6 @@
                 $('#comprehensive-product-categories').removeClass('is-invalid');
                 $('#comprehensive-product-categories').next('.invalid-feedback').remove();
             }
-            
-            // Validate product_ids (required)
-            const productIds = $('#comprehensive-etiket-select').val();
-            if (!productIds || productIds.length === 0) {
-                $('#comprehensive-etiket-select').addClass('is-invalid');
-                $('#comprehensive-etiket-select').next('.invalid-feedback').remove();
-                $('#comprehensive-etiket-select').after('<div class="invalid-feedback">لطفاً حداقل یک محصول انتخاب کنید</div>');
-                return false;
-            } else {
-                $('#comprehensive-etiket-select').removeClass('is-invalid');
-                $('#comprehensive-etiket-select').next('.invalid-feedback').remove();
-            }
-            
             // Submit form
             this.submit();
         });
