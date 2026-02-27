@@ -1588,14 +1588,6 @@ class ProductController extends Controller
             $validated['type'] = 'comprehensive_product';
             $validated['weight'] = 0;
             $validated['price'] = 0;
-
-            foreach ($request->product_ids as $productId) {
-                $pr = Product::find($productId);
-                if($pr){
-                    $validated['price'] = $validated['price'] + ( $pr->price * 10 );
-                    $validated['weight'] = $validated['weight'] + $pr->weight;
-                }
-            }
             
             $product = Product::create($validated);
         // Handle cover image
