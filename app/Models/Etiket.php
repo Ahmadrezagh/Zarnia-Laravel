@@ -68,7 +68,9 @@ class Etiket extends Model
 
     /**
      * Get the original price (stored price * 10 for display)
-     * This returns the price from database without any discount applied
+     * This returns the price from database without any discount applied.
+     * For comprehensive etikets, this remains the raw stored price (0 by design),
+     * while the effective price is calculated in getPriceAttribute().
      */
     public function getOriginalPriceAttribute()
     {
@@ -138,13 +140,63 @@ class Etiket extends Model
     }
 
     /**
-     * Get the effective price (discounted if available, otherwise original)
-     * This is the price that should be used for calculations and display
+     * Get the effective price.
+     * - For real etikets: discounted price if available, otherwise original.
+     * - For comprehensive etikets: sum of effective prices of related etikets.
      */
     public function getPriceAttribute($value)
     {
-        // If discounted price is available, use it; otherwise use original price
+        if ($this->type === 'comprehensive') {
+            // Try to use already loaded relation to avoid N+1
+            $links = $this->relationLoaded('comprehensiveEtikets')
+                ? $this->comprehensiveEtikets
+                : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
+
+            if (!$links || $links->isEmpty()) {
+                return 0;
+            }
+
+            return $links->sum(function (ComprehensiveEtiket $link) {
+                $related = $link->relatedEtiket;
+                if (!$related) {
+                    return 0;
+                }
+                // Use effective price of each related etiket (handles its own discounts)
+                return (int) ($related->price ?? 0);
+            });
+        }
+
+        // For regular etikets, use discounted price if available; otherwise original price
         return $this->discounted_price ?? $this->original_price;
+    }
+
+    /**
+     * Get effective weight.
+     * - For real etikets: just the stored weight.
+     * - For comprehensive etikets: sum of weights of related etikets.
+     */
+    public function getWeightAttribute($value)
+    {
+        if ($this->type === 'comprehensive') {
+            $links = $this->relationLoaded('comprehensiveEtikets')
+                ? $this->comprehensiveEtikets
+                : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
+
+            if (!$links || $links->isEmpty()) {
+                return 0;
+            }
+
+            return $links->sum(function (ComprehensiveEtiket $link) {
+                $related = $link->relatedEtiket;
+                if (!$related) {
+                    return 0;
+                }
+                // Use effective weight of related etikets (supports nested comprehensive if ever needed)
+                return (float) ($related->weight ?? 0);
+            });
+        }
+
+        return (float) $value;
     }
 
     public function getNameAttribute()
