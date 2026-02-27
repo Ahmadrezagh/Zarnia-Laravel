@@ -1627,12 +1627,6 @@ class ProductController extends Controller
                 $product->categories()->sync($categoryIds);
             }
 
-            foreach ($request->product_ids as $productId) {
-                ComprehensiveProduct::create([
-                    'comprehensive_product_id' => $product->id,
-                    'product_id' => $productId,
-                ]);
-            }
             
             // Update discounted price
             $this->updateDiscountedPrice($product);
