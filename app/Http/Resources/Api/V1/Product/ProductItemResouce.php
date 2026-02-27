@@ -60,7 +60,8 @@ class ProductItemResouce extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'weight' => $this->minimum_available_weight,
-            'description' => $this->description,
+            // Strip HTML tags from description for API output
+            'description' => $this->description ? trim(strip_tags($this->description)) : null,
             'image' => $this->image,
             'cover_image' => $this->CoverImageResponsive,
             'gallery_images' => $galleryUrls,
