@@ -1589,11 +1589,6 @@ class ProductController extends Controller
             $validated['weight'] = 0;
             $validated['price'] = 0;
 
-            // Ensure product_ids is an array
-            if (!is_array($request->product_ids) || empty($request->product_ids)) {
-                return back()->withErrors(['product_ids' => 'حداقل یک محصول باید انتخاب شود']);
-            }
-
             foreach ($request->product_ids as $productId) {
                 $pr = Product::find($productId);
                 if($pr){
