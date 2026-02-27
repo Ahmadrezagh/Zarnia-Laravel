@@ -55,8 +55,38 @@ class Etiket extends Model
     }
 
     /**
-     * Get the effective availability status (considering reservations)
-     * Returns 0 if reserved, otherwise returns the actual is_mojood value
+     * Base availability accessor.
+     * - For comprehensive etikets: 1 only if ALL related etikets have is_mojood == 1.
+     * - For other etikets: returns the raw database value.
+     */
+    public function getIsMojoodAttribute($value): int
+    {
+        if ($this->type === 'comprehensive') {
+            $links = $this->relationLoaded('comprehensiveEtikets')
+                ? $this->comprehensiveEtikets
+                : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
+
+            if (!$links || $links->isEmpty()) {
+                return 0;
+            }
+
+            $allAvailable = $links->every(function (ComprehensiveEtiket $link) {
+                $related = $link->relatedEtiket;
+                if (!$related) {
+                    return false;
+                }
+                return (int) ($related->is_mojood ?? 0) === 1;
+            });
+
+            return $allAvailable ? 1 : 0;
+        }
+
+        return (int) $value;
+    }
+
+    /**
+     * Effective availability (considers reservations).
+     * Returns 0 if reserved, otherwise uses the is_mojood accessor above.
      */
     public function getEffectiveIsMojoodAttribute(): int
     {
