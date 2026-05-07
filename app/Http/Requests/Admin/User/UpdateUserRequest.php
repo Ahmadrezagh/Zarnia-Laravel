@@ -25,7 +25,6 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'name' => ['required'],
-            'password' => ['nullable','confirmed'],
             'email' => ['nullable', Rule::unique('users', 'email')->ignore($this->id)],
             'phone' => ['nullable', Rule::unique('users', 'phone')->ignore($this->id),new IranPhoneNumberRule ],
             'profile_image' => ['nullable', 'file'],

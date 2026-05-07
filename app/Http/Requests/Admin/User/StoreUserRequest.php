@@ -26,7 +26,6 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'name' => ['required'],
-            'password' => ['required','confirmed'],
             'email' => ['nullable', Rule::unique('users', 'email')],
             'phone' => ['nullable', Rule::unique('users', 'phone'),new IranPhoneNumberRule ],
             'profile_image' => ['nullable', 'file'],
