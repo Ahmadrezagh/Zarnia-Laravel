@@ -136,9 +136,6 @@ class UserController extends Controller
         if ($request->profile_image){
             $validated['profile_image'] = upload_file($request->profile_image, '/profiles');
         }
-        if($validated['password'] == null){
-            unset($validated['password']);
-        }
         $user->update($validated);
         $user->roles()->sync($request->roles);
         return response()->json(['message' => 'با موفقیت انجام شد']);
