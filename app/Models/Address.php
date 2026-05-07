@@ -24,4 +24,8 @@ class Address extends Model
     {
         return $this->belongsTo(IranCity::class);
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
