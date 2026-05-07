@@ -108,7 +108,7 @@ class TorobController extends Controller
                 
                 // Build product data for this etiket
                 $productData = [
-                    'id' => (string) $product->id . '-' . $etiket->code, // Unique ID combining product ID and etiket code
+                    'id' => $etiket->code, // Unique ID combining product ID and etiket code
                     'title' => $product->name,
                     'link' => $baseUrl . '/products/' . $product->slug . '?e=' . $etiket->code,
                     'price' => (int) ($etiketPrice * 10), // Convert to integer (price is stored * 10 in DB)
