@@ -189,7 +189,7 @@ class User extends Authenticatable
         }
         
         return $this->addresses->map(function($address) {
-            return "({$address->receiver_name})- {$address->address}";
+            return "({$user->name})- {$address->address}";
         })->implode("\n");
     }
 
