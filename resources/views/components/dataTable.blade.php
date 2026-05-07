@@ -48,8 +48,8 @@
 {!! $slot !!}
 
 @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="{{ asset('cdn/dataTables.bootstrap4.min.css')}}" >
+    <link rel="stylesheet" href="{{ asset('cdn/responsive.bootstrap4.min.css')}} ">
 
     <style>
         /* ✅ Fix 1: Select option full width */

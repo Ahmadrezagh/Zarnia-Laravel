@@ -2,8 +2,8 @@
 <html lang="fa" dir="rtl">
 <head>
     <script src="{{ asset('pdfEditor/pdf.min.js') }}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs@1/dist/interact.min.js"></script>
+    <script src="{{ asset('cdn/pdf.worker.min.js') }}"></script>
+    <script src="{{ asset('cdn/interact.min.js') }}"></script>
     <style>
         body { margin: 0; padding: 0; }
         #editor-container {
