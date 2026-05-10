@@ -128,7 +128,8 @@ class Discount extends Model
 
     public function orders()
     {
-        return $this->hasMany(Order::class,'discount_code','code')->whereIn('status',[ Order::$STATUSES[1], Order::$STATUSES[4], Order::$STATUSES[5],Order::$STATUSES[6],Order::$STATUSES[7] ]);
+        return $this->hasMany(Order::class, 'discount_code', 'code')
+            ->whereIn('status', Order::inventoryCommittedStatuses());
     }
 
     /**
@@ -242,6 +243,7 @@ class Discount extends Model
         if ($discount->quantity_per_user) {
             $userUsage = Order::where('discount_code', $discount->code)
                 ->where('user_id', $userId)
+                ->whereIn('status', Order::inventoryCommittedStatuses())
                 ->count();
 
             if ($userUsage >= $discount->quantity_per_user) {
