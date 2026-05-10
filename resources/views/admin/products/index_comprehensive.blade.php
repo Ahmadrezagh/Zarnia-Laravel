@@ -595,20 +595,6 @@
             // Set modal title
             $('#dynamic-modal-title').text('ایجاد محصول');
             
-            // Initialize/create products array for create modal
-            if (!window.createComprehensiveProducts) {
-                window.createComprehensiveProducts = [];
-            } else {
-                window.createComprehensiveProducts = []; // Reset array
-            }
-            
-            // Initialize product data array
-            if (!window.createComprehensiveProductsData) {
-                window.createComprehensiveProductsData = [];
-            } else {
-                window.createComprehensiveProductsData = []; // Reset array
-            }
-            
             const categoryOptions = '@foreach($categories as $category) <option value="{{$category->id}}" >{{$category->title}}</option> @endforeach'
             appendToModalContent(`
 <form id="create-comprehensive-product-form" action="{{route("comprehensive_product.store")}}" method="POST" enctype="multipart/form-data" >
@@ -640,67 +626,6 @@
                         <div id="product-gallery"></div>
                     </div>
 
-                    <div class="form-group mt-4">
-                        <label class="font-weight-bold">محصولات تشکیل‌دهنده (جامع)</label>
-                        <div class="alert alert-info">
-                            <small>محصولات زیر پس از ایجاد محصول جامع به آن اضافه خواهند شد:</small>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped" id="create-comprehensive-products-table">
-                                <thead>
-                                    <tr>
-                                        <th>تصویر</th>
-                                        <th>نام محصول</th>
-                                        <th>وزن</th>
-                                        <th>قیمت</th>
-                                        <th>موجودی</th>
-                                        <th>عملیات</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="create-comprehensive-products-tbody">
-                                    <tr id="create-comprehensive-products-empty">
-                                        <td colspan="6" class="text-center text-muted">هیچ محصولی انتخاب نشده است</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="mt-3 p-3 border-top">
-                            <h6>افزودن محصول جدید</h6>
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="custom-product-search" style="position: relative;">
-                                        <input 
-                                            type="text" 
-                                            id="product-search-input-create" 
-                                            class="form-control" 
-                                            placeholder="جستجو و انتخاب محصول (با کلیک روی محصول، به لیست اضافه می‌شود)..."
-                                            autocomplete="off"
-                                            oninput="searchProductsForCreateComprehensive(this.value)"
-                                            onfocus="showProductDropdownCreate()"
-                                            onblur="setTimeout(() => hideProductDropdownCreate(), 200)"
-                                        />
-                                        <div 
-                                            id="product-dropdown-create" 
-                                            class="custom-product-dropdown" 
-                                            style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 300px; overflow-y: auto; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-top: 2px;"
-                                        >
-                                            <div class="text-center p-3 text-muted" style="display: none;" id="product-search-loading-create">
-                                                <i class="fas fa-spinner fa-spin"></i> در حال جستجو...
-                                            </div>
-                                            <div class="text-center p-3 text-muted" style="display: none;" id="product-search-empty-create">
-                                                نتیجه‌ای یافت نشد
-                                            </div>
-                                            <div id="product-search-results-create"></div>
-                                        </div>
-                                    </div>
-                                    <small class="text-muted mt-1 d-block">
-                                        <i class="fas fa-info-circle"></i> با کلیک روی محصول از لیست، به صورت خودکار به لیست اضافه می‌شود.
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Product IDs will be added via JavaScript, not hidden input -->
-                    </div>
 <button class="btn btn-success" type="submit">ایجاد</button>
 </form>
 
@@ -739,26 +664,12 @@
                 }
             });
             
-            // Store selected products for create modal
-            window.createComprehensiveProducts = [];
-            
             // Handle form submission with AJAX
             $('#create-comprehensive-product-form').off('submit').on('submit', function(e) {
                 e.preventDefault();
                 
                 const form = this;
                 const formData = new FormData(form);
-                
-                // Validate that at least one product is selected
-                if (!window.createComprehensiveProducts || window.createComprehensiveProducts.length === 0) {
-                    toastr.error('لطفا حداقل یک محصول را انتخاب کنید');
-                    return false;
-                }
-                
-                // Add product IDs to form data (convert to integers for validation)
-                window.createComprehensiveProducts.forEach(function(productId) {
-                    formData.append('product_ids[]', parseInt(productId, 10));
-                });
                 
                 $.ajax({
                     url: $(form).attr('action'),
@@ -773,9 +684,6 @@
                         toastr.success('محصول جامع با موفقیت ایجاد شد');
                         $('#dynamic-modal').modal('hide');
                         window.refreshTable();
-                        // Clear selected products and data
-                        window.createComprehensiveProducts = [];
-                        window.createComprehensiveProductsData = [];
                     },
                     error: function(xhr) {
                         if (xhr.status === 422) {
