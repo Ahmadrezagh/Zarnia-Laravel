@@ -3,24 +3,23 @@
 namespace App\Models;
 
 use App\Services\Api\Tahesab;
+use App\Services\NajvaService;
 use App\Services\PaymentGateways\SamanGateway;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
-use App\Services\NajvaService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
-use Carbon\Carbon;
 use Morilog\Jalali\Jalalian;
-use App\Models\Etiket;
 
 class Order extends Model
 {
     use SoftDeletes;
-    
+
     protected $fillable = [
         'user_id',
         'address_id',
@@ -67,20 +66,21 @@ class Order extends Model
         });
     }
 
-    public function scopeFilterByTransactionId(Builder $query, string $transactionId = null)
+    public function scopeFilterByTransactionId(Builder $query, ?string $transactionId = null)
     {
-        if($transactionId){
+        if ($transactionId) {
             $query->where('transaction_id', $transactionId);
         }
+
         return $query;
     }
 
-    public function scopeSearch(Builder $query, string $search = null)
+    public function scopeSearch(Builder $query, ?string $search = null)
     {
-        if($search){
+        if ($search) {
             $search = self::normalizeSearchValue($search);
 
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 if (is_numeric($search)) {
                     $q->where('id', intval($search));
                 }
@@ -88,19 +88,20 @@ class Order extends Model
                 $q->orWhere('id', 'LIKE', "%{$search}%")
                     ->orWhereHas('user', function ($q) use ($search) {
                         $q->where('name', 'LIKE', "%{$search}%")
-                          ->orWhere('last_name', 'LIKE', "%{$search}%");
+                            ->orWhere('last_name', 'LIKE', "%{$search}%");
                     })
                     ->orWhereHas('address', function ($q) use ($search) {
                         $q->where('receiver_name', 'LIKE', "%{$search}%");
                     })
                     ->orWhereHas('orderItems', function ($q) use ($search) {
                         $q->where('name', 'LIKE', "%{$search}%")
-                          ->orWhereHas('product', function ($p) use ($search) {
-                              $p->where('name', 'LIKE', "%{$search}%");
-                          });
+                            ->orWhereHas('product', function ($p) use ($search) {
+                                $p->where('name', 'LIKE', "%{$search}%");
+                            });
                     });
             });
         }
+
         return $query;
     }
 
@@ -112,9 +113,9 @@ class Order extends Model
 
         $search = trim($value);
 
-        $persianDigits  = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
-        $arabicDigits   = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
-        $englishDigits  = ['0','1','2','3','4','5','6','7','8','9'];
+        $persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        $arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        $englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
         $search = str_replace($persianDigits, $englishDigits, $search);
         $search = str_replace($arabicDigits, $englishDigits, $search);
@@ -122,28 +123,30 @@ class Order extends Model
         return $search;
     }
 
-    public function scopeFilterByStatus(Builder $query, string $status = null)
+    public function scopeFilterByStatus(Builder $query, ?string $status = null)
     {
-        if($status){
+        if ($status) {
             $query->where('status', $status);
         }
+
         return $query;
     }
 
-    public function scopeFilterByPhone(Builder $query, string $phone = null)
+    public function scopeFilterByPhone(Builder $query, ?string $phone = null)
     {
-        if($phone){
+        if ($phone) {
             $phone = self::normalizeSearchValue($phone);
-            
-            $query->where(function($q) use ($phone) {
+
+            $query->where(function ($q) use ($phone) {
                 $q->whereHas('user', function ($q) use ($phone) {
                     $q->where('phone', 'LIKE', "%{$phone}%");
                 })
-                ->orWhereHas('address', function ($q) use ($phone) {
-                    $q->where('receiver_phone', 'LIKE', "%{$phone}%");
-                });
+                    ->orWhereHas('address', function ($q) use ($phone) {
+                        $q->where('receiver_phone', 'LIKE', "%{$phone}%");
+                    });
             });
         }
+
         return $query;
     }
 
@@ -157,24 +160,37 @@ class Order extends Model
             END
         ")->latest();
     }
-    public function user(){
+
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
-    public function address(){
+
+    public function address()
+    {
         return $this->belongsTo(Address::class);
     }
-    public function shipping(){
+
+    public function shipping()
+    {
         return $this->belongsTo(Shipping::class);
     }
-    public function shippingTime(){
+
+    public function shippingTime()
+    {
         return $this->belongsTo(ShippingTime::class);
     }
-    public function gateway(){
+
+    public function gateway()
+    {
         return $this->belongsTo(Gateway::class);
     }
-    public function orderItems(){
-        return $this->hasMany(OrderItem::class,'order_id','id');
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'order_id', 'id');
     }
+
     public static $STATUSES = [
         'pending',
         'paid',
@@ -188,26 +204,26 @@ class Order extends Model
     ];
 
     public static $PERSIAN_STATUSES = [
-        'pending'   => 'در انتظار پرداخت',
-        'paid'      => 'موفق',
-        'failed'    => 'نا موفق (خطای درگاه)',
-        'rejected'    => 'مسترد شده',
-        'canceled'  => 'لغو (رها شدن خرید در مراحل پرداخت)',
-        'boxing'    => 'بسته بندی',
-        'sent'      => 'تحویل به پیک',
-        'post'      => 'پست',
+        'pending' => 'در انتظار پرداخت',
+        'paid' => 'موفق',
+        'failed' => 'نا موفق (خطای درگاه)',
+        'rejected' => 'مسترد شده',
+        'canceled' => 'لغو (رها شدن خرید در مراحل پرداخت)',
+        'boxing' => 'بسته بندی',
+        'sent' => 'تحویل به پیک',
+        'post' => 'پست',
         'completed' => 'تکمیل شده',
     ];
 
     public static $STATUS_COLORS = [
-        'pending'   => '#C0C0C0', // خاکستری
-        'paid'      => '#80EF80', // سبز
-        'failed'    => '#F84F31', // قرمز
-        'rejected'    => '#F84F31', // قرمز
-        'canceled'  => '#ffd3d6', // صورتی
-        'boxing'    => '#0076BE', // آبی
-        'sent'      => '#7B52AE', // بنفش
-        'post'      => '#FFE20B', // زرد
+        'pending' => '#C0C0C0', // خاکستری
+        'paid' => '#80EF80', // سبز
+        'failed' => '#F84F31', // قرمز
+        'rejected' => '#F84F31', // قرمز
+        'canceled' => '#ffd3d6', // صورتی
+        'boxing' => '#0076BE', // آبی
+        'sent' => '#7B52AE', // بنفش
+        'post' => '#FFE20B', // زرد
         'completed' => '#033500', // مشکی
     ];
 
@@ -220,14 +236,17 @@ class Order extends Model
     {
         return $this->user->name;
     }
+
     public function getShippingNameAttribute()
     {
         return $this->shipping ? $this->shipping->title : '';
     }
+
     public function getShippingTimeNameAttribute()
     {
         return $this->shippingTime ? $this->shippingTime->title : '';
     }
+
     public function getGatewayNameAttribute()
     {
         return $this->Gateway ? $this->Gateway->title : '';
@@ -242,27 +261,28 @@ class Order extends Model
     {
         return Jalalian::forge($this->created_at)->format('Y/m/d H:i:s');
     }
+
     public function getOrderColumnAttribute()
     {
-        $value = $this->id . "<br/>" . $this->userName.' - '.$this->user->phone . "<br/>" . $this->createdAtJalali;
+        $value = $this->id.'<br/>'.$this->userName.' - '.$this->user->phone.'<br/>'.$this->createdAtJalali;
 
         // Check if any order item has a product with discount
         $hasDiscount = false;
         $discountPercentage = null;
-        
+
         if ($this->relationLoaded('orderItems')) {
             // Ensure products are loaded if orderItems are loaded
-            if ($this->orderItems->isNotEmpty() && !$this->orderItems->first()->relationLoaded('product')) {
+            if ($this->orderItems->isNotEmpty() && ! $this->orderItems->first()->relationLoaded('product')) {
                 $this->load('orderItems.product');
             }
-            
+
             // Find first product with discount and get its discount_percentage
             foreach ($this->orderItems as $orderItem) {
                 if ($orderItem->product) {
                     $product = $orderItem->product;
-                    $hasProductDiscount = ($product->discounted_price && $product->discounted_price != 0) 
+                    $hasProductDiscount = ($product->discounted_price && $product->discounted_price != 0)
                         || ($product->discount_percentage && $product->discount_percentage != 0);
-                    
+
                     if ($hasProductDiscount) {
                         $hasDiscount = true;
                         // Get discount_percentage if available
@@ -279,23 +299,23 @@ class Order extends Model
                 ->whereHas('product', function ($query) {
                     $query->where(function ($q) {
                         $q->where('discounted_price', '!=', 0)
-                          ->whereNotNull('discounted_price');
+                            ->whereNotNull('discounted_price');
                     })->orWhere('discount_percentage', '!=', 0);
                 })
                 ->exists();
-            
+
             // Get discount_percentage from first product with discount
             if ($hasDiscount) {
                 $orderItemWithDiscount = $this->orderItems()
                     ->whereHas('product', function ($query) {
                         $query->where(function ($q) {
                             $q->where('discounted_price', '!=', 0)
-                              ->whereNotNull('discounted_price');
+                                ->whereNotNull('discounted_price');
                         })->orWhere('discount_percentage', '!=', 0);
                     })
                     ->with('product')
                     ->first();
-                
+
                 if ($orderItemWithDiscount && $orderItemWithDiscount->product) {
                     $discountPercentage = $orderItemWithDiscount->product->discount_percentage;
                 }
@@ -305,7 +325,7 @@ class Order extends Model
         if ($hasDiscount) {
             $discountText = "<br/><span style='color: green; font-weight: bold;'>سفارش با تخفیف</span>";
             if ($discountPercentage && $discountPercentage != 0) {
-                $discountText .= " - " . number_format($discountPercentage) . "%";
+                $discountText .= ' - '.number_format($discountPercentage).'%';
             }
             $value .= $discountText;
         }
@@ -319,6 +339,7 @@ class Order extends Model
     {
         return $this->orderItems()->first()->product->image ?? '';
     }
+
     public function getFirstNameOfOrderItemAttribute()
     {
         return $this->orderItems()->first()->product->name ?? '';
@@ -327,60 +348,62 @@ class Order extends Model
     public function getProductNameColAttribute()
     {
         $productName = $this->FirstNameOfOrderItem;
-        
+
         // Get product from first order item (use loaded relationship if available)
-        $firstOrderItem = $this->relationLoaded('orderItems') 
-            ? $this->orderItems->first() 
+        $firstOrderItem = $this->relationLoaded('orderItems')
+            ? $this->orderItems->first()
             : $this->orderItems()->first();
-        
+
         $product = $firstOrderItem->product ?? null;
-        
+
         // Make product name clickable if product exists and has frontend URL
         if ($product && $product->frontend_url) {
-            $productName = "<a href='" . e($product->frontend_url) . "' target='_blank' style='color: #007bff; text-decoration: none;'>" . e($productName) . "</a>";
+            $productName = "<a href='".e($product->frontend_url)."' target='_blank' style='color: #007bff; text-decoration: none;'>".e($productName).'</a>';
         }
-        
-        $result = $productName . "<br/>" . number_format($this->final_amount)." تومان ";
-        if($this->total_amount != $this->final_amount){
-            $result = $result."<br/> <p style='color: blue'>" . number_format($this->total_amount)." تومان "."</p>";
+
+        $result = $productName.'<br/>'.number_format($this->final_amount).' تومان ';
+        if ($this->total_amount != $this->final_amount) {
+            $result = $result."<br/> <p style='color: blue'>".number_format($this->total_amount).' تومان '.'</p>';
         }
-        
+
         // Add etiket codes from all order items
-        $orderItems = $this->relationLoaded('orderItems') 
-            ? $this->orderItems 
+        $orderItems = $this->relationLoaded('orderItems')
+            ? $this->orderItems
             : $this->orderItems()->get();
-        
+
         $etiketCodes = [];
         foreach ($orderItems as $orderItem) {
-            if (!empty($orderItem->etiket)) {
+            if (! empty($orderItem->etiket)) {
                 $etiketCodes[] = $orderItem->etiket;
             }
         }
-        
-        if (!empty($etiketCodes)) {
+
+        if (! empty($etiketCodes)) {
             $etiketCodesText = implode('، ', array_unique($etiketCodes));
-            $result .= "<br/><small style='color: #6c757d;'>کد اتیکت: " . e($etiketCodesText) . "</small>";
+            $result .= "<br/><small style='color: #6c757d;'>کد اتیکت: ".e($etiketCodesText).'</small>';
         }
-        
+
         // Add reference at the bottom (always show, default to "مستقیم" if null)
         $reference = $this->reference ?? 'مستقیم';
-        $result .= "<br/><small style='color: #6c757d;'>منبع: " . e($reference) . "</small>";
-        
+        $result .= "<br/><small style='color: #6c757d;'>منبع: ".e($reference).'</small>';
+
         return request()->expectsJson() ?
             $result :
-            new HtmlString($result );
+            new HtmlString($result);
     }
 
     public function getWeightAttribute()
     {
         $weight = 0;
         foreach ($this->orderItems as $orderItem) {
-            if($orderItem->etiketItem()->first()){
+            if ($orderItem->etiketItem()->first()) {
                 $weight = $weight + $orderItem->etiketItem->weight * $orderItem->count;
             }
         }
+
         return $weight;
     }
+
     public function getPercentageAttribute()
     {
         return $this->orderItems()->first()->etiketItem->darsad_kharid ?? 0;
@@ -388,8 +411,9 @@ class Order extends Model
 
     public function getDarsadKharidAttribute()
     {
-        return $this->orderItems()->first() && $this->orderItems()->first()->product ? $this->orderItems()->first()->product->darsad_kharid: 0 ;
+        return $this->orderItems()->first() && $this->orderItems()->first()->product ? $this->orderItems()->first()->product->darsad_kharid : 0;
     }
+
     public function getDarsadForooshAttribute()
     {
         $sum = 0;
@@ -398,11 +422,14 @@ class Order extends Model
                 $sum = $sum + ($orderItem->etiketItem->ojrat ?? 0);
             }
         }
+
         return $sum;
     }
+
     public function getWeightColAttribute()
     {
-        $result = "وزن : ".$this->weight ." گرم ". "<br/> خرید: " . $this->Percentage." % "."<br/> فروش: ".$this->DarsadForoosh." % "."<br/> تخفیف : ".$this->discount_percentage." % ";
+        $result = 'وزن : '.$this->weight.' گرم '.'<br/> خرید: '.$this->Percentage.' % '.'<br/> فروش: '.$this->DarsadForoosh.' % '.'<br/> تخفیف : '.$this->discount_percentage.' % ';
+
         return request()->expectsJson() ?
             $result :
             new HtmlString($result);
@@ -410,22 +437,21 @@ class Order extends Model
 
     public function getAddressColAttribute()
     {
-        $gateway = '<span style="background-color:' . e($this->gatewayColor) . ';border-radius:2.5rem;padding:4px">'
-            . e($this->gatewayName) . '</span>';
+        $gateway = '<span style="background-color:'.e($this->gatewayColor).';border-radius:2.5rem;padding:4px">'
+            .e($this->gatewayName).'</span>';
 
         // Handle in-store orders without address
         $addressText = $this->address ? $this->address->province->name : 'خرید حضوری';
-        
+
         // Add shipping type
         $shippingText = $this->shipping ? $this->shipping->title : 'بدون ارسال';
-        
-        $result = $addressText . "<br/> نوع ارسال : " . $shippingText . "<br/> نوع پرداخت : " . $gateway;
+
+        $result = $addressText.'<br/> نوع ارسال : '.$shippingText.'<br/> نوع پرداخت : '.$gateway;
 
         return request()->expectsJson()
             ? ($result) // return plain text for JSON
             : new HtmlString($result);
     }
-
 
     public function getSumCountBeforeAttribute()
     {
@@ -434,6 +460,7 @@ class Order extends Model
             ->where('id', '<', $this->id)
             ->count();
     }
+
     public function getSumFinalPriceBeforeAttribute()
     {
         return $this->user->orders()
@@ -441,26 +468,29 @@ class Order extends Model
             ->where('id', '<', $this->id)
             ->sum('final_amount');
     }
+
     public function getSumCountAndAmountColAttribute()
     {
-        $result =    number_format($this->SumCountBefore) ."عدد". "<br/> " . number_format($this->SumFinalPriceBefore);
+        $result = number_format($this->SumCountBefore).'عدد'.'<br/> '.number_format($this->SumFinalPriceBefore);
 
         return request()->expectsJson() ?
             $result :
             new HtmlString($result);
     }
+
     public function getDiscountColAttribute()
     {
-        $result =  $this->discount_code . "<br/> " . number_format($this->discount_price).' تومان ';
+        $result = $this->discount_code.'<br/> '.number_format($this->discount_price).' تومان ';
 
         return request()->expectsJson() ?
             $result :
             new HtmlString($result);
     }
+
     public function getFactorColAttribute()
     {
         $urt = route('admin_order.print', $this->uuid);
-        $result =  "<a href='$urt' class='btn btn-primary'>دانلود pdf</a> <a href='$urt' class='btn btn-success'>پرینت</a> ";
+        $result = "<a href='$urt' class='btn btn-primary'>دانلود pdf</a> <a href='$urt' class='btn btn-success'>پرینت</a> ";
 
         return request()->expectsJson() ?
             $result :
@@ -470,46 +500,46 @@ class Order extends Model
     public function verify()
     {
         // No verification needed for in-store orders without gateway
-        if(!$this->gateway) {
+        if (! $this->gateway) {
             return false;
         }
-        
-        if($this->gateway->key == 'snapp'){
+
+        if ($this->gateway->key == 'snapp') {
             return $this->verifySnapp();
-        } elseif($this->gateway->key == 'saman'){
+        } elseif ($this->gateway->key == 'saman') {
             return $this->verifySaman();
         }
-        
+
         return false;
     }
 
-//    public function verifySnapp()
-//    {
-//        $gateway = new SnappPayGateway();
-//        $verify = $gateway->verify($this->payment_token);
-//        if($verify){
-//            $this->update([
-//                'status' => 'paid'
-//            ]);
-//            $sms = new Kavehnegar();
-//            $sms->send_with_two_token($this->address->receiver_phone,$this->address->receiver_name,$this->id,$this->status);
-////            $this->submitInAccountingApp();
-//            return true;
-//        }
-//        return false;
-//    }
+    //    public function verifySnapp()
+    //    {
+    //        $gateway = new SnappPayGateway();
+    //        $verify = $gateway->verify($this->payment_token);
+    //        if($verify){
+    //            $this->update([
+    //                'status' => 'paid'
+    //            ]);
+    //            $sms = new Kavehnegar();
+    //            $sms->send_with_two_token($this->address->receiver_phone,$this->address->receiver_name,$this->id,$this->status);
+    // //            $this->submitInAccountingApp();
+    //            return true;
+    //        }
+    //        return false;
+    //    }
 
     public function verifySnapp()
     {
-        $gateway = new SnappPayGateway();
+        $gateway = new SnappPayGateway;
 
         // Step 1: Call verify (initial attempt)
         $verify = $gateway->verify($this->payment_token);
 
         // Step 2: Always check status after verify
         $response = $gateway->getStatus($this->payment_token);
-        $paymentStatus = (isset($response['status']) && $response['status'] ) ? strtolower($response['status']) : 'pending' ;
-        if ( !isset($response['status']) ) {
+        $paymentStatus = (isset($response['status']) && $response['status']) ? strtolower($response['status']) : 'pending';
+        if (! isset($response['status'])) {
             // Optional: Retry verify once more
             $verify = $gateway->verify($this->payment_token);
             $status = $gateway->getStatus($this->payment_token);
@@ -524,6 +554,7 @@ class Order extends Model
             $paymentStatus = strtolower($status['status'] ?? 'pending');
             if ($paymentStatus === 'settle') {
                 $this->markAsPaid();
+
                 return true;
             } else {
                 // Check status again if settle failed
@@ -531,12 +562,14 @@ class Order extends Model
                 $paymentStatus = strtolower($status['response']['status'] ?? '');
                 if ($paymentStatus === 'settle') {
                     $this->markAsPaid();
+
                     return true;
                 }
             }
         } elseif ($paymentStatus === 'settle') {
             // Already settled → mark as paid
             $this->markAsPaid();
+
             return true;
         }
 
@@ -546,35 +579,39 @@ class Order extends Model
 
     public function verifySaman()
     {
-        if (!$this->payment_token) {
+        if (! $this->payment_token) {
             Log::warning('Saman: No payment token found for order', ['order_id' => $this->id]);
+
             return false;
         }
 
-        $gateway = new SamanGateway();
-        
+        $gateway = new SamanGateway;
+
         // Amount in Rials (order stores in Tomans, so multiply by 10)
         $amount = $this->final_amount * 10;
-        
+
         try {
             $verify = $gateway->verifyByToken($this->payment_token, $amount);
-            
+
             if ($verify['success']) {
                 $this->markAsPaid();
+
                 return true;
             }
-            
+
             Log::warning('Saman: Payment verification failed', [
                 'order_id' => $this->id,
                 'verify' => $verify,
             ]);
+
             return false;
-            
+
         } catch (\Exception $e) {
             Log::error('Saman: Error verifying payment', [
                 'order_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -585,6 +622,36 @@ class Order extends Model
             '09127127053',
             '09193106488',
         ];
+    }
+
+    /**
+     * Normalizes mobiles for Kavenegar verify/template calls (expects 09xxxxxxxxx-style receptor).
+     */
+    public static function normalizePhoneForSms(?string $phone): ?string
+    {
+        if ($phone === null || $phone === '') {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', trim($phone));
+
+        if ($digits === '') {
+            return null;
+        }
+
+        if (strlen($digits) === 12 && str_starts_with($digits, '98')) {
+            return '0'.substr($digits, 2);
+        }
+
+        if (strlen($digits) === 11 && str_starts_with($digits, '09')) {
+            return $digits;
+        }
+
+        if (strlen($digits) === 10 && $digits[0] === '9') {
+            return '0'.$digits;
+        }
+
+        return $digits;
     }
 
     /**
@@ -611,11 +678,11 @@ class Order extends Model
      */
     public function notifyAdminsNewOrder()
     {
-        $sms = new Kavehnegar();
+        $sms = new Kavehnegar;
         $userName = $this->user->name ?? 'کاربر';
         $userName = str_replace(' ', '_', $userName);
         $orderAmount = number_format($this->final_amount);
-        
+
         foreach (self::adminSmsRecipientPhones() as $phone) {
             $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
         }
@@ -638,26 +705,37 @@ class Order extends Model
             ->whereIn('id', $productIds->all())
             ->with([
                 'etikets.comprehensiveEtikets.relatedEtiket',
+                'children.etikets.comprehensiveEtikets.relatedEtiket',
+                'products.etikets.comprehensiveEtikets.relatedEtiket',
             ])
             ->get()
             ->keyBy('id');
 
         foreach ($productIds as $productId) {
             $product = $products->get($productId);
-            if (!$product || $product->etikets->isEmpty()) {
+            if (! $product) {
                 continue;
             }
 
-            if ($product->hasAnyAvailableEtiketForSale()) {
+            $candidateEtikets = $product->candidateEtiketsForAvailability();
+            if ($candidateEtikets->isEmpty()) {
                 continue;
             }
 
-            $sms = new Kavehnegar();
+            $stillSellable = $candidateEtikets->contains(function (Etiket $etiket): bool {
+                return (int) $etiket->effective_is_mojood === 1;
+            });
+            if ($stillSellable) {
+                continue;
+            }
+
+            $sms = new Kavehnegar;
             $productNameToken = str_replace(' ', '_', $product->name ?? 'محصول');
 
             foreach (self::adminSmsRecipientPhones() as $phone) {
+                $to = self::normalizePhoneForSms($phone) ?? $phone;
                 try {
-                    $sms->send_with_pattern($phone, $productNameToken, 'notifyAdminProductNotAvailable');
+                    $sms->send_with_pattern($to, $productNameToken, 'notifyAdminProductNotAvailable');
                 } catch (\Throwable $e) {
                     Log::warning('notifyAdminProductNotAvailable SMS failed', [
                         'product_id' => $productId,
@@ -680,9 +758,9 @@ class Order extends Model
      */
     public function markAsPaid()
     {
-        
+
         $this->update([
-            'status' => 'paid'
+            'status' => 'paid',
         ]);
 
         $this->markOrderItemsOutOfStock(true);
@@ -694,10 +772,10 @@ class Order extends Model
         $this->sendSmsNotifications();
 
         $this->submitInAccountingApp(); // Uncomment if needed
-        
+
         // Check and generate gift discount code
         $this->checkAndGenerateGift();
-        
+
         // Notify admins about new paid order
         // $this->notifyAdminsNewOrder();
     }
@@ -710,13 +788,13 @@ class Order extends Model
         try {
             // Check and generate gift using static method
             $discount = GiftStructure::checkAndGenerateGift($this);
-            
+
             if ($discount) {
                 // Determine discount type for logging
-                $discountType = $discount->percentage 
-                    ? "percentage ({$discount->percentage}%)" 
-                    : "amount (" . number_format($discount->amount) . " تومان)";
-                
+                $discountType = $discount->percentage
+                    ? "percentage ({$discount->percentage}%)"
+                    : 'amount ('.number_format($discount->amount).' تومان)';
+
                 // Log the gift code generation
                 Log::info('Gift code generated', [
                     'order_id' => $this->id,
@@ -725,48 +803,52 @@ class Order extends Model
                     'discount_type' => $discountType,
                     'expires_at' => $discount->expires_at,
                 ]);
-                
+
                 // Optional: Send SMS with gift code using user's phone and name
-                $sms = new Kavehnegar();
+                $sms = new Kavehnegar;
                 $sms->send_with_pattern($this->user->phone, $this->user->name, 'gift');
             }
         } catch (\Exception $e) {
             Log::error('Failed to generate gift code', [
                 'order_id' => $this->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }
 
     public function status()
     {
-        if(!$this->gateway) {
+        if (! $this->gateway) {
             return null;
         }
+
         return $this->gateway->status($this->payment_token);
     }
-    
+
     public function cancel()
     {
-        if(!$this->gateway) {
+        if (! $this->gateway) {
             return false;
         }
+
         return $this->gateway->cancel($this->payment_token);
     }
-    
+
     public function settle()
     {
-        if(!$this->gateway) {
+        if (! $this->gateway) {
             return false;
         }
+
         return $this->gateway->settle($this->payment_token);
     }
-    
+
     public function updateSnappTransaction()
     {
-        if(!$this->gateway) {
+        if (! $this->gateway) {
             return false;
         }
+
         return $this->gateway->updateSnappTransaction(Order::find($this->id));
     }
 
@@ -782,22 +864,22 @@ class Order extends Model
 
     public function submitInAccountingApp()
     {
-        $accounting_app = new Tahesab();
+        $accounting_app = new Tahesab;
         $final_amount = $this->final_amount;
         $allSuccessful = true;
-        $transaction_id = "0000000000".$this->transaction_id;
+        $transaction_id = '0000000000'.$this->transaction_id;
 
         // Get receiver name (use user's name if address is null for in-store orders)
         $receiverName = $this->address ? $this->address->receiver_name : $this->user->name;
-        
+
         // Collect responses from each order item
         foreach ($this->orderItems as $orderItem) {
             Log::info('Submitting order item to accounting', [
                 'order_id' => $this->id,
                 'transaction_id' => $transaction_id,
-                'etiket' => $orderItem->etiket
+                'etiket' => $orderItem->etiket,
             ]);
-            
+
             $response = $accounting_app->DoNewSanadBuySaleEtiket(
                 $transaction_id,
                 $orderItem->etiket,
@@ -805,18 +887,18 @@ class Order extends Model
                 $orderItem->price,
                 $receiverName
             );
-            
+
             // Check if response has error
             // API returns ['error' => true, 'status' => ..., 'message' => ...] on failure
             if (isset($response['error']) && $response['error'] === true) {
                 $allSuccessful = false;
-                $sms = new Kavehnegar();
-                $sms->send_with_two_token('09127127053',$orderItem->etiket,$this->id,'notifyAdminEtiketFailedOnTahesabAct');
+                $sms = new Kavehnegar;
+                // $sms->send_with_two_token('09127127053',$orderItem->etiket,$this->id,'notifyAdminEtiketFailedOnTahesabAct');
                 \Log::warning('Accounting API call failed for order item', [
                     'order_id' => $this->id,
                     'order_item_id' => $orderItem->id,
                     'etiket' => $orderItem->etiket,
-                    'response' => $response
+                    'response' => $response,
                 ]);
             }
         }
@@ -824,53 +906,53 @@ class Order extends Model
         // Only proceed with shipping and gateway if all order items were successful
         if ($allSuccessful) {
             // Check shipping if exists (null for in-store orders)
-            if($this->shipping && $this->shipping->key == 'post'){
-//                $final_amount = $final_amount + 150000;
-                $accounting_app->DoNewSanadTalabBedehi($transaction_id,1,150000,0,1,"POST");
+            if ($this->shipping && $this->shipping->key == 'post') {
+                //                $final_amount = $final_amount + 150000;
+                $accounting_app->DoNewSanadTalabBedehi($transaction_id, 1, 150000, 0, 1, 'POST');
             }
-            
+
             // Check gateway if exists (null for in-store orders)
-            if($this->gateway && $this->gateway->key == 'snapp'){
-                 $accounting_app->DoNewSanadTalabBedehi($transaction_id,0,$final_amount,210,1,"Snapp");
-            }
-            elseif($this->gateway && $this->gateway->key == 'digipay'){
-                 $accounting_app->DoNewSanadTalabBedehi($transaction_id,0,$final_amount,3330,1,"Digipay");
-            }
-            elseif($this->gateway && $this->gateway->key == 'saman'){
-                $accounting_app->DoNewSanadVKHBank($transaction_id,0,$final_amount,"ملي",1,1,'Saman');
-            }else{
-                $accounting_app->DoNewSanadVKHBank($transaction_id,0,$final_amount,"ملي",1,1,'Hozoori');
+            if ($this->gateway && $this->gateway->key == 'snapp') {
+                $accounting_app->DoNewSanadTalabBedehi($transaction_id, 0, $final_amount, 210, 1, 'Snapp');
+            } elseif ($this->gateway && $this->gateway->key == 'digipay') {
+                $accounting_app->DoNewSanadTalabBedehi($transaction_id, 0, $final_amount, 3330, 1, 'Digipay');
+            } elseif ($this->gateway && $this->gateway->key == 'saman') {
+                $accounting_app->DoNewSanadVKHBank($transaction_id, 0, $final_amount, 'ملي', 1, 1, 'Saman');
+            } else {
+                $accounting_app->DoNewSanadVKHBank($transaction_id, 0, $final_amount, 'ملي', 1, 1, 'Hozoori');
             }
         } else {
             \Log::error('Skipping shipping and gateway accounting entries due to failed order item entries', [
-                'order_id' => $this->id
+                'order_id' => $this->id,
             ]);
         }
-        
+
         return $allSuccessful;
     }
 
     public function cancelOrder()
     {
-        $accounting_app = new Tahesab();
-        $transaction_id = "0000000000".$this->transaction_id;
+        $accounting_app = new Tahesab;
+        $transaction_id = '0000000000'.$this->transaction_id;
+
         return $accounting_app->DoDeleteSanad($transaction_id);
     }
 
     public function getShippingPriceAttribute()
     {
         $shippingPrice = 0;
-        if($this->shipping){
-            if($this->shipping->price){
+        if ($this->shipping) {
+            if ($this->shipping->price) {
                 $shippingPrice = $this->shipping->price;
             }
         }
+
         return $shippingPrice;
     }
 
     public function getFinalPriceAttribute()
     {
-        return ( $this->total_amount + $this->shippingPrice ) - $this->discount_price ;
+        return ($this->total_amount + $this->shippingPrice) - $this->discount_price;
     }
 
     public function markOrderItemsOutOfStockIfPaid(): void
@@ -885,7 +967,7 @@ class Order extends Model
         $this->loadMissing('orderItems');
 
         foreach ($this->orderItems as $item) {
-            if (!$item->etiket) {
+            if (! $item->etiket) {
                 continue;
             }
 
@@ -893,13 +975,13 @@ class Order extends Model
             $etiket = Etiket::where('product_id', $item->product_id)
                 ->where('code', $item->etiket)
                 ->first();
-            
-            if (!$etiket) {
+
+            if (! $etiket) {
                 continue;
             }
-            
+
             // Only set is_mojood to 0 if orderable_after_out_of_stock is not 1
-            if (!($etiket->orderable_after_out_of_stock ?? false)) {
+            if (! ($etiket->orderable_after_out_of_stock ?? false)) {
                 $etiket->update(['is_mojood' => 0]);
             }
         }
@@ -917,7 +999,7 @@ class Order extends Model
         $this->loadMissing('orderItems');
 
         foreach ($this->orderItems as $item) {
-            if (!$item->etiket) {
+            if (! $item->etiket) {
                 continue;
             }
 
@@ -926,13 +1008,13 @@ class Order extends Model
                 ->where('code', $item->etiket)
                 ->first();
 
-            if (!$etiket) {
+            if (! $etiket) {
                 continue;
             }
 
             $etiket->update(['is_mojood' => 1]);
 
-            Cache::forget('reserved_etiket_' . $item->etiket);
+            Cache::forget('reserved_etiket_'.$item->etiket);
         }
     }
 
@@ -969,11 +1051,11 @@ class Order extends Model
             }
             if ($this->address->city) {
                 $addressHtml = $addressHtml !== ''
-                    ? $addressHtml . ' - ' . $this->address->city->name
+                    ? $addressHtml.' - '.$this->address->city->name
                     : ($this->address->city->name ?? '');
             }
             $street = $this->address->address ?? '';
-            $addressHtml = ($addressHtml !== '' ? $addressHtml . ' - ' : '') . $street;
+            $addressHtml = ($addressHtml !== '' ? $addressHtml.' - ' : '').$street;
 
             if (mb_strlen($addressHtml, 'UTF-8') > 90) {
                 $segments = preg_split('/(?<=\G.{90})/u', $addressHtml, -1, PREG_SPLIT_NO_EMPTY);
@@ -996,10 +1078,10 @@ class Order extends Model
                 ];
                 $jalali = Jalalian::forge($this->shipping_date);
                 $dayOfWeek = Carbon::parse($this->shipping_date)->dayOfWeek;
-                $shippingDateText = $jalali->format('Y/m/d') . ' (' . ($persianDayNames[$dayOfWeek] ?? '') . ')';
-                $shipping = $shipping . '<br>' . $shippingDateText . '<br>' . $shippingTimeTitle;
+                $shippingDateText = $jalali->format('Y/m/d').' ('.($persianDayNames[$dayOfWeek] ?? '').')';
+                $shipping = $shipping.'<br>'.$shippingDateText.'<br>'.$shippingTimeTitle;
             } else {
-                $shipping = $shipping . '<br>' . $shippingTimeTitle;
+                $shipping = $shipping.'<br>'.$shippingTimeTitle;
             }
         }
 
@@ -1056,10 +1138,15 @@ class Order extends Model
 
     public function sendSmsNotifications(): void
     {
-        $sms = new Kavehnegar();
+        $this->loadMissing('user');
+
+        $sms = new Kavehnegar;
         $userName = $this->user->name ?? 'کاربر';
         $userName = str_replace(' ', '_', $userName);
-        $sms->send_with_two_token($this->user->phone, $userName, $this->id, $this->status);
+        $buyerPhone = self::normalizePhoneForSms($this->user->phone ?? null);
+        if ($buyerPhone !== null) {
+            $sms->send_with_two_token($buyerPhone, $userName, $this->id, $this->status);
+        }
 
         $this->sendComprehensiveEtiketProductSmsIfApplicable();
     }
@@ -1069,18 +1156,22 @@ class Order extends Model
      */
     public function sendComprehensiveEtiketProductSmsIfApplicable(): void
     {
-        if (!$this->has_comprehensive_etiket) {
+        if (! $this->has_comprehensive_etiket) {
             return;
         }
 
-        $phone = $this->user->phone ?? null;
+        $this->loadMissing('user');
+
+        $phone = self::normalizePhoneForSms($this->user->phone ?? null);
         if ($phone === null || $phone === '') {
             return;
         }
 
-        $sms = new Kavehnegar();
-        $sms->send_with_pattern($phone, (string) $this->user->name, 'sefareshiproduct');
+        $sms = new Kavehnegar;
+        $customerNameToken = str_replace(' ', '_', (string) ($this->user->name ?? 'کاربر'));
+        $sms->send_with_pattern($phone, $customerNameToken, 'sefareshiproduct');
     }
+
     /**
      * Send Najva notifications for all products in the order
      */
@@ -1095,17 +1186,18 @@ class Order extends Model
             // Load order items with product and user relationships
             $this->loadMissing('orderItems.product', 'user');
 
-            if (!$this->user || !$this->orderItems || $this->orderItems->isEmpty()) {
+            if (! $this->user || ! $this->orderItems || $this->orderItems->isEmpty()) {
                 Log::info('Najva notifications skipped: No user or order items', [
                     'order_id' => $this->id,
-                    'has_user' => !is_null($this->user),
+                    'has_user' => ! is_null($this->user),
                     'user_id' => $this->user_id,
                     'order_items_count' => $this->orderItems ? $this->orderItems->count() : 0,
                 ]);
+
                 return;
             }
 
-            $najvaService = new NajvaService();
+            $najvaService = new NajvaService;
             $userName = $this->user->name ?? '';
             $userPhone = $this->user->phone ?? '';
 
@@ -1114,6 +1206,7 @@ class Order extends Model
                     'order_id' => $this->id,
                     'user_id' => $this->user_id,
                 ]);
+
                 return;
             }
 
@@ -1174,6 +1267,4 @@ class Order extends Model
             ]);
         }
     }
-
-
 }

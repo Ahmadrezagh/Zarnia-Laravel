@@ -11,23 +11,25 @@ use App\Traits\Scopes\PriceRange;
 use App\Traits\Scopes\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Pishran\LaravelPersianSlug\HasPersianSlug;
 use Spatie\Image\Enums\CropPosition;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\Sluggable\SlugOptions;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\Sluggable\SlugOptions;
+
 class Product extends Model implements HasMedia
 {
-    use InteractsWithMedia;
-    use HasPersianSlug;
-    use SoftDeletes;
-    use Search,HasDiscount,MaxPrice,MinPrice,PriceRange;
     use HasComplementaryProducts,HasRelatedProducts;
+    use HasDiscount,MaxPrice,MinPrice,PriceRange,Search;
+    use HasPersianSlug;
+    use InteractsWithMedia;
+    use SoftDeletes;
+
     protected $fillable = [
         'name',
         'slug',
@@ -43,7 +45,7 @@ class Product extends Model implements HasMedia
         'meta_description',
         'meta_keywords',
         'canonical_url',
-        'visits'
+        'visits',
     ];
 
     public function setNameAttribute($value)
@@ -68,19 +70,19 @@ class Product extends Model implements HasMedia
     {
         // Get all available etikets (is_mojood = 1) and calculate lowest effective price
         $etikets = $this->etikets()->where('is_mojood', 1)->get();
-        
+
         if ($etikets->isNotEmpty()) {
             // Get the lowest price considering discounts
             $lowestPrice = $etikets->map(function ($etiket) {
                 // Use discounted_price accessor if available, otherwise use regular price
                 return $etiket->discounted_price ?? $etiket->price;
             })->min();
-            
+
             if ($lowestPrice) {
                 return $lowestPrice / 10;
             }
         }
-        
+
         // If no available etikets, check children's etikets
         if ($this->children()->exists()) {
             $childEtikets = \DB::table('etikets')
@@ -89,7 +91,7 @@ class Product extends Model implements HasMedia
                 ->where('etikets.is_mojood', 1)
                 ->select('etikets.*', 'products.discount_percentage')
                 ->get();
-            
+
             if ($childEtikets->isNotEmpty()) {
                 $lowestPrice = $childEtikets->map(function ($etiket) {
                     // Calculate discounted price if discount percentage exists
@@ -97,29 +99,31 @@ class Product extends Model implements HasMedia
                     if ($discountPercentage > 0 && $etiket->price > 0) {
                         return (int) round($etiket->price * (1 - $discountPercentage / 100));
                     }
+
                     return $etiket->price;
                 })->min();
-                
+
                 if ($lowestPrice) {
                     return $lowestPrice / 10;
                 }
             }
         }
-        
+
         // Fallback to 0 if no etikets found
         return 0;
     }
+
     public function getWeightAttribute($value)
     {
         // Get lowest weight from available etikets (is_mojood = 1)
         $lowestEtiketWeight = $this->etikets()
             ->where('is_mojood', 1)
             ->min('weight');
-        
+
         if ($lowestEtiketWeight) {
             return $lowestEtiketWeight;
         }
-        
+
         // If no available etikets, check children's etikets
         if ($this->children()->exists()) {
             $lowestChildEtiketWeight = \DB::table('etikets')
@@ -127,12 +131,12 @@ class Product extends Model implements HasMedia
                 ->where('products.parent_id', $this->id)
                 ->where('etikets.is_mojood', 1)
                 ->min('etikets.weight');
-            
+
             if ($lowestChildEtiketWeight) {
                 return $lowestChildEtiketWeight;
             }
         }
-        
+
         // Fallback to 0 if no etikets found
         return 0;
     }
@@ -147,18 +151,18 @@ class Product extends Model implements HasMedia
                 // Only include etikets where discount_percentage exists
                 return $etiket->product && ($etiket->product->discount_percentage ?? 0) > 0;
             });
-        
+
         if ($etikets->isNotEmpty()) {
             // Get the lowest original price (without discount)
             $lowestPrice = $etikets->map(function ($etiket) {
                 return $etiket->original_price;
             })->min();
-            
+
             if ($lowestPrice) {
                 return $lowestPrice / 10;
             }
         }
-        
+
         // If no available etikets, check children's etikets
         if ($this->children()->exists()) {
             $childEtikets = \DB::table('etikets')
@@ -168,19 +172,19 @@ class Product extends Model implements HasMedia
                 ->where('products.discount_percentage', '>', 0)
                 ->select('etikets.price')
                 ->get();
-            
+
             if ($childEtikets->isNotEmpty()) {
                 // Use price * 10 to get original_price equivalent
                 $lowestPrice = $childEtikets->map(function ($etiket) {
                     return $etiket->price * 10;
                 })->min();
-                
+
                 if ($lowestPrice) {
                     return $lowestPrice / 10;
                 }
             }
         }
-        
+
         return 0;
     }
 
@@ -189,16 +193,17 @@ class Product extends Model implements HasMedia
         $weight = $this->weight ?? 0;
         $baseGoldPrice = (float) setting('gold_price') ?? 0;
         $ojrat = $this->ojrat ?? 0;
-        
+
         // Add 1% to gold price
         $goldPrice = $baseGoldPrice * 1.01;
-        
+
         if ($weight > 0 && $goldPrice > 0 && $ojrat > 0) {
             $price = $weight * $goldPrice * (1 + ($ojrat / 100));
+
             // Round down to nearest thousand (last three digits become 0)
             return floor($price / 1000) * 1000;
         }
-        
+
         return 0;
     }
 
@@ -214,36 +219,38 @@ class Product extends Model implements HasMedia
 
     public function categories()
     {
-        return $this->belongsToMany(Category::class,'product_categories');
+        return $this->belongsToMany(Category::class, 'product_categories');
     }
+
     public function getImageAttribute()
     {
         $image = $this->getFirstMediaUrl('cover_image');
-        
+
         // If product doesn't have image and has parent_id, check parent product image
-        if ($image == "" && $this->parent_id) {
+        if ($image == '' && $this->parent_id) {
             // Load parent if not already loaded
-            if (!$this->relationLoaded('parent')) {
+            if (! $this->relationLoaded('parent')) {
                 $this->load('parent');
             }
-            
+
             if ($this->parent) {
                 $parentImage = $this->parent->getFirstMediaUrl('cover_image');
-                if ($parentImage != "") {
+                if ($parentImage != '') {
                     return $parentImage;
                 }
             }
         }
-        
-        return $image != "" ? $image : asset('img/no_image.jpg');
+
+        return $image != '' ? $image : asset('img/no_image.jpg');
     }
-    
+
     public function getFrontendUrlAttribute()
     {
         $frontendUrl = setting('url');
-        return $frontendUrl . '/products/' . $this->slug;
+
+        return $frontendUrl.'/products/'.$this->slug;
     }
-    
+
     public function getGalleryAttribute()
     {
         return [
@@ -256,11 +263,12 @@ class Product extends Model implements HasMedia
 
     public function scopeCategories(Builder $query, $category_ids = [])
     {
-        if(!empty($category_ids)){
+        if (! empty($category_ids)) {
             return $query->whereHas('categories', function ($q) use ($category_ids) {
                 $q->whereIn('categories.id', (array) $category_ids);
             });
         }
+
         return $query;
     }
 
@@ -286,25 +294,62 @@ class Product extends Model implements HasMedia
                 WHERE e.is_mojood = 1
                 GROUP BY COALESCE(parent.id, p.id)
             ) as etiket_prices'), 'products.id', '=', 'etiket_prices.product_id')
-            ->orderByRaw('(etiket_prices.min_price IS NULL), etiket_prices.min_price ' . $direction)
-            ->select('products.*');
+                ->orderByRaw('(etiket_prices.min_price IS NULL), etiket_prices.min_price '.$direction)
+                ->select('products.*');
         }
+
         return $query;
     }
 
     public function products()
     {
-        return $this->belongsToMany(Product::class,'comprehensive_products','comprehensive_product_id','product_id');
+        return $this->belongsToMany(Product::class, 'comprehensive_products', 'comprehensive_product_id', 'product_id');
     }
-    
+
     public function favorites()
     {
         return $this->belongsToMany(\App\Models\User::class, 'favorites', 'product_id', 'user_id');
     }
-    
+
     public function etikets()
     {
         return $this->hasMany(Etiket::class);
+    }
+
+    /**
+     * Etikets that define whether this product still has inventory (listing-level for parents/comprehensive, own rows for variants).
+     */
+    public function candidateEtiketsForAvailability(): Collection
+    {
+        if ($this->parent_id !== null) {
+            $etikets = $this->relationLoaded('etikets')
+                ? $this->etikets
+                : $this->etikets()->with(['comprehensiveEtikets.relatedEtiket'])->get();
+
+            return $etikets instanceof Collection ? $etikets : collect($etikets->all());
+        }
+
+        $etikets = $this->relationLoaded('etikets')
+            ? $this->etikets
+            : $this->etikets()->with(['comprehensiveEtikets.relatedEtiket'])->get();
+
+        $merged = collect($etikets->all());
+
+        $this->loadMissing(['children.etikets.comprehensiveEtikets.relatedEtiket']);
+
+        foreach ($this->children as $child) {
+            $merged = $merged->concat($child->etikets);
+        }
+
+        if ((int) $this->is_comprehensive === 1) {
+            $this->loadMissing(['products.etikets.comprehensiveEtikets.relatedEtiket']);
+
+            foreach ($this->products as $constituent) {
+                $merged = $merged->concat($constituent->etikets);
+            }
+        }
+
+        return $merged->unique('id')->values();
     }
 
     /**
@@ -312,11 +357,7 @@ class Product extends Model implements HasMedia
      */
     public function hasAnyAvailableEtiketForSale(): bool
     {
-        $etikets = $this->relationLoaded('etikets')
-            ? $this->etikets
-            : $this->etikets()->with(['comprehensiveEtikets.relatedEtiket'])->get();
-
-        foreach ($etikets as $etiket) {
+        foreach ($this->candidateEtiketsForAvailability() as $etiket) {
             if ((int) $etiket->effective_is_mojood === 1) {
                 return true;
             }
@@ -335,7 +376,7 @@ class Product extends Model implements HasMedia
             $etikets->push(...$child->etikets);
         });
 
-        if($this->is_comprehensive == 1){
+        if ($this->is_comprehensive == 1) {
             // Collect children's etikets
             $this->products->each(function ($child) use ($etikets) {
                 $etikets->push(...$child->etikets);
@@ -348,7 +389,7 @@ class Product extends Model implements HasMedia
 
     public function getEtiketsCodeAsArrayAttribute()
     {
-        $codes = "";
+        $codes = '';
 
         // Only show available etikets (is_mojood = 1)
         $availableEtikets = $this->AllEtikets->where('is_mojood', 1);
@@ -360,33 +401,33 @@ class Product extends Model implements HasMedia
         foreach ($availableEtikets as $etiket) {
             // Get etiket's product name (from its relationship)
             $etiketProductName = $etiket->product ? $this->normalizeName($etiket->product->name) : '';
-            
+
             // Check if etiket matches this product (same name AND same weight)
-            $matchesThisProduct = ($etiketProductName === $currentProductName) && 
+            $matchesThisProduct = ($etiketProductName === $currentProductName) &&
                                   ($etiket->weight == $currentProductWeight);
-            
+
             // Build the style for this etiket code
             $style = '';
-            
+
             if ($matchesThisProduct) {
                 // Light blue background for matching etikets
                 $style = 'background-color: lightblue; padding: 2px 5px; border-radius: 3px;';
             }
-            
+
             // Add cursor pointer for better UX
             $style .= ' cursor: help;';
-            
+
             // Create tooltip content - using product name instead of etiket name
             $productName = $etiket->product ? $etiket->product->name : 'نامشخص';
-            $tooltipContent = e($productName) . ' - ' . e($etiket->weight) . 'g';
-            
+            $tooltipContent = e($productName).' - '.e($etiket->weight).'g';
+
             // Add Bootstrap tooltip attributes
-            $tooltip = 'data-toggle="tooltip" data-placement="top" data-html="true" title="' . $tooltipContent . '"';
-            
+            $tooltip = 'data-toggle="tooltip" data-placement="top" data-html="true" title="'.$tooltipContent.'"';
+
             if ($style) {
-                $codes .= '<span class="etiket-code-item" style="' . $style . '" ' . $tooltip . '>' . e($etiket->code) . '</span>, ';
+                $codes .= '<span class="etiket-code-item" style="'.$style.'" '.$tooltip.'>'.e($etiket->code).'</span>, ';
             } else {
-                $codes .= '<span class="etiket-code-item" ' . $tooltip . '>' . e($etiket->code) . '</span>, ';
+                $codes .= '<span class="etiket-code-item" '.$tooltip.'>'.e($etiket->code).'</span>, ';
             }
         }
 
@@ -401,15 +442,16 @@ class Product extends Model implements HasMedia
     {
         // Arabic Ye → Persian Ye
         $name = str_replace(['ي', 'ی'], 'ی', $name);
-        
+
         // Arabic Kaf → Persian Kaf
         $name = str_replace('ك', 'ک', $name);
-        
+
         // Trim whitespace
         $name = trim($name);
-        
+
         return $name;
     }
+
     public function getSingleCountAttribute()
     {
         // Use the single_available_count column if it exists (from migration)
@@ -417,39 +459,39 @@ class Product extends Model implements HasMedia
         if ($this->getRawOriginal('single_available_count') !== null) {
             return (int) $this->getRawOriginal('single_available_count');
         }
-        
+
         // Fallback to old calculation if column doesn't exist
         // If this is a comprehensive product, return minimum single_count of constituent products
         if ($this->is_comprehensive == 1) {
             // Load products relationship if not already loaded
-            if (!$this->relationLoaded('products')) {
+            if (! $this->relationLoaded('products')) {
                 $this->load('products');
             }
-            
+
             // Get all constituent products
             $constituentProducts = $this->products;
-            
+
             // If no constituent products, return 0
             if ($constituentProducts->isEmpty()) {
                 return 0;
             }
-            
+
             // Get single_count for each constituent product
             $singleCounts = $constituentProducts->map(function ($product) {
                 return $product->single_count;
             })->filter(function ($count) {
                 return $count >= 0; // Include zero counts as well
             });
-            
+
             // If no available products (all have count < 0), return 0
             if ($singleCounts->isEmpty()) {
                 return 0;
             }
-            
+
             // Return minimum single_count
             return $singleCounts->min();
         }
-        
+
         // For non-comprehensive products, return etiket count (only direct, not children)
         return $this->etikets()->where('is_mojood', 1)->count();
     }
@@ -460,14 +502,14 @@ class Product extends Model implements HasMedia
         if ($this->getRawOriginal('count') !== null) {
             return (int) $this->getRawOriginal('count');
         }
-        
+
         // Fallback to old calculation if column doesn't exist
         // If this is a comprehensive product, return minimum single_count of constituent products
         if ($this->is_comprehensive == 1) {
             // For comprehensive products, count = single_count (minimum of constituent products)
             return $this->single_count;
         }
-        
+
         // Count from this product's etikets
         $ownCount = $this->etikets()->where('is_mojood', 1)->count();
 
@@ -479,29 +521,28 @@ class Product extends Model implements HasMedia
         return $ownCount + $childrenCount;
     }
 
-
     public function scopeHasCount(Builder $query): Builder
     {
         return $query->withCount([
             'etikets as count' => function ($query) {
                 $query->where('is_mojood', 1);
-            }
+            },
         ]);
     }
 
     public function getCategoriesTitleAttribute()
     {
-        if($this->categories()->count()){
-            $categoriesTitle = "";
-            foreach ($this->categories as $category){
-                $categoriesTitle .= $category->title.", ";
+        if ($this->categories()->count()) {
+            $categoriesTitle = '';
+            foreach ($this->categories as $category) {
+                $categoriesTitle .= $category->title.', ';
             }
+
             return $categoriesTitle;
-        }else{
-            return "بدون دسته بندی";
+        } else {
+            return 'بدون دسته بندی';
         }
     }
-
 
     public function registerMediaCollections(): void
     {
@@ -512,7 +553,7 @@ class Product extends Model implements HasMedia
     }
 
     // Optional: Generate thumbnail conversions for media
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('xlarge')
             ->crop(505, 505, CropPosition::Center)
@@ -540,36 +581,39 @@ class Product extends Model implements HasMedia
 
             ->performOnCollections('cover_image', 'gallery');
     }
+
     public function getOjratAttribute($value)
     {
-        if($value)
+        if ($value) {
             return intval($value);
+        }
     }
 
     public function getCoverImageResponsiveAttribute()
     {
         $coverImage = $this->getFirstMedia('cover_image');
-        
+
         // If product doesn't have image and has parent_id, check parent product image
-        if (!$coverImage && $this->parent_id) {
+        if (! $coverImage && $this->parent_id) {
             // Load parent if not already loaded
-            if (!$this->relationLoaded('parent')) {
+            if (! $this->relationLoaded('parent')) {
                 $this->load('parent');
             }
-            
+
             if ($this->parent) {
                 $coverImage = $this->parent->getFirstMedia('cover_image');
             }
         }
-        
-        if($coverImage){
+
+        if ($coverImage) {
             return [
                 'xlarge' => $coverImage->getUrl('xlarge') ?? null,
                 'large' => $coverImage->getUrl('large') ?? null,
                 'medium' => $coverImage->getUrl('medium') ?? null,
                 'small' => $coverImage->getUrl('small') ?? null,
-                ];
+            ];
         }
+
         return [
             'xlarge' => asset('img/no_image.jpg'),
             'large' => asset('img/no_image.jpg'),
@@ -596,16 +640,16 @@ class Product extends Model implements HasMedia
                     ->whereColumn('etikets.product_id', 'products.id')
                     ->where('etikets.is_mojood', 1);
             })
-            ->orWhere(function ($sub) {
-                $sub->whereNull('products.parent_id')
-                    ->whereExists(function ($child) {
-                        $child->selectRaw(1)
-                            ->from('products as child_products')
-                            ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
-                            ->whereColumn('child_products.parent_id', 'products.id')
-                            ->where('etikets.is_mojood', 1);
-                    });
-            });
+                ->orWhere(function ($sub) {
+                    $sub->whereNull('products.parent_id')
+                        ->whereExists(function ($child) {
+                            $child->selectRaw(1)
+                                ->from('products as child_products')
+                                ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
+                                ->whereColumn('child_products.parent_id', 'products.id')
+                                ->where('etikets.is_mojood', 1);
+                        });
+                });
         });
     }
 
@@ -626,19 +670,19 @@ class Product extends Model implements HasMedia
                     });
             })
             // OR parent product: has children with etikets but none with is_mojood == 1
-            ->orWhere(function ($parentQuery) {
-                $parentQuery->whereNull('products.parent_id')
-                    // Has children with etikets
-                    ->whereHas('children.etikets')
-                    // But none of children's etikets have is_mojood == 1
-                    ->whereNotExists(function ($childQuery) {
-                        $childQuery->selectRaw(1)
-                            ->from('products as child_products')
-                            ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
-                            ->whereColumn('child_products.parent_id', 'products.id')
-                            ->where('etikets.is_mojood', 1);
-                    });
-            });
+                ->orWhere(function ($parentQuery) {
+                    $parentQuery->whereNull('products.parent_id')
+                        // Has children with etikets
+                        ->whereHas('children.etikets')
+                        // But none of children's etikets have is_mojood == 1
+                        ->whereNotExists(function ($childQuery) {
+                            $childQuery->selectRaw(1)
+                                ->from('products as child_products')
+                                ->join('etikets', 'etikets.product_id', '=', 'child_products.id')
+                                ->whereColumn('child_products.parent_id', 'products.id')
+                                ->where('etikets.is_mojood', 1);
+                        });
+                });
         });
     }
 
@@ -666,19 +710,20 @@ class Product extends Model implements HasMedia
             ->havingRaw('(own_stock + children_stock) = 0');
     }
 
-
     public function scopeSortMojood(Builder $query, $direction = null)
     {
-        if($direction && in_array($direction, ['asc', 'desc'])){
+        if ($direction && in_array($direction, ['asc', 'desc'])) {
             return $query
                 ->withMojoodStatus()
-                ->orderBy("is_mojood", $direction);
+                ->orderBy('is_mojood', $direction);
         }
+
         return $query;
     }
+
     public function scopeWithImageStatus(Builder $query, $direction = null)
     {
-        if($direction){
+        if ($direction) {
             $query->selectSub(function ($q) {
                 $q->selectRaw('COUNT(*) > 0')
                     ->from('media')
@@ -696,7 +741,7 @@ class Product extends Model implements HasMedia
 
     public function scopeWithMojoodCount($query, $direction = null)
     {
-        if($direction){
+        if ($direction) {
             $query->selectSub(function ($q) {
                 $q->selectRaw('COUNT(*)')
                     ->from('etikets')
@@ -735,15 +780,17 @@ class Product extends Model implements HasMedia
             $q->where('collection_name', 'cover_image'); // optional: target a specific collection
         });
     }
+
     public function scopeWithoutGallery(Builder $query): Builder
     {
         return $query->whereDoesntHave('media', function ($q) {
             $q->where('collection_name', 'gallery'); // optional: target a specific collection
         });
     }
+
     public function scopeFilterProduct(Builder $query, $filter = null)
     {
-        if($filter){
+        if ($filter) {
             switch ($filter) {
                 case 'only_images':
                     return $query->hasImage();
@@ -761,16 +808,16 @@ class Product extends Model implements HasMedia
                     return $query;
             }
         }
+
         return $query;
     }
-
 
     public function scopeMultipleSearch(Builder $query, array $search = [])
     {
         $key = $search[0] ?? null;
         $val = $search[1] ?? null;
 
-        if (!$key || !$val) {
+        if (! $key || ! $val) {
             return $query; // Nothing to filter
         }
 
@@ -786,10 +833,10 @@ class Product extends Model implements HasMedia
 
         // Virtual attribute: count
         if ($key === 'count') {
-            return $query->whereRaw("(
+            return $query->whereRaw('(
             SELECT COUNT(*) FROM etikets 
             WHERE etikets.product_id = products.id AND is_mojood = 1
-        ) = ?", [$val]);
+        ) = ?', [$val]);
         }
 
         // Related field in etikets: etiket_code
@@ -816,9 +863,9 @@ class Product extends Model implements HasMedia
 
         $search = trim($value);
 
-        $persianDigits  = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
-        $arabicDigits   = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
-        $englishDigits  = ['0','1','2','3','4','5','6','7','8','9'];
+        $persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        $arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        $englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
         $search = str_replace($persianDigits, $englishDigits, $search);
         $search = str_replace($arabicDigits, $englishDigits, $search);
@@ -830,17 +877,17 @@ class Product extends Model implements HasMedia
     {
         // Get lowest original price from available etikets (is_mojood = 1)
         $etikets = $this->etikets()->where('is_mojood', 1)->get();
-        
+
         if ($etikets->isNotEmpty()) {
             $lowestPrice = $etikets->map(function ($etiket) {
                 return $etiket->original_price;
             })->min();
-            
+
             if ($lowestPrice) {
                 return $lowestPrice / 10;
             }
         }
-        
+
         // If no available etikets, check children's etikets
         if ($this->children()->exists()) {
             $childEtikets = \DB::table('etikets')
@@ -849,19 +896,19 @@ class Product extends Model implements HasMedia
                 ->where('etikets.is_mojood', 1)
                 ->select('etikets.price')
                 ->get();
-            
+
             if ($childEtikets->isNotEmpty()) {
                 // Use price * 10 to get original_price equivalent
                 $lowestPrice = $childEtikets->map(function ($etiket) {
                     return $etiket->price * 10;
                 })->min();
-                
+
                 if ($lowestPrice) {
                     return $lowestPrice / 10;
                 }
             }
         }
-        
+
         return 0;
     }
 
@@ -873,15 +920,15 @@ class Product extends Model implements HasMedia
         // If product has parent, return parent's discount_percentage
         if ($this->parent_id) {
             // Load parent if not already loaded
-            if (!$this->relationLoaded('parent')) {
+            if (! $this->relationLoaded('parent')) {
                 $this->load('parent');
             }
-            
+
             if ($this->parent) {
                 return $this->parent->getRawOriginal('discount_percentage') ?? 0;
             }
         }
-        
+
         // Return own discount_percentage
         return $value ?? 0;
     }
@@ -889,123 +936,123 @@ class Product extends Model implements HasMedia
     public function getPriceRangeTitleAttribute()
     {
         // Load children if not already loaded (to avoid N+1 queries)
-        if (!$this->relationLoaded('children')) {
+        if (! $this->relationLoaded('children')) {
             $this->load('children');
         }
-        
+
         // Collect available products (this product + children with single_count >= 1)
         $availableProducts = collect();
-        
+
         // Check if this product is available
         if ($this->single_count >= 1) {
             $availableProducts->push($this);
         }
-        
+
         // Add available children
         $this->children->each(function ($child) use ($availableProducts) {
             if ($child->single_count >= 1) {
                 $availableProducts->push($child);
             }
         });
-        
+
         // If no available products, return null or empty
         if ($availableProducts->isEmpty()) {
             return null;
         }
-        
+
         // Collect prices from available products only
         $prices = $availableProducts->map(function ($product) {
             return $product->price; // Uses the price accessor which handles discounted_price
         });
-        
+
         $minPrice = $prices->min();
         $maxPrice = $prices->max();
-        
+
         // If all prices are the same, return single price format
         if ($minPrice == $maxPrice) {
-            return number_format($minPrice) . ' تومان';
+            return number_format($minPrice).' تومان';
         }
-        
+
         // Return range format
-        return 'از ' . number_format($minPrice) . ' تومان تا ' . number_format($maxPrice) . ' تومان';
+        return 'از '.number_format($minPrice).' تومان تا '.number_format($maxPrice).' تومان';
     }
 
     public function getMinimumAvailablePriceAttribute()
     {
         // Load children if not already loaded (to avoid N+1 queries)
-        if (!$this->relationLoaded('children')) {
+        if (! $this->relationLoaded('children')) {
             $this->load('children');
         }
-        
+
         // Collect available products (this product + children with single_count >= 1)
         $availableProducts = collect();
-        
+
         // Check if this product is available
         if ($this->single_count >= 1) {
             $availableProducts->push($this);
         }
-        
+
         // Add available children
         $this->children->each(function ($child) use ($availableProducts) {
             if ($child->single_count >= 1) {
                 $availableProducts->push($child);
             }
         });
-        
+
         // If no available products, return null
         if ($availableProducts->isEmpty()) {
             return null;
         }
-        
+
         // Get the minimum price among available products
         $minPrice = $availableProducts->map(function ($product) {
             return $product->price; // Uses the price accessor which handles discounted_price
         })->min();
-        
+
         return $minPrice;
     }
 
     public function getMinimumAvailableWeightAttribute()
     {
         // Load children if not already loaded (to avoid N+1 queries)
-        if (!$this->relationLoaded('children')) {
+        if (! $this->relationLoaded('children')) {
             $this->load('children');
         }
-        
+
         // Collect available products (this product + children with single_count >= 1)
         $availableProducts = collect();
-        
+
         // Check if this product is available
         if ($this->single_count >= 1) {
             $availableProducts->push($this);
         }
-        
+
         // Add available children
         $this->children->each(function ($child) use ($availableProducts) {
             if ($child->single_count >= 1) {
                 $availableProducts->push($child);
             }
         });
-        
+
         // If no available products, return null
         if ($availableProducts->isEmpty()) {
             return null;
         }
-        
+
         // Get the minimum weight among available products
         $minWeight = $availableProducts->map(function ($product) {
             return $product->weight ?? 0;
         })->filter(function ($weight) {
             return $weight > 0; // Only consider positive weights
         })->min();
-        
+
         return $minWeight ?: null;
     }
 
     public function getPriceWithoutDiscountMinimumAvailableProductAttribute()
     {
         // Ensure children relationship is loaded for availability checks
-        if (!$this->relationLoaded('children')) {
+        if (! $this->relationLoaded('children')) {
             $this->load('children');
         }
 
@@ -1034,7 +1081,7 @@ class Product extends Model implements HasMedia
             return $product->weight;
         })->first();
 
-        if (!$targetProduct) {
+        if (! $targetProduct) {
             $targetProduct = $availableProducts->first();
         }
 
@@ -1076,27 +1123,27 @@ class Product extends Model implements HasMedia
                         });
                 })
                 // For regular products: check etiket count directly (single_count >= 1)
-                ->orWhere(function ($regularQuery) {
-                    $regularQuery->where(function ($subQ) {
-                        $subQ->whereNull('is_comprehensive')
-                            ->orWhere('is_comprehensive', 0);
-                    })
-                    ->whereHas('etikets', function ($etiketQuery) {
-                        $etiketQuery->where('is_mojood', 1);
-                    });
-                })
-                ->orWhere(function ($parentQuery) {
-                    $parentQuery->whereNull('parent_id')
-                        ->where(function ($subQ) {
+                    ->orWhere(function ($regularQuery) {
+                        $regularQuery->where(function ($subQ) {
                             $subQ->whereNull('is_comprehensive')
                                 ->orWhere('is_comprehensive', 0);
                         })
-                        ->whereHas('children', function ($childQuery) {
-                            $childQuery->whereHas('etikets', function ($etiketQuery) {
+                            ->whereHas('etikets', function ($etiketQuery) {
                                 $etiketQuery->where('is_mojood', 1);
                             });
-                        });
-                });
+                    })
+                    ->orWhere(function ($parentQuery) {
+                        $parentQuery->whereNull('parent_id')
+                            ->where(function ($subQ) {
+                                $subQ->whereNull('is_comprehensive')
+                                    ->orWhere('is_comprehensive', 0);
+                            })
+                            ->whereHas('children', function ($childQuery) {
+                                $childQuery->whereHas('etikets', function ($etiketQuery) {
+                                    $etiketQuery->where('is_mojood', 1);
+                                });
+                            });
+                    });
             });
     }
 
@@ -1116,7 +1163,7 @@ class Product extends Model implements HasMedia
      */
     public function scopeHasNoAvailableEtiket(Builder $query): Builder
     {
-        $raw = "
+        $raw = '
             (
                 (products.is_comprehensive = 1 AND (
                     SELECT COUNT(*) FROM comprehensive_products cp
@@ -1130,7 +1177,8 @@ class Product extends Model implements HasMedia
                     OR EXISTS (SELECT 1 FROM products ch JOIN etikets e ON e.product_id = ch.id AND e.deleted_at IS NULL WHERE ch.parent_id = products.id AND ch.deleted_at IS NULL AND e.is_mojood = 1)
                 ))
             )
-        ";
+        ';
+
         return $query->whereRaw("NOT ({$raw})");
     }
 
@@ -1149,16 +1197,16 @@ class Product extends Model implements HasMedia
                         ->whereHas('etikets');
                 })
                 // OR parent product: has children with etikets
-                ->orWhere(function ($parentQuery) {
-                    $parentQuery->whereNull('products.parent_id')
-                        ->whereHas('children.etikets');
-                });
+                    ->orWhere(function ($parentQuery) {
+                        $parentQuery->whereNull('products.parent_id')
+                            ->whereHas('children.etikets');
+                    });
             });
     }
 
     public function scopeComprehensive(Builder $query)
     {
-        return $query->where('is_comprehensive','=',1);
+        return $query->where('is_comprehensive', '=', 1);
     }
 
     public function scopeMostFavorite(Builder $query): Builder
@@ -1172,7 +1220,7 @@ class Product extends Model implements HasMedia
     public function scopeApplyDefaultSort(Builder $query, $sortType = null)
     {
         // If no sort type provided, get it from settings
-        if (!$sortType) {
+        if (! $sortType) {
             $sortType = setting('default_shop_display') ?? 'latest';
         }
 
@@ -1200,8 +1248,8 @@ class Product extends Model implements HasMedia
                     WHERE e.is_mojood = 1
                     GROUP BY COALESCE(parent.id, p.id)
                 ) as etiket_prices_asc'), 'products.id', '=', 'etiket_prices_asc.product_id')
-                ->orderByRaw('(etiket_prices_asc.min_price IS NULL), etiket_prices_asc.min_price ASC')
-                ->select('products.*');
+                    ->orderByRaw('(etiket_prices_asc.min_price IS NULL), etiket_prices_asc.min_price ASC')
+                    ->select('products.*');
             case 'price_desc':
                 // Order by minimum etiket price (products have no price column; use etikets only)
                 // For main products: min over own etikets + children's etikets, with discount
@@ -1221,8 +1269,8 @@ class Product extends Model implements HasMedia
                     WHERE e.is_mojood = 1
                     GROUP BY COALESCE(parent.id, p.id)
                 ) as etiket_prices_desc'), 'products.id', '=', 'etiket_prices_desc.product_id')
-                ->orderByRaw('(etiket_prices_desc.min_price IS NULL), etiket_prices_desc.min_price DESC')
-                ->select('products.*');
+                    ->orderByRaw('(etiket_prices_desc.min_price IS NULL), etiket_prices_desc.min_price DESC')
+                    ->select('products.*');
             case 'name_asc':
                 return $query->orderBy('name', 'asc');
             case 'name_desc':
@@ -1273,7 +1321,7 @@ class Product extends Model implements HasMedia
         // 2️⃣ Products from complementary categories
         $complementaryCategories = $this->complementaryProductsViaCategories()->get();
         foreach ($complementaryCategories as $category) {
-            if (!$category->relationLoaded('products')) {
+            if (! $category->relationLoaded('products')) {
                 $category->load('products');
             }
             $related = $related->concat($category->products);
@@ -1291,7 +1339,7 @@ class Product extends Model implements HasMedia
         $categories = $this->categories()->with('complementaryProductsViaCategories')->get();
         foreach ($categories as $category) {
             foreach ($category->complementaryProductsViaCategories as $complementaryCat) {
-                if (!$complementaryCat->relationLoaded('products')) {
+                if (! $complementaryCat->relationLoaded('products')) {
                     $complementaryCat->load('products');
                 }
                 $related = $related->concat($complementaryCat->products);
@@ -1301,8 +1349,6 @@ class Product extends Model implements HasMedia
         // Remove duplicates & keep order
         return $related->unique('id')->values();
     }
-
-
 
     // Direct product → product relations
     public function relatedProductsDirect(): MorphToMany
@@ -1354,7 +1400,7 @@ class Product extends Model implements HasMedia
         $relatedCategories = $this->relatedCategories()->get();
         if ($relatedCategories->isNotEmpty()) {
             foreach ($relatedCategories as $category) {
-                if (!$category->relationLoaded('products')) {
+                if (! $category->relationLoaded('products')) {
                     $category->load('products');
                 }
                 $filtered = $filterAvailableProducts($category->products);
@@ -1367,25 +1413,25 @@ class Product extends Model implements HasMedia
         // 3️⃣ Products from this product's categories → check for manual related products
         $categories = $this->categories()->with('products')->get();
         $hasManualRelatedProducts = false;
-        
+
         foreach ($categories as $category) {
             // Check if category has manual related products
             $manualRelatedProducts = $category->relatedProductsDirect()->get();
             $manualRelatedCategories = $category->relatedCategories()->get();
-            
+
             if ($manualRelatedProducts->isNotEmpty() || $manualRelatedCategories->isNotEmpty()) {
                 // Category has manual related products - use them
                 $hasManualRelatedProducts = true;
-                
+
                 // Filter manual related products
                 $filtered = $filterAvailableProducts($manualRelatedProducts);
                 if ($filtered->isNotEmpty()) {
                     $related = $related->concat($filtered);
                 }
-                
+
                 // Add products from manual related categories
                 foreach ($manualRelatedCategories as $relatedCat) {
-                    if (!$relatedCat->relationLoaded('products')) {
+                    if (! $relatedCat->relationLoaded('products')) {
                         $relatedCat->load('products');
                     }
                     $filtered = $filterAvailableProducts($relatedCat->products);
@@ -1397,27 +1443,27 @@ class Product extends Model implements HasMedia
                 // No manual related products - check parent category for manual related products
                 $parentHasManualRelated = false;
                 if ($category->parent_id) {
-                    if (!$category->relationLoaded('parent')) {
+                    if (! $category->relationLoaded('parent')) {
                         $category->load('parent');
                     }
-                    
+
                     if ($category->parent) {
                         $parentManualRelatedProducts = $category->parent->relatedProductsDirect()->get();
                         $parentManualRelatedCategories = $category->parent->relatedCategories()->get();
-                        
+
                         if ($parentManualRelatedProducts->isNotEmpty() || $parentManualRelatedCategories->isNotEmpty()) {
                             // Parent has manual related products - use them
                             $hasManualRelatedProducts = true;
                             $parentHasManualRelated = true;
-                            
+
                             // Filter parent manual related products
                             $filtered = $filterAvailableProducts($parentManualRelatedProducts);
                             if ($filtered->isNotEmpty()) {
                                 $related = $related->concat($filtered);
                             }
-                            
+
                             foreach ($parentManualRelatedCategories as $parentRelatedCat) {
-                                if (!$parentRelatedCat->relationLoaded('products')) {
+                                if (! $parentRelatedCat->relationLoaded('products')) {
                                     $parentRelatedCat->load('products');
                                 }
                                 $filtered = $filterAvailableProducts($parentRelatedCat->products);
@@ -1428,9 +1474,9 @@ class Product extends Model implements HasMedia
                         }
                     }
                 }
-                
+
                 // If neither category nor parent has manual related products, use products from category itself
-                if (!$parentHasManualRelated) {
+                if (! $parentHasManualRelated) {
                     if ($category->products && $category->products->isNotEmpty()) {
                         $filtered = $filterAvailableProducts($category->products);
                         if ($filtered->isNotEmpty()) {
@@ -1443,11 +1489,11 @@ class Product extends Model implements HasMedia
 
         // Remove duplicates and exclude current product
         $related = $related->unique('id')->where('id', '!=', $this->id)->values();
-        
+
         // 4️⃣ Fallback: if still empty after all steps, get 15 products from same categories
         if ($related->isEmpty()) {
             $related = collect();
-            
+
             if ($categories->isNotEmpty()) {
                 foreach ($categories as $category) {
                     if ($category->products && $category->products->isNotEmpty()) {
@@ -1458,7 +1504,7 @@ class Product extends Model implements HasMedia
                     }
                 }
             }
-            
+
             // Filter out current product and limit to 15
             $related = $related->unique('id')->where('id', '!=', $this->id)->take(15);
         }
@@ -1497,10 +1543,12 @@ class Product extends Model implements HasMedia
 
     public function getNameUrlAttribute()
     {
-        if($this->parent_id == null && $this->children()->count() > 0 && ($this->is_comprehensive == 0)) {
-            $url = route('products.products_children_of',$this->slug);
+        if ($this->parent_id == null && $this->children()->count() > 0 && ($this->is_comprehensive == 0)) {
+            $url = route('products.products_children_of', $this->slug);
+
             return "<a href='$url' target='_blank' >$this->name</a>";
         }
+
         return $this->name;
     }
 
