@@ -518,7 +518,7 @@
                     if (typeof toastr !== "undefined") {
                         toastr.success("وضعیت با موفقیت ویرایش شد");
                     } else {
-                        alert("خطا در ویرایش وضعیت");
+                        console.log("خطا در ویرایش وضعیت");
                     }
                 },
                 error: function (xhr) {
