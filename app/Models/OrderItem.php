@@ -13,6 +13,9 @@ class OrderItem extends Model
         'name',
         'count',
         'price',
+        'invoice_product_image',
+        'invoice_weight',
+        'invoice_ayar',
 //        'unique_order_number_per_etiket'
     ];
 

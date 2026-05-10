@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
+use Carbon\Carbon;
 use Morilog\Jalali\Jalalian;
 use App\Models\Etiket;
 
@@ -43,6 +44,7 @@ class Order extends Model
         'uuid',
         'shipping_date',
         'has_comprehensive_etiket',
+        'invoice_snapshot',
     ];
 
     protected $casts = [
@@ -50,6 +52,7 @@ class Order extends Model
         'shipping_date' => 'datetime',
         'deleted_at' => 'datetime',
         'has_comprehensive_etiket' => 'boolean',
+        'invoice_snapshot' => 'array',
     ];
 
     protected static function boot()
@@ -840,6 +843,113 @@ class Order extends Model
             self::$STATUSES[7], // post
             self::$STATUSES[8], // completed
         ];
+    }
+
+    /**
+     * Persist printable invoice headers and per-line product/etiket display fields (PDF uses snapshots only).
+     */
+    public function refreshInvoiceSnapshot(): void
+    {
+        $this->loadMissing([
+            'user',
+            'address.province',
+            'address.city',
+            'shipping',
+            'shippingTime',
+            'gateway',
+        ]);
+
+        $addressHtml = '';
+        if ($this->address) {
+            $addressHtml = '';
+            if ($this->address->province) {
+                $addressHtml = $this->address->province->name ?? '';
+            }
+            if ($this->address->city) {
+                $addressHtml = $addressHtml !== ''
+                    ? $addressHtml . ' - ' . $this->address->city->name
+                    : ($this->address->city->name ?? '');
+            }
+            $street = $this->address->address ?? '';
+            $addressHtml = ($addressHtml !== '' ? $addressHtml . ' - ' : '') . $street;
+
+            if (mb_strlen($addressHtml, 'UTF-8') > 90) {
+                $segments = preg_split('/(?<=\G.{90})/u', $addressHtml, -1, PREG_SPLIT_NO_EMPTY);
+                $addressHtml = implode('<br>', $segments);
+            }
+        }
+
+        $shipping = $this->shipping?->title ?? 'آنلاین';
+        if ($this->shipping_time_id && $this->shippingTime) {
+            $shippingTimeTitle = $this->shippingTime->title;
+            if ($this->shipping_date) {
+                $persianDayNames = [
+                    'یکشنبه',
+                    'دوشنبه',
+                    'سه‌شنبه',
+                    'چهارشنبه',
+                    'پنج‌شنبه',
+                    'جمعه',
+                    'شنبه',
+                ];
+                $jalali = Jalalian::forge($this->shipping_date);
+                $dayOfWeek = Carbon::parse($this->shipping_date)->dayOfWeek;
+                $shippingDateText = $jalali->format('Y/m/d') . ' (' . ($persianDayNames[$dayOfWeek] ?? '') . ')';
+                $shipping = $shipping . '<br>' . $shippingDateText . '<br>' . $shippingTimeTitle;
+            } else {
+                $shipping = $shipping . '<br>' . $shippingTimeTitle;
+            }
+        }
+
+        $gatewayName = '';
+        if ($this->gateway) {
+            $gatewayName = $this->gateway->title ?? '';
+        }
+
+        $previousPurchaseCount = self::query()
+            ->where('user_id', '=', $this->user_id)
+            ->where('id', '!=', $this->id)
+            ->count();
+
+        $sumOfPrevPurchases = self::query()
+            ->where('user_id', '=', $this->user_id)
+            ->where('id', '!=', $this->id)
+            ->sum('final_amount');
+
+        $this->invoice_snapshot = [
+            'receiver_name' => $this->user?->name ?? '',
+            'receiver_phone' => $this->user?->phone ?? '',
+            'postal_code' => $this->address?->postal_code ?? '',
+            'address_html' => $addressHtml,
+            'shipping_html' => $shipping,
+            'gateway_name' => $gatewayName,
+            'previous_purchase_count' => $previousPurchaseCount,
+            'sum_of_prev_purchases' => number_format((float) $sumOfPrevPurchases),
+        ];
+
+        $this->saveQuietly();
+
+        $items = OrderItem::query()->where('order_id', $this->id)->orderBy('id')->get();
+
+        foreach ($items as $orderItem) {
+            $img = asset('img/no_image.jpg');
+            if ($orderItem->product_id) {
+                $product = Product::withTrashed()->find($orderItem->product_id);
+                if ($product) {
+                    $img = $product->image;
+                }
+            }
+
+            $etiket = Etiket::withTrashed()->where('code', $orderItem->etiket)->first();
+            $weight = $etiket?->weight;
+            $weightStr = $weight !== null ? (string) $weight : '';
+
+            OrderItem::query()->where('id', $orderItem->id)->update([
+                'invoice_product_image' => $img,
+                'invoice_weight' => $weightStr,
+                'invoice_ayar' => '18',
+            ]);
+        }
     }
 
     public function sendSmsNotifications(): void

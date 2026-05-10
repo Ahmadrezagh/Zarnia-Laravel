@@ -256,6 +256,7 @@ class OrderController extends Controller
                 ]);
             }
 
+            $order->refreshInvoiceSnapshot();
             $order->markOrderItemsOutOfStock();
 
             \Log::info('Order created in admin', [
@@ -746,7 +747,12 @@ class OrderController extends Controller
 
     public function print(Order $order)
     {
-        return view('pdf.order', compact('order'));
+        $invoiceItems = \App\Models\OrderItem::query()
+            ->where('order_id', $order->id)
+            ->orderBy('id')
+            ->get();
+
+        return view('pdf.order', compact('order', 'invoiceItems'));
     }
 
 

@@ -225,6 +225,8 @@ class OrderController extends Controller
             }
         }
 
+        $order->refreshInvoiceSnapshot();
+
         // Cache reserved etiket codes for 32 minutes (1920 seconds), store reserving user id
         // Only the user who reserved can purchase; do not overwrite another user's reservation
         foreach ($reservedEtiketCodes as $etiketCode) {

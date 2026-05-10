@@ -91,76 +91,48 @@
     $mmToPx = fn($mm) => $mm * $dpi / 25.4;
     $containerWidth = $mmToPx($a4WidthMm); // 793.7px
     $containerHeight = $mmToPx($a4HeightMm); // 1122.5px
-    $address = '';
-    if($order->address ){
-        if($order->address->province){
-            $address = $order->address->province->name;
-        }
-        if($order->address->city){
-            $address = $address.' - '.$order->address->city->name;
-        }
-        $address = $address.' - '.$order->address->address;
-        if (mb_strlen($address, 'UTF-8') > 90) {
-            $segments = preg_split('/(?<=\G.{90})/u', $address, -1, PREG_SPLIT_NO_EMPTY);
-            $address = implode('<br>', $segments);
-        }
-    }
-    $shipping = $order->shipping->title ?? 'آنلاین';
-    if($order->shipping_time_id){
-        $shippingTimeTitle = $order->shippingTime->title;
-        
-        // Add shipping_date if it exists
-        if($order->shipping_date){
-            $persian_day_names = [
-                'یکشنبه',
-                'دوشنبه',
-                'سه‌شنبه',
-                'چهارشنبه',
-                'پنج‌شنبه',
-                'جمعه',
-                'شنبه'
-            ];
-            $jalali = \Morilog\Jalali\Jalalian::forge($order->shipping_date);
-            $day_of_week = \Carbon\Carbon::parse($order->shipping_date)->dayOfWeek;
-            $shippingDateText = $jalali->format('Y/m/d') . ' (' . $persian_day_names[$day_of_week] . ')';
-            $shipping = $shipping . '<br>' . $shippingDateText . '<br>' . $shippingTimeTitle;
-        } else {
-            $shipping = $shipping . '<br>' . $shippingTimeTitle;
-        }
-    }
-    $gatewayName = $order->gateway->name ?? ($order->gateway->title ?? '');
+
+    $snap = $order->invoice_snapshot ?? [];
+    $receiverName = $snap['receiver_name'] ?? '';
+    $receiverPhone = $snap['receiver_phone'] ?? '';
+    $postalCode = $snap['postal_code'] ?? '';
+    $addressHtml = $snap['address_html'] ?? '';
+    $shippingHtml = $snap['shipping_html'] ?? 'آنلاین';
+    $gatewayName = $snap['gateway_name'] ?? '';
+    $previousPurchaseCount = $snap['previous_purchase_count'] ?? 0;
+    $sumOfPrevPurchase = $snap['sum_of_prev_purchases'] ?? '0';
 
     $map = [
         'invoice_id' => $order->id,
-        'receiver_name' => $order->user->name,
-        'receiver_name2' => $order->user->name,
+        'receiver_name' => $receiverName,
+        'receiver_name2' => $receiverName,
         'purchase_date' => jdate($order->created_at)->format('Y/m/d'),
         'purchase_date2' => jdate($order->created_at)->format('Y/m/d'),
         'gold_price' => $order->gold_price,
         'total_label' => number_format($order->final_amount),
         'notes_label' => $order->note ?? '',
         'invoice_number' => $order->id ?? '',
-        'previous_purchase_count' => \App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->count(),
-        'shipping' => $shipping,
+        'previous_purchase_count' => $previousPurchaseCount,
+        'shipping' => $shippingHtml,
         'gateway_name' => $gatewayName,
-        'receiver_phone' => $order->user->phone ,
-        'postal_code' => $order->address->postal_code ?? '',
-        'address' => $address,
-        'sum_of_prev_purchase' => number_format(\App\Models\Order::query()->where('user_id','=',$order->user_id)->where('id','!=',$order->id)->sum('final_amount')),
-
-
+        'receiver_phone' => $receiverPhone,
+        'postal_code' => $postalCode,
+        'address' => $addressHtml,
+        'sum_of_prev_purchase' => $sumOfPrevPurchase,
     ];
-    foreach ($order->orderItems as $index => $orderItem){
+
+    foreach (($invoiceItems ?? []) as $index => $orderItem) {
         $idx = $index + 1;
-        $img = $orderItem->product->image;
-        $map['product_'.$idx.'_image'] = "<img src='$img' style='width:100px;height:100px' ></img>";
+        $imgUrl = $orderItem->invoice_product_image ?? asset('img/no_image.jpg');
+        $map['product_'.$idx.'_image'] = "<img src='$imgUrl' style='width:100px;height:100px' ></img>";
         $map['product_'.$idx.'_title'] = $orderItem->name;
         $map['product_'.$idx.'_count'] = $orderItem->count;
-        $map['product_'.$idx.'_weight'] = $orderItem->etiketItem->weight;
-        $map['product_'.$idx.'_weight_2'] = $orderItem->etiketItem->weight;
-        $map['product_'.$idx.'_ayar'] = '18';
+        $weight = $orderItem->invoice_weight ?? '';
+        $map['product_'.$idx.'_weight'] = $weight;
+        $map['product_'.$idx.'_weight_2'] = $weight;
+        $map['product_'.$idx.'_ayar'] = $orderItem->invoice_ayar ?? '18';
         $map['product_'.$idx.'_etiket'] = $orderItem->etiket;
-        $map['product_'.$idx.'_price'] = number_format($orderItem->price);
+        $map['product_'.$idx.'_price'] = number_format((float) $orderItem->price);
     }
 @endphp
 
