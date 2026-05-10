@@ -15,10 +15,11 @@ class ShoppingCartItemResource extends JsonResource
     public function toArray(Request $request): array
     {
         // Get price from etiket if available, otherwise fallback to product's lowest etiket price
-        $itemPrice = $this->etiket ? ($this->etiket->price / 10) : 0;
-        
+        $etiketRow = $this->etiketItem;
+        $itemPrice = $etiketRow ? ($etiketRow->price / 10) : 0;
+
         // Get weight from etiket if available, otherwise fallback to product's lowest etiket weight
-        $itemWeight = $this->etiket ? $this->etiket->weight : 0;
+        $itemWeight = $etiketRow ? $etiketRow->weight : 0;
         
         return [
             'id' => $this->id,
@@ -31,13 +32,13 @@ class ShoppingCartItemResource extends JsonResource
             'total_price' => ($itemPrice * $this->count),
             'item_price_formatted' => number_format($itemPrice),
             'total_price_formatted' => number_format($itemPrice * $this->count),
-            'etiket' => $this->etiket ? [
-                'id' => $this->etiket->id,
-                'code' => $this->etiket->code,
-                'weight' => $this->etiket->weight,
-                'price' => $this->etiket->price / 10,
+            'etiket' => $etiketRow ? [
+                'id' => $etiketRow->id,
+                'code' => $etiketRow->code,
+                'weight' => $etiketRow->weight,
+                'price' => $etiketRow->price / 10,
             ] : null,
-            'etiket_code' => $this->etiket ? $this->etiket->code : null,
+            'etiket_code' => $etiketRow ? $etiketRow->code : null,
         ];
     }
 }

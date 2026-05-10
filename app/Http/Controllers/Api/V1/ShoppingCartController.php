@@ -61,7 +61,7 @@ class ShoppingCartController extends Controller
             'count' => 1
         ]);
 
-        return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiket')->get());
+        return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiketItem')->get());
     }
 
 
@@ -79,12 +79,12 @@ class ShoppingCartController extends Controller
             $item->delete();
         }
 
-        return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiket')->get());
+        return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiketItem')->get());
     }
 
     public function index()
     {
         $user = auth()->user();
-        return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiket')->get());
+        return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiketItem')->get());
     }
 }

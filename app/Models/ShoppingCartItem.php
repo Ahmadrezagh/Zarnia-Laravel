@@ -6,6 +6,7 @@ use App\Traits\Scopes\FilterByProductId;
 use App\Traits\Scopes\FilterByUserId;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ShoppingCartItem extends Model
 {
@@ -27,8 +28,11 @@ class ShoppingCartItem extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function etiket()
+    /**
+     * Selected shelf etiket for this cart row (same idea as OrderItem::etiketItem).
+     */
+    public function etiketItem(): BelongsTo
     {
-        return $this->belongsTo(Etiket::class);
+        return $this->belongsTo(Etiket::class, 'etiket_id');
     }
 }
