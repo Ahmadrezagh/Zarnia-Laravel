@@ -38,7 +38,13 @@ class OrderObserver
      */
     public function updated(Order $order): void
     {
-        //
+        if (!$order->wasChanged('status')) {
+            return;
+        }
+
+        if (in_array($order->status, [Order::$STATUSES[3], Order::$STATUSES[4]], true)) {
+            $order->restoreOrderEtiketsAvailability();
+        }
     }
 
     /**

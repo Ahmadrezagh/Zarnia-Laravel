@@ -10,6 +10,7 @@ use App\Services\NajvaService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Carbon\Carbon;
@@ -905,6 +906,33 @@ class Order extends Model
 
         if ($notifyAdminsWhenProductFullyUnavailable) {
             $this->notifyAdminsIfAffectedProductsFullyOutOfStock();
+        }
+    }
+
+    /**
+     * Restore etikets on this order to available (is_mojood = 1). Used when order is canceled or rejected.
+     */
+    public function restoreOrderEtiketsAvailability(): void
+    {
+        $this->loadMissing('orderItems');
+
+        foreach ($this->orderItems as $item) {
+            if (!$item->etiket) {
+                continue;
+            }
+
+            $etiket = Etiket::query()
+                ->where('product_id', $item->product_id)
+                ->where('code', $item->etiket)
+                ->first();
+
+            if (!$etiket) {
+                continue;
+            }
+
+            $etiket->update(['is_mojood' => 1]);
+
+            Cache::forget('reserved_etiket_' . $item->etiket);
         }
     }
 

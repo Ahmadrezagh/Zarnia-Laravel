@@ -533,6 +533,13 @@ class OrderController extends Controller
             'paid_at' => in_array($status, ['paid', 'boxing', 'sent', 'post', 'completed']) ? now() : null,
         ]);
 
+        // Mass update does not fire observers — restore etikets when bulk-canceling/rejecting
+        if ($updated > 0 && in_array($status, [Order::$STATUSES[3], Order::$STATUSES[4]], true)) {
+            Order::whereIn('id', $validOrderIds)->get()->each(function (Order $order) {
+                $order->restoreOrderEtiketsAvailability();
+            });
+        }
+
         return response()->json([
             'success' => true,
             'message' => "وضعیت {$updated} سفارش با موفقیت تغییر کرد",
