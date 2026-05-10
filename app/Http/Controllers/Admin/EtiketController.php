@@ -573,19 +573,29 @@ class EtiketController extends Controller
     }
 
     /**
-     * AJAX: return attribute inputs for a given etiket (from its product's categories).
+     * AJAX: return attribute inputs for a given etiket (from its product's categories;
+     * if the product has no categories but has a parent, use the parent's categories).
      */
     public function etiketAttributeData(int $id)
     {
-        $etiket = Etiket::with(['product.categories.attributeGroups.attributes'])->findOrFail($id);
+        $etiket = Etiket::with([
+            'product.categories.attributeGroups.attributes',
+            'product.parent.categories.attributeGroups.attributes',
+        ])->findOrFail($id);
 
         $product = $etiket->product;
-        if (!$product) {
+        if (! $product) {
             return response()->json(['attributes' => [], 'attributeValues' => []]);
         }
 
+        $categories = $product->categories;
+        if ($categories->isEmpty() && $product->parent_id) {
+            $product->loadMissing(['parent.categories.attributeGroups.attributes']);
+            $categories = $product->parent?->categories ?? collect();
+        }
+
         $attributeIds = [];
-        foreach ($product->categories as $category) {
+        foreach ($categories as $category) {
             foreach ($category->attributeGroups as $group) {
                 foreach ($group->attributes as $attribute) {
                     $attributeIds[$attribute->id] = $attribute;
