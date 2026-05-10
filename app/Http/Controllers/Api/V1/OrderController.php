@@ -94,6 +94,12 @@ class OrderController extends Controller
         // Update cartItems to only include available items
         $cartItems = $availableCartItems;
 
+        $hasComprehensiveEtiket = $cartItems->contains(function ($cartItem) {
+            $etiket = $cartItem->etiket;
+
+            return $etiket && $etiket->type === 'comprehensive';
+        });
+
         $totalAmount = 0;
         $discountPrice = 0;
 
@@ -148,6 +154,7 @@ class OrderController extends Controller
             'gold_price' => $gold_price,
             'reference' => $validated['reference'] ?? null,
             'shipping_date' => $validated['shipping_date'] ?? null,
+            'has_comprehensive_etiket' => $hasComprehensiveEtiket,
         ]);
 
         // Create order items from cart and collect reserved etiket codes

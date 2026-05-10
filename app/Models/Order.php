@@ -41,13 +41,15 @@ class Order extends Model
         'gold_price',
         'reference',
         'uuid',
-        'shipping_date'
+        'shipping_date',
+        'has_comprehensive_etiket',
     ];
 
     protected $casts = [
         'paid_at' => 'datetime',
         'shipping_date' => 'datetime',
         'deleted_at' => 'datetime',
+        'has_comprehensive_etiket' => 'boolean',
     ];
 
     protected static function boot()
@@ -846,6 +848,26 @@ class Order extends Model
         $userName = $this->user->name ?? 'کاربر';
         $userName = str_replace(' ', '_', $userName);
         $sms->send_with_two_token($this->user->phone, $userName, $this->id, $this->status);
+
+        $this->sendComprehensiveEtiketProductSmsIfApplicable();
+    }
+
+    /**
+     * Notify customer when the order included a comprehensive-type etiket (Kavenegar template sefareshiproduct).
+     */
+    public function sendComprehensiveEtiketProductSmsIfApplicable(): void
+    {
+        if (!$this->has_comprehensive_etiket) {
+            return;
+        }
+
+        $phone = $this->user->phone ?? null;
+        if ($phone === null || $phone === '') {
+            return;
+        }
+
+        $sms = new Kavehnegar();
+        $sms->send_with_pattern($phone, (string) $this->user->name, 'sefareshiproduct');
     }
     /**
      * Send Najva notifications for all products in the order

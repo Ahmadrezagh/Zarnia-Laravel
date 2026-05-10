@@ -129,6 +129,7 @@ class OrderController extends Controller
 
             $orderItemsPayload = [];
             $totalAmount = 0;
+            $hasComprehensiveEtiket = false;
 
             foreach ($products as $productData) {
                 $productId = (int) ($productData['product_id'] ?? 0);
@@ -163,6 +164,10 @@ class OrderController extends Controller
                         'success' => false,
                         'errors' => ['products' => ['کد اتیکت ' . $etiketCode . ' برای این محصول معتبر نیست یا موجود نمی‌باشد']]
                     ], 422);
+                }
+
+                if ($etiket->type === 'comprehensive') {
+                    $hasComprehensiveEtiket = true;
                 }
                 
                 // Use edited price from request if provided, otherwise use product's default price
@@ -230,6 +235,7 @@ class OrderController extends Controller
                 'paid_at' => in_array($request->status, ['paid', 'boxing', 'sent', 'post', 'completed']) ? now() : null,
                 'gold_price' => $gold_price,
                 'reference' => $request->reference ?? null,
+                'has_comprehensive_etiket' => $hasComprehensiveEtiket,
             ]);
 
             // Create order items
@@ -730,6 +736,11 @@ class OrderController extends Controller
 
         $sms = new Kavehnegar();
         $sms->send_with_two_token($order->user->phone, $order->user->name, $order->id, $order->status);
+
+        if ($request->orderStatus === Order::$STATUSES[1]) {
+            $order->sendComprehensiveEtiketProductSmsIfApplicable();
+        }
+
         return response()->json();
     }
 
