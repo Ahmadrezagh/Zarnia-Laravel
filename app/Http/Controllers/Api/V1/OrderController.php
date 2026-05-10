@@ -102,7 +102,7 @@ class OrderController extends Controller
         $hasComprehensiveEtiket = $cartEtiketIds->isNotEmpty()
             && Etiket::query()
                 ->whereIn('code', $cartEtiketIds)
-                ->where('type', 'comprehensive')
+                ->where('code', 'like','s-%')
                 ->exists();
 
         $totalAmount = 0;
