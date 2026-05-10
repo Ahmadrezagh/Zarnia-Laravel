@@ -307,6 +307,24 @@ class Product extends Model implements HasMedia
         return $this->hasMany(Etiket::class);
     }
 
+    /**
+     * Whether the product still has at least one etiket considered available for sale (uses effective availability).
+     */
+    public function hasAnyAvailableEtiketForSale(): bool
+    {
+        $etikets = $this->relationLoaded('etikets')
+            ? $this->etikets
+            : $this->etikets()->with(['comprehensiveEtikets.relatedEtiket'])->get();
+
+        foreach ($etikets as $etiket) {
+            if ((int) $etiket->effective_is_mojood === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function getAllEtiketsAttribute()
     {
         // Collect current product's etikets

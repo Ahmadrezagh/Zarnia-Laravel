@@ -578,23 +578,99 @@ class Order extends Model
         }
     }
 
+    public static function adminSmsRecipientPhones(): array
+    {
+        return [
+            '09127127053',
+            '09193106488',
+        ];
+    }
+
+    /**
+     * Statuses for which inventory (etikets) is committed against the catalog.
+     */
+    public static function inventoryCommittedStatuses(): array
+    {
+        return [
+            self::$STATUSES[1], // paid
+            self::$STATUSES[5], // boxing
+            self::$STATUSES[6], // sent
+            self::$STATUSES[7], // post
+            self::$STATUSES[8], // completed
+        ];
+    }
+
+    public function commitsInventory(): bool
+    {
+        return in_array($this->status, self::inventoryCommittedStatuses(), true);
+    }
+
     /**
      * Send SMS notification to admins about new order
      */
     public function notifyAdminsNewOrder()
     {
-        $adminNumbers = [
-            '09127127053',
-            '09193106488'
-        ];
-        
         $sms = new Kavehnegar();
         $userName = $this->user->name ?? 'کاربر';
         $userName = str_replace(' ', '_', $userName);
         $orderAmount = number_format($this->final_amount);
         
-        foreach ($adminNumbers as $phone) {
+        foreach (self::adminSmsRecipientPhones() as $phone) {
             $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
+        }
+    }
+
+    /**
+     * Notify admins when a product from this order has no sellable etikets left (after stock update).
+     */
+    public function notifyAdminsIfAffectedProductsFullyOutOfStock(): void
+    {
+        $this->loadMissing('orderItems');
+
+        $productIds = $this->orderItems->pluck('product_id')->unique()->filter();
+
+        if ($productIds->isEmpty()) {
+            return;
+        }
+
+        $products = Product::query()
+            ->whereIn('id', $productIds->all())
+            ->with([
+                'etikets.comprehensiveEtikets.relatedEtiket',
+            ])
+            ->get()
+            ->keyBy('id');
+
+        foreach ($productIds as $productId) {
+            $product = $products->get($productId);
+            if (!$product || $product->etikets->isEmpty()) {
+                continue;
+            }
+
+            if ($product->hasAnyAvailableEtiketForSale()) {
+                continue;
+            }
+
+            $sms = new Kavehnegar();
+            $productNameToken = str_replace(' ', '_', $product->name ?? 'محصول');
+
+            foreach (self::adminSmsRecipientPhones() as $phone) {
+                try {
+                    $sms->send_with_pattern($phone, $productNameToken, 'notifyAdminProductNotAvailable');
+                } catch (\Throwable $e) {
+                    Log::warning('notifyAdminProductNotAvailable SMS failed', [
+                        'product_id' => $productId,
+                        'order_id' => $this->id,
+                        'phone' => $phone,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            Log::info('notifyAdminProductNotAvailable sent — product fully unavailable', [
+                'product_id' => $productId,
+                'order_id' => $this->id,
+            ]);
         }
     }
 
@@ -608,7 +684,7 @@ class Order extends Model
             'status' => 'paid'
         ]);
 
-        $this->markOrderItemsOutOfStock();
+        $this->markOrderItemsOutOfStock(true);
 
         // Clear shopping cart items when order is verified/paid
         $this->user->shoppingCartItems()->delete();
@@ -798,18 +874,12 @@ class Order extends Model
 
     public function markOrderItemsOutOfStockIfPaid(): void
     {
-        if (in_array($this->status, [
-            self::$STATUSES[1], // paid
-            self::$STATUSES[5], // boxing
-            self::$STATUSES[6], // sent
-            self::$STATUSES[7], // post
-            self::$STATUSES[8], // completed
-        ], true)) {
-            $this->markOrderItemsOutOfStock();
+        if ($this->commitsInventory()) {
+            $this->markOrderItemsOutOfStock(true);
         }
     }
 
-    public function markOrderItemsOutOfStock(): void
+    public function markOrderItemsOutOfStock(bool $notifyAdminsWhenProductFullyUnavailable = false): void
     {
         $this->loadMissing('orderItems');
 
@@ -831,6 +901,10 @@ class Order extends Model
             if (!($etiket->orderable_after_out_of_stock ?? false)) {
                 $etiket->update(['is_mojood' => 0]);
             }
+        }
+
+        if ($notifyAdminsWhenProductFullyUnavailable) {
+            $this->notifyAdminsIfAffectedProductsFullyOutOfStock();
         }
     }
 

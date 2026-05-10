@@ -257,7 +257,7 @@ class OrderController extends Controller
             }
 
             $order->refreshInvoiceSnapshot();
-            $order->markOrderItemsOutOfStock();
+            $order->markOrderItemsOutOfStock($order->commitsInventory());
 
             \Log::info('Order created in admin', [
                 'order_id' => $order->id,
