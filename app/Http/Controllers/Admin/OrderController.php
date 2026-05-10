@@ -6,15 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Order\AdminUpdateOrderRequest;
 use App\Http\Requests\Admin\Order\AdminUpdateOrderStatusRequest;
 use App\Http\Resources\Admin\Order\OrderItemResource;
-use App\Http\Resources\Admin\Table\AdminProductResource;
-use App\Models\Attribute;
 use App\Models\Order;
-use App\Models\Page;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -30,7 +26,7 @@ class OrderController extends Controller
         foreach (Order::$STATUSES as $status) {
             $statusCounts[$status] = Order::where('status', $status)->count();
         }
-        
+
         $orders = Order::query()
             ->with(['orderItems.product', 'user', 'address', 'shipping', 'gateway'])
             ->filterByTransactionId($request->transaction_id)
@@ -39,10 +35,10 @@ class OrderController extends Controller
             ->search($request->search)
             ->orderByStatusPriority()
             ->paginate();
-        
+
         // Get online users count (last 5 minutes)
         $onlineUsersCount = \App\Models\Visit::getOnlineUsers(5);
-        
+
         return view('admin.orders.index', compact('orders', 'statusCounts', 'onlineUsersCount'));
     }
 
@@ -66,7 +62,7 @@ class OrderController extends Controller
             'gateway_id' => $request->gateway_id,
             'shipping_id' => $request->shipping_id,
             'products' => $request->products,
-            'all_data' => $request->all()
+            'all_data' => $request->all(),
         ]);
 
         $request->validate([
@@ -75,7 +71,7 @@ class OrderController extends Controller
             'gateway_id' => 'nullable|exists:gateways,id',
             'shipping_id' => 'nullable|exists:shippings,id',
             'products' => 'required|string',
-            'status' => 'required|in:' . implode(',', Order::$STATUSES),
+            'status' => 'required|in:'.implode(',', Order::$STATUSES),
             'discount_code' => 'nullable|string',
             'reference' => 'nullable|string|max:255',
             'note' => 'nullable|string',
@@ -85,22 +81,22 @@ class OrderController extends Controller
             // Replace null with empty string for optional fields
             $discountCode = $request->discount_code ?? '';
             $note = $request->note ?? '';
-            
+
             // Parse products JSON
             $products = json_decode($request->products, true);
-            
+
             // Validate that products is valid JSON and is an array
-            if (json_last_error() !== JSON_ERROR_NONE || !is_array($products)) {
+            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($products)) {
                 return response()->json([
                     'success' => false,
-                    'errors' => ['products' => ['فرمت محصولات نامعتبر است']]
+                    'errors' => ['products' => ['فرمت محصولات نامعتبر است']],
                 ], 422);
             }
-            
+
             if (empty($products)) {
                 return response()->json([
                     'success' => false,
-                    'errors' => ['products' => ['حداقل یک محصول را انتخاب کنید']]
+                    'errors' => ['products' => ['حداقل یک محصول را انتخاب کنید']],
                 ], 422);
             }
 
@@ -113,7 +109,7 @@ class OrderController extends Controller
             if ($productIds->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'errors' => ['products' => ['حداقل یک محصول معتبر انتخاب کنید']]
+                    'errors' => ['products' => ['حداقل یک محصول معتبر انتخاب کنید']],
                 ], 422);
             }
 
@@ -123,7 +119,7 @@ class OrderController extends Controller
             if ($productModels->count() !== $productIds->count()) {
                 return response()->json([
                     'success' => false,
-                    'errors' => ['products' => ['بعضی از محصولات انتخاب شده در دسترس نیستند']]
+                    'errors' => ['products' => ['بعضی از محصولات انتخاب شده در دسترس نیستند']],
                 ], 422);
             }
 
@@ -136,10 +132,10 @@ class OrderController extends Controller
                 $quantity = max(1, (int) ($productData['quantity'] ?? 1));
                 $etiketCode = $productData['etiket_code'] ?? null;
 
-                if (!$productId || !$productModels->has($productId)) {
+                if (! $productId || ! $productModels->has($productId)) {
                     return response()->json([
                         'success' => false,
-                        'errors' => ['products' => ['محصول انتخاب شده نامعتبر است']]
+                        'errors' => ['products' => ['محصول انتخاب شده نامعتبر است']],
                     ], 422);
                 }
 
@@ -147,32 +143,32 @@ class OrderController extends Controller
                 if (empty($etiketCode)) {
                     return response()->json([
                         'success' => false,
-                        'errors' => ['products' => ['کد اتیکت برای همه محصولات الزامی است']]
+                        'errors' => ['products' => ['کد اتیکت برای همه محصولات الزامی است']],
                     ], 422);
                 }
 
                 $productModel = $productModels->get($productId);
-                
+
                 // Validate etiket code exists and belongs to the product
                 $etiket = \App\Models\Etiket::where('code', $etiketCode)
                     ->where('product_id', $productId)
                     ->where('is_mojood', 1)
                     ->first();
-                
-                if (!$etiket) {
+
+                if (! $etiket) {
                     return response()->json([
                         'success' => false,
-                        'errors' => ['products' => ['کد اتیکت ' . $etiketCode . ' برای این محصول معتبر نیست یا موجود نمی‌باشد']]
+                        'errors' => ['products' => ['کد اتیکت '.$etiketCode.' برای این محصول معتبر نیست یا موجود نمی‌باشد']],
                     ], 422);
                 }
 
                 if ($etiket->type === 'comprehensive') {
                     $hasComprehensiveEtiket = true;
                 }
-                
+
                 // Use edited price from request if provided, otherwise use product's default price
-                $unitPrice = isset($productData['price']) && $productData['price'] > 0 
-                    ? (int) $productData['price'] 
+                $unitPrice = isset($productData['price']) && $productData['price'] > 0
+                    ? (int) $productData['price']
                     : (int) $productModel->price;
 
                 $orderItemsPayload[] = [
@@ -195,7 +191,7 @@ class OrderController extends Controller
             // Handle discount if provided
             $discountPrice = 0;
             $discountPercentage = 0;
-            if (!empty($discountCode)) {
+            if (! empty($discountCode)) {
                 $discount = \App\Models\Discount::where('code', $discountCode)->first();
                 if ($discount) {
                     if ($discount->amount) {
@@ -215,7 +211,7 @@ class OrderController extends Controller
             $transactionId = Order::generateUniqueTransactionId();
 
             // Calculate gold price
-            $gold_price = number_format(get_gold_price()/10);
+            $gold_price = number_format(get_gold_price() / 10);
 
             // Create order
             $order = Order::create([
@@ -242,7 +238,7 @@ class OrderController extends Controller
             foreach ($orderItemsPayload as $itemPayload) {
                 /** @var \App\Models\Product $product */
                 $product = $itemPayload['model'];
-                
+
                 // Use the exact etiket code provided by admin, or fallback to first available
                 $etiketCode = $itemPayload['etiket_code'] ?? ($product->etikets->first()->code ?? null);
 
@@ -263,7 +259,7 @@ class OrderController extends Controller
                 'order_id' => $order->id,
                 'status' => $order->status,
                 'is_paid' => ($order->status === 'paid'),
-                'final_amount' => $order->final_amount
+                'final_amount' => $order->final_amount,
             ]);
 
             // Check and generate gift if order is paid (created by admin with paid status)
@@ -271,66 +267,76 @@ class OrderController extends Controller
                 $order->submitInAccountingApp();
 
                 \Log::info('Order status is paid, proceeding with gift and SMS', [
-                    'order_id' => $order->id
+                    'order_id' => $order->id,
                 ]);
-                
+
                 $order->checkAndGenerateGift();
-                
+
                 // Refresh order to ensure user relationship is loaded
                 $order->refresh();
                 $order->load('user');
-                
+
                 // Notify admins about new paid order
                 $adminNumbers = [
                     '09127127053',
-                    '09193106488'
+                    '09193106488',
                 ];
-                
-                $sms = new Kavehnegar();
+
+                $sms = new Kavehnegar;
                 $userName = $order->user->name ?? 'کاربر';
-                $orderAmount = number_format($order->final_amount) . ' تومان';
-                
+                $orderAmount = number_format($order->final_amount).' تومان';
+
                 \Log::info('Sending admin SMS notification', [
                     'order_id' => $order->id,
                     'user_name' => $userName,
                     'order_amount' => $orderAmount,
-                    'admin_numbers' => $adminNumbers
+                    'admin_numbers' => $adminNumbers,
                 ]);
-                
+
                 foreach ($adminNumbers as $phone) {
                     try {
                         $result = $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
                         \Log::info('Admin SMS sent successfully', [
                             'order_id' => $order->id,
                             'phone' => $phone,
-                            'sms_result' => $result
+                            'sms_result' => $result,
                         ]);
                     } catch (\Exception $e) {
                         \Log::error('Failed to send admin SMS notification', [
                             'order_id' => $order->id,
                             'phone' => $phone,
                             'error' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString()
+                            'trace' => $e->getTraceAsString(),
                         ]);
                     }
+                }
+
+                $order->loadMissing(['orderItems']);
+                try {
+                    $order->sendComprehensiveEtiketProductSmsIfApplicable();
+                } catch (\Throwable $e) {
+                    \Log::warning('Admin order store: comprehensive (sefareshiproduct) SMS failed', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             } else {
                 \Log::info('Order status is not paid, skipping SMS', [
                     'order_id' => $order->id,
-                    'status' => $order->status
+                    'status' => $order->status,
                 ]);
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'سفارش با موفقیت ایجاد شد',
-                'order' => $order
+                'order' => $order,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'خطا در ایجاد سفارش: ' . $e->getMessage()
+                'message' => 'خطا در ایجاد سفارش: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -357,6 +363,7 @@ class OrderController extends Controller
     public function editModal(Order $order)
     {
         $order->load(['orderItems.product', 'user', 'address', 'shipping', 'gateway', 'shippingTime']);
+
         return view('admin.orders.partials.edit_modal', compact('order'))->render();
     }
 
@@ -375,7 +382,7 @@ class OrderController extends Controller
             foreach ($payload['items'] as $itemId => $newCount) {
                 $orderItem = $order->orderItems()->find($itemId);
 
-                if (!$orderItem) {
+                if (! $orderItem) {
                     continue; // آیتم معتبر نبود
                 }
 
@@ -402,7 +409,7 @@ class OrderController extends Controller
         if ($order->final_amount <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'بدلیل صفر شدن مجموع فاکتور سفارش قابل ویرایش نیست درصورت تمایل سفارش را لغو یا مسترد کنید'
+                'message' => 'بدلیل صفر شدن مجموع فاکتور سفارش قابل ویرایش نیست درصورت تمایل سفارش را لغو یا مسترد کنید',
             ], 422);
         }
 
@@ -431,14 +438,14 @@ class OrderController extends Controller
         foreach (Order::$STATUSES as $status) {
             $statusCounts[$status] = Order::onlyTrashed()->where('status', $status)->count();
         }
-        
+
         $orders = Order::onlyTrashed()
             ->filterByTransactionId($request->transaction_id)
             ->filterByStatus($request->status)
             ->search($request->search)
             ->orderByStatusPriority()
             ->paginate();
-            
+
         return view('admin.orders.trash', compact('orders', 'statusCounts'));
     }
 
@@ -449,10 +456,10 @@ class OrderController extends Controller
     {
         $order = Order::onlyTrashed()->findOrFail($id);
         $order->restore();
-        
+
         return response()->json([
             'success' => true,
-            'message' => 'سفارش با موفقیت بازیابی شد'
+            'message' => 'سفارش با موفقیت بازیابی شد',
         ]);
     }
 
@@ -463,10 +470,10 @@ class OrderController extends Controller
     {
         $order = Order::onlyTrashed()->findOrFail($id);
         $order->forceDelete();
-        
+
         return response()->json([
             'success' => true,
-            'message' => 'سفارش به طور کامل حذف شد'
+            'message' => 'سفارش به طور کامل حذف شد',
         ]);
     }
 
@@ -479,42 +486,42 @@ class OrderController extends Controller
         $orderIds = $request->order_ids;
         if (is_string($orderIds)) {
             $orderIds = json_decode($orderIds, true);
-            if (json_last_error() !== JSON_ERROR_NONE || !is_array($orderIds)) {
+            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($orderIds)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'فرمت داده ارسالی صحیح نیست'
+                    'message' => 'فرمت داده ارسالی صحیح نیست',
                 ], 422);
             }
         }
 
         // Ensure order_ids is an array
-        if (!is_array($orderIds) || empty($orderIds)) {
+        if (! is_array($orderIds) || empty($orderIds)) {
             return response()->json([
                 'success' => false,
-                'message' => 'لطفا حداقل یک سفارش را انتخاب کنید'
+                'message' => 'لطفا حداقل یک سفارش را انتخاب کنید',
             ], 422);
         }
 
         // Convert all order IDs to integers and re-index array
         $orderIds = array_map('intval', $orderIds);
-        $orderIds = array_filter($orderIds, function($id) {
+        $orderIds = array_filter($orderIds, function ($id) {
             return $id > 0; // Remove any invalid IDs (0 or negative)
         });
         $orderIds = array_values($orderIds); // Re-index array
-        
+
         if (empty($orderIds)) {
             return response()->json([
                 'success' => false,
-                'message' => 'شناسه‌های سفارش معتبر نیستند'
+                'message' => 'شناسه‌های سفارش معتبر نیستند',
             ], 422);
         }
 
         // Validate status
         $status = $request->status;
-        if (!$status || !in_array($status, Order::$STATUSES)) {
+        if (! $status || ! in_array($status, Order::$STATUSES)) {
             return response()->json([
                 'success' => false,
-                'message' => 'وضعیت انتخاب شده معتبر نیست'
+                'message' => 'وضعیت انتخاب شده معتبر نیست',
             ], 422);
         }
 
@@ -523,7 +530,7 @@ class OrderController extends Controller
         if (empty($validOrderIds)) {
             return response()->json([
                 'success' => false,
-                'message' => 'سفارش‌های انتخاب شده یافت نشدند'
+                'message' => 'سفارش‌های انتخاب شده یافت نشدند',
             ], 422);
         }
 
@@ -543,7 +550,7 @@ class OrderController extends Controller
         return response()->json([
             'success' => true,
             'message' => "وضعیت {$updated} سفارش با موفقیت تغییر کرد",
-            'updated_count' => $updated
+            'updated_count' => $updated,
         ]);
     }
 
@@ -559,7 +566,7 @@ class OrderController extends Controller
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'فرمت داده ارسالی صحیح نیست'
+                    'message' => 'فرمت داده ارسالی صحیح نیست',
                 ], 422);
             }
         }
@@ -576,23 +583,23 @@ class OrderController extends Controller
         return response()->json([
             'success' => true,
             'message' => "{$deleted} سفارش به زباله دان منتقل شد",
-            'deleted_count' => $deleted
+            'deleted_count' => $deleted,
         ]);
     }
 
     /**
      * Remove the specified resource from storage (soft delete).
      */
-    public function destroy( $order_id)
+    public function destroy($order_id)
     {
-         $order = Order::query()->findOrFail($order_id);
+        $order = Order::query()->findOrFail($order_id);
         $order->delete();
+
         return response()->json([
             'success' => true,
-            'message' => 'سفارش به زباله دان منتقل شد'
+            'message' => 'سفارش به زباله دان منتقل شد',
         ]);
     }
-
 
     public function table(Request $request)
     {
@@ -616,11 +623,11 @@ class OrderController extends Controller
                 $searchValue = $request->input('search');
             }
         }
-        
-        if (!empty($searchValue)) {
+
+        if (! empty($searchValue)) {
             $query->search($searchValue);
         }
-        
+
         // Apply custom ordering by status priority
         $query->orderByStatusPriority();
 
@@ -648,7 +655,7 @@ class OrderController extends Controller
             'draw' => (int) $request->input('draw', 1),
             'recordsTotal' => $totalRecords,
             'recordsFiltered' => $filteredRecords,
-            'data' => $data
+            'data' => $data,
         ]);
     }
 
@@ -674,11 +681,11 @@ class OrderController extends Controller
                 $searchValue = $request->input('search');
             }
         }
-        
-        if (!empty($searchValue)) {
+
+        if (! empty($searchValue)) {
             $query->search($searchValue);
         }
-        
+
         // Apply custom ordering by status priority
         $query->orderByStatusPriority();
 
@@ -706,7 +713,7 @@ class OrderController extends Controller
             'draw' => (int) $request->input('draw', 1),
             'recordsTotal' => $totalRecords,
             'recordsFiltered' => $filteredRecords,
-            'data' => $data
+            'data' => $data,
         ]);
     }
 
@@ -714,12 +721,12 @@ class OrderController extends Controller
     {
         $order = Order::find($request->input('orderId'));
         $order->update([
-            'status' => $request->orderStatus
+            'status' => $request->orderStatus,
         ]);
 
         $order->markOrderItemsOutOfStockIfPaid();
 
-        if($request->orderStatus == Order::$STATUSES[1]){
+        if ($request->orderStatus == Order::$STATUSES[1]) {
             $order->submitInAccountingApp();
             $order->notifyAdminsNewOrder();
             // Send Najva notifications when order status is updated to paid
@@ -734,19 +741,26 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
-                    
+
                 ]);
             }
         }
-        if($request->orderStatus == Order::$STATUSES[3] || $request->orderStatus == Order::$STATUSES[4]){
+        if ($request->orderStatus == Order::$STATUSES[3] || $request->orderStatus == Order::$STATUSES[4]) {
             return $order->cancelOrder();
         }
 
-        $sms = new Kavehnegar();
-        $sms->send_with_two_token($order->user->phone, $order->user->name, $order->id, $order->status);
+        $order->loadMissing(['user', 'orderItems']);
+        $order->sendBuyerOrderStatusTwoTokenSms();
 
         if ($request->orderStatus === Order::$STATUSES[1]) {
-            $order->sendComprehensiveEtiketProductSmsIfApplicable();
+            try {
+                $order->sendComprehensiveEtiketProductSmsIfApplicable();
+            } catch (\Throwable $e) {
+                \Log::warning('Admin updateOrderStatus: comprehensive (sefareshiproduct) SMS failed', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return response()->json();
@@ -762,10 +776,11 @@ class OrderController extends Controller
         return view('pdf.order', compact('order', 'invoiceItems'));
     }
 
-
-    function normalizeIranPhone(?string $phone): ?string
+    public function normalizeIranPhone(?string $phone): ?string
     {
-        if (!$phone) return null;
+        if (! $phone) {
+            return null;
+        }
 
         $phone = trim($phone);
 
@@ -776,30 +791,31 @@ class OrderController extends Controller
 
         // If starts with 09xxxxxxxxx → convert to +98
         if (preg_match('/^09\d{9}$/', $phone)) {
-            return '+98' . substr($phone, 1);
+            return '+98'.substr($phone, 1);
         }
 
         // If starts with 9xxxxxxxxx → convert to +98
         if (preg_match('/^9\d{9}$/', $phone)) {
-            return '+98' . $phone;
+            return '+98'.$phone;
         }
 
         // Otherwise return null (invalid format)
         return null;
     }
 
-
     public function cancel($order_id): array
     {
         $order = Order::query()->findOrFail($order_id);
-        if($order->gateway->key == 'snapp'){
-            $snapp = new SnappPayGateway();
+        if ($order->gateway->key == 'snapp') {
+            $snapp = new SnappPayGateway;
             $result = $snapp->cancel($order->payment_token);
             $order->update(['status' => Order::$STATUSES[4]]);
+
             return $result;
         }
+
         return [
-            'error' => 'این قابلیت صرفا جهت سفارشات با درگاه اسنپ می باشد'
+            'error' => 'این قابلیت صرفا جهت سفارشات با درگاه اسنپ می باشد',
         ];
     }
 
@@ -809,27 +825,27 @@ class OrderController extends Controller
     public function getUsersList(Request $request)
     {
         $search = $request->input('search', '');
-        
+
         $users = \App\Models\User::query()
-            ->when($search, function($query) use ($search) {
+            ->when($search, function ($query) use ($search) {
                 $query->where('name', 'LIKE', "%{$search}%")
-                      ->orWhere('phone', 'LIKE', "%{$search}%")
-                      ->orWhere('email', 'LIKE', "%{$search}%");
+                    ->orWhere('phone', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%");
             })
             ->select('id', 'name', 'phone', 'email')
             ->limit(20)
             ->get();
-        
+
         return response()->json([
-            'results' => $users->map(function($user) {
+            'results' => $users->map(function ($user) {
                 return [
                     'id' => $user->id,
-                    'text' => $user->name . ' (' . $user->phone . ')',
+                    'text' => $user->name.' ('.$user->phone.')',
                     'name' => $user->name,
                     'phone' => $user->phone,
                     'email' => $user->email,
                 ];
-            })
+            }),
         ]);
     }
 
@@ -850,7 +866,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'addresses' => $addresses
+            'addresses' => $addresses,
         ]);
     }
 
@@ -862,24 +878,24 @@ class OrderController extends Controller
         try {
             // Clear all application cache
             Cache::flush();
-            
+
             // Clear config cache
             Artisan::call('config:clear');
-            
+
             // Clear route cache
             Artisan::call('route:clear');
-            
+
             // Clear view cache
             Artisan::call('view:clear');
-            
+
             return response()->json([
                 'success' => true,
-                'message' => 'تمام کش‌های سیستم با موفقیت پاک شدند'
+                'message' => 'تمام کش‌های سیستم با موفقیت پاک شدند',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'خطا در پاک کردن کش: ' . $e->getMessage()
+                'message' => 'خطا در پاک کردن کش: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -891,20 +907,20 @@ class OrderController extends Controller
     {
         try {
             // Run getEtikets in background to avoid blocking the response
-//            dispatch(function () {
-                getEtikets();
-//            })->afterResponse();
-            
+            //            dispatch(function () {
+            getEtikets();
+            //            })->afterResponse();
+
             return response()->json([
                 'success' => true,
-                'message' => 'دریافت از حسابداری شروع شد. این عملیات در پس‌زمینه انجام می‌شود.'
+                'message' => 'دریافت از حسابداری شروع شد. این عملیات در پس‌زمینه انجام می‌شود.',
             ]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error starting getEtikets: ' . $e->getMessage());
-            
+            \Illuminate\Support\Facades\Log::error('Error starting getEtikets: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'خطا در شروع دریافت از حسابداری: ' . $e->getMessage()
+                'message' => 'خطا در شروع دریافت از حسابداری: '.$e->getMessage(),
             ], 500);
         }
     }

@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Models\Gateway;
 use App\Models\Order;
-use App\Services\SMS\Kavehnegar;
 
 class OrderObserver
 {
@@ -13,10 +12,19 @@ class OrderObserver
      */
     public function created(Order $order): void
     {
-        $gold_rpice = number_format(get_gold_price()/10);
+        $gateway = Gateway::find($order->gateway_id);
+        $gold_rpice = number_format(get_gold_price() / 10);
         $order->update([
             'gold_price' => $gold_rpice,
         ]);
+        //        $gateway->createTransaction($order);
+
+        // وضعیت سفارش؛ پیامک جامع بعد از وجود خطوط سفارش (مثلاً markAsPaid یا Admin store) فرستاده می‌شود.
+        $order->sendBuyerOrderStatusTwoTokenSms();
+
+        if ($order->status == 'paid') {
+            $order->notifyAdminsNewOrder();
+        }
     }
 
     /**
@@ -24,7 +32,7 @@ class OrderObserver
      */
     public function updated(Order $order): void
     {
-        if (!$order->wasChanged('status')) {
+        if (! $order->wasChanged('status')) {
             return;
         }
 
