@@ -97,7 +97,7 @@ class OrderController extends Controller
         // Update cartItems to only include available items
         $cartItems = $availableCartItems;
 
-        $cartEtiketIds = $cartItems->pluck('etiket')->unique()->filter()->values();
+        $cartEtiketIds = $cartItems->pluck('etiket_id')->unique()->filter()->values();
 
         $hasComprehensiveEtiket = $cartEtiketIds->isNotEmpty()
             && Etiket::query()
