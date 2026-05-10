@@ -1136,27 +1136,88 @@ class Order extends Model
         }
     }
 
-    public function sendSmsNotifications(): void
+    /**
+     * اطلاع وضعیت سفارش با قالب دو-توکن (بدون پیام اتیکت جامع)، پس از کامل شدن خطوط.
+     */
+    public function sendCustomerStatusTwoTokenSms(): void
     {
         $this->loadMissing('user');
 
         $sms = new Kavehnegar;
-        $userName = $this->user->name ?? 'کاربر';
-        $userName = str_replace(' ', '_', $userName);
+        $userName = str_replace(' ', '_', $this->user->name ?? 'کاربر');
         $buyerPhone = self::normalizePhoneForSms($this->user->phone ?? null);
-        if ($buyerPhone !== null) {
-            $sms->send_with_two_token($buyerPhone, $userName, $this->id, $this->status);
+        if ($buyerPhone === null) {
+            return;
         }
 
-        $this->sendComprehensiveEtiketProductSmsIfApplicable();
+        $sms->send_with_two_token($buyerPhone, $userName, $this->id, $this->status);
     }
 
     /**
-     * Notify customer when the order included a comprehensive-type etiket (Kavenegar template sefareshiproduct).
+     * پس از پرداخت تأییدشده: پیام دو-توکن + در صورت واجد شرایط پیام اتیکت جامع با پیشوند s-.
+     */
+    public function sendSmsNotifications(): void
+    {
+        $this->sendCustomerStatusTwoTokenSms();
+
+        if ($this->status === self::$STATUSES[1]) {
+            $this->sendComprehensiveEtiketProductSmsIfApplicable();
+        }
+    }
+
+    /**
+     * Whether this order triggers the sefareshiproduct SMS: comprehensive bundle etiket with code prefix "s-".
+     * (either stored on a line directly or inferred from expanded bundle rows via comprehensive_etikets).
+     */
+    public function orderHasSPrefixedComprehensiveEtiket(): bool
+    {
+        $this->loadMissing('orderItems');
+
+        $codes = $this->orderItems->pluck('etiket')->filter()->unique()->values();
+        if ($codes->isEmpty()) {
+            return false;
+        }
+
+        $codeArray = $codes->all();
+
+        $hasDirect = Etiket::query()
+            ->whereIn('code', $codeArray)
+            ->where('type', 'comprehensive')
+            ->get()
+            ->contains(fn (Etiket $e): bool => str_starts_with((string) $e->code, 's-'));
+
+        if ($hasDirect) {
+            return true;
+        }
+
+        $lineEtiketIds = Etiket::query()->whereIn('code', $codeArray)->pluck('id');
+        if ($lineEtiketIds->isEmpty()) {
+            return false;
+        }
+
+        $bundleEtiketIds = ComprehensiveEtiket::query()
+            ->whereIn('related_etiket_id', $lineEtiketIds)
+            ->pluck('etiket_id')
+            ->unique()
+            ->values();
+
+        if ($bundleEtiketIds->isEmpty()) {
+            return false;
+        }
+
+        return Etiket::query()
+            ->whereIn('id', $bundleEtiketIds)
+            ->where('type', 'comprehensive')
+            ->get()
+            ->contains(fn (Etiket $e): bool => str_starts_with((string) $e->code, 's-'));
+    }
+
+    /**
+     * Notify customer when the order included an s-prefixed comprehensive etiket (Kavenegar template sefareshiproduct).
      */
     public function sendComprehensiveEtiketProductSmsIfApplicable(): void
     {
-        if (! $this->has_comprehensive_etiket) {
+        if (! $this->orderHasSPrefixedComprehensiveEtiket()) {
             return;
         }
 
