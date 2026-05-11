@@ -9,6 +9,23 @@ use Illuminate\Support\Facades\Log;
 class EtiketObserver
 {
     /**
+     * Update ONLY product.created_at to move product in latest(created_at) sort.
+     */
+    private function bumpProductCreatedAt(Etiket $etiket): void
+    {
+        if (! $etiket->product_id) {
+            return;
+        }
+
+        $product = Product::find($etiket->product_id);
+        if ($product) {
+            Product::withoutTimestamps(function () use ($product) {
+                $product->updateQuietly(['created_at' => now()]);
+            });
+        }
+    }
+
+    /**
      * Handle the Etiket "created" event.
      */
     public function created(Etiket $etiket): void
@@ -17,6 +34,7 @@ class EtiketObserver
         // Etikets should now be created with a product_id already assigned.
         // If you need to implement auto-assignment logic, use product_id directly instead of name matching.
         
+        $this->bumpProductCreatedAt($etiket);
         // if ((int) $etiket->is_mojood !== 1) {
         //     return;
         // }
