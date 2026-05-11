@@ -1915,20 +1915,13 @@ class ProductController extends Controller
     /**
      * Delete one comprehensive etiket from a comprehensive product.
      */
-    public function destroyComprehensiveEtiket(Product $product, Etiket $etiket)
+    public function destroyComprehensiveEtiket($product_id, $etiket_id)
     {
-        if ((int) $product->is_comprehensive !== 1) {
-            return back()->withErrors(['error' => 'این محصول جامع نیست.']);
-        }
-
-        if ((int) $etiket->product_id !== (int) $product->id || $etiket->type !== 'comprehensive') {
-            return back()->withErrors(['error' => 'اتیکت انتخاب شده متعلق به این محصول جامع نیست.']);
-        }
-
+        $product = Product::findOrFail($product_id);
+        $etiket = Etiket::findOrFail($etiket_id);
         ComprehensiveEtiket::where('etiket_id', $etiket->id)->delete();
         $etiket->delete();
-
-        return back()->with('success', 'اتیکت جامع با موفقیت حذف شد.');
+        return redirect()->route('products.comprehensive_etikets', $product->id)->with('success', 'اتیکت جامع با موفقیت حذف شد.');
     }
 
     /**
