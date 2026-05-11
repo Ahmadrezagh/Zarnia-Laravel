@@ -1894,7 +1894,7 @@ class ProductController extends Controller
     /**
      * Manage comprehensive etikets of a comprehensive product.
      */
-    public function comprehensiveEtikets(Product $product)
+    public function comprehensiveEtikets($product)
     {
         return $product;
         if ((int) $product->is_comprehensive !== 1) {
