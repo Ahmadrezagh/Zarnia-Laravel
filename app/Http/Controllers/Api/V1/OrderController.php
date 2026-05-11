@@ -265,6 +265,7 @@ class OrderController extends Controller
     {
         $response = $order->cancel();
         $order->update(['status' => Order::$STATUSES[3]]);
+        $order->restoreOrderEtiketsAvailability();
         $sms = new Kavehnegar;
         $sms->send_with_two_token($order->user->phone, $order->user->name, $order->id, $order->status);
 

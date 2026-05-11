@@ -166,16 +166,30 @@ class OrderController extends Controller
                     $hasComprehensiveEtiket = true;
                 }
 
-                // Use edited price from request if provided, otherwise use product's default price
-                $unitPrice = isset($productData['price']) && $productData['price'] > 0
-                    ? (int) $productData['price']
-                    : (int) $productModel->price;
+                // For comprehensive etikets, total is calculated from related real etikets.
+                // For real etikets, keep existing behavior (edited price or product price).
+                if ($etiket->type === 'comprehensive') {
+                    $links = $etiket->relationLoaded('comprehensiveEtikets')
+                        ? $etiket->comprehensiveEtikets
+                        : $etiket->comprehensiveEtikets()->with('relatedEtiket')->get();
+
+                    $unitPrice = $links->sum(function ($link) {
+                        $related = $link->relatedEtiket;
+                        return $related ? ((int) $related->price / 10) : 0;
+                    });
+                } else {
+                    $unitPrice = isset($productData['price']) && $productData['price'] > 0
+                        ? (int) $productData['price']
+                        : (int) $productModel->price;
+                }
 
                 $orderItemsPayload[] = [
                     'model' => $productModel,
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
                     'etiket_code' => $etiketCode,
+                    'etiket_id' => $etiket->id,
+                    'is_comprehensive_etiket' => $etiket->type === 'comprehensive',
                 ];
 
                 $totalAmount += $unitPrice * $quantity;
@@ -238,15 +252,46 @@ class OrderController extends Controller
             foreach ($orderItemsPayload as $itemPayload) {
                 /** @var \App\Models\Product $product */
                 $product = $itemPayload['model'];
+                $quantity = $itemPayload['quantity'];
 
                 // Use the exact etiket code provided by admin, or fallback to first available
                 $etiketCode = $itemPayload['etiket_code'] ?? ($product->etikets->first()->code ?? null);
+
+                if (! empty($itemPayload['is_comprehensive_etiket'])) {
+                    $comprehensiveEtiket = \App\Models\Etiket::query()
+                        ->with('comprehensiveEtikets.relatedEtiket.product')
+                        ->find($itemPayload['etiket_id']);
+
+                    if ($comprehensiveEtiket) {
+                        foreach ($comprehensiveEtiket->comprehensiveEtikets as $link) {
+                            $related = $link->relatedEtiket;
+                            if (! $related) {
+                                continue;
+                            }
+
+                            $relatedProduct = $related->relationLoaded('product')
+                                ? $related->product
+                                : $related->product()->first();
+
+                            \App\Models\OrderItem::create([
+                                'order_id' => $order->id,
+                                'product_id' => $relatedProduct ? $relatedProduct->id : $product->id,
+                                'name' => $relatedProduct ? $relatedProduct->name : $product->name,
+                                'count' => $quantity,
+                                'price' => (int) ($related->price / 10),
+                                'etiket' => $related->code,
+                            ]);
+                        }
+
+                        continue;
+                    }
+                }
 
                 \App\Models\OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
                     'name' => $product->name,
-                    'count' => $itemPayload['quantity'],
+                    'count' => $quantity,
                     'price' => $itemPayload['unit_price'],
                     'etiket' => $etiketCode,
                 ]);
@@ -746,6 +791,7 @@ class OrderController extends Controller
             }
         }
         if ($request->orderStatus == Order::$STATUSES[3] || $request->orderStatus == Order::$STATUSES[4]) {
+            $order->restoreOrderEtiketsAvailability();
             return $order->cancelOrder();
         }
 
@@ -810,6 +856,7 @@ class OrderController extends Controller
             $snapp = new SnappPayGateway;
             $result = $snapp->cancel($order->payment_token);
             $order->update(['status' => Order::$STATUSES[4]]);
+            $order->restoreOrderEtiketsAvailability();
 
             return $result;
         }

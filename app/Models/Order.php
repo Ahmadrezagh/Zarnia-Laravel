@@ -971,18 +971,13 @@ class Order extends Model
                 continue;
             }
 
-            // Find the etiket
-            $etiket = Etiket::where('product_id', $item->product_id)
-                ->where('code', $item->etiket)
-                ->first();
+            foreach ($this->resolveEtiketsForStockTransition($item->etiket, (bool) $this->has_comprehensive_etiket) as $etiket) {
+                // Only set is_mojood to 0 if orderable_after_out_of_stock is not 1
+                if (! ($etiket->orderable_after_out_of_stock ?? false)) {
+                    $etiket->update(['is_mojood' => 0]);
+                }
 
-            if (! $etiket) {
-                continue;
-            }
-
-            // Only set is_mojood to 0 if orderable_after_out_of_stock is not 1
-            if (! ($etiket->orderable_after_out_of_stock ?? false)) {
-                $etiket->update(['is_mojood' => 0]);
+                Cache::forget('reserved_etiket_'.$etiket->code);
             }
         }
 
@@ -1003,19 +998,48 @@ class Order extends Model
                 continue;
             }
 
-            $etiket = Etiket::query()
-                ->where('product_id', $item->product_id)
-                ->where('code', $item->etiket)
-                ->first();
-
-            if (! $etiket) {
-                continue;
+            foreach ($this->resolveEtiketsForStockTransition($item->etiket, (bool) $this->has_comprehensive_etiket) as $etiket) {
+                $etiket->update(['is_mojood' => 1]);
+                Cache::forget('reserved_etiket_'.$etiket->code);
             }
-
-            $etiket->update(['is_mojood' => 1]);
-
-            Cache::forget('reserved_etiket_'.$item->etiket);
         }
+    }
+
+    /**
+     * Resolve all etikets that should transition stock state for an order-item etiket code.
+     * Includes:
+     * - the etiket itself
+     * - related real etikets when the etiket is comprehensive
+     * - parent comprehensive etikets that include this real etiket
+     */
+    private function resolveEtiketsForStockTransition(string $etiketCode, bool $includeParentComprehensive = false)
+    {
+        $baseEtiket = Etiket::query()
+            ->with(['comprehensiveEtikets.relatedEtiket'])
+            ->where('code', $etiketCode)
+            ->first();
+
+        if (! $baseEtiket) {
+            return collect();
+        }
+
+        $allEtikets = collect([$baseEtiket]);
+
+        if ($baseEtiket->type === 'comprehensive') {
+            $relatedRealEtikets = $baseEtiket->comprehensiveEtikets
+                ->pluck('relatedEtiket')
+                ->filter();
+            $allEtikets = $allEtikets->concat($relatedRealEtikets);
+        } elseif ($includeParentComprehensive) {
+            $parentComprehensiveEtikets = Etiket::query()
+                ->whereHas('comprehensiveEtikets', function ($query) use ($baseEtiket) {
+                    $query->where('related_etiket_id', $baseEtiket->id);
+                })
+                ->get();
+            $allEtikets = $allEtikets->concat($parentComprehensiveEtikets);
+        }
+
+        return $allEtikets->unique('id')->values();
     }
 
     protected function getSummableStatuses(): array
