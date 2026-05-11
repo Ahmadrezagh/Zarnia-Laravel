@@ -1916,6 +1916,7 @@ class ProductController extends Controller
      */
     public function destroyComprehensiveEtiket(Product $product, Etiket $etiket)
     {
+        return [$product, $etiket];
         if ((int) $product->is_comprehensive !== 1) {
             return back()->withErrors(['error' => 'این محصول جامع نیست.']);
         }
