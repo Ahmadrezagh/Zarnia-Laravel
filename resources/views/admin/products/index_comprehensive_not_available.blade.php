@@ -79,6 +79,7 @@
                         ]"
             :items="$products"
             :actions="[
+                            ['label' => 'مدیریت اتیکت‌ها', 'route' => ['products.comprehensive_etikets', ['product' => '{id}']]],
                             ['label' => 'ویرایش', 'type' => 'modalEdit'],
                             ['label' => 'حذف', 'type' => 'modalDestroy'],
                         ]"

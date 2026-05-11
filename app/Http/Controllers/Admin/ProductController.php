@@ -13,6 +13,7 @@ use App\Models\Attribute;
 use App\Models\AttributeGroup;
 use App\Models\AttributeValue;
 use App\Models\Category;
+use App\Models\ComprehensiveEtiket;
 use App\Models\ComprehensiveProduct;
 use App\Models\Etiket;
 use App\Models\Product;
@@ -1888,6 +1889,45 @@ class ProductController extends Controller
             'success' => true,
             'message' => 'محصول با موفقیت از محصول جامع حذف شد'
         ]);
+    }
+
+    /**
+     * Manage comprehensive etikets of a comprehensive product.
+     */
+    public function comprehensiveEtikets(Product $product)
+    {
+        if ((int) $product->is_comprehensive !== 1) {
+            return redirect()->route('products.products_comprehensive')
+                ->withErrors(['error' => 'این محصول جامع نیست.']);
+        }
+
+        $product->load([
+            'etikets' => function ($query) {
+                $query->where('type', 'comprehensive')->latest('id');
+            },
+            'etikets.comprehensiveEtikets.relatedEtiket.product',
+        ]);
+
+        return view('admin.products.comprehensive_etikets', compact('product'));
+    }
+
+    /**
+     * Delete one comprehensive etiket from a comprehensive product.
+     */
+    public function destroyComprehensiveEtiket(Product $product, Etiket $etiket)
+    {
+        if ((int) $product->is_comprehensive !== 1) {
+            return back()->withErrors(['error' => 'این محصول جامع نیست.']);
+        }
+
+        if ((int) $etiket->product_id !== (int) $product->id || $etiket->type !== 'comprehensive') {
+            return back()->withErrors(['error' => 'اتیکت انتخاب شده متعلق به این محصول جامع نیست.']);
+        }
+
+        ComprehensiveEtiket::where('etiket_id', $etiket->id)->delete();
+        $etiket->delete();
+
+        return back()->with('success', 'اتیکت جامع با موفقیت حذف شد.');
     }
 
     /**
