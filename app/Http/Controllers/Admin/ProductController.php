@@ -1896,6 +1896,7 @@ class ProductController extends Controller
      */
     public function comprehensiveEtikets(Product $product)
     {
+        return $product;
         if ((int) $product->is_comprehensive !== 1) {
             return redirect()->route('products.products_comprehensive')
                 ->withErrors(['error' => 'این محصول جامع نیست.']);
@@ -1916,7 +1917,6 @@ class ProductController extends Controller
      */
     public function destroyComprehensiveEtiket(Product $product, Etiket $etiket)
     {
-        return [$product, $etiket];
         if ((int) $product->is_comprehensive !== 1) {
             return back()->withErrors(['error' => 'این محصول جامع نیست.']);
         }
