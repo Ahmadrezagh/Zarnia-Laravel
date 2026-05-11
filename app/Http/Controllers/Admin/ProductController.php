@@ -1121,22 +1121,12 @@ class ProductController extends Controller
     }
     public function products_comprehensive_table(Request $request)
     {
-        // Show only available comprehensive products (where ALL constituent products have single_count >= 1)
+        // Show only available comprehensive products.
+        // A comprehensive product is available only when all of its comprehensive etikets
+        // are effectively available (which means all assigned real etikets are available too).
         $query = Product::query()
             ->comprehensive()
             ->main()
-            ->whereHas('products', function ($productsQuery) {
-                // Check if constituent product has at least one available etiket (single_count >= 1)
-                $productsQuery->whereHas('etikets', function ($etiketQuery) {
-                    $etiketQuery->where('is_mojood', 1);
-                });
-            })
-            // Ensure ALL constituent products have available etikets (not just one)
-            ->whereDoesntHave('products', function ($productsQuery) {
-                $productsQuery->whereDoesntHave('etikets', function ($etiketQuery) {
-                    $etiketQuery->where('is_mojood', 1);
-                });
-            })
             ->select('*');
 
         // Get total records before applying filters
@@ -1189,9 +1179,8 @@ class ProductController extends Controller
             $query = $query->latest('id');
         }
 
-        // Fetch paginated data
+        // Build filtered query first (search/filter/category/sort helpers)
         $data = $query
-
             ->multipleSearch([$request->searchKey,$request->searchVal])
             ->WithMojoodCount($count_dir)
             ->WithImageStatus($image_dir)
@@ -1199,12 +1188,35 @@ class ProductController extends Controller
             ->FilterProduct($request->filter)
             ->categories($request->category_ids);
 
-        // Get filtered records count after search
-        $filteredRecords = $query->count();
-        $data = $data
-            ->skip($start)
-            ->take($length)
+        // Evaluate availability in PHP based on comprehensive-etiket mapping.
+        $items = $data
+            ->with([
+                'etikets.comprehensiveEtikets.relatedEtiket',
+            ])
             ->get()
+            ->filter(function (Product $product) {
+                if (! $product->relationLoaded('etikets')) {
+                    $product->load('etikets.comprehensiveEtikets.relatedEtiket');
+                }
+
+                $comprehensiveEtikets = $product->etikets->where('type', 'comprehensive');
+
+                // A comprehensive product without comprehensive etiket is not available.
+                if ($comprehensiveEtikets->isEmpty()) {
+                    return false;
+                }
+
+                // All comprehensive etikets must be effectively available.
+                return $comprehensiveEtikets->every(function ($etiket) {
+                    return (int) $etiket->effective_is_mojood === 1;
+                });
+            })
+            ->values();
+
+        $filteredRecords = $items->count();
+
+        $data = $items
+            ->slice($start, $length)
             ->map(function ($item) {
                 return AdminProductResource::make($item); // Ensure all necessary fields are included
             });
@@ -1218,16 +1230,12 @@ class ProductController extends Controller
     
     public function products_comprehensive_not_available_table(Request $request)
     {
-        // Show comprehensive products where at least one constituent product doesn't have available etikets
+        // Show comprehensive products that are not available:
+        // - products without comprehensive etiket
+        // - OR products with at least one comprehensive etiket that is not effectively available
         $query = Product::query()
             ->comprehensive()
             ->main()
-            ->whereHas('products', function ($productsQuery) {
-                // Must have at least one product without available etikets
-                $productsQuery->whereDoesntHave('etikets', function ($etiketQuery) {
-                    $etiketQuery->where('is_mojood', 1);
-                });
-            })
             ->select('*');
 
         // Get total records before applying filters
@@ -1279,7 +1287,7 @@ class ProductController extends Controller
             $query = $query->latest('id');
         }
 
-        // Fetch paginated data
+        // Build filtered query first (search/filter/category/sort helpers)
         $data = $query
             ->multipleSearch([$request->searchKey,$request->searchVal])
             ->WithMojoodCount($count_dir)
@@ -1288,12 +1296,35 @@ class ProductController extends Controller
             ->FilterProduct($request->filter)
             ->categories($request->category_ids);
 
-        // Get filtered records count after search
-        $filteredRecords = $query->count();
-        $data = $data
-            ->skip($start)
-            ->take($length)
+        // Evaluate availability in PHP based on comprehensive-etiket mapping.
+        $items = $data
+            ->with([
+                'etikets.comprehensiveEtikets.relatedEtiket',
+            ])
             ->get()
+            ->filter(function (Product $product) {
+                if (! $product->relationLoaded('etikets')) {
+                    $product->load('etikets.comprehensiveEtikets.relatedEtiket');
+                }
+
+                $comprehensiveEtikets = $product->etikets->where('type', 'comprehensive');
+
+                // Comprehensive product with no comprehensive etiket is unavailable.
+                if ($comprehensiveEtikets->isEmpty()) {
+                    return true;
+                }
+
+                // If any comprehensive etiket is unavailable, product is unavailable.
+                return $comprehensiveEtikets->contains(function ($etiket) {
+                    return (int) $etiket->effective_is_mojood !== 1;
+                });
+            })
+            ->values();
+
+        $filteredRecords = $items->count();
+
+        $data = $items
+            ->slice($start, $length)
             ->map(function ($item) {
                 return AdminProductResource::make($item);
             });
