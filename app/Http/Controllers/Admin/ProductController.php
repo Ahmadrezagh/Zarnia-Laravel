@@ -1894,9 +1894,9 @@ class ProductController extends Controller
     /**
      * Manage comprehensive etikets of a comprehensive product.
      */
-    public function comprehensiveEtikets($product)
+    public function comprehensiveEtikets($product_id)
     {
-        return $product;
+        $product = Product::findOrFail($product_id);
         if ((int) $product->is_comprehensive !== 1) {
             return redirect()->route('products.products_comprehensive')
                 ->withErrors(['error' => 'این محصول جامع نیست.']);
