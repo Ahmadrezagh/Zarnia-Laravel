@@ -72,7 +72,10 @@ class ProductListResouce extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'weight' => $this->weight,
+            // Only comprehensive products should use minimum available weight.
+            'weight' => (int) ($this->is_comprehensive ?? 0) === 1
+                ? ($this->minimum_available_weight ?? $this->weight)
+                : $this->weight,
             'image' => $this->image,
             'images' => $galleryUrls,
             'cover_image' => $this->CoverImageResponsive,
