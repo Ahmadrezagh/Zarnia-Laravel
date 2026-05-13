@@ -40,10 +40,11 @@ class ProductItemResouce extends JsonResource
         }
         $product = Product::query()
             ->with([
-                'etikets' => fn($query) => $query->where('is_mojood', 1),
+                // Load all etikets; filter below (real: is_mojood only; comprehensive: all related must be mojood).
                 'etikets.attributeValues.attribute',
-                'children.etikets' => fn($query) => $query->where('is_mojood', 1),
+                'etikets.comprehensiveEtikets.relatedEtiket',
                 'children.etikets.attributeValues.attribute',
+                'children.etikets.comprehensiveEtikets.relatedEtiket',
             ])
             ->find($this->id);
         $coverImage = $product->getFirstMedia('cover_image');
@@ -98,9 +99,17 @@ class ProductItemResouce extends JsonResource
             'weights' => collect([$product])
                 ->merge($product?->children ?? collect())
                 ->map(function ($productItem) {
-                    $availableEtikets = $productItem->relationLoaded('etikets')
+                    $etiketsQuery = $productItem->etikets()->with([
+                        'attributeValues.attribute',
+                        'comprehensiveEtikets.relatedEtiket',
+                    ]);
+                    $allEtikets = $productItem->relationLoaded('etikets')
                         ? $productItem->etikets
-                        : $productItem->etikets()->where('is_mojood', 1)->get();
+                        : $etiketsQuery->get();
+
+                    $availableEtikets = $allEtikets->filter(function ($etiket) {
+                        return $this->etiketShouldAppearInWeightsList($etiket);
+                    });
 
                     if ($availableEtikets->isEmpty()) {
                         return null;
@@ -115,7 +124,12 @@ class ProductItemResouce extends JsonResource
                         'etikets' => $availableEtikets->map(function ($etiket) {
                             $isReserved = $etiket->isReserved();
                             $reservedByUserId = $isReserved ? Cache::get('reserved_etiket_' . $etiket->code) : null;
-                            $available = !$isReserved || ($reservedByUserId === $this->user?->id || $reservedByUserId === true);
+                            $reservedForCurrentUser = $reservedByUserId === $this->user?->id || $reservedByUserId === true;
+                            // Real: stock flag only. Comprehensive: already filtered so all related are mojood.
+                            $baseAvailable = ($etiket->type ?? '') === 'comprehensive'
+                                ? true
+                                : (int) $etiket->getRawOriginal('is_mojood') === 1;
+                            $available = $baseAvailable && (!$isReserved || $reservedForCurrentUser);
 
                             return [
                                 'id'                            => $etiket->id,
@@ -150,6 +164,33 @@ class ProductItemResouce extends JsonResource
      *
      * @return array
      */
+    /**
+     * Real etikets: include only when DB is_mojood === 1.
+     * Comprehensive etikets: include only when every related etiket has is_mojood === 1 (otherwise omit from list).
+     *
+     * @param  \App\Models\Etiket  $etiket
+     */
+    private function etiketShouldAppearInWeightsList($etiket): bool
+    {
+        if (($etiket->type ?? '') === 'comprehensive') {
+            $links = $etiket->relationLoaded('comprehensiveEtikets')
+                ? $etiket->comprehensiveEtikets
+                : $etiket->comprehensiveEtikets()->with('relatedEtiket')->get();
+
+            if ($links->isEmpty()) {
+                return false;
+            }
+
+            return $links->every(function ($link) {
+                $related = $link->relatedEtiket;
+
+                return $related && (int) $related->getRawOriginal('is_mojood') === 1;
+            });
+        }
+
+        return (int) $etiket->getRawOriginal('is_mojood') === 1;
+    }
+
     private function getGalleryEndImages(): array
     {
         $galleryEndImagesJson = Setting::getValue('gallery_end_images');
