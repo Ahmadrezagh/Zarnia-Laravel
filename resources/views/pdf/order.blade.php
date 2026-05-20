@@ -109,7 +109,7 @@
         'purchase_date' => jdate($order->created_at)->format('Y/m/d'),
         'purchase_date2' => jdate($order->created_at)->format('Y/m/d'),
         'gold_price' => $order->gold_price,
-        'total_label' => number_format($order->final_amount),
+        'total_label' => number_format(max(0, (float) $order->final_amount - (float) ($order->shipping_price ?? 0))),
         'notes_label' => $order->note ?? '',
         'invoice_number' => $order->id ?? '',
         'previous_purchase_count' => $previousPurchaseCount,
