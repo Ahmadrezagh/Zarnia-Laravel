@@ -8,7 +8,6 @@ use App\Http\Requests\Admin\Order\AdminUpdateOrderStatusRequest;
 use App\Http\Resources\Admin\Order\OrderItemResource;
 use App\Models\Order;
 use App\Services\PaymentGateways\SnappPayGateway;
-use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -321,50 +320,18 @@ class OrderController extends Controller
                 $order->refresh();
                 $order->load('user');
 
-                // Notify admins about new paid order
-                $adminNumbers = [
-                    '09127127053',
-                    '09193106488',
-                ];
-
-                $sms = new Kavehnegar;
-                $userName = $order->user->name ?? 'کاربر';
-                $orderAmount = number_format($order->final_amount).' تومان';
-
-                \Log::info('Sending admin SMS notification', [
-                    'order_id' => $order->id,
-                    'user_name' => $userName,
-                    'order_amount' => $orderAmount,
-                    'admin_numbers' => $adminNumbers,
-                ]);
-
-                foreach ($adminNumbers as $phone) {
-                    try {
-                        $result = $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
-                        \Log::info('Admin SMS sent successfully', [
-                            'order_id' => $order->id,
-                            'phone' => $phone,
-                            'sms_result' => $result,
-                        ]);
-                    } catch (\Exception $e) {
-                        \Log::error('Failed to send admin SMS notification', [
-                            'order_id' => $order->id,
-                            'phone' => $phone,
-                            'error' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString(),
-                        ]);
-                    }
-                }
-
-                $order->loadMissing(['orderItems']);
+                $order->loadMissing(['user', 'orderItems']);
                 try {
-                    $order->sendComprehensiveEtiketProductSmsIfApplicable();
+                    $order->sendSmsNotifications();
                 } catch (\Throwable $e) {
-                    \Log::warning('Admin order store: comprehensive (sefareshiproduct) SMS failed', [
+                    \Log::warning('Admin order store: buyer SMS failed', [
                         'order_id' => $order->id,
                         'error' => $e->getMessage(),
                     ]);
                 }
+
+                \Log::info('Sending admin SMS notification', ['order_id' => $order->id]);
+                $order->notifyAdminsNewOrder();
             } else {
                 \Log::info('Order status is not paid, skipping SMS', [
                     'order_id' => $order->id,

@@ -676,15 +676,26 @@ class Order extends Model
     /**
      * Send SMS notification to admins about new order
      */
-    public function notifyAdminsNewOrder()
+    public function notifyAdminsNewOrder(): void
     {
+        $this->loadMissing('user');
+
         $sms = new Kavehnegar;
-        $userName = $this->user->name ?? 'کاربر';
-        $userName = str_replace(' ', '_', $userName);
-        $orderAmount = number_format($this->final_amount);
+        $userName = str_replace(' ', '_', (string) ($this->user->name ?? 'کاربر'));
+        $orderAmount = number_format((float) $this->final_amount).' تومان';
 
         foreach (self::adminSmsRecipientPhones() as $phone) {
-            $sms->send_with_two_token($phone, $userName, $orderAmount, 'notifyAdminNewOrder');
+            $to = self::normalizePhoneForSms($phone) ?? $phone;
+
+            try {
+                $sms->send_with_two_token($to, $userName, $orderAmount, 'notifyAdminNewOrder');
+            } catch (\Throwable $e) {
+                Log::error('Failed to send admin SMS notification', [
+                    'order_id' => $this->id,
+                    'phone' => $phone,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 
@@ -756,11 +767,14 @@ class Order extends Model
     /**
      * Mark order as paid and send SMS
      */
-    public function markAsPaid()
+    public function markAsPaid(): void
     {
+        if ($this->status === self::$STATUSES[1]) {
+            return;
+        }
 
         $this->update([
-            'status' => 'paid',
+            'status' => self::$STATUSES[1],
         ]);
 
         $this->markOrderItemsOutOfStock(true);
@@ -776,8 +790,7 @@ class Order extends Model
         // Check and generate gift discount code
         $this->checkAndGenerateGift();
 
-        // Notify admins about new paid order
-        // $this->notifyAdminsNewOrder();
+        $this->notifyAdminsNewOrder();
     }
 
     /**

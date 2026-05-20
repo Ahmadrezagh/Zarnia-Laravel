@@ -19,11 +19,9 @@ class OrderObserver
         ]);
         //        $gateway->createTransaction($order);
 
-        // وضعیت سفارش؛ پیامک جامع بعد از وجود خطوط سفارش (مثلاً markAsPaid یا Admin store) فرستاده می‌شود.
-        $order->sendBuyerOrderStatusTwoTokenSms();
-
-        if ($order->status == 'paid') {
-            $order->notifyAdminsNewOrder();
+        // پیامک وضعیت خریدار؛ پیامک مدیران و sefareshiproduct بعد از پرداخت/ثبت کامل (markAsPaid یا Admin store).
+        if ($order->status !== Order::$STATUSES[1]) {
+            $order->sendBuyerOrderStatusTwoTokenSms();
         }
     }
 
