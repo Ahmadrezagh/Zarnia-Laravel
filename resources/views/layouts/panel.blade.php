@@ -52,7 +52,7 @@
 
 
     <!-- CkEditor -->
-    <script src="{{asset('cdn/ckeditor.js')}}"></script>
+    <script src="{{asset('ckeditor/ckeditor.js')}}"></script>
 
     <style>
         .cke_notification_warning{
