@@ -259,4 +259,76 @@ class Etiket extends Model
         }
         return '-';
     }
+
+    /**
+     * Whether a code is already used (includes soft-deleted etikets).
+     */
+    public static function codeExists(string $code): bool
+    {
+        return static::withTrashed()->where('code', $code)->exists();
+    }
+
+    /**
+     * Generate next unique auto etiket code ({number} or {prefix}-{number}).
+     * Considers soft-deleted rows so codes are never reused.
+     *
+     * @param  array<int, string>  $batchCodes  Codes already assigned in the current request
+     * @param  string  $prefix  '' for numeric codes, 's' for orderable (s-XXXX)
+     */
+    public static function generateUniqueCode(array $batchCodes = [], string $prefix = ''): string
+    {
+        $startNumber = 7000;
+        $highestNumber = $startNumber - 1;
+
+        $query = static::withTrashed();
+
+        if ($prefix !== '') {
+            $pattern = '/^'.preg_quote($prefix, '/').'-(\d+)$/';
+            foreach ($query->where('code', 'like', $prefix.'-%')->pluck('code') as $code) {
+                if (preg_match($pattern, (string) $code, $matches)) {
+                    $highestNumber = max($highestNumber, (int) $matches[1]);
+                }
+            }
+        } else {
+            foreach ($query->whereRaw("code REGEXP '^[0-9]+$'")->pluck('code') as $code) {
+                if (preg_match('/^(\d+)$/', (string) $code, $matches)) {
+                    $highestNumber = max($highestNumber, (int) $matches[1]);
+                }
+            }
+        }
+
+        foreach ($batchCodes as $code) {
+            if ($prefix !== '') {
+                $pattern = '/^'.preg_quote($prefix, '/').'-(\d+)$/';
+                if (preg_match($pattern, (string) $code, $matches)) {
+                    $highestNumber = max($highestNumber, (int) $matches[1]);
+                }
+            } elseif (preg_match('/^(\d+)$/', (string) $code, $matches)) {
+                $highestNumber = max($highestNumber, (int) $matches[1]);
+            }
+        }
+
+        $maxId = (int) static::withTrashed()->max('id');
+        $nextFromId = $maxId + 1;
+        $nextFromCodes = max($highestNumber + 1, $startNumber);
+        $nextNumber = $nextFromCodes <= $nextFromId ? $nextFromCodes : $nextFromId;
+
+        do {
+            $candidate = $prefix !== '' ? $prefix.'-'.$nextNumber : (string) $nextNumber;
+            $nextNumber++;
+        } while (static::codeExists($candidate) || in_array($candidate, $batchCodes, true));
+
+        return $candidate;
+    }
+
+    /**
+     * Next numeric part for UI preview (includes soft-deleted etikets in max id).
+     */
+    public static function nextAutoCodeNumber(string $prefix = '', int $pending = 0): int
+    {
+        $startNumber = 7000;
+        $maxId = (int) static::withTrashed()->max('id');
+
+        return max($maxId + 1 + $pending, $startNumber);
+    }
 }

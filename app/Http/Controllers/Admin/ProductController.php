@@ -197,7 +197,7 @@ class ProductController extends Controller
                         
                         // Ensure code is unique (check in database)
                         $attempts = 0;
-                        while (Etiket::where('code', $etiketCode)->exists() && $attempts < 10) {
+                        while (Etiket::codeExists($etiketCode) && $attempts < 10) {
                             $etiketCode = $baseCode . '-' . ($i + 1) . '-' . mt_rand(1000, 9999);
                             $attempts++;
                         }
@@ -391,7 +391,7 @@ class ProductController extends Controller
                 // Generate unique code: {number} for regular, s-{number} for orderable
                 $prefix = $isOrderable ? 's' : '';
                 $existingCodesForPrefix = $isOrderable ? $orderableEtiketCodes : $etiketCodes;
-                $etiketCode = $this->generateUniqueEtiketCode($existingCodesForPrefix, $prefix);
+                $etiketCode = Etiket::generateUniqueCode($existingCodesForPrefix, $prefix);
                 
                 // Create etiket
                 Etiket::create([
@@ -423,72 +423,6 @@ class ProductController extends Controller
         ]);
     }
     
-    /**
-     * Generate unique etiket code in format: {prefix}-{number} or just {number} starting from 7000
-     * @param array $existingCodes Existing codes in current batch
-     * @param string $prefix Code prefix ('' for regular, 's' for orderable)
-     * @return string
-     */
-    private function generateUniqueEtiketCode(array $existingCodes = [], string $prefix = ''): string
-    {
-        $startNumber = 7000;
-        $highestNumber = $startNumber - 1;
-        
-        // Build the pattern based on prefix
-        $likePattern = $prefix ? $prefix . '-%' : '';
-        
-        // Find the highest existing code number in database
-        if ($prefix) {
-            // For prefixed codes (like s-7000)
-            $etikets = Etiket::where('code', 'like', $likePattern)->get();
-            foreach ($etikets as $etiket) {
-                $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
-                if (preg_match($pattern, $etiket->code, $matches)) {
-                    $codeNumber = (int)$matches[1];
-                    if ($codeNumber >= $highestNumber) {
-                        $highestNumber = $codeNumber;
-                    }
-                }
-            }
-        } else {
-            // For non-prefixed codes (just numbers like 7000)
-            $etikets = Etiket::whereRaw('code REGEXP \'^[0-9]+$\'')->get();
-            foreach ($etikets as $etiket) {
-                if (preg_match('/^(\d+)$/', $etiket->code, $matches)) {
-                    $codeNumber = (int)$matches[1];
-                    if ($codeNumber >= $highestNumber) {
-                        $highestNumber = $codeNumber;
-                    }
-                }
-            }
-        }
-        
-        // Check for codes in current batch and find the highest
-        foreach ($existingCodes as $code) {
-            if ($prefix) {
-                $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
-                if (preg_match($pattern, $code, $matches)) {
-                    $codeNumber = (int)$matches[1];
-                    if ($codeNumber >= $highestNumber) {
-                        $highestNumber = $codeNumber;
-                    }
-                }
-            } else {
-                if (preg_match('/^(\d+)$/', $code, $matches)) {
-                    $codeNumber = (int)$matches[1];
-                    if ($codeNumber >= $highestNumber) {
-                        $highestNumber = $codeNumber;
-                    }
-                }
-            }
-        }
-        
-        // Start from the highest number found + 1, or 7000 if no codes exist
-        $nextNumber = max($startNumber, $highestNumber + 1);
-        
-        return $prefix ? $prefix . '-' . $nextNumber : (string)$nextNumber;
-    }
-
     /**
      * Display the specified resource.
      */

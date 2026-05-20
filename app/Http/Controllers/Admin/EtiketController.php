@@ -267,8 +267,8 @@ class EtiketController extends Controller
         $created = 0;
         $skipped = 0;
 
-        // Get existing numeric codes to avoid duplicates
-        $existingCodes = Etiket::whereRaw('code REGEXP \'^[0-9]+$\'')->pluck('code')->toArray();
+        // Get existing numeric codes to avoid duplicates (including soft-deleted)
+        $existingCodes = Etiket::withTrashed()->whereRaw('code REGEXP \'^[0-9]+$\'')->pluck('code')->toArray();
 
         foreach ($request->etikets as $etiketData) {
             $count = (int)($etiketData['count'] ?? 1);
@@ -281,14 +281,12 @@ class EtiketController extends Controller
             
             // Generate unique numeric codes for each etiket
             for ($i = 0; $i < $count; $i++) {
-                $etiketCode = $this->generateUniqueEtiketCode(
+                $etiketCode = Etiket::generateUniqueCode(
                     array_merge($etiketCodes, $existingCodes),
                     ''
                 );
-            
-            // Check for duplicate in database
-                $existingEtiket = Etiket::where('code', $etiketCode)->first();
-            if ($existingEtiket) {
+
+                if (Etiket::codeExists($etiketCode)) {
                 $skipped++;
                 continue;
             }
@@ -389,8 +387,8 @@ class EtiketController extends Controller
         $orderableEtiketCodes = [];
         $created = 0;
         $skipped = 0;
-        $existingNumeric = Etiket::whereRaw('code REGEXP \'^[0-9]+$\'')->pluck('code')->toArray();
-        $existingOrderable = Etiket::where('code', 'like', 's-%')->pluck('code')->toArray();
+        $existingNumeric = Etiket::withTrashed()->whereRaw('code REGEXP \'^[0-9]+$\'')->pluck('code')->toArray();
+        $existingOrderable = Etiket::withTrashed()->where('code', 'like', 's-%')->pluck('code')->toArray();
 
         // Regular etikets (one per row; code from form or generated)
         if ($hasRegular) {
@@ -404,9 +402,9 @@ class EtiketController extends Controller
                 if ($codeInput !== '' && preg_match('/^\d+$/', $codeInput)) {
                     $etiketCode = $codeInput;
                 } else {
-                    $etiketCode = $this->generateUniqueEtiketCode(array_merge($etiketCodes, $existingNumeric), '');
+                    $etiketCode = Etiket::generateUniqueCode(array_merge($etiketCodes, $existingNumeric), '');
                 }
-                if (Etiket::where('code', $etiketCode)->exists()) {
+                if (Etiket::codeExists($etiketCode)) {
                     $skipped++;
                     continue;
                 }
@@ -458,9 +456,9 @@ class EtiketController extends Controller
                 if ($codeInput !== '' && preg_match('/^s-\d+$/', $codeInput)) {
                     $etiketCode = $codeInput;
                 } else {
-                    $etiketCode = $this->generateUniqueEtiketCode(array_merge($orderableEtiketCodes, $existingOrderable), 's');
+                    $etiketCode = Etiket::generateUniqueCode(array_merge($orderableEtiketCodes, $existingOrderable), 's');
                 }
-                if (Etiket::where('code', $etiketCode)->exists()) {
+                if (Etiket::codeExists($etiketCode)) {
                     $skipped++;
                     continue;
                 }
@@ -632,87 +630,9 @@ class EtiketController extends Controller
         $pendingRegular = (int) $request->get('pending_regular', 0);
         $pendingOrderable = (int) $request->get('pending_orderable', 0);
         return response()->json([
-            'regular_start' => $this->getNextEtiketNumber('', $pendingRegular),
-            'orderable_start' => $this->getNextEtiketNumber('s', $pendingOrderable),
+            'regular_start' => Etiket::nextAutoCodeNumber('', $pendingRegular),
+            'orderable_start' => Etiket::nextAutoCodeNumber('s', $pendingOrderable),
         ]);
-    }
-
-    /**
-     * Get next starting number for etiket codes. Uses latest etiket id + 1 so numbers follow id (e.g. 15474 after id 15473).
-     * @param string $prefix '' for regular numeric, 's' for orderable (s-XXXX)
-     * @param int $pending Number of cards already added in form (offset)
-     */
-    private function getNextEtiketNumber(string $prefix, int $pending = 0): int
-    {
-        $startNumber = 7000;
-        $maxId = (int) Etiket::max('id');
-        $nextFromId = $maxId + 1 + $pending;
-        return max($nextFromId, $startNumber);
-    }
-
-    /**
-     * Generate unique etiket code in format: {prefix}-{number} or just {number}
-     * @param array $existingCodes Existing codes in current batch
-     * @param string $prefix Code prefix ('' for regular numeric, 's' for orderable)
-     */
-    private function generateUniqueEtiketCode(array $existingCodes = [], string $prefix = ''): string
-    {
-        $startNumber = 7000;
-        $highestNumber = $startNumber - 1;
-        
-        // Find the highest existing code number in database
-        if ($prefix) {
-            // For prefixed codes (like s-7000)
-            $etikets = Etiket::where('code', 'like', $prefix . '-%')->get();
-            foreach ($etikets as $etiket) {
-                $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
-                if (preg_match($pattern, $etiket->code, $matches)) {
-                    $codeNumber = (int)$matches[1];
-                    if ($codeNumber >= $highestNumber) {
-                        $highestNumber = $codeNumber;
-                    }
-                }
-            }
-        } else {
-            // For non-prefixed codes (just numbers like 7000)
-            $etikets = Etiket::whereRaw('code REGEXP \'^[0-9]+$\'')->get();
-            foreach ($etikets as $etiket) {
-                if (preg_match('/^(\d+)$/', $etiket->code, $matches)) {
-                    $codeNumber = (int)$matches[1];
-                    if ($codeNumber >= $highestNumber) {
-                        $highestNumber = $codeNumber;
-                    }
-                }
-            }
-        }
-        
-        // Check for codes in current batch and find the highest
-        foreach ($existingCodes as $code) {
-            if ($prefix) {
-                $pattern = '/^' . preg_quote($prefix, '/') . '-(\d+)$/';
-                if (preg_match($pattern, $code, $matches)) {
-                    $codeNumber = (int)$matches[1];
-                    if ($codeNumber >= $highestNumber) {
-                        $highestNumber = $codeNumber;
-                    }
-                }
-            } else {
-                if (preg_match('/^(\d+)$/', $code, $matches)) {
-                    $codeNumber = (int)$matches[1];
-                    if ($codeNumber >= $highestNumber) {
-                        $highestNumber = $codeNumber;
-                    }
-                }
-            }
-        }
-        
-        // Use latest etiket id + 1 so new codes follow id (e.g. 15474 after id 15473); avoid using stray high code values
-        $maxId = (int) Etiket::max('id');
-        $nextFromId = $maxId + 1;
-        $nextFromCodes = max($highestNumber + 1, $startNumber);
-        // If code-based next is unreasonably high (e.g. 33333333335), use id-based next instead
-        $nextNumber = $nextFromCodes <= $nextFromId ? $nextFromCodes : $nextFromId;
-        return $prefix ? $prefix . '-' . $nextNumber : (string)$nextNumber;
     }
 
     /**
