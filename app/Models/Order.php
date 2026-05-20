@@ -984,7 +984,7 @@ class Order extends Model
                 continue;
             }
 
-            foreach ($this->resolveEtiketsForStockTransition($item->etiket, (bool) $this->has_comprehensive_etiket) as $etiket) {
+            foreach ($this->resolveEtiketsForStockTransition($item->etiket, (bool) $this->has_comprehensive_etiket, $item->product_id) as $etiket) {
                 // Only set is_mojood to 0 if orderable_after_out_of_stock is not 1
                 if (! ($etiket->orderable_after_out_of_stock ?? false)) {
                     $etiket->update(['is_mojood' => 0]);
@@ -1011,7 +1011,7 @@ class Order extends Model
                 continue;
             }
 
-            foreach ($this->resolveEtiketsForStockTransition($item->etiket, (bool) $this->has_comprehensive_etiket) as $etiket) {
+            foreach ($this->resolveEtiketsForStockTransition($item->etiket, (bool) $this->has_comprehensive_etiket, $item->product_id) as $etiket) {
                 $etiket->update(['is_mojood' => 1]);
                 Cache::forget('reserved_etiket_'.$etiket->code);
             }
@@ -1025,12 +1025,17 @@ class Order extends Model
      * - related real etikets when the etiket is comprehensive
      * - parent comprehensive etikets that include this real etiket
      */
-    private function resolveEtiketsForStockTransition(string $etiketCode, bool $includeParentComprehensive = false)
+    private function resolveEtiketsForStockTransition(string $etiketCode, bool $includeParentComprehensive = false, ?int $productId = null)
     {
-        $baseEtiket = Etiket::query()
+        $baseQuery = Etiket::query()
             ->with(['comprehensiveEtikets.relatedEtiket'])
-            ->where('code', $etiketCode)
-            ->first();
+            ->where('code', $etiketCode);
+
+        if ($productId !== null) {
+            $baseQuery->where('product_id', $productId);
+        }
+
+        $baseEtiket = $baseQuery->first();
 
         if (! $baseEtiket) {
             return collect();
@@ -1161,7 +1166,11 @@ class Order extends Model
                 }
             }
 
-            $etiket = Etiket::withTrashed()->where('code', $orderItem->etiket)->first();
+            $etiketQuery = Etiket::withTrashed()->where('code', $orderItem->etiket);
+            if ($orderItem->product_id) {
+                $etiketQuery->where('product_id', $orderItem->product_id);
+            }
+            $etiket = $etiketQuery->first();
             $weight = $etiket?->weight;
             $weightStr = $weight !== null ? (string) $weight : '';
 

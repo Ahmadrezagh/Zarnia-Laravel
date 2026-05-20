@@ -53,7 +53,8 @@ class OrderItem extends Model
 
     public function etiketItem()
     {
-        return $this->hasOne(Etiket::class,'code','etiket');
+        return $this->hasOne(Etiket::class, 'code', 'etiket')
+            ->whereColumn('etikets.product_id', 'order_items.product_id');
     }
 
 }
