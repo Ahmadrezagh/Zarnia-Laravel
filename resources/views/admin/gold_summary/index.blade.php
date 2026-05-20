@@ -152,7 +152,7 @@
 
                             foreach ($order->orderItems as $item) {
                                 if ($item->product) {
-                                    $etiket = $item->etiketItem;
+                                    $etiket = $item->resolveEtiket();
                                     $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                                     $itemAmount = floatval($item->price) * intval($item->count);
                                     

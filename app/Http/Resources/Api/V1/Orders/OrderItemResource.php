@@ -21,7 +21,7 @@ class OrderItemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $etiketItem = $this->etiketItem;
+        $etiketItem = $this->resolveEtiket();
         return [
             'id' => $this->id,
             'etiket' => $etiketItem ? array_merge($etiketItem->toArray(), [

@@ -19,7 +19,7 @@ class GoldSummaryController extends Controller
     public function index(Request $request)
     {
         // Build base query with date filters
-        $query = Order::with(['orderItems.product', 'orderItems.etiketItem', 'gateway'])
+        $query = Order::with(['orderItems.product', 'orderItems', 'gateway'])
             ->whereIn('status', self::VALID_STATUSES);
 
         // Apply date filters if provided
@@ -54,7 +54,7 @@ class GoldSummaryController extends Controller
             
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
-                    $etiket = $item->etiketItem;
+                    $etiket = $item->resolveEtiket();
                     $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                     $itemAmount = floatval($item->price) * intval($item->count);
                     
@@ -112,7 +112,7 @@ class GoldSummaryController extends Controller
             
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
-                    $etiket = $item->etiketItem;
+                    $etiket = $item->resolveEtiket();
                     $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                     $itemAmount = floatval($item->price) * intval($item->count);
                     
@@ -187,7 +187,7 @@ class GoldSummaryController extends Controller
     public function table(Request $request)
     {
         // Build base query with status filter
-        $query = Order::with(['orderItems.product', 'orderItems.etiketItem'])
+        $query = Order::with(['orderItems.product', 'orderItems'])
             ->whereIn('status', self::VALID_STATUSES)
             ->orderBy('created_at', 'asc');
 
@@ -212,7 +212,7 @@ class GoldSummaryController extends Controller
         $length = $request->input('length', 25);
 
         // Build paginated query with same filters
-        $paginatedQuery = Order::with(['orderItems.product', 'orderItems.etiketItem'])
+        $paginatedQuery = Order::with(['orderItems.product', 'orderItems'])
             ->whereIn('status', self::VALID_STATUSES)
             ->orderBy('created_at', 'asc');
             
@@ -246,7 +246,7 @@ class GoldSummaryController extends Controller
             
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
-                    $etiket = $item->etiketItem;
+                    $etiket = $item->resolveEtiket();
                     $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                     $itemAmount = floatval($item->price) * intval($item->count);
                     
@@ -297,7 +297,7 @@ class GoldSummaryController extends Controller
 
             foreach ($order->orderItems as $item) {
                 if ($item->product) {
-                    $etiket = $item->etiketItem;
+                    $etiket = $item->resolveEtiket();
                     $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                     $itemAmount = floatval($item->price) * intval($item->count);
                     
@@ -400,7 +400,7 @@ class GoldSummaryController extends Controller
         }
 
         // Load order with items, products and etikets
-        $order->load(['orderItems.product', 'orderItems.etiketItem', 'user', 'address']);
+        $order->load(['orderItems.product', 'orderItems', 'user', 'address']);
 
         // Calculate details for each order item
         $items = [];
@@ -417,7 +417,7 @@ class GoldSummaryController extends Controller
         
         foreach ($order->orderItems as $item) {
             if ($item->product) {
-                $etiket = $item->etiketItem;
+                $etiket = $item->resolveEtiket();
                 $itemWeight = floatval($etiket->weight ?? $item->product->weight ?? 0) * intval($item->count);
                 $itemAmount = floatval($item->price) * intval($item->count);
                 

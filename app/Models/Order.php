@@ -396,8 +396,9 @@ class Order extends Model
     {
         $weight = 0;
         foreach ($this->orderItems as $orderItem) {
-            if ($orderItem->etiketItem()->first()) {
-                $weight = $weight + $orderItem->etiketItem->weight * $orderItem->count;
+            $etiket = $orderItem->resolveEtiket();
+            if ($etiket) {
+                $weight = $weight + $etiket->weight * $orderItem->count;
             }
         }
 
@@ -406,7 +407,9 @@ class Order extends Model
 
     public function getPercentageAttribute()
     {
-        return $this->orderItems()->first()->etiketItem->darsad_kharid ?? 0;
+        $firstItem = $this->orderItems()->first();
+
+        return $firstItem?->resolveEtiket()?->darsad_kharid ?? 0;
     }
 
     public function getDarsadKharidAttribute()
@@ -418,8 +421,9 @@ class Order extends Model
     {
         $sum = 0;
         foreach ($this->orderItems as $orderItem) {
-            if ($orderItem->etiketItem) {
-                $sum = $sum + ($orderItem->etiketItem->ojrat ?? 0);
+            $etiket = $orderItem->resolveEtiket();
+            if ($etiket) {
+                $sum = $sum + ($etiket->ojrat ?? 0);
             }
         }
 
