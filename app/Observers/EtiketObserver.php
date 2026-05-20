@@ -10,6 +10,7 @@ class EtiketObserver
 {
     /**
      * Update ONLY product.created_at to move product in latest(created_at) sort.
+     * Also bumps parent (shop lists main products) and comprehensive bundles that include this product.
      */
     private function bumpProductCreatedAt(Etiket $etiket): void
     {
@@ -17,10 +18,31 @@ class EtiketObserver
             return;
         }
 
-        $product = Product::find($etiket->product_id);
-        if ($product) {
-            Product::withoutTimestamps(function () use ($product) {
-                $product->updateQuietly(['created_at' => now()]);
+        $productIds = collect([$etiket->product_id]);
+
+        $product = Product::query()->select(['id', 'parent_id'])->find($etiket->product_id);
+        if ($product?->parent_id) {
+            $productIds->push($product->parent_id);
+        }
+
+        $comprehensiveParentIds = Product::query()
+            ->where('is_comprehensive', 1)
+            ->whereHas('products', fn ($q) => $q->where('products.id', $etiket->product_id))
+            ->pluck('id');
+
+        $productIds = $productIds->merge($comprehensiveParentIds)->unique()->filter()->values();
+
+        $now = now();
+
+        foreach ($productIds as $productId) {
+            $target = Product::query()->find($productId);
+            if (! $target) {
+                continue;
+            }
+
+            Product::withoutTimestamps(function () use ($target, $now) {
+                // created_at is not fillable — updateQuietly would silently skip it
+                $target->forceFill(['created_at' => $now])->saveQuietly();
             });
         }
     }
