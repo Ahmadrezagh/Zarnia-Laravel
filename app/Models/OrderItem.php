@@ -53,8 +53,25 @@ class OrderItem extends Model
 
     public function etiketItem()
     {
-        return $this->hasOne(Etiket::class, 'code', 'etiket')
-            ->whereColumn('etikets.product_id', 'order_items.product_id');
+        return $this->hasOne(Etiket::class, ['code', 'product_id'], ['etiket', 'product_id']);
+    }
+
+    /**
+     * Resolve the etiket for this line (code + product_id). Used by invoice print/snapshot.
+     */
+    public function resolveEtiket(): ?Etiket
+    {
+        if (! $this->etiket) {
+            return null;
+        }
+
+        $query = Etiket::withTrashed()->where('code', $this->etiket);
+
+        if ($this->product_id) {
+            $query->where('product_id', $this->product_id);
+        }
+
+        return $query->first();
     }
 
 }

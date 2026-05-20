@@ -1166,11 +1166,7 @@ class Order extends Model
                 }
             }
 
-            $etiketQuery = Etiket::withTrashed()->where('code', $orderItem->etiket);
-            if ($orderItem->product_id) {
-                $etiketQuery->where('product_id', $orderItem->product_id);
-            }
-            $etiket = $etiketQuery->first();
+            $etiket = $orderItem->resolveEtiket();
             $weight = $etiket?->weight;
             $weightStr = $weight !== null ? (string) $weight : '';
 

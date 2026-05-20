@@ -123,11 +123,14 @@
 
     foreach (($invoiceItems ?? []) as $index => $orderItem) {
         $idx = $index + 1;
+        $etiket = $orderItem->resolveEtiket();
         $imgUrl = $orderItem->invoice_product_image ?? asset('img/no_image.jpg');
         $map['product_'.$idx.'_image'] = "<img src='$imgUrl' style='width:100px;height:100px' ></img>";
         $map['product_'.$idx.'_title'] = $orderItem->name;
         $map['product_'.$idx.'_count'] = $orderItem->count;
-        $weight = $orderItem->invoice_weight ?? '';
+        $weight = ($etiket && $etiket->weight !== null)
+            ? (string) $etiket->weight
+            : ($orderItem->invoice_weight ?? '');
         $map['product_'.$idx.'_weight'] = $weight;
         $map['product_'.$idx.'_weight_2'] = $weight;
         $map['product_'.$idx.'_ayar'] = $orderItem->invoice_ayar ?? '18';

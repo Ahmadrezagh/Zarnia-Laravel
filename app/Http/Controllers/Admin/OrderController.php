@@ -781,10 +781,14 @@ class OrderController extends Controller
 
     public function print(Order $order)
     {
+        $order->refreshInvoiceSnapshot();
+
         $invoiceItems = \App\Models\OrderItem::query()
             ->where('order_id', $order->id)
             ->orderBy('id')
             ->get();
+
+        $order->refresh();
 
         return view('pdf.order', compact('order', 'invoiceItems'));
     }
