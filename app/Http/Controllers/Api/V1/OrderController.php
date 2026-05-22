@@ -53,8 +53,9 @@ class OrderController extends Controller
             // Check if the selected etiket is available
             $etiket = $cartItem->etiketItem;
             $isOrderableAfterOutOfStock = $etiket->orderable_after_out_of_stock ?? false;
+            $isSkippableReservation = self::isNonReservableEtiketCode($etiket->code);
             $cacheKey = 'reserved_etiket_'.$etiket->code;
-            $reservedByUserId = Cache::get($cacheKey);
+            $reservedByUserId = $isSkippableReservation ? null : Cache::get($cacheKey);
             $isReserved = $reservedByUserId !== null;
 
             // Skip availability check if etiket is orderable after out of stock
@@ -195,8 +196,9 @@ class OrderController extends Controller
                         'price' => $itemPrice,
                     ]);
 
-                    // Reserve each real etiket that participates in the comprehensive etiket
-                    $reservedEtiketCodes[] = $related->code;
+                    if (self::isReservableEtiketCode($related->code)) {
+                        $reservedEtiketCodes[] = $related->code;
+                    }
                 }
 
                 // Skip normal real-etiket handling for comprehensive etikets
@@ -224,8 +226,7 @@ class OrderController extends Controller
                 'price' => $itemPrice,
             ]);
 
-            // Collect etiket codes that are being reserved (only if we have an etiket)
-            if ($etiketCode) {
+            if (self::isReservableEtiketCode($etiketCode)) {
                 $reservedEtiketCodes[] = $etiketCode;
             }
         }
@@ -296,5 +297,15 @@ class OrderController extends Controller
         $snapp = new SnappPayGateway;
 
         return $snapp->eligible($price * 10);
+    }
+
+    private static function isReservableEtiketCode(?string $code): bool
+    {
+        return $code !== null && $code !== '' && ! self::isNonReservableEtiketCode($code);
+    }
+
+    private static function isNonReservableEtiketCode(?string $code): bool
+    {
+        return $code !== null && str_starts_with($code, 's-');
     }
 }
