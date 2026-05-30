@@ -777,6 +777,14 @@ class Order extends Model
             return;
         }
 
+        if (! $this->orderEtiketsAreAvailableForPayment()) {
+            Log::warning('markAsPaid rejected: etiket already sold or reserved by another order', [
+                'order_id' => $this->id,
+            ]);
+
+            return;
+        }
+
         $this->update([
             'status' => self::$STATUSES[1],
         ]);
@@ -979,6 +987,91 @@ class Order extends Model
         }
     }
 
+    /**
+     * Reserve etikets when the user enters payment (pending order). Writes cache + sets is_mojood = 0.
+     */
+    public function reserveOrderEtiketsForPayment(int $userId, int $ttlSeconds = Etiket::PAYMENT_RESERVATION_TTL_SECONDS): void
+    {
+        $this->loadMissing('orderItems');
+
+        foreach ($this->orderItems as $item) {
+            if (! $item->etiket || self::isNonReservableEtiketCode($item->etiket)) {
+                continue;
+            }
+
+            $cacheKey = 'reserved_etiket_'.$item->etiket;
+            $existing = Cache::get($cacheKey);
+            if ($existing !== null && $existing !== $userId && $existing !== true) {
+                continue;
+            }
+
+            Cache::put($cacheKey, $userId, $ttlSeconds);
+
+            foreach ($this->resolveEtiketsForStockTransition($item->etiket, (bool) $this->has_comprehensive_etiket, $item->product_id) as $etiket) {
+                if (! ($etiket->orderable_after_out_of_stock ?? false)) {
+                    $etiket->update(['is_mojood' => 0]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Whether this pending order can still be paid (no etiket sold in another committed order).
+     */
+    public function orderEtiketsAreAvailableForPayment(): bool
+    {
+        $this->loadMissing('orderItems');
+
+        foreach ($this->orderItems as $item) {
+            if (! $item->etiket || self::isNonReservableEtiketCode($item->etiket)) {
+                continue;
+            }
+
+            if (self::etiketIsSoldInCommittedOrder($item->etiket, $this->id)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Whether another order already holds this etiket (pending or paid/committed).
+     */
+    public static function etiketIsHeldByAnotherOrder(string $etiketCode, int $exceptOrderId): bool
+    {
+        return OrderItem::query()
+            ->where('etiket', $etiketCode)
+            ->where('order_id', '!=', $exceptOrderId)
+            ->whereHas('order', function ($query) {
+                $query->whereIn('status', array_merge(
+                    [self::$STATUSES[0]],
+                    self::inventoryCommittedStatuses()
+                ));
+            })
+            ->exists();
+    }
+
+    public static function etiketIsSoldInCommittedOrder(string $etiketCode, ?int $exceptOrderId = null): bool
+    {
+        $query = OrderItem::query()
+            ->where('etiket', $etiketCode)
+            ->whereHas('order', function ($q) {
+                $q->whereIn('status', self::inventoryCommittedStatuses());
+            });
+
+        if ($exceptOrderId !== null) {
+            $query->where('order_id', '!=', $exceptOrderId);
+        }
+
+        return $query->exists();
+    }
+
+    public static function isNonReservableEtiketCode(?string $code): bool
+    {
+        return $code !== null && str_starts_with($code, 's-');
+    }
+
     public function markOrderItemsOutOfStock(bool $notifyAdminsWhenProductFullyUnavailable = false): void
     {
         $this->loadMissing('orderItems');
@@ -1016,6 +1109,14 @@ class Order extends Model
             }
 
             foreach ($this->resolveEtiketsForStockTransition($item->etiket, (bool) $this->has_comprehensive_etiket, $item->product_id) as $etiket) {
+                if (self::etiketIsHeldByAnotherOrder($etiket->code, $this->id)) {
+                    continue;
+                }
+
+                if (self::etiketIsSoldInCommittedOrder($etiket->code, $this->id)) {
+                    continue;
+                }
+
                 $etiket->update(['is_mojood' => 1]);
                 Cache::forget('reserved_etiket_'.$etiket->code);
             }

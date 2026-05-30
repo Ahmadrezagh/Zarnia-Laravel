@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 class Etiket extends Model
 {
     use SoftDeletes;
-    
+
     protected $fillable = [
         'code',
         'type',
@@ -21,8 +21,13 @@ class Etiket extends Model
         'darsad_kharid',
         'mazaneh',
         'darsad_vazn_foroosh',
-        'orderable_after_out_of_stock'
+        'orderable_after_out_of_stock',
     ];
+
+    /**
+     * Reservation TTL when user enters payment (32 minutes — longer than gateway 30 min limit).
+     */
+    public const PAYMENT_RESERVATION_TTL_SECONDS = 1920;
 
     public function product()
     {
@@ -45,18 +50,55 @@ class Etiket extends Model
     }
 
     /**
-     * Check if this etiket is currently reserved (cached for 32 minutes during order processing)
-     * Reserved etikets should return is_mojood = 0 during the reservation period
+     * Comprehensive orderable codes (s-*) are always purchasable and never payment-reserved.
      */
-    public function isReserved(): bool
+    public function isAlwaysOrderableCode(): bool
     {
-        // For comprehensive etikets, consider reserved if ANY related etiket is reserved
+        return Order::isNonReservableEtiketCode($this->code);
+    }
+
+    /**
+     * User id stored in cache for this etiket's payment reservation, or null if not reserved.
+     */
+    public function reservedByUserId(): int|bool|null
+    {
+        if ($this->isAlwaysOrderableCode()) {
+            return null;
+        }
+
         if ($this->type === 'comprehensive') {
             $links = $this->relationLoaded('comprehensiveEtikets')
                 ? $this->comprehensiveEtikets
                 : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
 
-            if (!$links || $links->isEmpty()) {
+            foreach ($links as $link) {
+                $related = $link->relatedEtiket;
+                if ($related && $related->reservedByUserId() !== null) {
+                    return $related->reservedByUserId();
+                }
+            }
+
+            return null;
+        }
+
+        return Cache::get('reserved_etiket_'.$this->code);
+    }
+
+    /**
+     * Check if this etiket is currently reserved for payment (cache, 32 minutes).
+     */
+    public function isReserved(): bool
+    {
+        if ($this->isAlwaysOrderableCode()) {
+            return false;
+        }
+
+        if ($this->type === 'comprehensive') {
+            $links = $this->relationLoaded('comprehensiveEtikets')
+                ? $this->comprehensiveEtikets
+                : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
+
+            if (! $links || $links->isEmpty()) {
                 return false;
             }
 
@@ -70,14 +112,38 @@ class Etiket extends Model
             return false;
         }
 
-        $cacheKey = 'reserved_etiket_' . $this->code;
-        return Cache::has($cacheKey);
+        return Cache::has('reserved_etiket_'.$this->code);
     }
 
     /**
-     * Base availability accessor.
-     * - For comprehensive etikets: 1 only if ALL related etikets have is_mojood == 1.
-     * - For other etikets: returns the raw database value.
+     * Stored inventory flag from the database only (ignores payment reservation cache).
+     */
+    public function databaseIsMojood(): int
+    {
+        if ($this->type === 'comprehensive') {
+            $links = $this->relationLoaded('comprehensiveEtikets')
+                ? $this->comprehensiveEtikets
+                : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
+
+            if (! $links || $links->isEmpty()) {
+                return 0;
+            }
+
+            $allAvailable = $links->every(function (ComprehensiveEtiket $link) {
+                $related = $link->relatedEtiket;
+
+                return $related && $related->databaseIsMojood() === 1;
+            });
+
+            return $allAvailable ? 1 : 0;
+        }
+
+        return (int) ($this->attributes['is_mojood'] ?? 0);
+    }
+
+    /**
+     * Public availability: database stock plus payment reservation cache.
+     * Returns 0 when sold or reserved for another checkout session.
      */
     public function getIsMojoodAttribute($value): int
     {
@@ -86,33 +152,65 @@ class Etiket extends Model
                 ? $this->comprehensiveEtikets
                 : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
 
-            if (!$links || $links->isEmpty()) {
+            if (! $links || $links->isEmpty()) {
                 return 0;
             }
 
             $allAvailable = $links->every(function (ComprehensiveEtiket $link) {
                 $related = $link->relatedEtiket;
-                if (!$related) {
-                    return false;
-                }
-                return (int) ($related->is_mojood ?? 0) === 1;
+
+                return $related && (int) $related->is_mojood === 1;
             });
 
             return $allAvailable ? 1 : 0;
         }
 
-        return (int) $value;
+        if ($this->databaseIsMojood() !== 1) {
+            return 0;
+        }
+
+        return $this->isReserved() ? 0 : 1;
     }
 
     /**
-     * Effective availability (considers reservations).
-     * Returns 0 if reserved, otherwise uses the is_mojood accessor above.
+     * Whether this user may add the etiket to cart or proceed to payment.
+     * Reservation is written only when creating an order (payment page), not on cart add.
+     */
+    public function isAvailableForUser(?int $userId): bool
+    {
+        if ($this->isAlwaysOrderableCode() || ($this->orderable_after_out_of_stock ?? false)) {
+            return true;
+        }
+
+        if ($this->type === 'comprehensive') {
+            $links = $this->relationLoaded('comprehensiveEtikets')
+                ? $this->comprehensiveEtikets
+                : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
+
+            if (! $links || $links->isEmpty()) {
+                return false;
+            }
+
+            return $links->every(function (ComprehensiveEtiket $link) use ($userId) {
+                $related = $link->relatedEtiket;
+
+                return $related && $related->isAvailableForUser($userId);
+            });
+        }
+
+        $reservedBy = $this->reservedByUserId();
+        if ($reservedBy !== null) {
+            return $userId !== null && ($reservedBy === $userId || $reservedBy === true);
+        }
+
+        return $this->databaseIsMojood() === 1;
+    }
+
+    /**
+     * @deprecated Use is_mojood — same semantics after DB + cache merge.
      */
     public function getEffectiveIsMojoodAttribute(): int
     {
-        if ($this->isReserved()) {
-            return 0;
-        }
         return (int) $this->is_mojood;
     }
 
@@ -135,11 +233,11 @@ class Etiket extends Model
     public function getDiscountedPriceAttribute()
     {
         // Load product if not already loaded
-        if (!$this->relationLoaded('product')) {
+        if (! $this->relationLoaded('product')) {
             $this->load('product');
         }
 
-        if (!$this->product) {
+        if (! $this->product) {
             return null;
         }
 
@@ -147,10 +245,10 @@ class Etiket extends Model
 
         // If product has a parent, use parent's discount_percentage
         if ($this->product->parent_id) {
-            if (!$this->product->relationLoaded('parent')) {
+            if (! $this->product->relationLoaded('parent')) {
                 $this->product->load('parent');
             }
-            
+
             if ($this->product->parent) {
                 $discountPercentage = $this->product->parent->discount_percentage ?? 0;
             }
@@ -162,7 +260,7 @@ class Etiket extends Model
         if ($discountPercentage > 0 && $this->original_price > 0) {
             // Calculate discounted price using original_price
             $discountedPrice = $this->original_price * (1 - $discountPercentage / 100);
-            
+
             // Round to nearest integer
             return (int) round($discountedPrice);
         }
@@ -170,22 +268,22 @@ class Etiket extends Model
         return null;
     }
 
-
     public function getTabanGoharPriceAttribute()
     {
         $weight = $this->weight ?? 0;
         $baseGoldPrice = (float) setting('gold_price') ?? 0;
         $ojrat = $this->ojrat ?? 0;
-        
+
         // Add 1% to gold price
         $goldPrice = $baseGoldPrice * 1.01;
-        
+
         if ($weight > 0 && $goldPrice > 0 && $ojrat > 0) {
             $price = $weight * $goldPrice * (1 + ($ojrat / 100));
+
             // Round down to nearest thousand (last three digits become 0)
             return floor($price / 1000) * 1000;
         }
-        
+
         return 0;
     }
 
@@ -202,15 +300,16 @@ class Etiket extends Model
                 ? $this->comprehensiveEtikets
                 : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
 
-            if (!$links || $links->isEmpty()) {
+            if (! $links || $links->isEmpty()) {
                 return 0;
             }
 
             return $links->sum(function (ComprehensiveEtiket $link) {
                 $related = $link->relatedEtiket;
-                if (!$related) {
+                if (! $related) {
                     return 0;
                 }
+
                 // Use effective price of each related etiket (handles its own discounts)
                 return (int) ($related->price ?? 0);
             });
@@ -232,15 +331,16 @@ class Etiket extends Model
                 ? $this->comprehensiveEtikets
                 : $this->comprehensiveEtikets()->with('relatedEtiket')->get();
 
-            if (!$links || $links->isEmpty()) {
+            if (! $links || $links->isEmpty()) {
                 return 0;
             }
 
             $total = $links->sum(function (ComprehensiveEtiket $link) {
                 $related = $link->relatedEtiket;
-                if (!$related) {
+                if (! $related) {
                     return 0;
                 }
+
                 // Use effective weight of related etikets (supports nested comprehensive if ever needed)
                 return (float) ($related->weight ?? 0);
             });
@@ -254,9 +354,10 @@ class Etiket extends Model
 
     public function getNameAttribute()
     {
-        if($this->product){
-        return $this->product->name;
+        if ($this->product) {
+            return $this->product->name;
         }
+
         return '-';
     }
 

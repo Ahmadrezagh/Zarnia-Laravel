@@ -8,12 +8,12 @@ use App\Models\Product;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Cache;
 
 class ProductItemResouce extends JsonResource
 {
     protected $user;
-    public function __construct($resource,$user = null)
+
+    public function __construct($resource, $user = null)
     {
         parent::__construct($resource);
 
@@ -32,10 +32,10 @@ class ProductItemResouce extends JsonResource
             Product::query()->inRandomOrder()->take(15)->get(),
             $this->user
         );
-        if($this->user){
+        if ($this->user) {
             $is_favorite = Favorite::query()->where([
                 'user_id' => $this->user->id,
-                'product_id' => $this->id
+                'product_id' => $this->id,
             ])->exists();
         }
         $product = Product::query()
@@ -57,6 +57,7 @@ class ProductItemResouce extends JsonResource
                 'small' => $media->getUrl('small'),
             ];
         })->toArray();
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -69,28 +70,29 @@ class ProductItemResouce extends JsonResource
             'gallery' => array_merge(
                 $this->getMedia('gallery')->map(function ($media, $index) {
                     $url = $media->getUrl();
+
                     return $url;
                 })->toArray(),
                 $this->getGalleryEndImages()
             ),
             'slug' => $this->slug,
             'price' => number_format($this->minimum_available_price),
-            'price_without_discount' => number_format($this->price_without_discount_minimum_available_product  ?? 0),
+            'price_without_discount' => number_format($this->price_without_discount_minimum_available_product ?? 0),
             'price_range_title' => $this->price_range_title,
             'minimum_available_price' => $this->minimum_available_price,
             'minimum_available_weight' => $this->minimum_available_weight,
             'discount_percentage' => $this->discount_percentage,
-            'snapp_pay_each_installment' => number_format($this->price/4),
+            'snapp_pay_each_installment' => number_format($this->price / 4),
             'children' => new ProductListCollection($this->children, $this->user),
             'categories' => CategoryResource::collection($this->categories),
             'is_favorite' => $is_favorite,
             'purity' => '18',
-            'gold_price' => get_gold_price()/10,
+            'gold_price' => get_gold_price() / 10,
             'attribute_values' => $product->etikets->first()?->attributeValues
-                ->map(fn($av) => [
-                    'attribute_id'   => $av->attribute_id,
+                ->map(fn ($av) => [
+                    'attribute_id' => $av->attribute_id,
                     'attribute_name' => $av->attribute?->name,
-                    'value'          => trim(($av->attribute?->prefix_sentence ?? '') . ' ' . $av->value . ' ' . ($av->attribute?->postfix_sentence ?? '')),
+                    'value' => trim(($av->attribute?->prefix_sentence ?? '').' '.$av->value.' '.($av->attribute?->postfix_sentence ?? '')),
                 ]) ?? collect(),
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
@@ -122,29 +124,23 @@ class ProductItemResouce extends JsonResource
                         'slug' => $productItem->slug,
                         'price' => number_format($productItem->price),
                         'etikets' => $availableEtikets->map(function ($etiket) {
-                            $isReserved = $etiket->isReserved();
-                            $reservedByUserId = $isReserved ? Cache::get('reserved_etiket_' . $etiket->code) : null;
-                            $reservedForCurrentUser = $reservedByUserId === $this->user?->id || $reservedByUserId === true;
-                            // Real: stock flag only. Comprehensive: already filtered so all related are mojood.
-                            $baseAvailable = ($etiket->type ?? '') === 'comprehensive'
-                                ? true
-                                : (int) $etiket->getRawOriginal('is_mojood') === 1;
-                            $available = $baseAvailable && (!$isReserved || $reservedForCurrentUser);
+                            $userId = $this->user?->id;
 
                             return [
-                                'id'                            => $etiket->id,
-                                'code'                          => $etiket->code,
-                                'weight'                        => $etiket->weight,
-                                'price'                         => $etiket->price / 10,
-                                'original_price'                => $etiket->original_price / 10,
-                                'orderable_after_out_of_stock'  => $etiket->orderable_after_out_of_stock ?? false,
-                                'is_reserved'                   => $isReserved,
-                                'available'                     => $available,
-                                'attribute_values'              => $etiket->relationLoaded('attributeValues')
-                                    ? $etiket->attributeValues->map(fn($av) => [
-                                        'attribute_id'   => $av->attribute_id,
+                                'id' => $etiket->id,
+                                'code' => $etiket->code,
+                                'weight' => $etiket->weight,
+                                'price' => $etiket->price / 10,
+                                'original_price' => $etiket->original_price / 10,
+                                'orderable_after_out_of_stock' => $etiket->orderable_after_out_of_stock ?? false,
+                                'is_reserved' => $etiket->isReserved(),
+                                'available' => $etiket->isAvailableForUser($userId),
+                                'is_mojood' => (int) $etiket->is_mojood,
+                                'attribute_values' => $etiket->relationLoaded('attributeValues')
+                                    ? $etiket->attributeValues->map(fn ($av) => [
+                                        'attribute_id' => $av->attribute_id,
                                         'attribute_name' => $av->attribute?->name,
-                                        'value'          => trim(($av->attribute?->prefix_sentence ?? '') . ' ' . $av->value . ' ' . ($av->attribute?->postfix_sentence ?? '')),
+                                        'value' => trim(($av->attribute?->prefix_sentence ?? '').' '.$av->value.' '.($av->attribute?->postfix_sentence ?? '')),
                                     ])
                                     : [],
                             ];
@@ -154,7 +150,6 @@ class ProductItemResouce extends JsonResource
                 ->filter()
                 ->sortBy('weight')
                 ->values(),
-               
 
         ];
     }
@@ -164,47 +159,25 @@ class ProductItemResouce extends JsonResource
      *
      * @return array
      */
-    /**
-     * Real etikets: include only when DB is_mojood === 1.
-     * Comprehensive etikets: include only when every related etiket has is_mojood === 1 (otherwise omit from list).
-     *
-     * @param  \App\Models\Etiket  $etiket
-     */
     private function etiketShouldAppearInWeightsList($etiket): bool
     {
-        if (($etiket->type ?? '') === 'comprehensive') {
-            $links = $etiket->relationLoaded('comprehensiveEtikets')
-                ? $etiket->comprehensiveEtikets
-                : $etiket->comprehensiveEtikets()->with('relatedEtiket')->get();
-
-            if ($links->isEmpty()) {
-                return false;
-            }
-
-            return $links->every(function ($link) {
-                $related = $link->relatedEtiket;
-
-                return $related && (int) $related->getRawOriginal('is_mojood') === 1;
-            });
-        }
-
-        return (int) $etiket->getRawOriginal('is_mojood') === 1;
+        return $etiket->isAvailableForUser($this->user?->id);
     }
 
     private function getGalleryEndImages(): array
     {
         $galleryEndImagesJson = Setting::getValue('gallery_end_images');
-        
+
         if (empty($galleryEndImagesJson)) {
             return [];
         }
-        
+
         $galleryEndImages = json_decode($galleryEndImagesJson, true);
-        
-        if (!is_array($galleryEndImages)) {
+
+        if (! is_array($galleryEndImages)) {
             return [];
         }
-        
+
         // Convert image paths to full URLs
         return array_map(function ($imagePath) {
             return asset($imagePath);

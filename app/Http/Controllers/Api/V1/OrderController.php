@@ -13,7 +13,7 @@ use App\Models\Shipping;
 use App\Services\PaymentGateways\SnappPayGateway;
 use App\Services\SMS\Kavehnegar;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -50,24 +50,15 @@ class OrderController extends Controller
                 continue;
             }
 
-            // Check if the selected etiket is available
             $etiket = $cartItem->etiketItem;
-            $isOrderableAfterOutOfStock = $etiket->orderable_after_out_of_stock ?? false;
-            $isSkippableReservation = self::isNonReservableEtiketCode($etiket->code);
-            $cacheKey = 'reserved_etiket_'.$etiket->code;
-            $reservedByUserId = $isSkippableReservation ? null : Cache::get($cacheKey);
-            $isReserved = $reservedByUserId !== null;
 
-            // Skip availability check if etiket is orderable after out of stock
-            if ($isOrderableAfterOutOfStock) {
+            if ($etiket->orderable_after_out_of_stock ?? false) {
                 $availableCartItems->push($cartItem);
 
                 continue;
             }
 
-            // Etiket must be available (is_mojood). If reserved, only the user who reserved it can purchase.
-            $canPurchaseReserved = $isReserved && $reservedByUserId === $user->id;
-            if ($etiket->is_mojood != 1 || ($isReserved && ! $canPurchaseReserved)) {
+            if (! $etiket->isAvailableForUser($user->id)) {
                 $unavailableProducts[] = $cartItem->product->name.' (اتیکت انتخاب شده موجود نیست)';
                 $cartItem->delete();
 
@@ -103,7 +94,7 @@ class OrderController extends Controller
         $hasComprehensiveEtiket = $cartEtiketIds->isNotEmpty()
             && Etiket::query()
                 ->whereIn('code', $cartEtiketIds)
-                ->where('code', 'like','s-%')
+                ->where('code', 'like', 's-%')
                 ->exists();
 
         $totalAmount = 0;
@@ -141,107 +132,101 @@ class OrderController extends Controller
         // Calculate gold price
         $gold_price = number_format(get_gold_price() / 10);
 
-        // Create the order
-        $order = Order::create([
-            'user_id' => $user->id,
-            'address_id' => $validated['address_id'],
-            'shipping_id' => $validated['shipping_id'],
-            'shipping_time_id' => $validated['shipping_time_id'] ?? null,
-            'gateway_id' => $validated['gateway_id'] ?? null,
-            'status' => 'pending',
-            'discount_code' => $validated['discount_code'] ?? '',
-            'discount_price' => $discountPrice,
-            'discount_percentage' => $discountPercentage,
-            'total_amount' => $totalAmount,
-            'final_amount' => $finalAmount,
-            'note' => $validated['note'] ?? null,
-            'user_agent' => $validated['user_agent'] ?? null,
-            'shipping_price' => $shipping_price,
-            'gold_price' => $gold_price,
-            'reference' => $validated['reference'] ?? null,
-            'shipping_date' => $validated['shipping_date'] ?? null,
-            'has_comprehensive_etiket' => $hasComprehensiveEtiket,
-        ]);
+        // Create the order, items, and payment reservation inside a transaction
+        try {
+            $order = DB::transaction(function () use ($user, $validated, $cartItems, $hasComprehensiveEtiket, $totalAmount, $discountPrice, $discountPercentage, $finalAmount, $shipping_price, $gold_price) {
+                foreach ($cartItems as $cartItem) {
+                    $etiket = $this->lockEtiketForCheckout($cartItem->etiketItem);
 
-        // Create order items from cart and collect reserved etiket codes
-        $reservedEtiketCodes = [];
-
-        foreach ($cartItems as $cartItem) {
-            $etiket = $cartItem->etiket_id ? $cartItem->etiketItem : null;
-
-            // If etiket is comprehensive, expand it into its related etikets
-            if ($etiket && $etiket->type === 'comprehensive') {
-                $links = $etiket->relationLoaded('comprehensiveEtikets')
-                    ? $etiket->comprehensiveEtikets
-                    : $etiket->comprehensiveEtikets()->with('relatedEtiket.product')->get();
-
-                foreach ($links as $link) {
-                    $related = $link->relatedEtiket;
-                    if (! $related) {
-                        continue;
-                    }
-
-                    $relatedProduct = $related->relationLoaded('product')
-                        ? $related->product
-                        : $related->product()->first();
-
-                    $itemPrice = $related->price ? ($related->price / 10) : 0;
-
-                    OrderItem::create([
-                        'order_id' => $order->id,
-                        'product_id' => $relatedProduct ? $relatedProduct->id : $cartItem->product_id,
-                        'etiket' => $related->code,
-                        'name' => $relatedProduct ? $relatedProduct->name : $cartItem->product->name,
-                        'count' => $cartItem->count,
-                        'price' => $itemPrice,
-                    ]);
-
-                    if (self::isReservableEtiketCode($related->code)) {
-                        $reservedEtiketCodes[] = $related->code;
+                    if (! ($etiket->orderable_after_out_of_stock ?? false) && ! $etiket->isAvailableForUser($user->id)) {
+                        throw new \RuntimeException('etiket_unavailable:'.$cartItem->product->name);
                     }
                 }
 
-                // Skip normal real-etiket handling for comprehensive etikets
-                continue;
+                $order = Order::create([
+                    'user_id' => $user->id,
+                    'address_id' => $validated['address_id'],
+                    'shipping_id' => $validated['shipping_id'],
+                    'shipping_time_id' => $validated['shipping_time_id'] ?? null,
+                    'gateway_id' => $validated['gateway_id'] ?? null,
+                    'status' => 'pending',
+                    'discount_code' => $validated['discount_code'] ?? '',
+                    'discount_price' => $discountPrice,
+                    'discount_percentage' => $discountPercentage,
+                    'total_amount' => $totalAmount,
+                    'final_amount' => $finalAmount,
+                    'note' => $validated['note'] ?? null,
+                    'user_agent' => $validated['user_agent'] ?? null,
+                    'shipping_price' => $shipping_price,
+                    'gold_price' => $gold_price,
+                    'reference' => $validated['reference'] ?? null,
+                    'shipping_date' => $validated['shipping_date'] ?? null,
+                    'has_comprehensive_etiket' => $hasComprehensiveEtiket,
+                ]);
+
+                foreach ($cartItems as $cartItem) {
+                    $etiket = $cartItem->etiket_id ? $cartItem->etiketItem : null;
+
+                    if ($etiket && $etiket->type === 'comprehensive') {
+                        $links = $etiket->relationLoaded('comprehensiveEtikets')
+                            ? $etiket->comprehensiveEtikets
+                            : $etiket->comprehensiveEtikets()->with('relatedEtiket.product')->get();
+
+                        foreach ($links as $link) {
+                            $related = $link->relatedEtiket;
+                            if (! $related) {
+                                continue;
+                            }
+
+                            $relatedProduct = $related->relationLoaded('product')
+                                ? $related->product
+                                : $related->product()->first();
+
+                            $itemPrice = $related->price ? ($related->price / 10) : 0;
+
+                            OrderItem::create([
+                                'order_id' => $order->id,
+                                'product_id' => $relatedProduct ? $relatedProduct->id : $cartItem->product_id,
+                                'etiket' => $related->code,
+                                'name' => $relatedProduct ? $relatedProduct->name : $cartItem->product->name,
+                                'count' => $cartItem->count,
+                                'price' => $itemPrice,
+                            ]);
+                        }
+
+                        continue;
+                    }
+
+                    $etiketCode = $etiket?->code;
+                    $itemPrice = $etiket ? ($etiket->price / 10) : 0;
+
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $cartItem->product_id,
+                        'etiket' => $etiketCode ?? '',
+                        'name' => $cartItem->product->name,
+                        'count' => $cartItem->count,
+                        'price' => $itemPrice,
+                    ]);
+                }
+
+                $order->reserveOrderEtiketsForPayment($user->id);
+
+                return $order;
+            });
+        } catch (\RuntimeException $e) {
+            if (str_starts_with($e->getMessage(), 'etiket_unavailable:')) {
+                $productName = substr($e->getMessage(), strlen('etiket_unavailable:'));
+
+                return response()->json([
+                    'message' => "محصول {$productName} موجود نمی باشد",
+                ], 400);
             }
 
-            $etiketCode = null;
-            $isOrderableAfterOutOfStock = false;
-
-            // Use the etiket from the cart item if available
-            if ($etiket) {
-                $etiketCode = $etiket->code;
-                $isOrderableAfterOutOfStock = $etiket->orderable_after_out_of_stock ?? false;
-            }
-
-            // Use etiket price if available, otherwise fallback to product's lowest etiket price
-            $itemPrice = $etiket ? ($etiket->price / 10) : 0;
-
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $cartItem->product_id,
-                'etiket' => $etiketCode ?? '',
-                'name' => $cartItem->product->name,
-                'count' => $cartItem->count,
-                'price' => $itemPrice,
-            ]);
-
-            if (self::isReservableEtiketCode($etiketCode)) {
-                $reservedEtiketCodes[] = $etiketCode;
-            }
+            throw $e;
         }
 
         $order->refreshInvoiceSnapshot();
-
-        // Cache reserved etiket codes for 32 minutes (1920 seconds), store reserving user id
-        // Only the user who reserved can purchase; do not overwrite another user's reservation
-        foreach ($reservedEtiketCodes as $etiketCode) {
-            $cacheKey = 'reserved_etiket_'.$etiketCode;
-            $existing = Cache::get($cacheKey);
-            if ($existing === null || $existing === $user->id || $existing === true) {
-                Cache::put($cacheKey, $user->id, 1920);
-            }
-        }
 
         $order_url = null;
 
@@ -299,6 +284,20 @@ class OrderController extends Controller
         return $snapp->eligible($price * 10);
     }
 
+    private function lockEtiketForCheckout(Etiket $etiket): Etiket
+    {
+        if ($etiket->type === 'comprehensive') {
+            $etiket->loadMissing('comprehensiveEtikets.relatedEtiket');
+            foreach ($etiket->comprehensiveEtikets as $link) {
+                if ($link->relatedEtiket) {
+                    Etiket::query()->whereKey($link->relatedEtiket->id)->lockForUpdate()->first();
+                }
+            }
+        }
+
+        return Etiket::query()->whereKey($etiket->id)->lockForUpdate()->first() ?? $etiket;
+    }
+
     private static function isReservableEtiketCode(?string $code): bool
     {
         return $code !== null && $code !== '' && ! self::isNonReservableEtiketCode($code);
@@ -306,6 +305,6 @@ class OrderController extends Controller
 
     private static function isNonReservableEtiketCode(?string $code): bool
     {
-        return $code !== null && str_starts_with($code, 's-');
+        return Order::isNonReservableEtiketCode($code);
     }
 }

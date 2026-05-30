@@ -7,7 +7,6 @@ use App\Http\Resources\Api\V1\ShoppingCartResource;
 use App\Models\Etiket;
 use App\Models\Product;
 use App\Models\ShoppingCartItem;
-use Illuminate\Http\Request;
 
 class ShoppingCartController extends Controller
 {
@@ -17,18 +16,18 @@ class ShoppingCartController extends Controller
 
         // Find etiket by code
         $etiket = Etiket::where('code', $etiket_code)->first();
-        
-        if (!$etiket) {
+
+        if (! $etiket) {
             return response()->json([
-                'message' => 'اتیکت یافت نشد'
+                'message' => 'اتیکت یافت نشد',
             ], 404);
         }
 
         // Get product from etiket
         $product = $etiket->product;
-        if (!$product) {
+        if (! $product) {
             return response()->json([
-                'message' => 'محصول مرتبط با این اتیکت یافت نشد'
+                'message' => 'محصول مرتبط با این اتیکت یافت نشد',
             ], 404);
         }
 
@@ -40,16 +39,13 @@ class ShoppingCartController extends Controller
 
         if ($existingCartItem) {
             return response()->json([
-                'message' => 'این اتیکت قبلاً به سبد خرید اضافه شده است'
+                'message' => 'این اتیکت قبلاً به سبد خرید اضافه شده است',
             ], 400);
         }
 
-        // Check if etiket is available (is_mojood = 1 OR orderable_after_out_of_stock = 1)
-        $isAvailable = ($etiket->is_mojood == 1) || ($etiket->orderable_after_out_of_stock == 1);
-        
-        if (!$isAvailable) {
+        if (! $etiket->isAvailableForUser($user->id)) {
             return response()->json([
-                'message' => 'این اتیکت موجود نیست'
+                'message' => 'این اتیکت موجود نیست',
             ], 400);
         }
 
@@ -58,12 +54,11 @@ class ShoppingCartController extends Controller
             'user_id' => $user->id,
             'product_id' => $product->id,
             'etiket_id' => $etiket->id,
-            'count' => 1
+            'count' => 1,
         ]);
 
         return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiketItem')->get());
     }
-
 
     public function remove($id)
     {
@@ -85,6 +80,7 @@ class ShoppingCartController extends Controller
     public function index()
     {
         $user = auth()->user();
+
         return ShoppingCartResource::make([], $user->shoppingCartItems()->with('etiketItem')->get());
     }
 }
