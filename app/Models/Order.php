@@ -797,7 +797,7 @@ class Order extends Model
         // Use user's phone and name for SMS
         $this->sendSmsNotifications();
 
-        $this->submitInAccountingApp(); // Uncomment if needed
+        // $this->submitInAccountingApp(); // Uncomment if needed
 
         // Check and generate gift discount code
         $this->checkAndGenerateGift();
@@ -889,70 +889,7 @@ class Order extends Model
 
     public function submitInAccountingApp()
     {
-        $accounting_app = new Tahesab;
-        $final_amount = $this->final_amount;
-        $allSuccessful = true;
-        $transaction_id = '0000000000'.$this->transaction_id;
-
-        // Get receiver name (use user's name if address is null for in-store orders)
-        $receiverName = $this->address ? $this->address->receiver_name : $this->user->name;
-
-        // Collect responses from each order item
-        foreach ($this->orderItems as $orderItem) {
-            Log::info('Submitting order item to accounting', [
-                'order_id' => $this->id,
-                'transaction_id' => $transaction_id,
-                'etiket' => $orderItem->etiket,
-            ]);
-
-            $response = $accounting_app->DoNewSanadBuySaleEtiket(
-                $transaction_id,
-                $orderItem->etiket,
-                $orderItem->product->mazaneh,
-                $orderItem->price,
-                $receiverName
-            );
-
-            // Check if response has error
-            // API returns ['error' => true, 'status' => ..., 'message' => ...] on failure
-            if (isset($response['error']) && $response['error'] === true) {
-                $allSuccessful = false;
-                $sms = new Kavehnegar;
-                // $sms->send_with_two_token('09127127053',$orderItem->etiket,$this->id,'notifyAdminEtiketFailedOnTahesabAct');
-                \Log::warning('Accounting API call failed for order item', [
-                    'order_id' => $this->id,
-                    'order_item_id' => $orderItem->id,
-                    'etiket' => $orderItem->etiket,
-                    'response' => $response,
-                ]);
-            }
-        }
-
-        // Only proceed with shipping and gateway if all order items were successful
-        if ($allSuccessful) {
-            // Check shipping if exists (null for in-store orders)
-            if ($this->shipping && $this->shipping->key == 'post') {
-                //                $final_amount = $final_amount + 150000;
-                $accounting_app->DoNewSanadTalabBedehi($transaction_id, 1, 150000, 0, 1, 'POST');
-            }
-
-            // Check gateway if exists (null for in-store orders)
-            if ($this->gateway && $this->gateway->key == 'snapp') {
-                $accounting_app->DoNewSanadTalabBedehi($transaction_id, 0, $final_amount, 210, 1, 'Snapp');
-            } elseif ($this->gateway && $this->gateway->key == 'digipay') {
-                $accounting_app->DoNewSanadTalabBedehi($transaction_id, 0, $final_amount, 3330, 1, 'Digipay');
-            } elseif ($this->gateway && $this->gateway->key == 'saman') {
-                $accounting_app->DoNewSanadVKHBank($transaction_id, 0, $final_amount, 'ملي', 1, 1, 'Saman');
-            } else {
-                $accounting_app->DoNewSanadVKHBank($transaction_id, 0, $final_amount, 'ملي', 1, 1, 'Hozoori');
-            }
-        } else {
-            \Log::error('Skipping shipping and gateway accounting entries due to failed order item entries', [
-                'order_id' => $this->id,
-            ]);
-        }
-
-        return $allSuccessful;
+        return 0;
     }
 
     public function cancelOrder()
