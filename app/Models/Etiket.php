@@ -370,17 +370,15 @@ class Etiket extends Model
     }
 
     /**
-     * Generate next unique auto etiket code ({number} or {prefix}-{number}).
-     * Considers soft-deleted rows so codes are never reused.
+     * Highest numeric part among stored codes (and optional batch), for a given prefix.
+     * Returns 6999 when no matching codes exist (start floor is 7000).
      *
-     * @param  array<int, string>  $batchCodes  Codes already assigned in the current request
-     * @param  string  $prefix  '' for numeric codes, 's' for orderable (s-XXXX)
+     * @param  array<int, string>  $batchCodes
      */
-    public static function generateUniqueCode(array $batchCodes = [], string $prefix = ''): string
+    private static function highestAutoCodeNumber(array $batchCodes = [], string $prefix = ''): int
     {
         $startNumber = 7000;
         $highestNumber = $startNumber - 1;
-
         $query = static::withTrashed();
 
         if ($prefix !== '') {
@@ -409,10 +407,20 @@ class Etiket extends Model
             }
         }
 
-        $maxId = (int) static::withTrashed()->max('id');
-        $nextFromId = $maxId + 1;
-        $nextFromCodes = max($highestNumber + 1, $startNumber);
-        $nextNumber = $nextFromCodes <= $nextFromId ? $nextFromCodes : $nextFromId;
+        return $highestNumber;
+    }
+
+    /**
+     * Generate next unique auto etiket code ({number} or {prefix}-{number}).
+     * Considers soft-deleted rows so codes are never reused.
+     *
+     * @param  array<int, string>  $batchCodes  Codes already assigned in the current request
+     * @param  string  $prefix  '' for numeric codes, 's' for orderable (s-XXXX)
+     */
+    public static function generateUniqueCode(array $batchCodes = [], string $prefix = ''): string
+    {
+        $startNumber = 7000;
+        $nextNumber = max(static::highestAutoCodeNumber($batchCodes, $prefix) + 1, $startNumber);
 
         do {
             $candidate = $prefix !== '' ? $prefix.'-'.$nextNumber : (string) $nextNumber;
@@ -423,13 +431,12 @@ class Etiket extends Model
     }
 
     /**
-     * Next numeric part for UI preview (includes soft-deleted etikets in max id).
+     * Next numeric part for UI preview (last used code + 1, plus optional pending rows).
      */
     public static function nextAutoCodeNumber(string $prefix = '', int $pending = 0): int
     {
         $startNumber = 7000;
-        $maxId = (int) static::withTrashed()->max('id');
 
-        return max($maxId + 1 + $pending, $startNumber);
+        return max(static::highestAutoCodeNumber([], $prefix) + 1 + $pending, $startNumber);
     }
 }
