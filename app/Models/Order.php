@@ -66,6 +66,34 @@ class Order extends Model
         });
     }
 
+    /**
+     * Orders are soft-deleted only; permanent removal is never allowed.
+     */
+    public function delete()
+    {
+        if ($this->forceDeleting) {
+            Log::warning('Blocked permanent order deletion', ['order_id' => $this->id]);
+
+            return false;
+        }
+
+        $this->runSoftDelete();
+
+        return true;
+    }
+
+    /**
+     * Never hard-delete — already trashed orders stay in trash; active orders are soft-deleted.
+     */
+    public function forceDelete()
+    {
+        if ($this->trashed()) {
+            return false;
+        }
+
+        return (bool) $this->delete();
+    }
+
     public function scopeFilterByTransactionId(Builder $query, ?string $transactionId = null)
     {
         if ($transactionId) {

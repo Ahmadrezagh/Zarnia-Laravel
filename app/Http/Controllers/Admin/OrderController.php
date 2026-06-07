@@ -174,6 +174,7 @@ class OrderController extends Controller
 
                     $unitPrice = $links->sum(function ($link) {
                         $related = $link->relatedEtiket;
+
                         return $related ? ((int) $related->price / 10) : 0;
                     });
                 } else {
@@ -476,20 +477,6 @@ class OrderController extends Controller
     }
 
     /**
-     * Permanently delete an order.
-     */
-    public function forceDelete($id)
-    {
-        $order = Order::onlyTrashed()->findOrFail($id);
-        $order->forceDelete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'سفارش به طور کامل حذف شد',
-        ]);
-    }
-
-    /**
      * Bulk update status for multiple orders.
      */
     public function bulkStatus(Request $request)
@@ -759,6 +746,7 @@ class OrderController extends Controller
         }
         if ($request->orderStatus == Order::$STATUSES[3] || $request->orderStatus == Order::$STATUSES[4]) {
             $order->restoreOrderEtiketsAvailability();
+
             return $order->cancelOrder();
         }
 

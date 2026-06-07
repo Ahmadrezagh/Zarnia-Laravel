@@ -69,8 +69,7 @@
                         ]"
             :items="$orders"
             :actions="[
-                            ['label' => 'بازیابی', 'type' => 'modalRestore'],
-                            ['label' => 'حذف دائم', 'type' => 'modalForceDelete']
+                            ['label' => 'بازیابی', 'type' => 'modalRestore']
                         ]"
         >
 
@@ -96,30 +95,6 @@
                     </div>
                 </div>
 
-                <!-- Force Delete Modal -->
-                <div class="modal fade" id="modal-force-delete-{{$order->id}}" tabindex="-1" role="dialog">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header bg-danger text-white">
-                                <h5 class="modal-title">حذف دائم سفارش</h5>
-                                <button type="button" class="close text-white" data-dismiss="modal">
-                                    <span>&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="alert alert-danger">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <strong>هشدار:</strong> این عملیات غیرقابل بازگشت است!
-                                </div>
-                                <p>آیا از حذف دائمی سفارش شماره <strong>{{$order->id}}</strong> اطمینان دارید؟</p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
-                                <button type="button" class="btn btn-danger" onclick="forceDeleteOrder({{$order->id}})">حذف دائم</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             @endforeach
         </x-dataTable>
     </x-page>
@@ -197,10 +172,6 @@
             $("#modal-restore-"+id).modal("show");
         }
 
-        function modalForceDelete(id){
-            $("#modal-force-delete-"+id).modal("show");
-        }
-
         function restoreOrder(id){
             $.ajax({
                 url: "{{ route('admin_orders.restore', ':id') }}".replace(':id', id),
@@ -229,39 +200,6 @@
                         }, 2000);
                     } else {
                         toastr.error(xhr.responseJSON?.message || 'خطا در بازیابی سفارش: ' + (xhr.statusText || 'خطای ناشناخته'));
-                    }
-                }
-            });
-        }
-
-        function forceDeleteOrder(id){
-            $.ajax({
-                url: "{{ route('admin_orders.force_delete', ':id') }}".replace(':id', id),
-                type: "DELETE",
-                data: {
-                    _token: "{{ csrf_token() }}"
-                },
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    toastr.success(response.message || 'سفارش به طور کامل حذف شد');
-                    $("#modal-force-delete-"+id).modal("hide");
-                    
-                    // Reload page after short delay
-                    setTimeout(function() {
-                        location.reload();
-                    }, 500);
-                },
-                error: function(xhr) {
-                    console.error('Force delete error:', xhr);
-                    if (xhr.status === 419) {
-                        toastr.error('نشست شما منقضی شده است. لطفا صفحه را رفرش کنید.');
-                        setTimeout(function() {
-                            location.reload();
-                        }, 2000);
-                    } else {
-                        toastr.error(xhr.responseJSON?.message || 'خطا در حذف دائم سفارش: ' + (xhr.statusText || 'خطای ناشناخته'));
                     }
                 }
             });

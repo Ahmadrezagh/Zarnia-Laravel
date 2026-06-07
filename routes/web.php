@@ -34,16 +34,16 @@ Route::middleware('panel.ip')->group(function () {
     Route::get('/', function () {
         return redirect('home');
     });
-    
+
     Auth::routes();
-    
+
     Route::middleware(['auth'])->group(function () {
         Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
-    
+
         Route::get('/categories/{category}/complementary-products', [CategoryController::class, 'getComplementaryProducts']);
         Route::get('/categories/{category}/related-products', [CategoryController::class, 'getRelatedProducts']);
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-    
+
     });
     Route::middleware(['auth'])->prefix('table')->name('table.')->group(function () {
         Route::get('admins', [AdminController::class, 'table'])->name('admins');
@@ -93,28 +93,28 @@ Route::middleware('panel.ip')->group(function () {
         Route::delete('etikets/{id}/force-delete', [EtiketController::class, 'forceDelete'])->name('etikets.force-delete');
         Route::post('etikets/bulk-update-for-products', [EtiketController::class, 'bulkUpdateForProducts'])->name('etikets.bulk_update_for_products');
     });
-    Route::middleware(['auth'])->prefix('admin')-> group(function (){
-        Route::resource('roles', RoleController::class );
+    Route::middleware(['auth'])->prefix('admin')->group(function () {
+        Route::resource('roles', RoleController::class);
         Route::get('users/export', [UserController::class, 'export'])->name('users.export');
-        Route::resource('users', UserController::class );
-        Route::resource('admins', AdminController::class );
-        Route::resource('categories', CategoryController::class );
-        Route::resource('setting_group.settings', SettingController::class );
+        Route::resource('users', UserController::class);
+        Route::resource('admins', AdminController::class);
+        Route::resource('categories', CategoryController::class);
+        Route::resource('setting_group.settings', SettingController::class);
         Route::delete('setting_group/{setting_group}/settings/{setting}/delete-image/{imageIndex}', [SettingController::class, 'deleteImage'])->name('setting_group.settings.deleteImage');
-        Route::resource('pages', PageController::class );
-        
+        Route::resource('pages', PageController::class);
+
         // Product routes - specific routes BEFORE resource route
-        Route::get('products/export', [ProductController::class,'export' ])->name('products.export');
+        Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
         Route::get('products/create-gold', [ProductController::class, 'createGold'])->name('products.create.gold');
         Route::get('products/create-non-gold', [ProductController::class, 'createNonGold'])->name('products.create.non.gold');
         Route::get('products/create-comprehensive', [ProductController::class, 'createComprehensive'])->name('products.create.comprehensive');
-        Route::post('products/bulk_update', [ProductController::class,'bulkUpdate' ])->name('products.bulk_update');
+        Route::post('products/bulk_update', [ProductController::class, 'bulkUpdate'])->name('products.bulk_update');
         Route::post('products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk_delete');
         Route::post('products/bulk-update-products-and-etikets', [ProductController::class, 'bulkUpdateProductsAndEtikets'])->name('products.bulk_update_products_and_etikets');
-        Route::post('products/assign_category', [ProductController::class,'assignCategory' ])->name('products.assign_category');
-        Route::post('products/remove-cover/{product}', [ProductController::class,'removeCoverImage' ])->name('products.remove_cover_image');
-        Route::post('products/recalculate-discounts', [ProductController::class,'recalculateDiscounts' ])->name('products.recalculate_discounts');
-        Route::post('products/reorganize-groups', [ProductController::class,'reorganizeProductGroups' ])->name('products.reorganize_groups');
+        Route::post('products/assign_category', [ProductController::class, 'assignCategory'])->name('products.assign_category');
+        Route::post('products/remove-cover/{product}', [ProductController::class, 'removeCoverImage'])->name('products.remove_cover_image');
+        Route::post('products/recalculate-discounts', [ProductController::class, 'recalculateDiscounts'])->name('products.recalculate_discounts');
+        Route::post('products/reorganize-groups', [ProductController::class, 'reorganizeProductGroups'])->name('products.reorganize_groups');
         Route::get('products/ajax/search', [ProductController::class, 'ajaxSearch'])->name('products.ajax.search');
         Route::get('products/ajax/search-parents', [ProductController::class, 'ajaxSearchParents'])->name('products.ajax.search.parents');
         Route::get('products/ajax/search-comprehensive', [ProductController::class, 'ajaxSearchForComprehensive'])->name('products.ajax.search.comprehensive');
@@ -131,7 +131,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('etikets/ajax/search', [EtiketController::class, 'ajaxSearch'])->name('etikets.ajax.search');
         Route::get('etikets/{id}/attribute-data', [EtiketController::class, 'etiketAttributeData'])->name('etikets.attribute_data');
 
-        Route::resource('products', ProductController::class );
+        Route::resource('products', ProductController::class);
         Route::get('products_deleted', [ProductController::class, 'deletedProducts'])->name('products.deleted');
         Route::any('table/products_deleted', [ProductController::class, 'deletedProductsTable'])->name('table.products.deleted');
         Route::post('products/{id}/restore', [ProductController::class, 'restore'])->name('products.restore');
@@ -141,61 +141,60 @@ Route::middleware('panel.ip')->group(function () {
         Route::get('admin_order/print/{order:uuid}', [OrderController::class, 'print'])->name('admin_order.print');
         Route::get('admin_order/cancel/{order}', [OrderController::class, 'cancel'])->name('admin_order.cancel');
         Route::post('admin_order/update/{order}', [OrderController::class, 'updateOrder'])->name('admin_order.update');
-        Route::post('update_order_status', [OrderController::class,'updateOrderStatus'] )->name('update_order_status');
+        Route::post('update_order_status', [OrderController::class, 'updateOrderStatus'])->name('update_order_status');
         Route::get('admin_order/users/search', [OrderController::class, 'getUsersList'])->name('admin_order.users.search');
-        
+
         // Trash routes
         Route::get('admin_orders_trash', [OrderController::class, 'trash'])->name('admin_orders.trash');
         Route::post('table/orders/trash', [OrderController::class, 'trashTable'])->name('table.orders.trash');
         Route::post('admin_orders/{id}/restore', [OrderController::class, 'restore'])->name('admin_orders.restore');
-        Route::delete('admin_orders/{id}/force-delete', [OrderController::class, 'forceDelete'])->name('admin_orders.force_delete');
-        
+
         // Bulk actions
         Route::post('admin_orders/bulk-status', [OrderController::class, 'bulkStatus'])->name('admin_orders.bulk_status');
         Route::post('admin_orders/bulk-delete', [OrderController::class, 'bulkDelete'])->name('admin_orders.bulk_delete');
         Route::get('admin_order/users/{user}/addresses', [OrderController::class, 'getUserAddresses'])->name('admin_order.users.addresses');
         Route::post('admin_orders/clear-cache', [OrderController::class, 'clearCache'])->name('admin_orders.clear_cache');
         Route::post('admin_orders/get-etikets', [OrderController::class, 'getEtiketsFromAccounting'])->name('admin_orders.get_etikets');
-        Route::get('products_not_available', [ProductController::class,'notAvailable' ])->name('products.products_not_available');
-        Route::get('products_without_category', [ProductController::class,'withoutCategory' ])->name('products.product_without_category');
-        Route::get('products_comprehensive', [ProductController::class,'productsComprehensive' ])->name('products.products_comprehensive');
-        Route::get('products_comprehensive_not_available', [ProductController::class,'productsComprehensiveNotAvailable' ])->name('products.products_comprehensive_not_available');
-        Route::get('products_children_of/{product}', [ProductController::class,'productsChildrenOf' ])->name('products.products_children_of');
-        Route::resource('index_banners', IndexBannerController::class );
-        Route::resource('index_buttons', IndexButtonController::class );
-        Route::resource('qas', QAController::class );
-        Route::resource('product_sliders', ProductSliderController::class );
-        Route::resource('product_sliders.product_slider_buttons', ProductSliderButtonController::class );
-        Route::resource('header_links', HeaderLinkController::class );
-        Route::resource('footer_titles', FooterTitleController::class );
-        Route::resource('footer_title.footer_title_links', FooterTitleLinkController::class );
+        Route::get('products_not_available', [ProductController::class, 'notAvailable'])->name('products.products_not_available');
+        Route::get('products_without_category', [ProductController::class, 'withoutCategory'])->name('products.product_without_category');
+        Route::get('products_comprehensive', [ProductController::class, 'productsComprehensive'])->name('products.products_comprehensive');
+        Route::get('products_comprehensive_not_available', [ProductController::class, 'productsComprehensiveNotAvailable'])->name('products.products_comprehensive_not_available');
+        Route::get('products_children_of/{product}', [ProductController::class, 'productsChildrenOf'])->name('products.products_children_of');
+        Route::resource('index_banners', IndexBannerController::class);
+        Route::resource('index_buttons', IndexButtonController::class);
+        Route::resource('qas', QAController::class);
+        Route::resource('product_sliders', ProductSliderController::class);
+        Route::resource('product_sliders.product_slider_buttons', ProductSliderButtonController::class);
+        Route::resource('header_links', HeaderLinkController::class);
+        Route::resource('footer_titles', FooterTitleController::class);
+        Route::resource('footer_title.footer_title_links', FooterTitleLinkController::class);
         Route::get('etiket_search', [EtiketController::class, 'search'])->name('etiket_search');
         Route::post('store_comprehensive_product', [ProductController::class, 'storeComprehensiveProduct'])->name('comprehensive_product.store');
         Route::post('comprehensive_product/add', [ProductController::class, 'addProductToComprehensive'])->name('comprehensive_product.add');
         Route::post('comprehensive_product/remove', [ProductController::class, 'removeProductFromComprehensive'])->name('comprehensive_product.remove');
-    
-        Route::resource('attributes', AttributeController::class );
-        Route::resource('attribute_groups', AttributeGroupController::class );
+
+        Route::resource('attributes', AttributeController::class);
+        Route::resource('attribute_groups', AttributeGroupController::class);
         Route::get('attribute_groups/api/list', [AttributeGroupController::class, 'apiList'])->name('attribute_groups.api_list');
-        Route::resource('invoice_templates', InvoiceTemplateController::class );
-        Route::resource('discounts', DiscountController::class );
-        Route::resource('gift_structures', GiftStructureController::class );
-        Route::resource('shippings', ShippingController::class );
-        Route::resource('blogs', BlogController::class );
-        
+        Route::resource('invoice_templates', InvoiceTemplateController::class);
+        Route::resource('discounts', DiscountController::class);
+        Route::resource('gift_structures', GiftStructureController::class);
+        Route::resource('shippings', ShippingController::class);
+        Route::resource('blogs', BlogController::class);
+
         // Shipping times nested routes
         Route::get('shippings/{shipping}/times', [ShippingController::class, 'times'])->name('shippings.times');
         Route::post('shippings/{shipping}/times', [ShippingController::class, 'storeTime'])->name('shippings.times.store');
         Route::put('shippings/{shipping}/times/{time}', [ShippingController::class, 'updateTime'])->name('shippings.times.update');
         Route::delete('shippings/{shipping}/times/{time}', [ShippingController::class, 'destroyTime'])->name('shippings.times.destroy');
-    
-        Route::post('load_attribute_group',[AttributeController::class,'loadAttributeGroup'])->name('load_attribute_group');
-    
-        Route::get('visit',[VisitController::class,'index'])->name('visit.index');
-        Route::post('visit/clear-bots',[VisitController::class,'clearBotVisits'])->name('visit.clear.bots');
-        Route::get('gold_summary',[GoldSummaryController::class,'index'])->name('gold_summary.index');
-        Route::get('gold_summary/{order}',[GoldSummaryController::class,'show'])->name('gold_summary.show');
-    
+
+        Route::post('load_attribute_group', [AttributeController::class, 'loadAttributeGroup'])->name('load_attribute_group');
+
+        Route::get('visit', [VisitController::class, 'index'])->name('visit.index');
+        Route::post('visit/clear-bots', [VisitController::class, 'clearBotVisits'])->name('visit.clear.bots');
+        Route::get('gold_summary', [GoldSummaryController::class, 'index'])->name('gold_summary.index');
+        Route::get('gold_summary/{order}', [GoldSummaryController::class, 'show'])->name('gold_summary.show');
+
     });
 });
 
@@ -213,13 +212,12 @@ Route::get('/products/feed.xml', [\App\Http\Controllers\ProductFeedController::c
 Route::get('/api/torob/products', [\App\Http\Controllers\TorobController::class, 'getProducts'])->name('torob.products');
 
 // TEST ROUTE - Remove after testing
-Route::get('/test-thank-you/{orderId}', function($orderId) {
+Route::get('/test-thank-you/{orderId}', function ($orderId) {
     $order = \App\Models\Order::with(['gateway', 'shipping', 'user', 'address'])->find($orderId);
-    
-    if (!$order) {
+
+    if (! $order) {
         return abort(404, 'Order not found');
     }
-    
+
     return view('thank-you.index', compact('order'));
 })->name('test.thank-you');
-
