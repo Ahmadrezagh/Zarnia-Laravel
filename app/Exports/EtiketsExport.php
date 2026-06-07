@@ -25,13 +25,13 @@ class EtiketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
     {
         $query = Etiket::query()->with('product.categories')->select('etikets.*');
         
-        // Filter by availability if specified
+        // Filter by stored DB availability (not effective is_mojood with reservation cache)
         if (isset($this->filters['is_mojood'])) {
             $isMojood = $this->filters['is_mojood'];
             if ($isMojood === '1' || $isMojood === 1) {
-                $query->where('etikets.is_mojood', 1);
+                $query->realIsMojood();
             } elseif ($isMojood === '0' || $isMojood === 0) {
-                $query->where('etikets.is_mojood', 0);
+                $query->realIsMojood(0);
             }
         }
 
@@ -146,7 +146,7 @@ class EtiketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
             number_format($etiket->price / 10), // Divide by 10 as per requirement
             $product ? $product->name : '-',
             $categories,
-            $etiket->is_mojood ? 'موجود' : 'ناموجود',
+            $etiket->databaseIsMojood() === 1 ? 'موجود' : 'ناموجود',
             $etiket->ojrat ?? '-',
             $etiket->darsad_kharid ?? '-',
             $etiket->created_at ? $etiket->created_at->format('Y/m/d H:i') : '-',

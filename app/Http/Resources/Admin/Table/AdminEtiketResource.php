@@ -36,7 +36,7 @@ class AdminEtiketResource extends JsonResource
             'product_name' => $product ? $product->name : '-',
             'product_id' => $this->product_id,
             'categories' => $categories,
-            'is_mojood' => $this->is_mojood ? 'موجود' : 'ناموجود',
+            'is_mojood' => $this->databaseIsMojood() === 1 ? 'موجود' : 'ناموجود',
             'ojrat' => $this->ojrat ?? '-',
             'darsad_kharid' => $this->darsad_kharid ?? '-',
             'created_at' => $this->created_at ? $this->created_at->format('Y/m/d H:i') : '-',

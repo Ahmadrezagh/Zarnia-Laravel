@@ -56,13 +56,13 @@ class EtiketController extends Controller
             $query->onlyTrashed();
         }
         
-        // Filter by availability if specified
+        // Filter by stored DB availability (not effective is_mojood with reservation cache)
         if ($request->has('is_mojood')) {
             $isMojood = $request->input('is_mojood');
             if ($isMojood === '1' || $isMojood === 1) {
-                $query->where('etikets.is_mojood', 1);
+                $query->realIsMojood();
             } elseif ($isMojood === '0' || $isMojood === 0) {
-                $query->where('etikets.is_mojood', 0);
+                $query->realIsMojood(0);
             }
         }
 

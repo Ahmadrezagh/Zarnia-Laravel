@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
@@ -359,6 +360,14 @@ class Etiket extends Model
         }
 
         return '-';
+    }
+
+    /**
+     * Filter by stored is_mojood column only (ignores payment reservation cache).
+     */
+    public function scopeRealIsMojood(Builder $query, int $value = 1): Builder
+    {
+        return $query->where('etikets.is_mojood', $value);
     }
 
     /**
