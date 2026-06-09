@@ -211,6 +211,9 @@ Route::get('/products/feed.xml', [\App\Http\Controllers\ProductFeedController::c
 // Torob API
 Route::get('/api/torob/products', [\App\Http\Controllers\TorobController::class, 'getProducts'])->name('torob.products');
 
+// Snapp API
+Route::get('/api/snapp/products', [\App\Http\Controllers\SnappController::class, 'getProducts'])->name('snapp.products');
+
 // TEST ROUTE - Remove after testing
 Route::get('/test-thank-you/{orderId}', function ($orderId) {
     $order = \App\Models\Order::with(['gateway', 'shipping', 'user', 'address'])->find($orderId);
