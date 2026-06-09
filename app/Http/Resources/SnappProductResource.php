@@ -24,8 +24,6 @@ class SnappProductResource extends JsonResource
         $baseUrl = rtrim(setting('url') ?? config('app.url'), '/');
         $productAttributeValues = $product->attributeValues ?? collect();
 
-        $brand = $this->extractAttributeValue($productAttributeValues, ['brand', 'برند']);
-
         $imageUrl = $product->image;
         if ($imageUrl === asset('img/no_image.jpg')) {
             $imageUrl = null;
@@ -51,17 +49,23 @@ class SnappProductResource extends JsonResource
         if (! $subtitle && $product->description) {
             $subtitle = strip_tags($product->description);
         }
+        if (! $subtitle) {
+            $subtitle = $product->name;
+        }
 
         $shipping = $request->get('shipping', []);
         $shippingCost = $shipping['cost'] ?? null;
-        $deliveryTime = $shipping['time'] ?? null;
+
+        $deliveryTime = str_starts_with((string) $etiket->code, 's-')
+            ? '۷ تا ۱۰ روز کاری'
+            : 'ارسال سریع';
 
         $description = $this->buildDescriptionObject($product, $productAttributeValues);
 
         $result = [
             'id' => $etiket->code,
             'title' => $product->name,
-            'subtitle' => $subtitle ?? '',
+            'subtitle' => $subtitle,
             'link' => $baseUrl.'/products/'.$product->slug.'?e='.$etiket->code,
             'image_link' => $imageLink,
             'availability' => $availability,
@@ -69,18 +73,12 @@ class SnappProductResource extends JsonResource
             'sale_price' => $salePrice,
             'category' => $category,
             'description' => $description ?? $product->name,
+            'brand' => 'گالری طلای زرنیا',
+            'delivery_time' => $deliveryTime,
         ];
-
-        if ($brand) {
-            $result['brand'] = $brand;
-        }
 
         if ($shippingCost !== null) {
             $result['shipping_cost'] = (int) $shippingCost;
-        }
-
-        if ($deliveryTime) {
-            $result['delivery_time'] = $deliveryTime;
         }
 
         return $result;
@@ -124,21 +122,5 @@ class SnappProductResource extends JsonResource
     private function isExcludedDescriptionAttribute(string $attrName): bool
     {
         return in_array(strtolower($attrName), ['brand', 'برند', 'gtin'], true);
-    }
-
-    /**
-     * @param  \Illuminate\Support\Collection<int, \App\Models\AttributeValue>  $attributeValues
-     * @param  array<int, string>  $names
-     */
-    private function extractAttributeValue($attributeValues, array $names): ?string
-    {
-        foreach ($attributeValues as $attrValue) {
-            $attrName = $attrValue->attribute->name ?? '';
-            if (in_array(strtolower($attrName), array_map('strtolower', $names), true)) {
-                return $attrValue->value ?: null;
-            }
-        }
-
-        return null;
     }
 }

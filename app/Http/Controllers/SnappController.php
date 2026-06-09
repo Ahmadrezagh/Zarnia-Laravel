@@ -21,14 +21,10 @@ class SnappController extends Controller
 
         $shipping = Shipping::first();
         $shippingCost = $shipping ? $shipping->price : null;
-        $deliveryTime = $shipping && $shipping->times()->exists()
-            ? $shipping->times()->first()->title ?? null
-            : null;
 
         $request->merge([
             'shipping' => [
                 'cost' => $shippingCost,
-                'time' => $deliveryTime,
             ],
         ]);
 
