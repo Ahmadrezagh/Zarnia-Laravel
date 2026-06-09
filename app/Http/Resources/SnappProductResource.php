@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Etiket;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,64 +16,59 @@ class SnappProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        /** @var Product $product */
+        $product = $this->resource;
+        /** @var Etiket $etiket */
+        $etiket = $product->snappEtiket;
+
         $baseUrl = rtrim(setting('url') ?? config('app.url'), '/');
-        $productAttributeValues = $this->attributeValues ?? collect();
+        $productAttributeValues = $product->attributeValues ?? collect();
 
         $brand = $this->extractAttributeValue($productAttributeValues, ['brand', 'برند']);
 
-        $imageUrl = $this->image;
+        $imageUrl = $product->image;
         if ($imageUrl === asset('img/no_image.jpg')) {
             $imageUrl = null;
         }
 
-        $galleryUrls = $this->getMedia('gallery')->map(fn ($media) => $media->getUrl())->values()->toArray();
+        $galleryUrls = $product->getMedia('gallery')->map(fn ($media) => $media->getUrl())->values()->toArray();
         if ($imageUrl && ! in_array($imageUrl, $galleryUrls)) {
             array_unshift($galleryUrls, $imageUrl);
         }
         $imageLink = ! empty($galleryUrls) ? $galleryUrls : ($imageUrl ? [$imageUrl] : []);
 
-        $availableEtikets = ($this->relationLoaded('etikets') ? $this->etikets : $this->etikets()->get())
-            ->where('is_mojood', 1);
+        $salePrice = (int) $etiket->price;
+        $regularPrice = (int) $etiket->original_price;
 
-        if ($availableEtikets->isEmpty() && $this->relationLoaded('children')) {
-            $availableEtikets = $this->children->flatMap(function ($child) {
-                $etikets = $child->relationLoaded('etikets') ? $child->etikets : $child->etikets()->get();
-
-                return $etikets->where('is_mojood', 1);
-            });
-        }
-
-        $lowestEtiket = $availableEtikets->sortBy(fn ($e) => $e->price)->first();
-        $salePrice = $lowestEtiket ? (int) $lowestEtiket->price : 0;
-        $regularPrice = $lowestEtiket ? (int) $lowestEtiket->original_price : $salePrice;
-
-        $availability = $this->single_count > 0 ? 'in stock' : 'out of stock';
+        $availability = $etiket->is_mojood ? 'in stock' : 'out of stock';
 
         $category = null;
-        if ($this->categories && $this->categories->isNotEmpty()) {
-            $category = $this->categories->pluck('title')->implode(' > ');
+        if ($product->categories && $product->categories->isNotEmpty()) {
+            $category = $product->categories->pluck('title')->implode(' > ');
         }
 
-        $subtitle = $this->meta_description;
-        if (! $subtitle && $this->description) {
-            $subtitle = strip_tags($this->description);
+        $subtitle = $product->meta_description;
+        if (! $subtitle && $product->description) {
+            $subtitle = strip_tags($product->description);
         }
 
         $shipping = $request->get('shipping', []);
         $shippingCost = $shipping['cost'] ?? null;
         $deliveryTime = $shipping['time'] ?? null;
 
+        $description = $this->buildDescriptionObject($product, $productAttributeValues);
+
         $result = [
-            'id' => (int) $this->id,
-            'title' => $this->name,
+            'id' => $etiket->code,
+            'title' => $product->name,
             'subtitle' => $subtitle ?? '',
-            'link' => $baseUrl.'/products/'.$this->slug,
+            'link' => $baseUrl.'/products/'.$product->slug.'?e='.$etiket->code,
             'image_link' => $imageLink,
             'availability' => $availability,
             'regular_price' => $regularPrice,
             'sale_price' => $salePrice,
             'category' => $category,
-            'description' => $this->buildDescriptionObject($productAttributeValues),
+            'description' => $description ?? $product->name,
         ];
 
         if ($brand) {
@@ -91,12 +88,13 @@ class SnappProductResource extends JsonResource
 
     /**
      * @param  \Illuminate\Support\Collection<int, \App\Models\AttributeValue>  $attributeValues
+     * @return array<string, string>|null
      */
-    private function buildDescriptionObject($attributeValues): array
+    private function buildDescriptionObject(Product $product, $attributeValues): ?array
     {
-        if (! empty($this->description)) {
-            $decoded = json_decode($this->description, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+        if (! empty($product->description)) {
+            $decoded = json_decode($product->description, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && ! empty($decoded)) {
                 return $decoded;
             }
         }
@@ -120,7 +118,7 @@ class SnappProductResource extends JsonResource
             }
         }
 
-        return $description;
+        return ! empty($description) ? $description : null;
     }
 
     private function isExcludedDescriptionAttribute(string $attrName): bool

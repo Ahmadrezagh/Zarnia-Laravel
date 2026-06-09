@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\SnappProductResource;
 use App\Models\AttributeValue;
-use App\Models\Etiket;
 use App\Models\Product;
 use App\Models\Shipping;
 use Illuminate\Http\JsonResponse;
@@ -13,7 +12,7 @@ use Illuminate\Http\Request;
 class SnappController extends Controller
 {
     /**
-     * Get products for Snapp API
+     * Get products for Snapp API (one item per available etiket)
      */
     public function getProducts(Request $request): JsonResponse
     {
@@ -36,7 +35,7 @@ class SnappController extends Controller
         $productsQuery = Product::query()
             ->main()
             ->hasCountAndImage()
-            ->with(['categories', 'children', 'etikets', 'children.etikets']);
+            ->with(['categories', 'etikets', 'children.etikets']);
 
         $total = $productsQuery->count();
 
@@ -45,27 +44,50 @@ class SnappController extends Controller
             ->take($perPage)
             ->get();
 
-        $etiketIds = Etiket::whereIn('product_id', $products->pluck('id'))
-            ->orderBy('id')
-            ->get(['id', 'product_id'])
-            ->groupBy('product_id')
-            ->map(fn ($group) => $group->first()->id);
+        $etiketIds = $products->flatMap(function ($product) {
+            $etikets = $product->etikets->where('is_mojood', 1);
 
-        $attributeValues = AttributeValue::whereIn('etiket_id', $etiketIds->values())
+            if ($product->children && $product->children->isNotEmpty()) {
+                $childrenEtikets = $product->children->flatMap(function ($child) {
+                    return $child->etikets->where('is_mojood', 1);
+                });
+                $etikets = $etikets->merge($childrenEtikets);
+            }
+
+            return $etikets->pluck('id');
+        })->unique()->values();
+
+        $attributeValuesByEtiket = AttributeValue::whereIn('etiket_id', $etiketIds)
             ->with('attribute')
             ->get()
-            ->groupBy(function ($attributeValue) use ($etiketIds) {
-                return $etiketIds->search($attributeValue->etiket_id);
-            });
+            ->groupBy('etiket_id');
 
-        $products->each(function ($product) use ($attributeValues) {
-            $product->attributeValues = $attributeValues->get($product->id, collect());
-        });
+        $items = $products->flatMap(function ($product) use ($request, $attributeValuesByEtiket) {
+            $etikets = $product->etikets->where('is_mojood', 1)->values();
+
+            if ($product->children && $product->children->isNotEmpty()) {
+                $childrenEtikets = $product->children->flatMap(function ($child) {
+                    return $child->etikets->where('is_mojood', 1)->values();
+                });
+                $etikets = $etikets->merge($childrenEtikets);
+            }
+
+            if ($etikets->isEmpty()) {
+                return [];
+            }
+
+            return $etikets->map(function ($etiket) use ($product, $request, $attributeValuesByEtiket) {
+                $product->snappEtiket = $etiket;
+                $product->attributeValues = $attributeValuesByEtiket->get($etiket->id, collect());
+
+                return (new SnappProductResource($product))->toArray($request);
+            });
+        })->values();
 
         return response()->json([
             'success' => true,
             'data' => [
-                'items' => SnappProductResource::collection($products)->resolve($request),
+                'items' => $items,
                 'pagination' => [
                     'current_page' => $page,
                     'per_page' => $perPage,
