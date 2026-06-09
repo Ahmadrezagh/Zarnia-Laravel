@@ -17,16 +17,6 @@ class SnappController extends Controller
      */
     public function getProducts(Request $request): JsonResponse
     {
-        $token = $request->header('X-API-Token') ?? $request->input('token');
-        $expectedToken = config('services.snapp.api_token', env('SNAPP_API_TOKEN'));
-
-        if ($expectedToken && $token !== $expectedToken) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Invalid API token.',
-            ], 401);
-        }
-
         $page = max(1, (int) ($request->input('page', 1)));
         $perPage = min(100, max(1, (int) ($request->input('per_page', 50))));
 

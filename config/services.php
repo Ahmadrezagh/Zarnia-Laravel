@@ -39,8 +39,4 @@ return [
         'api_token' => env('TOROB_API_TOKEN'),
     ],
 
-    'snapp' => [
-        'api_token' => env('SNAPP_API_TOKEN'),
-    ],
-
 ];
