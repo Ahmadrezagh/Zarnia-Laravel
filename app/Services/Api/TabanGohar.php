@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+
 class TabanGohar
 {
     private $api_url = 'https://webservice.tgnsrv.ir/Pr/Get/zarnia7053/z09127127053z';
@@ -47,6 +48,8 @@ class TabanGohar
 
     /**
      * Update gold price setting from API
+     * Note: This only updates the gold_price setting, not product prices
+     * Use updateAllProductsPrices() separately to recalculate product prices
      *
      * @return bool
      */
@@ -71,9 +74,6 @@ class TabanGohar
                 'time_read' => $prices['TimeRead'] ?? null
             ]);
 
-            // Update all products with new gold price
-            $this->updateAllProductsPrices();
-
             return true;
         }
 
@@ -85,81 +85,48 @@ class TabanGohar
     }
 
     /**
-     * Update all products' prices based on tabanGoharPrice and update discounted prices
+     * Update all etikets' prices based on their weight and product's ojrat
+     * This can be called independently to recalculate all etiket prices
+     * Note: Products no longer store price/weight directly - these are calculated from etikets
      */
     public function updateAllProductsPrices(): void
     {
         try {
-            $updatedCount = 0;
+            $updatedEtiketsCount = 0;
             
-            // Process products in chunks to avoid memory issues
-            Product::query()->chunk(100, function ($products) use (&$updatedCount) {
-                foreach ($products as $product) {
-                    // Refresh to ensure we have latest attributes
-                    $product->refresh();
+            // Get all products (both regular and comprehensive)
+            $products = Product::with('etikets')->get();
+            
+            foreach ($products as $product) {
+                // Update all etikets for this product
+                $etikets = $product->etikets;
+                
+                foreach ($etikets as $etiket) {
+                    // Calculate price based on etiket's weight and product's attributes
+                    $etiketPrice = $etiket->taban_gohar_price;
                     
-                    // Calculate tabanGoharPrice
-                    $tabanGoharPrice = $product->taban_gohar_price;
-                    
-                    if ($tabanGoharPrice > 0) {
-                        // Update product price (multiply by 10 to match database format)
-                        $product->updateQuietly([
-                            'price' => $tabanGoharPrice * 10
-                        ]);
-                        
-                        // Update discounted price
-                        $this->updateDiscountedPrice($product);
-                        
-                        $updatedCount++;
+                    if ($etiketPrice > 0) {
+                        $etiket->updateQuietly(['price' => $etiketPrice]);
+                        $updatedEtiketsCount++;
                     }
                 }
-            });
+            }
 
-            Log::info('All products updated with new gold price', [
-                'updated_count' => $updatedCount
+            Log::info('All etikets updated with new gold price', [
+                'updated_etikets' => $updatedEtiketsCount
             ]);
         } catch (\Exception $e) {
-            Log::error('Error updating products after gold price change', [
+            Log::error('Error updating etikets after gold price change', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
         }
     }
-
+    
     /**
-     * Calculate and update discounted price for a product
+     * Calculate etiket price based on etiket weight and product attributes
+     * Formula: weight * gold_price * 1.01 * (1 + ojrat/100)
+     * Note: darsad_kharid has been removed from products, using ojrat instead
      */
-    private function updateDiscountedPrice(Product $product): void
-    {
-        // Get raw price value (stored multiplied by 10) and discount percentage
-        $rawPrice = $product->getRawOriginal('price');
-        
-        // If product has parent, use parent's discount_percentage
-        $discountPercentage = 0;
-        if ($product->parent_id) {
-            $parent = Product::find($product->parent_id);
-            if ($parent) {
-                $discountPercentage = $parent->getRawOriginal('discount_percentage') ?? 0;
-            }
-        } else {
-            // Use own discount_percentage
-            $discountPercentage = $product->getRawOriginal('discount_percentage') ?? 0;
-        }
 
-        if ($rawPrice != 0 && $discountPercentage != 0) {
-            // Calculate discounted price
-            // Raw price is stored multiplied by 10, so divide by 10 to get actual price
-            // discounted_price is stored as-is (not multiplied by 10)
-            $discountedPrice = ($rawPrice / 10) * (1 - $discountPercentage / 100);
-
-            // Round to nearest 1000 (last three digits to 000)
-            $discountedPrice = round($discountedPrice, -3);
-
-            $product->discounted_price = $discountedPrice;
-        } else {
-            $product->discounted_price = null;
-        }
-
-        $product->saveQuietly();
-    }
 }
