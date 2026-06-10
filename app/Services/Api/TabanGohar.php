@@ -87,7 +87,7 @@ class TabanGohar
     /**
      * Update all products' prices based on tabanGoharPrice and update discounted prices
      */
-    private function updateAllProductsPrices(): void
+    public function updateAllProductsPrices(): void
     {
         try {
             $updatedCount = 0;
