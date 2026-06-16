@@ -72,7 +72,7 @@ class SnappProductResource extends JsonResource
             'regular_price' => $regularPrice,
             'sale_price' => $salePrice,
             'category' => $category,
-            'description' => $description ?? $product->name,
+            'description' => "",
             'brand' => 'گالری طلای زرنیا',
             'delivery_time' => $deliveryTime,
         ];
