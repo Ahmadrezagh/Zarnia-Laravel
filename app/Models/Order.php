@@ -226,6 +226,7 @@ class Order extends Model
         'canceled',
         'rejected',
         'boxing',
+        'custom',
         'sent',
         'post',
         'completed',
@@ -239,6 +240,7 @@ class Order extends Model
         'canceled' => 'لغو (رها شدن خرید در مراحل پرداخت)',
         'boxing' => 'بسته بندی',
         'sent' => 'تحویل به پیک',
+        'custom' => 'سفارشی',
         'post' => 'پست',
         'completed' => 'تکمیل شده',
     ];
@@ -253,6 +255,7 @@ class Order extends Model
         'sent' => '#7B52AE', // بنفش
         'post' => '#FFE20B', // زرد
         'completed' => '#033500', // مشکی
+        'custom' => '#fda50f', // نارنجی
     ];
 
     public function getPersianStatusAttribute()
