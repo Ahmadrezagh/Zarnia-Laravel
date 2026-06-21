@@ -21,7 +21,7 @@
                         <x-form.input title="کد پیگیری" name="transaction_id" id="transaction_id" :value="request('transaction_id')" />
                     </div>
                     <div class="col-md-6">
-                        <x-form.input title="جستجو (شناسه / نام محصول / نام کاربر)" name="search" id="search_input" :value="request('search')" />
+                        <x-form.input title="جستجو (شناسه / کد پیگیری / نام محصول / نام کاربر)" name="search" id="search_input" :value="request('search')" />
                     </div>
                 </div>
                 <div class="row">

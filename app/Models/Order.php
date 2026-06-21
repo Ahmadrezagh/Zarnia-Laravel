@@ -114,6 +114,7 @@ class Order extends Model
                 }
 
                 $q->orWhere('id', 'LIKE', "%{$search}%")
+                    ->orWhere('transaction_id', 'LIKE', "%{$search}%")
                     ->orWhereHas('user', function ($q) use ($search) {
                         $q->where('name', 'LIKE', "%{$search}%")
                             ->orWhere('last_name', 'LIKE', "%{$search}%");
