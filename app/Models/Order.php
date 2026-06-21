@@ -226,10 +226,10 @@ class Order extends Model
         'canceled',
         'rejected',
         'boxing',
-        'custom',
         'sent',
         'post',
         'completed',
+        'custom',
     ];
 
     public static $PERSIAN_STATUSES = [
@@ -240,9 +240,9 @@ class Order extends Model
         'canceled' => 'لغو (رها شدن خرید در مراحل پرداخت)',
         'boxing' => 'بسته بندی',
         'sent' => 'تحویل به پیک',
-        'custom' => 'سفارشی',
         'post' => 'پست',
         'completed' => 'تکمیل شده',
+        'custom' => 'سفارشی',
     ];
 
     public static $STATUS_COLORS = [
