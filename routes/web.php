@@ -136,6 +136,7 @@ Route::middleware('panel.ip')->group(function () {
         Route::any('table/products_deleted', [ProductController::class, 'deletedProductsTable'])->name('table.products.deleted');
         Route::post('products/{id}/restore', [ProductController::class, 'restore'])->name('products.restore');
         Route::delete('products/{id}/force-delete', [ProductController::class, 'forceDelete'])->name('products.force-delete');
+        Route::get('admin_orders/export', [OrderController::class, 'export'])->name('admin_orders.export');
         Route::resource('admin_orders', OrderController::class);
         Route::get('admin_orders/{order}/edit-modal', [OrderController::class, 'editModal'])->name('admin_orders.edit_modal');
         Route::get('admin_order/print/{order:uuid}', [OrderController::class, 'print'])->name('admin_order.print');

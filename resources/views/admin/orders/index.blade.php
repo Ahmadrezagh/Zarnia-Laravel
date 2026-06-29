@@ -35,6 +35,9 @@
                     <div class="col-md-12">
                         <button class="btn btn-success" type="button" onclick="applyFilters()" >اعمال فیلتر</button>
                         <button class="btn btn-secondary" type="button" onclick="clearFilters()" >پاک کردن فیلتر</button>
+                        <button type="button" class="btn btn-outline-success" onclick="exportOrders()">
+                            <i class="fas fa-file-excel"></i> خروجی اکسل
+                        </button>
                     </div>
                 </div>
             </form>
@@ -788,15 +791,31 @@
             $("#transaction_id").val('');
             $("#search_input").val('');
             $("#phone_input").val('');
-            
+
             // Reset status filter
             currentStatusFilter = '';
-            
+
             // Reset button active states
             $('.btn-group button').removeClass('active');
             $('.btn-group button:first').addClass('active');
-            
+
             window.loadDataWithNewUrl("{{route('table.orders')}}");
+        }
+
+        function exportOrders() {
+            const params = new URLSearchParams();
+
+            const transactionId = $("#transaction_id").val();
+            const search = $("#search_input").val();
+            const phone = $("#phone_input").val();
+
+            if (transactionId) params.append('transaction_id', transactionId);
+            if (search) params.append('search', search);
+            if (phone) params.append('phone', phone);
+            if (currentStatusFilter) params.append('status', currentStatusFilter);
+
+            const exportUrl = '{{ route('admin_orders.export') }}' + (params.toString() ? '?' + params.toString() : '');
+            window.location.href = exportUrl;
         }
     </script>
 

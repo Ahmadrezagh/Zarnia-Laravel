@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\OrdersExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Order\AdminUpdateOrderRequest;
 use App\Http\Requests\Admin\Order\AdminUpdateOrderStatusRequest;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OrderController extends Controller
 {
@@ -929,5 +931,23 @@ class OrderController extends Controller
                 'message' => 'خطا در شروع دریافت از حسابداری: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Export orders to Excel (direct download, respects current filters).
+     */
+    public function export(Request $request)
+    {
+        $filters = [
+            'transaction_id' => $request->get('transaction_id'),
+            'status' => $request->get('status'),
+            'phone' => $request->get('phone'),
+            'search' => $request->get('search'),
+        ];
+
+        return Excel::download(
+            new OrdersExport($filters),
+            'orders_'.date('Y-m-d_H-i-s').'.xlsx'
+        );
     }
 }
