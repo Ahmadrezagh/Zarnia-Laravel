@@ -640,19 +640,53 @@ class EtiketController extends Controller
      */
     private function calculateEtiketPrice(Product $product, float $weight): float
     {
+        return $this->calculatePriceFromWeightAndOjrat($weight, (float) ($product->ojrat ?? 0));
+    }
+
+    /**
+     * Calculate etiket price from weight and ojrat (sale commission %).
+     */
+    private function calculatePriceFromWeightAndOjrat(float $weight, float $ojrat): float
+    {
         $goldPrice = (float) setting('gold_price') ?? 0;
-        $ojrat = $product->ojrat ?? 0;
-        
+
         if ($weight > 0 && $goldPrice > 0 && $ojrat > 0) {
             // Formula: price = weight * (goldPrice * 1.01) * (1 + (ojrat / 100))
             $adjustedGoldPrice = $goldPrice * 1.01;
             $calculatedPrice = $weight * $adjustedGoldPrice * (1 + ($ojrat / 100));
-            
+
             // Round down to nearest thousand (last three digits become 0)
             return floor($calculatedPrice / 1000) * 1000;
         }
-        
+
         return 0;
+    }
+
+    /**
+     * Recalculate stored etiket price after ojrat/weight changes (skips manual-price products).
+     */
+    private function recalculateEtiketPrice(Etiket $etiket): void
+    {
+        if ($etiket->type === 'comprehensive') {
+            return;
+        }
+
+        $product = $etiket->product;
+        if ($product) {
+            $productType = $product->type ?? 'gold';
+            if (in_array($productType, ['none_gold', 'comprehensive_product'], true)) {
+                return;
+            }
+        }
+
+        $etiketPrice = $this->calculatePriceFromWeightAndOjrat(
+            (float) ($etiket->weight ?? 0),
+            (float) ($etiket->ojrat ?? 0)
+        );
+
+        if ($etiketPrice > 0) {
+            $etiket->updateQuietly(['price' => $etiketPrice]);
+        }
     }
 
     /**
@@ -675,8 +709,9 @@ class EtiketController extends Controller
             'weight' => 'nullable|numeric|min:0',
         ]);
 
-        $etikets = Etiket::whereIn('id', $request->etiket_ids)->get();
+        $etikets = Etiket::whereIn('id', $request->etiket_ids)->with('product')->get();
         $updated = 0;
+        $shouldRecalculatePrice = $request->filled('ojrat') || $request->filled('weight');
 
         foreach ($etikets as $etiket) {
             $updateData = [];
@@ -721,6 +756,11 @@ class EtiketController extends Controller
                 }
                 // Save will update product_id if it was set above, and any other fields in updateData
                 $etiket->save();
+
+                if ($shouldRecalculatePrice) {
+                    $this->recalculateEtiketPrice($etiket);
+                }
+
                 $updated++;
             }
         }
@@ -750,9 +790,10 @@ class EtiketController extends Controller
             'weight' => 'nullable|numeric|min:0',
         ]);
 
-        $products = Product::whereIn('id', $request->product_ids)->get();
+        $products = Product::whereIn('id', $request->product_ids)->with('etikets.product')->get();
         $updated = 0;
         $totalEtikets = 0;
+        $shouldRecalculatePrice = $request->filled('ojrat') || $request->filled('weight');
 
         foreach ($products as $product) {
             $etikets = $product->etikets;
@@ -775,6 +816,12 @@ class EtiketController extends Controller
                 
                 if (!empty($updateData)) {
                     $etiket->update($updateData);
+
+                    if ($shouldRecalculatePrice) {
+                        $etiket->refresh();
+                        $this->recalculateEtiketPrice($etiket);
+                    }
+
                     $updated++;
                 }
             }
