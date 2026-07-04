@@ -366,6 +366,51 @@ class Product extends Model implements HasMedia
         return false;
     }
 
+    /**
+     * Whether this comprehensive product has at least one comprehensive etiket whose related real etikets are all available.
+     */
+    public function hasAnyAvailableComprehensiveEtiket(): bool
+    {
+        if ((int) $this->is_comprehensive !== 1) {
+            return false;
+        }
+
+        $etikets = $this->relationLoaded('etikets')
+            ? $this->etikets
+            : $this->etikets()->with(['comprehensiveEtikets.relatedEtiket'])->get();
+
+        $comprehensiveEtikets = $etikets->where('type', 'comprehensive');
+
+        if ($comprehensiveEtikets->isEmpty()) {
+            return false;
+        }
+
+        return $comprehensiveEtikets->contains(function ($etiket) {
+            return (int) $etiket->effective_is_mojood === 1;
+        });
+    }
+
+    /**
+     * SQL fragment: at least one comprehensive etiket on this product has all related real etikets in stock.
+     */
+    public static function effectivelyAvailableComprehensiveEtiketExistsSql(string $productIdColumn = 'products.id'): string
+    {
+        return "EXISTS (
+            SELECT 1
+            FROM etikets ce
+            WHERE ce.product_id = {$productIdColumn}
+              AND ce.type = 'comprehensive'
+              AND ce.deleted_at IS NULL
+              AND EXISTS (SELECT 1 FROM comprehensive_etikets cpl WHERE cpl.etiket_id = ce.id)
+              AND NOT EXISTS (
+                SELECT 1
+                FROM comprehensive_etikets cpl
+                INNER JOIN etikets re ON re.id = cpl.related_etiket_id AND re.deleted_at IS NULL
+                WHERE cpl.etiket_id = ce.id AND re.is_mojood != 1
+              )
+        )";
+    }
+
     public function getAllEtiketsAttribute()
     {
         // Collect current product's etikets
@@ -1079,22 +1124,25 @@ class Product extends Model implements HasMedia
                 $q->where('collection_name', 'cover_image');
             })
             ->where(function ($q) {
-                // For comprehensive products: check if ALL constituent products have single_count >= 1
-                // (This ensures comprehensive product's single_count >= 1 since it's the minimum)
+                // For comprehensive products: at least one effectively available comprehensive etiket,
+                // or all constituent products have at least one available etiket.
                 $q->where(function ($comprehensiveQuery) {
                     $comprehensiveQuery->where('is_comprehensive', 1)
-                        ->whereHas('products', function ($productsQuery) {
-                            // Check if constituent product has at least one available etiket (single_count >= 1)
-                            $productsQuery->whereHas('etikets', function ($etiketQuery) {
-                                $etiketQuery->where('is_mojood', 1);
-                            });
-                        })
-                        // Ensure ALL constituent products have available etikets (not just one)
-                        // This is done by checking that there are no constituent products without available etikets
-                        ->whereDoesntHave('products', function ($productsQuery) {
-                            $productsQuery->whereDoesntHave('etikets', function ($etiketQuery) {
-                                $etiketQuery->where('is_mojood', 1);
-                            });
+                        ->where(function ($availabilityQuery) {
+                            $availabilityQuery->whereRaw(self::effectivelyAvailableComprehensiveEtiketExistsSql())
+                                ->orWhere(function ($constituentsQuery) {
+                                    $constituentsQuery->whereHas('products')
+                                        ->whereHas('products', function ($productsQuery) {
+                                            $productsQuery->whereHas('etikets', function ($etiketQuery) {
+                                                $etiketQuery->where('is_mojood', 1);
+                                            });
+                                        })
+                                        ->whereDoesntHave('products', function ($productsQuery) {
+                                            $productsQuery->whereDoesntHave('etikets', function ($etiketQuery) {
+                                                $etiketQuery->where('is_mojood', 1);
+                                            });
+                                        });
+                                });
                         });
                 })
                 // For regular products: check etiket count directly (single_count >= 1)
@@ -1138,21 +1186,26 @@ class Product extends Model implements HasMedia
      */
     public function scopeHasNoAvailableEtiket(Builder $query): Builder
     {
-        $raw = '
+        $comprehensiveEtiketSql = self::effectivelyAvailableComprehensiveEtiketExistsSql();
+        $raw = "
             (
                 (products.is_comprehensive = 1 AND (
-                    SELECT COUNT(*) FROM comprehensive_products cp
-                    JOIN products const ON const.id = cp.product_id
-                    WHERE cp.comprehensive_product_id = products.id
-                    AND NOT EXISTS (SELECT 1 FROM etikets e WHERE e.product_id = const.id AND e.is_mojood = 1 AND e.deleted_at IS NULL)
-                ) = 0)
+                    {$comprehensiveEtiketSql}
+                    OR (
+                        SELECT COUNT(*) FROM comprehensive_products cp
+                        JOIN products const ON const.id = cp.product_id
+                        WHERE cp.comprehensive_product_id = products.id
+                        AND NOT EXISTS (SELECT 1 FROM etikets e WHERE e.product_id = const.id AND e.is_mojood = 1 AND e.deleted_at IS NULL)
+                    ) = 0
+                    AND EXISTS (SELECT 1 FROM comprehensive_products cp WHERE cp.comprehensive_product_id = products.id)
+                ))
                 OR
                 (COALESCE(products.is_comprehensive, 0) = 0 AND (
                     EXISTS (SELECT 1 FROM etikets e WHERE e.product_id = products.id AND e.is_mojood = 1 AND e.deleted_at IS NULL)
                     OR EXISTS (SELECT 1 FROM products ch JOIN etikets e ON e.product_id = ch.id AND e.deleted_at IS NULL WHERE ch.parent_id = products.id AND ch.deleted_at IS NULL AND e.is_mojood = 1)
                 ))
             )
-        ';
+        ";
 
         return $query->whereRaw("NOT ({$raw})");
     }

@@ -1057,8 +1057,8 @@ class ProductController extends Controller
     public function products_comprehensive_table(Request $request)
     {
         // Show only available comprehensive products.
-        // A comprehensive product is available only when all of its comprehensive etikets
-        // are effectively available (which means all assigned real etikets are available too).
+        // A comprehensive product is available when at least one comprehensive etiket
+        // is effectively available (all assigned real etikets are available too).
         $query = Product::query()
             ->comprehensive()
             ->main()
@@ -1136,15 +1136,8 @@ class ProductController extends Controller
 
                 $comprehensiveEtikets = $product->etikets->where('type', 'comprehensive');
 
-                // A comprehensive product without comprehensive etiket is not available.
-                if ($comprehensiveEtikets->isEmpty()) {
-                    return false;
-                }
-
-                // All comprehensive etikets must be effectively available.
-                return $comprehensiveEtikets->every(function ($etiket) {
-                    return (int) $etiket->effective_is_mojood === 1;
-                });
+                // At least one comprehensive etiket must be effectively available.
+                return $product->hasAnyAvailableComprehensiveEtiket();
             })
             ->values();
 
@@ -1167,7 +1160,7 @@ class ProductController extends Controller
     {
         // Show comprehensive products that are not available:
         // - products without comprehensive etiket
-        // - OR products with at least one comprehensive etiket that is not effectively available
+        // - OR products with no effectively available comprehensive etiket
         $query = Product::query()
             ->comprehensive()
             ->main()
@@ -1242,17 +1235,8 @@ class ProductController extends Controller
                     $product->load('etikets.comprehensiveEtikets.relatedEtiket');
                 }
 
-                $comprehensiveEtikets = $product->etikets->where('type', 'comprehensive');
-
-                // Comprehensive product with no comprehensive etiket is unavailable.
-                if ($comprehensiveEtikets->isEmpty()) {
-                    return true;
-                }
-
-                // If any comprehensive etiket is unavailable, product is unavailable.
-                return $comprehensiveEtikets->contains(function ($etiket) {
-                    return (int) $etiket->effective_is_mojood !== 1;
-                });
+                // Comprehensive product with no effectively available comprehensive etiket is unavailable.
+                return ! $product->hasAnyAvailableComprehensiveEtiket();
             })
             ->values();
 

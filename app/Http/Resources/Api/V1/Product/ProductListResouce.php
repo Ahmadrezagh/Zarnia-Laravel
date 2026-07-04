@@ -58,15 +58,19 @@ class ProductListResouce extends JsonResource
         // true if at least one numeric code exists; false if all codes start with "s-" (overrides)
         $fast_delivery = $allStartWithS ? false : true;
 
-        // Availability: product has at least one available etiket (is_mojood=1), or has a child with at least one
-        $hasOwnAvailableEtiket = $product->etikets()->where('is_mojood', 1)->exists();
-        if ($hasOwnAvailableEtiket) {
-            $availability = true;
+        // Availability: at least one effectively available etiket (comprehensive etikets check related stock).
+        if ((int) ($product->is_comprehensive ?? 0) === 1) {
+            $availability = $product->hasAnyAvailableComprehensiveEtiket();
         } else {
-            $hasChildWithAvailableEtiket = $product->relationLoaded('children') && $product->children->isNotEmpty()
-                ? Etiket::whereIn('product_id', $product->children->pluck('id'))->where('is_mojood', 1)->exists()
-                : $product->children()->whereHas('etikets', fn ($q) => $q->where('is_mojood', 1))->exists();
-            $availability = $hasChildWithAvailableEtiket;
+            $hasOwnAvailableEtiket = $product->etikets()->where('is_mojood', 1)->exists();
+            if ($hasOwnAvailableEtiket) {
+                $availability = true;
+            } else {
+                $hasChildWithAvailableEtiket = $product->relationLoaded('children') && $product->children->isNotEmpty()
+                    ? Etiket::whereIn('product_id', $product->children->pluck('id'))->where('is_mojood', 1)->exists()
+                    : $product->children()->whereHas('etikets', fn ($q) => $q->where('is_mojood', 1))->exists();
+                $availability = $hasChildWithAvailableEtiket;
+            }
         }
 
         return [
